@@ -60,7 +60,7 @@
 
 | Hook | 作用 | 启用方式 |
 |---|---|---|
-| `stop-run-tests.sh` | Stop 后在 Go 项目（有 `go.mod`）自动跑 `vet` / `golangci-lint` / `test -race` / `make test-integration`，失败回灌给 AI | `export CLAUDE_ENABLE_STOP_TESTS=1` 或项目根 `touch .enable-stop-tests` |
+| `stop-auto-tests.sh` | Stop 后在 Go 项目（有 `go.mod`）自动跑 `vet` / `golangci-lint` / `test -race` / `make test-integration`，失败回灌给 AI | `export CLAUDE_ENABLE_AUTO_TESTS=1` 或项目根 `touch .enable-auto-tests` |
 | `stop-auto-commit.sh` | Stop 后在 git 仓库自动 commit 已追踪改动（仅 `git add -u`，非 main/master，不 push） | `export CLAUDE_ENABLE_AUTO_COMMIT=1` 或仓库根 `touch .enable-auto-commit` |
 
 环境变量是会话级 / 全局级启用（写进 shell rc），标记文件是项目级启用，二选一或并用。停用：`unset` 环境变量 或 `rm` 标记文件即可。
@@ -109,7 +109,7 @@
 | 临时允许 npm / yarn / pnpm | 暂未提供，建议临时禁用 plugin |
 | 临时允许 main commit | 同上 |
 | 跳过 Stop 自检 | 当前无开关——这是核心铁律，不建议跳过 |
-| 启用 stop-run-tests | `CLAUDE_ENABLE_STOP_TESTS=1` 或项目根 `.enable-stop-tests` |
+| 启用 stop-auto-tests | `CLAUDE_ENABLE_AUTO_TESTS=1` 或项目根 `.enable-auto-tests` |
 | 启用 stop-auto-commit | `CLAUDE_ENABLE_AUTO_COMMIT=1` 或仓库根 `.enable-auto-commit` |
 
 ---

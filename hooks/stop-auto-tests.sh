@@ -8,9 +8,9 @@
 #     兜底前先校验启用开关，避免对非 Go 项目误扫到无关模块。
 # 防循环：依赖 stop_hook_active；二次触发直接放行，避免修测试 → 触发 → 再修死循环。
 # 启用开关：默认不跑，必须显式启用——满足其一即可：
-#   - 环境变量 CLAUDE_ENABLE_STOP_TESTS=1（全局开，所有发现的模块都跑）；
-#   - cwd 存在 .enable-stop-tests 标记（工作区全开，所有发现的模块都跑）；
-#   - 任一模块根存在 .enable-stop-tests（仅该模块开）。
+#   - 环境变量 CLAUDE_ENABLE_AUTO_TESTS=1（全局开，所有发现的模块都跑）；
+#   - cwd 存在 .enable-auto-tests 标记（工作区全开，所有发现的模块都跑）；
+#   - 任一模块根存在 .enable-auto-tests（仅该模块开）。
 #   注：兜底扫描（路径 2 / 3）本身要求"全局开"或"cwd 标记开"，否则连扫都不扫。
 # 输入：标准 Stop stdin JSON（含 cwd 字段，fallback 到 $PWD）。
 # 输出：失败 → decision:block + 失败摘要交还给 AI；通过 → 静默 exit 0。
@@ -108,7 +108,7 @@ else
   # 路径 2 / 3 是兜底扫描，可能找到与本任务无关的 Go 项目。
   # 必须 cwd 级显式启用（环境变量 or cwd 标记文件）才扫，避免在非 Go 工作区里误触发。
   GLOBAL_ON=0
-  if [ "${CLAUDE_ENABLE_STOP_TESTS:-0}" = "1" ] || [ -f "$HOOK_CWD/.enable-stop-tests" ]; then
+  if [ "${CLAUDE_ENABLE_AUTO_TESTS:-0}" = "1" ] || [ -f "$HOOK_CWD/.enable-auto-tests" ]; then
     GLOBAL_ON=1
   fi
   if [ "$GLOBAL_ON" = "1" ]; then
@@ -130,13 +130,13 @@ fi
 [ "${#MOD_ROOTS[@]}" -eq 0 ] && exit 0
 
 # ---- 按启用开关过滤模块 -----------------------------------------------------
-# 单模块场景下保留对模块根 .enable-stop-tests 的兼容；多模块场景下，cwd 标记 / 环境
-# 变量统一开关，单模块根的 .enable-stop-tests 仅对该模块生效。
+# 单模块场景下保留对模块根 .enable-auto-tests 的兼容；多模块场景下，cwd 标记 / 环境
+# 变量统一开关，单模块根的 .enable-auto-tests 仅对该模块生效。
 ENABLED_ROOTS=()
 for r in "${MOD_ROOTS[@]}"; do
-  if [ "${CLAUDE_ENABLE_STOP_TESTS:-0}" = "1" ] \
-    || [ -f "$HOOK_CWD/.enable-stop-tests" ] \
-    || [ -f "$r/.enable-stop-tests" ]; then
+  if [ "${CLAUDE_ENABLE_AUTO_TESTS:-0}" = "1" ] \
+    || [ -f "$HOOK_CWD/.enable-auto-tests" ] \
+    || [ -f "$r/.enable-auto-tests" ]; then
     ENABLED_ROOTS+=( "$r" )
   fi
 done
@@ -163,7 +163,7 @@ run_with_timeout() {
 
 # ---- 测试执行 ----------------------------------------------------------------
 FAILED_STAGES=()
-LOG_FILE=$(mktemp -t stop-run-tests.XXXXXX.log)
+LOG_FILE=$(mktemp -t stop-auto-tests.XXXXXX.log)
 trap 'rm -f "$LOG_FILE"' EXIT
 
 run_stage() {
@@ -232,7 +232,7 @@ $ROOTS_LIST
 $LOG_TAIL
 \`\`\`
 
-请按 TDD 纪律先修测试再动实现（或修实现让测试通过），改完后这一轮 stop hook 不会再触发（防循环），但下次任务结束会再次校验。如果你判断这些失败与本次任务无关、属于历史遗留，请显式告知用户并征求是否**临时停用**本 hook（删除对应模块根的 .enable-stop-tests 文件、或工作区根的 .enable-stop-tests，或 \`unset CLAUDE_ENABLE_STOP_TESTS\`）。
+请按 TDD 纪律先修测试再动实现（或修实现让测试通过），改完后这一轮 stop hook 不会再触发（防循环），但下次任务结束会再次校验。如果你判断这些失败与本次任务无关、属于历史遗留，请显式告知用户并征求是否**临时停用**本 hook（删除对应模块根的 .enable-auto-tests 文件、或工作区根的 .enable-auto-tests，或 \`unset CLAUDE_ENABLE_AUTO_TESTS\`）。
 EOF
 )
 
