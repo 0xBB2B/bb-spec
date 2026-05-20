@@ -56,29 +56,14 @@
 
 ## 高级选项：可选 Hooks（默认关，按需启用）
 
-仓库还附带两个**副作用较大**的 hook 脚本，**未自动注册**，需自己加进 `~/.claude/settings.json`：
+仓库还附带两个**副作用较大**的 Stop hook，已随 plugin 一起注册，但脚本顶部有启用门槛，**默认不跑**——必须显式启用：
 
-| Hook | 作用 | 逃生开关 |
+| Hook | 作用 | 启用方式 |
 |---|---|---|
-| `stop-run-tests.sh` | Stop 后在 Go 项目（有 `go.mod`）自动跑 `vet` / `golangci-lint` / `test -race` / `make test-integration`，失败回灌给 AI | `CLAUDE_SKIP_STOP_TESTS=1` 或项目根 `.skip-stop-tests` |
-| `stop-auto-commit.sh` | Stop 后在 git 仓库自动 commit 已追踪改动（仅 `git add -u`，非 main/master，不 push） | `CLAUDE_SKIP_AUTO_COMMIT=1` 或仓库根 `.skip-auto-commit` |
+| `stop-run-tests.sh` | Stop 后在 Go 项目（有 `go.mod`）自动跑 `vet` / `golangci-lint` / `test -race` / `make test-integration`，失败回灌给 AI | `export CLAUDE_ENABLE_STOP_TESTS=1` 或项目根 `touch .enable-stop-tests` |
+| `stop-auto-commit.sh` | Stop 后在 git 仓库自动 commit 已追踪改动（仅 `git add -u`，非 main/master，不 push） | `export CLAUDE_ENABLE_AUTO_COMMIT=1` 或仓库根 `touch .enable-auto-commit` |
 
-启用方式（追加到 `settings.json` 的 `hooks.Stop`）：
-
-```json
-{
-  "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          { "type": "command", "command": "${HOME}/.claude/plugins/cache/0xbb2b/bb-channel/<version>/hooks/stop-run-tests.sh" },
-          { "type": "command", "command": "${HOME}/.claude/plugins/cache/0xbb2b/bb-channel/<version>/hooks/stop-auto-commit.sh" }
-        ]
-      }
-    ]
-  }
-}
-```
+环境变量是会话级 / 全局级启用（写进 shell rc），标记文件是项目级启用，二选一或并用。停用：`unset` 环境变量 或 `rm` 标记文件即可。
 
 ---
 
@@ -117,15 +102,15 @@
 
 ---
 
-## 逃生开关速查
+## Hook 开关速查
 
 | 场景 | 开关 |
 |---|---|
 | 临时允许 npm / yarn / pnpm | 暂未提供，建议临时禁用 plugin |
 | 临时允许 main commit | 同上 |
 | 跳过 Stop 自检 | 当前无开关——这是核心铁律，不建议跳过 |
-| 跳过 stop-run-tests | `CLAUDE_SKIP_STOP_TESTS=1` 或 `.skip-stop-tests` |
-| 跳过 stop-auto-commit | `CLAUDE_SKIP_AUTO_COMMIT=1` 或 `.skip-auto-commit` |
+| 启用 stop-run-tests | `CLAUDE_ENABLE_STOP_TESTS=1` 或项目根 `.enable-stop-tests` |
+| 启用 stop-auto-commit | `CLAUDE_ENABLE_AUTO_COMMIT=1` 或仓库根 `.enable-auto-commit` |
 
 ---
 

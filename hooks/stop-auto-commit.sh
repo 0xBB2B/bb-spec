@@ -8,7 +8,8 @@
 #   - 提示 AI 用 `git add -u`：仅暂存已追踪文件的修改 / 删除；untracked 由 AI 判断是否纳入。
 #   - 不在 main / master / detached HEAD 上触发（与 block-main-commit.sh 保持一致）。
 # 防循环：依赖 stop_hook_active；二次触发直接放行（AI 已收过指令，无论是否 commit 都不再回灌）。
-# 跳过开关：CLAUDE_SKIP_AUTO_COMMIT=1，或仓库根存在 .skip-auto-commit 标记文件。
+# 启用开关：默认不跑，必须显式启用——环境变量 CLAUDE_ENABLE_AUTO_COMMIT=1，
+#           或仓库根存在 .enable-auto-commit 标记文件，二者满足其一即可。
 # 输入：标准 Stop stdin JSON（含 cwd 字段，fallback 到 $PWD）。
 # 输出：满足条件 → decision:block + 让 AI 自己写 message 并 commit 的指令；否则静默 exit 0。
 
@@ -35,12 +36,14 @@ cd "$HOOK_CWD" 2>/dev/null || exit 0
 # ---- 必须在 git 仓库内 -------------------------------------------------------
 git rev-parse --is-inside-work-tree &>/dev/null || exit 0
 
-# 拿到仓库根（用于检测 .skip-auto-commit 标记 + 提示信息）。
+# 拿到仓库根（用于检测 .enable-auto-commit 标记 + 提示信息）。
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 
-# ---- 跳过开关 ----------------------------------------------------------------
-[ "${CLAUDE_SKIP_AUTO_COMMIT:-0}" = "1" ] && exit 0
-[ -f "$REPO_ROOT/.skip-auto-commit" ] && exit 0
+# ---- 启用开关 ----------------------------------------------------------------
+# 默认关。必须显式启用，避免在不期望自动 commit 的仓库里产生意外提交。
+if [ "${CLAUDE_ENABLE_AUTO_COMMIT:-0}" != "1" ] && [ ! -f "$REPO_ROOT/.enable-auto-commit" ]; then
+  exit 0
+fi
 
 # ---- 分支保护 ----------------------------------------------------------------
 BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || exit 0
