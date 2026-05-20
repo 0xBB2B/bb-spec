@@ -1,4 +1,4 @@
-# skills
+# bb-channel
 
 > 中文优先的 Claude Code 工作流约束套装：**Go + Vue + bun 技术栈强约束**、**TDD / 反历史包袱铁律**、**多代理本地 review 套件**。
 
@@ -12,7 +12,7 @@
 
 ```bash
 /plugin marketplace add 0xBB2B/skills
-/plugin install skills@0xbb2b
+/plugin install bb-channel@0xbb2b
 ```
 
 或手动添加到 `~/.claude/settings.json`：
@@ -25,7 +25,7 @@
     }
   },
   "enabledPlugins": {
-    "skills@0xbb2b": true
+    "bb-channel@0xbb2b": true
   }
 }
 ```
@@ -36,7 +36,7 @@
 
 ```bash
 /plugin update              # 检查并更新所有已装 plugin
-/plugin update skills       # 仅更新本 plugin
+/plugin update bb-channel   # 仅更新本 plugin
 ```
 
 不会自动拉取，需主动触发。
@@ -71,8 +71,8 @@
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "${HOME}/.claude/plugins/cache/0xbb2b/skills/<version>/hooks/stop-run-tests.sh" },
-          { "type": "command", "command": "${HOME}/.claude/plugins/cache/0xbb2b/skills/<version>/hooks/stop-auto-commit.sh" }
+          { "type": "command", "command": "${HOME}/.claude/plugins/cache/0xbb2b/bb-channel/<version>/hooks/stop-run-tests.sh" },
+          { "type": "command", "command": "${HOME}/.claude/plugins/cache/0xbb2b/bb-channel/<version>/hooks/stop-auto-commit.sh" }
         ]
       }
     ]
