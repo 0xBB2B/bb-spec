@@ -2,7 +2,8 @@
 # Stop hook：任务结束前在 Go 项目根目录跑一遍全套测试（vet / lint / test / integration）。
 # 触发条件：cwd（或其祖先）存在 go.mod。否则静默放行。
 # 防循环：依赖 stop_hook_active；二次触发直接放行，避免修测试 → 触发 → 再修死循环。
-# 跳过开关：环境变量 CLAUDE_SKIP_STOP_TESTS=1，或项目根存在 .skip-stop-tests 标记文件。
+# 启用开关：默认不跑，必须显式启用——环境变量 CLAUDE_ENABLE_STOP_TESTS=1，
+#           或项目根存在 .enable-stop-tests 标记文件，二者满足其一即可。
 # 输入：标准 Stop stdin JSON（含 cwd 字段，fallback 到 $PWD）。
 # 输出：失败 → decision:block + 失败摘要交还给 AI；通过 → 静默 exit 0。
 
@@ -42,11 +43,9 @@ find_module_root() {
 
 MOD_ROOT=$(find_module_root "$HOOK_CWD") || exit 0
 
-# ---- 跳过开关 ----------------------------------------------------------------
-if [ "${CLAUDE_SKIP_STOP_TESTS:-0}" = "1" ]; then
-  exit 0
-fi
-if [ -f "$MOD_ROOT/.skip-stop-tests" ]; then
+# ---- 启用开关 ----------------------------------------------------------------
+# 默认关。必须显式启用，避免在不期望测试自动跑的项目里炸出意外开销。
+if [ "${CLAUDE_ENABLE_STOP_TESTS:-0}" != "1" ] && [ ! -f "$MOD_ROOT/.enable-stop-tests" ]; then
   exit 0
 fi
 
@@ -132,7 +131,7 @@ $FAILED_LIST
 $LOG_TAIL
 \`\`\`
 
-请按 TDD 纪律先修测试再动实现（或修实现让测试通过），改完后这一轮 stop hook 不会再触发（防循环），但下次任务结束会再次校验。如果你判断这些失败与本次任务无关、属于历史遗留，请显式告知用户并征求是否暂时跳过（可在项目根创建 .skip-stop-tests 文件）。
+请按 TDD 纪律先修测试再动实现（或修实现让测试通过），改完后这一轮 stop hook 不会再触发（防循环），但下次任务结束会再次校验。如果你判断这些失败与本次任务无关、属于历史遗留，请显式告知用户并征求是否**临时停用**本 hook（删除项目根 .enable-stop-tests 文件，或 \`unset CLAUDE_ENABLE_STOP_TESTS\`）。
 EOF
 )
 
