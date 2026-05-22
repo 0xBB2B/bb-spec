@@ -67,7 +67,7 @@
 
 ---
 
-## Skills 一览（12 个）
+## Skills 一览（14 个）
 
 ### 通用纪律
 
@@ -75,6 +75,7 @@
 - **`dependency-version-policy`** — 引入/升级依赖前必须官方渠道查最新版，禁凭训练记忆
 - **`git-workflow-discipline`** — 分支决策、阶段性 commit、PR 三段式描述、合并后清理
 - **`git-push-pr`** — 用户主动触发的多仓库批量/选择性推送 PR 流程
+- **`spec`** — 需求拆解与文档化：一文一规则、≤100 行、frontmatter + INDEX.md 按需加载
 - **`api-design`** — REST API 设计：资源命名、状态码、分页、错误响应、版本化
 
 ### Go 后端
