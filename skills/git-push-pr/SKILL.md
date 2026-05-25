@@ -1,6 +1,6 @@
 ---
 name: git-push-pr
-description: Use when 用户想把本地代码通过 PR 流程推送到远程仓库。自动检测单 / 多仓库，支持批量或选择性处理；用户也可通过参数指定单个仓库目录。推送前若项目内存在 `docs/spec/INDEX.md`，会自动跑一次**分支规范自查（pre-review）**——派 subagent 拿 spec 比对当前分支 vs main 的 diff，违规由主 agent 直接修复并循环复审，通过后生成一份**简洁的 6 段 PR 描述草稿**（背景 / 需求 / 方案 / 结果 / 测试 / 规范，整体不超过 50 行），直接用作创建 PR 的 body。常见触发："push 一下"、"提个 PR"、"代码推上去"、"准备发 PR"、"开 PR 之前帮我自查一下"、"对照规范看下这个分支"。
+description: Use when 用户想把本地代码通过 PR 流程推送到远程仓库。自动检测单 / 多仓库，支持批量或选择性处理；用户也可通过参数指定单个仓库目录。推送前若项目内存在 `.bb-channel/docs/spec/INDEX.md`，会自动跑一次**分支规范自查（pre-review）**——派 subagent 拿 spec 比对当前分支 vs main 的 diff，违规由主 agent 直接修复并循环复审，通过后生成一份**简洁的 6 段 PR 描述草稿**（背景 / 需求 / 方案 / 结果 / 测试 / 规范，整体不超过 50 行），直接用作创建 PR 的 body。常见触发："push 一下"、"提个 PR"、"代码推上去"、"准备发 PR"、"开 PR 之前帮我自查一下"、"对照规范看下这个分支"。
 user-invocable: true
 ---
 
@@ -8,7 +8,7 @@ user-invocable: true
 
 ## 概览
 
-创建分支 → 跑测试 → 提交 → **分支规范自查 + PR 草稿**（仅当有 `docs/spec/INDEX.md`）→ 推送 → 创建 PR → 处理 PR → 清理分支。
+创建分支 → 跑测试 → 提交 → **分支规范自查 + PR 草稿**（仅当有 `.bb-channel/docs/spec/INDEX.md`）→ 推送 → 创建 PR → 处理 PR → 清理分支。
 
 ## 参数
 
@@ -41,7 +41,7 @@ user-invocable: true
 
 ### 前置探测
 
-`test -f docs/spec/INDEX.md`。不存在 → 跳过整个 4.5。
+读取项目根目录 `.bb-channel.yaml` 的 `docs_dir`（默认 `.bb-channel/docs`）确定 spec 路径。`test -f {docs_dir}/spec/INDEX.md`。不存在 → 跳过整个 4.5。
 
 ### 核心原则
 
@@ -54,7 +54,7 @@ user-invocable: true
 
 `Agent`（`subagent_type: general-purpose`），prompt 包含：
 - `git diff <base>...HEAD` + `git log <base>..HEAD --oneline`
-- 规范来源：**仅** `docs/spec/` 下内容（禁引入外部最佳实践）
+- 规范来源：**仅** `.bb-channel/docs/spec/` 下内容（禁引入外部最佳实践）
 - 输出格式：`## 结论 PASS|FAIL` → `## 违规项`（file:line + 违反哪条 + 建议修法）→ `## 备注`
 - subagent **只读不改**
 

@@ -1,0 +1,9 @@
+# .bb-channel.yaml 模板
+#
+# 复制到项目根目录并重命名为 .bb-channel.yaml，按需修改。
+# 影响 /spec、/plan、/git-push-pr 等 skill 的文档读写路径。
+
+# spec 和 plan 文档的基础目录
+# /spec 输出至 {docs_dir}/spec/，/plan 输出至 {docs_dir}/plan/
+# 默认值：.bb-channel/docs
+docs_dir: .bb-channel/docs
