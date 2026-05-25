@@ -67,7 +67,7 @@
 
 ---
 
-## Skills 一览（14 个）
+## Skills 一览（15 个）
 
 ### 通用纪律
 
@@ -75,7 +75,8 @@
 - **`dependency-version-policy`** — 引入/升级依赖前必须官方渠道查最新版，禁凭训练记忆
 - **`git-workflow-discipline`** — 分支决策、阶段性 commit、PR 三段式描述、合并后清理
 - **`git-push-pr`** — 用户主动触发的多仓库批量/选择性推送 PR 流程
-- **`spec`** — 需求拆解与文档化：一文一规则、≤100 行、frontmatter + INDEX.md 按需加载
+- **`spec`** — 需求拆解与文档化：一文一规则、≤100 行、输出至 `.bb-channel/docs/spec/`
+- **`plan`** — 读取 spec 产出分步实施计划：一文一单元、函数级详细、输出至 `.bb-channel/docs/plan/`
 - **`api-design`** — REST API 设计：资源命名、状态码、分页、错误响应、版本化
 
 ### Go 后端
@@ -96,9 +97,21 @@
 
 ---
 
-## 推荐配套：CLAUDE.md 模板
+## 推荐配套
 
-仓库根目录的 [`CLAUDE-template.md`](./CLAUDE-template.md) 是配套的"铁律索引"参考。**不会自动安装**——按需复制到你的 `~/.claude/CLAUDE.md` 或项目根 `CLAUDE.md`，按需裁剪。
+### CLAUDE.md 模板
+
+仓库根目录的 [`CLAUDE.template.md`](./CLAUDE.template.md) 是配套的"铁律索引"参考。**不会自动安装**——按需复制到你的 `~/.claude/CLAUDE.md` 或项目根 `CLAUDE.md`，按需裁剪。
+
+### .bb-channel.yaml 项目配置
+
+`/spec` 和 `/plan` 默认输出至 `.bb-channel/docs/spec/`、`.bb-channel/docs/plan/`。在项目根目录创建 `.bb-channel.yaml` 可覆盖基础路径：
+
+```yaml
+docs_dir: my/custom/docs  # → my/custom/docs/spec/、my/custom/docs/plan/
+```
+
+参考模板：[`.bb-channel.template.yaml`](./.bb-channel.template.yaml)。
 
 ---
 
