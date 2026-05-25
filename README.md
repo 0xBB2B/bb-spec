@@ -30,36 +30,22 @@
 }
 ```
 
-## Codex 安装 / Install
-
-添加插件源并安装：
-
-```bash
-codex plugin marketplace add 0xBB2B/skills
-codex
-/plugins
-```
-
-在插件列表中选择 `bb-channel` 安装。安装后新开一个线程即可使用内置 skills；hooks 首次运行前需要在 Codex 中执行 `/hooks`，审查并信任当前 hook 定义。
-
 ## 版本与更新 / Versioning
 
 本 plugin 采用 **SemVer + Git tag** 版本模式。`plugin.json` 里的 `version` 必须与 Git tag 去掉 `v` 前缀后保持一致；例如当前首个版本是 `0.1.0`，对应 tag 是 `v0.1.0`。
 
 发布新版本时，在 GitHub Actions 里手动运行 `Release Plugin Version`，输入 `0.1.0` 或 `v0.1.0`。该 workflow 会完成三件事：
 
-1. 同步更新 `.claude-plugin/plugin.json` 与 `.codex-plugin/plugin.json` 的 `version`
+1. 同步更新 `.claude-plugin/plugin.json` 的 `version`
 2. 提交 `release: vX.Y.Z`
 3. 在该提交上创建并推送 `vX.Y.Z` tag
 
-更新 Claude Code 已安装插件：
+更新已安装插件：
 
 ```bash
 /plugin update              # 检查并更新所有已装 plugin
 /plugin update bb-channel   # 仅更新本 plugin
 ```
-
-更新 Codex 已安装插件：重新打开 `/plugins`，在 `bb-channel` 条目中更新或重新安装。hooks 若发生变更，需要重新执行 `/hooks` 审查并信任。
 
 ---
 

@@ -59,10 +59,8 @@ jobs:
           version = "${{ steps.version.outputs.version }}"
           manifest_paths = [
               Path(".claude-plugin/plugin.json"),
-              Path(".codex-plugin/plugin.json"),
           ]
 
-          # 两个插件入口必须保持同一个版本号，否则安装器会出现不一致的更新判断。
           for manifest_path in manifest_paths:
               data = json.loads(manifest_path.read_text(encoding="utf-8"))
               data["version"] = version
@@ -76,7 +74,6 @@ jobs:
         shell: bash
         run: |
           python3 -m json.tool .claude-plugin/plugin.json >/dev/null
-          python3 -m json.tool .codex-plugin/plugin.json >/dev/null
 
       - name: Commit version change
         shell: bash
@@ -84,12 +81,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          if git diff --quiet -- .claude-plugin/plugin.json .codex-plugin/plugin.json; then
+          if git diff --quiet -- .claude-plugin/plugin.json; then
             echo "Manifest versions are already ${{ steps.version.outputs.version }}."
             exit 0
           fi
 
-          git add .claude-plugin/plugin.json .codex-plugin/plugin.json
+          git add .claude-plugin/plugin.json
           git commit -m "release: ${{ steps.version.outputs.tag }}"
 
       - name: Push commit and tag

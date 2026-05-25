@@ -1,6 +1,6 @@
 ---
 name: plan
-description: 读取 `.bb-channel/docs/spec/` 中的规格说明，结合项目现有代码结构，在 `.bb-channel/docs/plan/<主题>/` 下产出自包含的分步实施计划；每个文件只解决一个独立问题，详细到函数名与职责但不写具体参数与实现，任何 AI 在清空上下文后仅凭该文件即可正确编码。常见触发：用户输入 `/plan`、"生成实施计划"、"怎么落地这些 spec"。
+description: 读取 `.bb-channel/docs/spec/` 中的规格说明，结合项目现有代码结构，在 `.bb-channel/docs/plan/<YYYY-MM-DD>.<主题>/` 下产出自包含的分步实施计划；每个文件只解决一个独立问题，详细到函数名与职责但不写具体参数与实现，任何 AI 在清空上下文后仅凭该文件即可正确编码。常见触发：用户输入 `/plan`、"生成实施计划"、"怎么落地这些 spec"。
 user-invocable: true
 ---
 
@@ -22,8 +22,9 @@ user-invocable: true
 
 默认读取 `.bb-channel/docs/spec/`，输出至 `.bb-channel/docs/plan/`。`.bb-channel.yaml` 的 `docs_dir` 可覆盖基础路径。
 
-**统一子目录格式**：`.bb-channel/docs/plan/<主题>/<序号>-<名称>.md`
+**统一子目录格式**：`.bb-channel/docs/plan/<YYYY-MM-DD>.<主题>/<序号>-<名称>.md`
 
+- `<YYYY-MM-DD>`：plan 创建当天的日期，如 `2026-05-25`
 - `<主题>`：默认取当前 git 分支名（去掉 `feature/`、`fix/` 等前缀）。用户可在步骤 2 确认时覆盖
 - `<序号>`：两位数字前缀，表示同主题内推荐执行顺序（`01-`、`02-`…）
 - `<名称>`：kebab-case 的关注点描述
@@ -34,9 +35,9 @@ user-invocable: true
 | 文件 | 职责 | 规模 |
 |---|---|---|
 | `plan/INDEX.md` | 列主题目录 + 状态，一行一主题 | 永远 < 50 行 |
-| `plan/<主题>/INDEX.md` | 列该主题内 plan 文件，含阶段分组和依赖 | 通常 < 30 行 |
+| `plan/<YYYY-MM-DD>.<主题>/INDEX.md` | 列该主题内 plan 文件，含阶段分组和依赖 | 通常 < 30 行 |
 
-**进度文件**：`plan/<主题>/PROGRESS.md` — 执行断点的唯一事实源，AI 执行前必读、每步完成必更新。
+**进度文件**：`plan/<YYYY-MM-DD>.<主题>/PROGRESS.md` — 执行断点的唯一事实源，AI 执行前必读、每步完成必更新。
 
 ---
 
@@ -91,7 +92,7 @@ cat .bb-channel/docs/plan/INDEX.md 2>/dev/null || find .bb-channel/docs/plan/ -n
 
 ### 步骤 5：更新索引与进度文件
 
-**主题 INDEX.md**（`plan/<主题>/INDEX.md`）：
+**主题 INDEX.md**（`plan/<YYYY-MM-DD>.<主题>/INDEX.md`）：
 - 每条一行：`- [<name>](<文件名>) — <description>`
 - 用 `## <阶段>` 分组表示执行顺序，同阶段可并行
 - 依赖标注：描述末尾 `[依赖: <name>]`
@@ -101,7 +102,7 @@ cat .bb-channel/docs/plan/INDEX.md 2>/dev/null || find .bb-channel/docs/plan/ -n
 - 状态：`进行中` | `已完成`；完成时填写日期
 - 已完成主题仅作历史审计，AI 未经用户允许不得读取其内容
 
-**PROGRESS.md**（`plan/<主题>/PROGRESS.md`）：初始生成时所有步骤标记 `pending`，格式见下方模板。
+**PROGRESS.md**（`plan/<YYYY-MM-DD>.<主题>/PROGRESS.md`）：初始生成时所有步骤标记 `pending`，格式见下方模板。
 
 ### 步骤 6：自检
 
@@ -164,11 +165,11 @@ description: <一句话概括，≤ 80 字>
 
 | 主题 | 概述 | 状态 | 完成时间 |
 |---|---|---|---|
-| [add-user-dashboard](add-user-dashboard/INDEX.md) | 用户仪表盘功能 | 进行中 | — |
-| [auth-refactor](auth-refactor/INDEX.md) | 认证模块重构 | 已完成 | 2026-05-20 |
+| [add-user-dashboard](2026-05-25.add-user-dashboard/INDEX.md) | 用户仪表盘功能 | 进行中 | — |
+| [auth-refactor](2026-05-15.auth-refactor/INDEX.md) | 认证模块重构 | 已完成 | 2026-05-20 |
 ```
 
-**主题 INDEX.md**（`plan/<主题>/INDEX.md`）— 按阶段分组，同阶段可并行：
+**主题 INDEX.md**（`plan/<YYYY-MM-DD>.<主题>/INDEX.md`）— 按阶段分组，同阶段可并行：
 
 ```markdown
 # <主题名> 实施计划
@@ -178,7 +179,7 @@ description: <一句话概括，≤ 80 字>
 - [domain-types](02-domain-types.md) — 领域模型定义 [依赖: project-bootstrap]
 ```
 
-**PROGRESS.md**（`plan/<主题>/PROGRESS.md`）— 执行断点唯一事实源：
+**PROGRESS.md**（`plan/<YYYY-MM-DD>.<主题>/PROGRESS.md`）— 执行断点唯一事实源：
 
 ```markdown
 # 执行进度
