@@ -81,7 +81,6 @@
 ### Go 后端
 
 - **`go-project-constraints`** — Go 项目全生命周期约束：三层架构、禁过度抽象、测试服从生产设计
-- **`golang-patterns`** — Go 惯用模式与最佳实践
 - **`golang-testing`** — Go 测试组织：table-driven、subtests、benchmark、fuzz
 
 ### 前端
