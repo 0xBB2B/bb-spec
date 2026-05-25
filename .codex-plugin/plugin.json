@@ -1,0 +1,23 @@
+{
+  "name": "bb-channel",
+  "version": "0.1.0",
+  "description": "中文优先的 Codex 工作流约束套装：Go + Vue + bun 技术栈强约束、TDD/反历史包袱铁律、多代理本地 review 套件。",
+  "author": {
+    "name": "0xBB2B",
+    "url": "https://github.com/0xBB2B"
+  },
+  "homepage": "https://github.com/0xBB2B/skills",
+  "repository": "https://github.com/0xBB2B/skills",
+  "license": "MIT",
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "bb-channel",
+    "shortDescription": "中文优先的 Codex 工作流约束套装",
+    "longDescription": "提供 Go、Vue、bun、TDD、Git 流程、文档规范和本地 review 工作流约束，并通过 hooks 提供包管理器、主分支提交、依赖版本检查和任务结束自检。",
+    "developerName": "0xBB2B",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "websiteURL": "https://github.com/0xBB2B/skills"
+  }
+}

@@ -1,0 +1,100 @@
+name: Release Plugin Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "SemVer 版本号，例如 0.1.1 或 v0.1.1"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Update manifests and tag release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Normalize and validate version
+        id: version
+        shell: bash
+        run: |
+          # 发布必须从默认分支发起，避免 tag 指向临时分支或未合并代码。
+          if [[ "${GITHUB_REF_NAME}" != "${{ github.event.repository.default_branch }}" ]]; then
+            echo "::error::请从默认分支 ${{ github.event.repository.default_branch }} 运行发布 workflow。"
+            exit 1
+          fi
+
+          raw="${{ inputs.version }}"
+          version="${raw#v}"
+          tag="v${version}"
+
+          if [[ ! "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::版本号必须是 SemVer，例如 0.1.1 或 v0.1.1。"
+            exit 1
+          fi
+
+          if git rev-parse "${tag}" >/dev/null 2>&1; then
+            echo "::error::tag ${tag} 已存在。"
+            exit 1
+          fi
+
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+
+      - name: Update plugin manifests
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          version = "${{ steps.version.outputs.version }}"
+          manifest_paths = [
+              Path(".claude-plugin/plugin.json"),
+              Path(".codex-plugin/plugin.json"),
+          ]
+
+          # 两个插件入口必须保持同一个版本号，否则安装器会出现不一致的更新判断。
+          for manifest_path in manifest_paths:
+              data = json.loads(manifest_path.read_text(encoding="utf-8"))
+              data["version"] = version
+              manifest_path.write_text(
+                  json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+                  encoding="utf-8",
+              )
+          PY
+
+      - name: Verify manifests
+        shell: bash
+        run: |
+          python3 -m json.tool .claude-plugin/plugin.json >/dev/null
+          python3 -m json.tool .codex-plugin/plugin.json >/dev/null
+
+      - name: Commit version change
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git diff --quiet -- .claude-plugin/plugin.json .codex-plugin/plugin.json; then
+            echo "Manifest versions are already ${{ steps.version.outputs.version }}."
+            exit 0
+          fi
+
+          git add .claude-plugin/plugin.json .codex-plugin/plugin.json
+          git commit -m "release: ${{ steps.version.outputs.tag }}"
+
+      - name: Push commit and tag
+        shell: bash
+        run: |
+          git tag -a "${{ steps.version.outputs.tag }}" -m "Release ${{ steps.version.outputs.tag }}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+          git push origin "${{ steps.version.outputs.tag }}"
