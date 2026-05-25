@@ -6,7 +6,7 @@ user-invocable: true
 
 # Plan 实施计划生成
 
-读取 spec 规格说明 + 项目代码结构，产出**自包含、分文件、函数级**的实施计划。`/spec` 输出"做什么"，`/plan` 输出"怎么做"。Plan 可引用 spec 的 `name` 溯源，但**必须内联复述**相关规则，禁止"详见 spec"式弱引用。
+读取 spec + 项目代码结构，产出**自包含、分文件、函数级**的实施计划。`/spec` 输出"做什么"，`/plan` 输出"怎么做"。可引用 spec `name` 溯源，但**必须内联复述**相关规则，禁"详见 spec"式弱引用。
 
 ## 核心原则
 
@@ -14,8 +14,9 @@ user-invocable: true
 2. **自包含可执行**：仅凭该文件 + 项目现有代码即可正确编码，无需对话历史或其他 plan
 3. **函数级详细**：指明函数名与职责，**不写参数签名和函数体**
 4. **尊重现有代码**：基于真实代码路径和命名风格产出，而非凭空设计
-5. **有序但独立**：INDEX.md 给出执行顺序和依赖，但每份 plan 内部独立可读
+5. **有序但独立**：INDEX 给出执行顺序和依赖，但每份 plan 内部独立可读
 6. **单文件 ≤ 200 行**（不含 frontmatter），超过则拆分
+7. **可断点恢复**：执行进度持久化到 PROGRESS.md，token 耗尽后可从断点继续
 
 ## 输出目录与命名
 
@@ -23,10 +24,19 @@ user-invocable: true
 
 **统一子目录格式**：`.bb-channel/docs/plan/<主题>/<序号>-<名称>.md`
 
-- `<主题>`：默认取当前 git 分支名（去掉 `feature/`、`fix/` 等前缀）。例如分支 `feature/add-user-dashboard` → 主题目录 `add-user-dashboard`。用户可在步骤 2 确认时覆盖
+- `<主题>`：默认取当前 git 分支名（去掉 `feature/`、`fix/` 等前缀）。用户可在步骤 2 确认时覆盖
 - `<序号>`：两位数字前缀，表示同主题内推荐执行顺序（`01-`、`02-`…）
 - `<名称>`：kebab-case 的关注点描述
 - 禁止扁平放在 `plan/` 根目录下
+
+**两级索引**：
+
+| 文件 | 职责 | 规模 |
+|---|---|---|
+| `plan/INDEX.md` | 列主题目录 + 状态，一行一主题 | 永远 < 50 行 |
+| `plan/<主题>/INDEX.md` | 列该主题内 plan 文件，含阶段分组和依赖 | 通常 < 30 行 |
+
+**进度文件**：`plan/<主题>/PROGRESS.md` — 执行断点的唯一事实源，AI 执行前必读、每步完成必更新。
 
 ---
 
@@ -40,7 +50,7 @@ git diff main...HEAD --name-status -- '.bb-channel/docs/spec/' 2>/dev/null
 
 - **不在 git 仓库 / 无 main 分支 / spec 目录不存在**：告知用户"建议先运行 `/spec`"并终止。
 - **diff 为空**（当前分支无 spec 变更）：告知用户"当前分支相对 main 无 spec 变更，无需生成 plan"，终止。
-- **有变更**：仅读取 diff 中**新增（A）和修改（M）**的 spec 文件正文，这些就是本次 plan 的输入范围。删除（D）的 spec 忽略。同时读取 `INDEX.md` 了解全局上下文，但 plan 只针对变更部分产出。
+- **有变更**：仅读取 diff 中**新增（A）和修改（M）**的 spec 文件正文作为本次输入。删除（D）忽略。同时读取 `INDEX.md` 了解全局上下文，但 plan 只针对变更部分产出。
 
 ### 步骤 1：摸清项目现状
 
@@ -53,11 +63,7 @@ git diff main...HEAD --name-status -- '.bb-channel/docs/spec/' 2>/dev/null
 
 ### 步骤 2：规划拆分策略
 
-拆分维度（按优先级）：按层 → 按功能 → 按横切关注点。
-
-- 每份 plan 对应一个可独立完成和验证的实施单元
-- 宁可多拆小文件，不要一份大文件塞多个关注点
-- 简单 spec（< 5 个函数）可合并到相关 plan，不必一一对应
+拆分维度（按优先级）：按层 → 按功能 → 按横切关注点。每份 plan 对应一个可独立完成和验证的实施单元。宁可多拆小文件，不要一份大文件塞多个关注点。简单 spec（< 5 个函数）可合并到相关 plan。
 
 向用户**展示拆分方案**（文件名 + 一句话描述），等待确认后再动手写。
 
@@ -79,21 +85,32 @@ cat .bb-channel/docs/plan/INDEX.md 2>/dev/null || find .bb-channel/docs/plan/ -n
 - **不写**具体参数列表、返回值类型、函数体实现
 - 函数名和文件路径必须符合项目已有命名风格
 
-### 步骤 5：更新 INDEX.md
+### 步骤 5：更新索引与进度文件
 
-- 每条一行：`- [<name>](<路径>) — <description>`
+**主题 INDEX.md**（`plan/<主题>/INDEX.md`）：
+- 每条一行：`- [<name>](<文件名>) — <description>`
 - 用 `## <阶段>` 分组表示执行顺序，同阶段可并行
 - 依赖标注：描述末尾 `[依赖: <name>]`
 
+**根 INDEX.md**（`plan/INDEX.md`）：
+- 表格格式：主题 | 概述 | 状态 | 完成时间
+- 状态：`进行中` | `已完成`；完成时填写日期
+- 已完成主题仅作历史审计，AI 未经用户允许不得读取其内容
+
+**PROGRESS.md**（`plan/<主题>/PROGRESS.md`）：初始生成时所有步骤标记 `pending`，格式见下方模板。
+
 ### 步骤 6：自检
 
-- [ ] 已逐份读完所有 spec 文档？
-- [ ] 已摸清项目代码结构和命名风格？
 - [ ] 每份 plan 只解决一个独立问题，正文 ≤ 200 行？
 - [ ] 函数清单有函数名 + 文件路径 + 职责，无参数和实现？
-- [ ] 调用关系和外部依赖已说明？
 - [ ] 仅凭此文件即可正确编码，无"详见 spec"式引用？
-- [ ] INDEX.md 已同步，含执行顺序和依赖关系？
+- [ ] 两级 INDEX.md 已同步？PROGRESS.md 已生成？
+
+---
+
+## 执行恢复协议
+
+AI 执行 plan 时**必须**遵守：启动前读 PROGRESS.md，从第一个非 `done` 步骤开始；每步完成后立即更新 PROGRESS.md（标 `done` + 时间戳）；遇阻塞记录原因并标 `blocked`；上下文耗尽重启后读 PROGRESS.md → 读对应 plan 文件 → 继续。
 
 ---
 
@@ -126,33 +143,52 @@ description: <一句话概括，≤ 80 字>
 | `FuncB` | 一句话描述 |
 
 ## 协作关系
-- `Handler` 接收请求 → 调用 `Service` 处理业务逻辑
-- `Service` 内部调用 `Repository` 读写数据
-<如有外部依赖（数据库、消息队列、第三方 API），在此说明。>
+<函数间调用关系 + 外部依赖（数据库、消息队列、第三方 API）说明。>
 
 ## 验证方式
 - [ ] <验证项 1>
 - [ ] <验证项 2>
 ```
 
-## INDEX.md 模板
+## 索引与进度模板
+
+**根 INDEX.md**（`plan/INDEX.md`）— 一行一主题，已完成主题仅作历史审计，AI 未经用户允许不得读取：
 
 ```markdown
 # Plan 索引
+> 已完成主题仅作历史审计留存，AI 未经用户明确允许不得读取其内容。
 
-> 按阶段分组，同阶段内可并行。每个 plan 文件自包含。
+| 主题 | 概述 | 状态 | 完成时间 |
+|---|---|---|---|
+| [add-user-dashboard](add-user-dashboard/INDEX.md) | 用户仪表盘功能 | 进行中 | — |
+| [auth-refactor](auth-refactor/INDEX.md) | 认证模块重构 | 已完成 | 2026-05-20 |
+```
 
+**主题 INDEX.md**（`plan/<主题>/INDEX.md`）— 按阶段分组，同阶段可并行：
+
+```markdown
+# <主题名> 实施计划
 ## 阶段 1：基础设施
-
-- [project-bootstrap](add-user-dashboard/01-project-bootstrap.md) — 项目脚手架与基础依赖
-
+- [project-bootstrap](01-project-bootstrap.md) — 项目脚手架与基础依赖
 ## 阶段 2：核心业务
+- [domain-types](02-domain-types.md) — 领域模型定义 [依赖: project-bootstrap]
+```
 
-- [domain-types](add-user-dashboard/02-domain-types.md) — 领域模型定义 [依赖: project-bootstrap]
+**PROGRESS.md**（`plan/<主题>/PROGRESS.md`）— 执行断点唯一事实源：
 
-## 阶段 3：接口层
+```markdown
+# 执行进度
+| 序号 | Plan | 状态 | 完成时间 |
+|---|---|---|---|
+| 01 | project-bootstrap | done | 2026-05-25 |
+| 02 | domain-types | in-progress | — |
+| 03 | api-handlers | pending | — |
 
-- [api-handlers](add-user-dashboard/03-api-handlers.md) — HTTP 接口实现 [依赖: domain-types]
+## 当前
+正在执行 `02-domain-types.md`：已完成函数清单中 3/5 个函数。
+
+## 阻塞
+（无）
 ```
 
 ---
@@ -165,5 +201,5 @@ description: <一句话概括，≤ 80 字>
 - ❌ "先完成 plan A 才能理解本文档"——每份必须独立可读
 - ❌ 没有摸清项目结构就凭空设计文件路径和函数名
 - ❌ 一个 spec 固定对应一个 plan——应按实施关注点拆分
-- ❌ INDEX.md 不标注执行顺序和依赖关系
-- ❌ 文件扁平放在 `plan/` 根目录下而不放入主题子目录
+- ❌ 所有 plan 挤在根 INDEX / 扁平放在 `plan/` 根目录——必须用主题子目录 + 两级索引
+- ❌ 执行 plan 时不读/不更新 PROGRESS.md，进度丢失或从头开始
