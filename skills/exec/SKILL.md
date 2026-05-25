@@ -29,8 +29,8 @@ cat .bb-channel/docs/plan/INDEX.md 2>/dev/null
 | 调用方式 | 行为 |
 |---|---|
 | `/exec` | 自动选主题 → 询问执行范围 |
-| `/exec <主题>` | 指定主题 → 询问执行范围 |
-| `/exec <主题>/<plan名>` | 指定主题 + 单个 plan，只执行该 plan |
+| `/exec <YYYY-MM-DD>.<主题>` | 指定主题 → 询问执行范围 |
+| `/exec <YYYY-MM-DD>.<主题>/<plan名>` | 指定主题 + 单个 plan，只执行该 plan |
 
 **主题定位**（无参数或仅指定主题时）：
 - INDEX.md 不存在 → 告知用户"建议先运行 `/plan`"，终止
@@ -41,7 +41,7 @@ cat .bb-channel/docs/plan/INDEX.md 2>/dev/null
 ### 步骤 1：确定执行范围
 
 ```bash
-cat .bb-channel/docs/plan/<主题>/PROGRESS.md 2>/dev/null
+cat .bb-channel/docs/plan/<YYYY-MM-DD>.<主题>/PROGRESS.md 2>/dev/null
 ```
 
 读取 PROGRESS.md（不存在则初始化，所有步骤标 `pending`）。
