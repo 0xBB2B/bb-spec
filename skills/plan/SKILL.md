@@ -50,7 +50,11 @@ git diff main...HEAD --name-status -- '.bb-channel/docs/spec/' 2>/dev/null
 
 - **不在 git 仓库 / 无 main 分支 / spec 目录不存在**：告知用户"建议先运行 `/spec`"并终止。
 - **diff 为空**（当前分支无 spec 变更）：告知用户"当前分支相对 main 无 spec 变更，无需生成 plan"，终止。
-- **有变更**：仅读取 diff 中**新增（A）和修改（M）**的 spec 文件正文作为本次输入。删除（D）忽略。同时读取 `INDEX.md` 了解全局上下文，但 plan 只针对变更部分产出。
+- **有变更**：按变更类型分别处理：
+  - **新增（A）**：读取 spec 正文，作为新功能 plan 的输入
+  - **修改（M）**：读取 spec 正文 + `git diff main...HEAD -- <path>` 的具体内容差异，plan 聚焦变更部分而非整体重写
+  - **删除（D）**：通过 `git show main:<path>` 读取旧 spec 内容，生成对应的代码清理/移除计划
+  - 同时读取 `INDEX.md` 了解全局上下文，但 plan 只针对变更部分产出
 
 ### 步骤 1：摸清项目现状
 
