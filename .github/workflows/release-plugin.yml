@@ -3,10 +3,14 @@ name: Release Plugin Version
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: "SemVer 版本号，例如 0.1.1 或 v0.1.1"
+      bump:
+        description: "版本升级类型"
         required: true
-        type: string
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 permissions:
   contents: write
@@ -22,24 +26,26 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Normalize and validate version
+      - name: Calculate next version
         id: version
         shell: bash
         run: |
-          # 发布必须从默认分支发起，避免 tag 指向临时分支或未合并代码。
           if [[ "${GITHUB_REF_NAME}" != "${{ github.event.repository.default_branch }}" ]]; then
             echo "::error::请从默认分支 ${{ github.event.repository.default_branch }} 运行发布 workflow。"
             exit 1
           fi
 
-          raw="${{ inputs.version }}"
-          version="${raw#v}"
-          tag="v${version}"
+          current=$(python3 -c "import json; print(json.load(open('.claude-plugin/plugin.json'))['version'])")
+          IFS='.' read -r major minor patch <<< "${current}"
 
-          if [[ ! "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
-            echo "::error::版本号必须是 SemVer，例如 0.1.1 或 v0.1.1。"
-            exit 1
-          fi
+          case "${{ inputs.bump }}" in
+            major) major=$((major + 1)); minor=0; patch=0 ;;
+            minor) minor=$((minor + 1)); patch=0 ;;
+            patch) patch=$((patch + 1)) ;;
+          esac
+
+          version="${major}.${minor}.${patch}"
+          tag="v${version}"
 
           if git rev-parse "${tag}" >/dev/null 2>&1; then
             echo "::error::tag ${tag} 已存在。"
@@ -48,6 +54,7 @@ jobs:
 
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+          echo "### 🏷️ ${current} → ${version} (${{ inputs.bump }})" >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Update plugin manifests
         shell: bash
