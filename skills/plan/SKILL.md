@@ -70,9 +70,17 @@ git diff main...HEAD --name-status -- '.bb-spec/docs/spec/' 2>/dev/null
 
 拆分维度（按优先级）：按层 → 按功能 → 按横切关注点。每份 plan 对应一个可独立完成和验证的实施单元。宁可多拆小文件，不要一份大文件塞多个关注点。简单 spec（< 5 个函数）可合并到相关 plan。
 
-向用户**展示拆分方案**（文件名 + 一句话描述），等待确认后再动手写。
+### 步骤 3：方案质检
 
-### 步骤 3：盘点已有 plan
+拆分方案向用户展示**之前**，逐条自问：
+
+1. **是否最优实施路径**：当前拆分和实施顺序是否最直接？有无更少步骤、更少文件改动的做法？
+2. **是否触及根源**：每份 plan 解决的是实际需求，还是在绕过不合理的既有设计？发现后者时先提出重构既有设计的 plan
+3. **有无过度设计**：是否引入了 spec 未要求的抽象层、中间件、工具函数？spec 没说的不做
+
+质检通过后，向用户**展示拆分方案**（文件名 + 一句话描述），等待确认再动手写。
+
+### 步骤 4：盘点已有 plan
 
 ```bash
 cat .bb-spec/docs/plan/INDEX.md 2>/dev/null || find .bb-spec/docs/plan/ -name "*.md" 2>/dev/null
@@ -80,7 +88,7 @@ cat .bb-spec/docs/plan/INDEX.md 2>/dev/null || find .bb-spec/docs/plan/ -name "*
 
 已有 plan 存在时，识别冲突/可复用/需修订项，呈现给用户裁决。
 
-### 步骤 4：产出 plan 文档
+### 步骤 5：产出 plan 文档
 
 每份文档包含 frontmatter + 正文六块（见下方模板）。
 
@@ -90,7 +98,7 @@ cat .bb-spec/docs/plan/INDEX.md 2>/dev/null || find .bb-spec/docs/plan/ -name "*
 - **不写**具体参数列表、返回值类型、函数体实现
 - 函数名和文件路径必须符合项目已有命名风格
 
-### 步骤 5：更新索引与进度文件
+### 步骤 6：更新索引与进度文件
 
 **主题 INDEX.md**（`plan/<YYYY-MM-DD>.<主题>/INDEX.md`）：
 - 每条一行：`- [<name>](<文件名>) — <description>`
@@ -104,8 +112,13 @@ cat .bb-spec/docs/plan/INDEX.md 2>/dev/null || find .bb-spec/docs/plan/ -name "*
 
 **PROGRESS.md**（`plan/<YYYY-MM-DD>.<主题>/PROGRESS.md`）：初始生成时所有步骤标记 `pending`，格式见下方模板。
 
-### 步骤 6：自检
+### 步骤 7：自检
 
+**方案质检**：
+- [ ] 步骤 3 根源性质检已完成？每份 plan 是最直接的实施路径？
+- [ ] 无 spec 未要求的抽象层、中间件、工具函数？
+
+**格式自检**：
 - [ ] 每份 plan 只解决一个独立问题，正文 ≤ 200 行？
 - [ ] 函数清单有函数名 + 文件路径 + 职责，无参数和实现？
 - [ ] 仅凭此文件即可正确编码，无"详见 spec"式引用？
