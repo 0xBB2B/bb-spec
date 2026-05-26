@@ -42,9 +42,15 @@ argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 
 ## 工作流
 
-### 步骤 0：解析参数与定位目标
+### 步骤 0：读取项目配置 + 解析参数与定位目标
 
-读取 `plan/INDEX.md`，按参数形式决定行为：
+```bash
+cat .bb-spec.yaml 2>/dev/null
+```
+
+有 `docs_dir` → 用其值作为基础路径；文件不存在或无该字段 → 默认 `.bb-spec/docs`。后续所有路径基于此值。
+
+读取 `${DOCS_DIR}/plan/INDEX.md`，按参数形式决定行为：
 
 | 调用方式 | 行为 |
 |---|---|

@@ -20,9 +20,7 @@ user-invocable: true
 
 ## 输出目录与命名
 
-默认读取 `.bb-spec/docs/spec/`，输出至 `.bb-spec/docs/plan/`。`.bb-spec.yaml` 的 `docs_dir` 可覆盖基础路径。
-
-**统一子目录格式**：`.bb-spec/docs/plan/<YYYY-MM-DD>.<主题>/<序号>-<名称>.md`
+**统一子目录格式**：`{DOCS_DIR}/plan/<YYYY-MM-DD>.<主题>/<序号>-<名称>.md`
 
 - `<YYYY-MM-DD>`：plan 创建当天的日期，如 `2026-05-25`
 - `<主题>`：默认取当前 git 分支名（去掉 `feature/`、`fix/` 等前缀）。用户可在步骤 2 确认时覆盖
@@ -41,9 +39,15 @@ user-invocable: true
 
 ## 工作流
 
-### 步骤 0：识别 spec 变更范围
+### 步骤 0：读取项目配置 + 识别 spec 变更范围
 
-运行 `git diff main...HEAD --name-status -- '.bb-spec/docs/spec/'` 检查变更：
+```bash
+cat .bb-spec.yaml 2>/dev/null
+```
+
+有 `docs_dir` → 用其值作为基础路径；文件不存在或无该字段 → 默认 `.bb-spec/docs`。后续所有路径基于此值。
+
+运行 `git diff main...HEAD --name-status -- '${DOCS_DIR}/spec/'` 检查变更：
 
 - **不在 git 仓库 / 无 main 分支 / spec 目录不存在**：告知用户"建议先运行 `/spec`"并终止
 - **diff 为空**：告知用户"当前分支相对 main 无 spec 变更，无需生成 plan"，终止
@@ -75,7 +79,7 @@ user-invocable: true
 ### 步骤 4：盘点已有 plan
 
 ```bash
-cat .bb-spec/docs/plan/INDEX.md 2>/dev/null || find .bb-spec/docs/plan/ -name "*.md" 2>/dev/null
+cat ${DOCS_DIR}/plan/INDEX.md 2>/dev/null || find ${DOCS_DIR}/plan/ -name "*.md" 2>/dev/null
 ```
 
 已有 plan 存在时，识别冲突/可复用/需修订项，呈现给用户裁决。

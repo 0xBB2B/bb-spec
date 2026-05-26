@@ -38,11 +38,17 @@ argument-hint: <bug 描述>
 - 实际行为是什么？
 - 在哪个场景/功能下出现？
 
-### 步骤 1：定位关联资产
+### 步骤 1：读取项目配置 + 定位关联资产
 
 ```bash
-cat .bb-spec/docs/spec/INDEX.md 2>/dev/null
-cat .bb-spec/docs/plan/INDEX.md 2>/dev/null
+cat .bb-spec.yaml 2>/dev/null
+```
+
+有 `docs_dir` → 用其值作为基础路径；文件不存在或无该字段 → 默认 `.bb-spec/docs`。后续所有路径基于此值。
+
+```bash
+cat ${DOCS_DIR}/spec/INDEX.md 2>/dev/null
+cat ${DOCS_DIR}/plan/INDEX.md 2>/dev/null
 ```
 
 根据 bug 描述定位四层资产：
