@@ -18,24 +18,39 @@ TOOL=$(jq -r '.tool_name // empty' <<<"$INPUT")
 CMD=$(jq -r '.tool_input.command // empty' <<<"$INPUT")
 [ -n "$CMD" ] || exit 0
 
-# 拆 tokens（剥 env 前缀 / sudo / nohup）
-read -r FIRST REST <<<"$CMD" || true
-while [[ "$FIRST" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]] || [[ "$FIRST" == "sudo" ]] || [[ "$FIRST" == "nohup" ]]; do
-  read -r FIRST REST <<<"$REST" || true
-  [ -z "$FIRST" ] && break
-done
+# 按 &&、||、; 拆分成多段，逐段检查是否含 git commit
+# 用换行替换分隔符，再逐行处理
+SEGMENTS=$(printf '%s\n' "$CMD" | sed 's/ *&& */\n/g; s/ *|| */\n/g; s/ *; */\n/g')
 
-[ "$FIRST" = "git" ] || exit 0
-
-# 处理 `git -C <path> ...` 的工作目录覆盖
+FOUND=0
 WORKTREE=""
-read -r SECOND REST2 <<<"$REST" || true
-if [ "$SECOND" = "-C" ]; then
-  read -r WORKTREE REST3 <<<"$REST2" || true
-  read -r SECOND _ <<<"$REST3" || true
-fi
 
-[ "$SECOND" = "commit" ] || exit 0
+while IFS= read -r SEG; do
+  [ -z "$SEG" ] && continue
+
+  # 剥 env 前缀 / sudo / nohup
+  read -r FIRST REST <<<"$SEG" || true
+  while [[ "$FIRST" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]] || [[ "$FIRST" == "sudo" ]] || [[ "$FIRST" == "nohup" ]]; do
+    read -r FIRST REST <<<"$REST" || true
+    [ -z "$FIRST" ] && break
+  done
+
+  [ "$FIRST" = "git" ] || continue
+
+  # 处理 `git -C <path> ...` 的工作目录覆盖
+  read -r SECOND REST2 <<<"$REST" || true
+  if [ "$SECOND" = "-C" ]; then
+    read -r WORKTREE REST3 <<<"$REST2" || true
+    read -r SECOND _ <<<"$REST3" || true
+  fi
+
+  if [ "$SECOND" = "commit" ]; then
+    FOUND=1
+    break
+  fi
+done <<<"$SEGMENTS"
+
+[ "$FOUND" = "1" ] || exit 0
 
 # 取分支
 if [ -n "$WORKTREE" ]; then

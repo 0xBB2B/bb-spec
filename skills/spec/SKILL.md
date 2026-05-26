@@ -19,18 +19,20 @@ user-invocable: true
 7. **中文优先**：正文中文，标识符/API 名/错误码保持英文
 8. **纯净现态**：spec 只描述当前系统行为，不携带变更历史或过渡标记；废弃规则直接删文件，git 是变更追溯的唯一来源
 
-## 输出目录
-
-默认 `.bb-spec/docs/spec/`。项目根目录 `.bb-spec.yaml` 的 `docs_dir` 可覆盖基础路径（如 `docs_dir: my/docs` → 输出至 `my/docs/spec/`）。
-
 ---
 
 ## 工作流
 
-### 步骤 0：盘点已有 spec + 冲突分析
+### 步骤 0：读取项目配置 + 盘点已有 spec
 
 ```bash
-cat .bb-spec/docs/spec/INDEX.md 2>/dev/null || ls .bb-spec/docs/spec/ 2>/dev/null
+cat .bb-spec.yaml 2>/dev/null
+```
+
+有 `docs_dir` → 用其值作为基础路径（如 `docs_dir: my/docs` → spec 目录为 `my/docs/spec/`）；文件不存在或无该字段 → 默认 `.bb-spec/docs`。后续所有路径基于此值。
+
+```bash
+cat ${DOCS_DIR}/spec/INDEX.md 2>/dev/null || ls ${DOCS_DIR}/spec/ 2>/dev/null
 ```
 
 - 不存在/为空 → 跳过，进入步骤 1
@@ -64,7 +66,7 @@ cat .bb-spec/docs/spec/INDEX.md 2>/dev/null || ls .bb-spec/docs/spec/ 2>/dev/nul
 
 ### 步骤 4：产出文档
 
-在 `.bb-spec/docs/spec/` 下创建，命名二选一（同领域一致）：
+在 `${DOCS_DIR}/spec/` 下创建，命名二选一（同领域一致）：
 - 扁平：`<领域>-<动作>.md`
 - 子目录：`<领域>/<动作>.md`（相关主题多时）
 
