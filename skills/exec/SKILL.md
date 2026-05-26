@@ -48,7 +48,7 @@ argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 ### 步骤 0：解析参数与定位目标
 
 ```bash
-cat .bb-channel/docs/plan/INDEX.md 2>/dev/null
+cat .bb-spec/docs/plan/INDEX.md 2>/dev/null
 ```
 
 **参数形式**：
@@ -68,7 +68,7 @@ cat .bb-channel/docs/plan/INDEX.md 2>/dev/null
 ### 步骤 1：确定执行范围
 
 ```bash
-cat .bb-channel/docs/plan/<YYYY-MM-DD>.<主题>/PROGRESS.md 2>/dev/null
+cat .bb-spec/docs/plan/<YYYY-MM-DD>.<主题>/PROGRESS.md 2>/dev/null
 ```
 
 读取 PROGRESS.md（不存在则初始化，所有步骤标 `pending`）。

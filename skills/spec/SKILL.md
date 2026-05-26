@@ -1,6 +1,6 @@
 ---
 name: spec
-description: 通过对话细化用户需求，将庞大需求拆解为多个"小规则"，并在当前目录 `.bb-channel/docs/spec/` 下产出一规则一文档的简洁规格说明（每文档 ≤ 100 行，只说一件事 + 一个例子）；所有文档头部带 `name + description` frontmatter，由 `.bb-channel/docs/spec/INDEX.md` 汇成轻量索引，读者先扫索引再按需加载具体文件。常见触发：用户输入 `/spec`、"帮我整理需求"、"把这个功能写成 spec"、"做需求拆解"。
+description: 通过对话细化用户需求，将庞大需求拆解为多个"小规则"，并在当前目录 `.bb-spec/docs/spec/` 下产出一规则一文档的简洁规格说明（每文档 ≤ 100 行，只说一件事 + 一个例子）；所有文档头部带 `name + description` frontmatter，由 `.bb-spec/docs/spec/INDEX.md` 汇成轻量索引，读者先扫索引再按需加载具体文件。常见触发：用户输入 `/spec`、"帮我整理需求"、"把这个功能写成 spec"、"做需求拆解"。
 user-invocable: true
 ---
 
@@ -21,7 +21,7 @@ user-invocable: true
 
 ## 输出目录
 
-默认 `.bb-channel/docs/spec/`。项目根目录 `.bb-channel.yaml` 的 `docs_dir` 可覆盖基础路径（如 `docs_dir: my/docs` → 输出至 `my/docs/spec/`）。
+默认 `.bb-spec/docs/spec/`。项目根目录 `.bb-spec.yaml` 的 `docs_dir` 可覆盖基础路径（如 `docs_dir: my/docs` → 输出至 `my/docs/spec/`）。
 
 ---
 
@@ -30,7 +30,7 @@ user-invocable: true
 ### 步骤 0：盘点已有 spec + 冲突分析
 
 ```bash
-cat .bb-channel/docs/spec/INDEX.md 2>/dev/null || ls .bb-channel/docs/spec/ 2>/dev/null
+cat .bb-spec/docs/spec/INDEX.md 2>/dev/null || ls .bb-spec/docs/spec/ 2>/dev/null
 ```
 
 - 不存在/为空 → 跳过，进入步骤 1
@@ -54,7 +54,7 @@ cat .bb-channel/docs/spec/INDEX.md 2>/dev/null || ls .bb-channel/docs/spec/ 2>/d
 
 ### 步骤 3：产出文档
 
-在 `.bb-channel/docs/spec/` 下创建，命名二选一（同领域一致）：
+在 `.bb-spec/docs/spec/` 下创建，命名二选一（同领域一致）：
 - 扁平：`<领域>-<动作>.md`
 - 子目录：`<领域>/<动作>.md`（相关主题多时）
 

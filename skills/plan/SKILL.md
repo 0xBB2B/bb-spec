@@ -1,6 +1,6 @@
 ---
 name: plan
-description: 读取 `.bb-channel/docs/spec/` 中的规格说明，结合项目现有代码结构，在 `.bb-channel/docs/plan/<YYYY-MM-DD>.<主题>/` 下产出自包含的分步实施计划；每个文件只解决一个独立问题，详细到函数名与职责但不写具体参数与实现，任何 AI 在清空上下文后仅凭该文件即可正确编码。常见触发：用户输入 `/plan`、"生成实施计划"、"怎么落地这些 spec"。
+description: 读取 `.bb-spec/docs/spec/` 中的规格说明，结合项目现有代码结构，在 `.bb-spec/docs/plan/<YYYY-MM-DD>.<主题>/` 下产出自包含的分步实施计划；每个文件只解决一个独立问题，详细到函数名与职责但不写具体参数与实现，任何 AI 在清空上下文后仅凭该文件即可正确编码。常见触发：用户输入 `/plan`、"生成实施计划"、"怎么落地这些 spec"。
 user-invocable: true
 ---
 
@@ -20,9 +20,9 @@ user-invocable: true
 
 ## 输出目录与命名
 
-默认读取 `.bb-channel/docs/spec/`，输出至 `.bb-channel/docs/plan/`。`.bb-channel.yaml` 的 `docs_dir` 可覆盖基础路径。
+默认读取 `.bb-spec/docs/spec/`，输出至 `.bb-spec/docs/plan/`。`.bb-spec.yaml` 的 `docs_dir` 可覆盖基础路径。
 
-**统一子目录格式**：`.bb-channel/docs/plan/<YYYY-MM-DD>.<主题>/<序号>-<名称>.md`
+**统一子目录格式**：`.bb-spec/docs/plan/<YYYY-MM-DD>.<主题>/<序号>-<名称>.md`
 
 - `<YYYY-MM-DD>`：plan 创建当天的日期，如 `2026-05-25`
 - `<主题>`：默认取当前 git 分支名（去掉 `feature/`、`fix/` 等前缀）。用户可在步骤 2 确认时覆盖
@@ -46,7 +46,7 @@ user-invocable: true
 ### 步骤 0：识别 spec 变更范围
 
 ```bash
-git diff main...HEAD --name-status -- '.bb-channel/docs/spec/' 2>/dev/null
+git diff main...HEAD --name-status -- '.bb-spec/docs/spec/' 2>/dev/null
 ```
 
 - **不在 git 仓库 / 无 main 分支 / spec 目录不存在**：告知用户"建议先运行 `/spec`"并终止。
@@ -75,7 +75,7 @@ git diff main...HEAD --name-status -- '.bb-channel/docs/spec/' 2>/dev/null
 ### 步骤 3：盘点已有 plan
 
 ```bash
-cat .bb-channel/docs/plan/INDEX.md 2>/dev/null || find .bb-channel/docs/plan/ -name "*.md" 2>/dev/null
+cat .bb-spec/docs/plan/INDEX.md 2>/dev/null || find .bb-spec/docs/plan/ -name "*.md" 2>/dev/null
 ```
 
 已有 plan 存在时，识别冲突/可复用/需修订项，呈现给用户裁决。
