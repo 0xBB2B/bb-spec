@@ -39,23 +39,15 @@ user-invocable: true
 
 **进度文件**：`plan/<YYYY-MM-DD>.<主题>/PROGRESS.md` — 执行断点的唯一事实源，AI 执行前必读、每步完成必更新。
 
----
-
 ## 工作流
 
 ### 步骤 0：识别 spec 变更范围
 
-```bash
-git diff main...HEAD --name-status -- '.bb-spec/docs/spec/' 2>/dev/null
-```
+运行 `git diff main...HEAD --name-status -- '.bb-spec/docs/spec/'` 检查变更：
 
-- **不在 git 仓库 / 无 main 分支 / spec 目录不存在**：告知用户"建议先运行 `/spec`"并终止。
-- **diff 为空**（当前分支无 spec 变更）：告知用户"当前分支相对 main 无 spec 变更，无需生成 plan"，终止。
-- **有变更**：按变更类型分别处理：
-  - **新增（A）**：读取 spec 正文，作为新功能 plan 的输入
-  - **修改（M）**：读取 spec 正文 + `git diff main...HEAD -- <path>` 的具体内容差异，plan 聚焦变更部分而非整体重写
-  - **删除（D）**：通过 `git show main:<path>` 读取旧 spec 内容，生成对应的代码清理/移除计划
-  - 同时读取 `INDEX.md` 了解全局上下文，但 plan 只针对变更部分产出
+- **不在 git 仓库 / 无 main 分支 / spec 目录不存在**：告知用户"建议先运行 `/spec`"并终止
+- **diff 为空**：告知用户"当前分支相对 main 无 spec 变更，无需生成 plan"，终止
+- **有变更**：按类型处理——新增（A）读 spec 正文；修改（M）读正文 + `git diff` 差异，聚焦变更部分；删除（D）通过 `git show main:<path>` 读旧内容，生成清理计划。同时读 `INDEX.md` 了解全局上下文
 
 ### 步骤 1：摸清项目现状
 
@@ -114,23 +106,16 @@ cat .bb-spec/docs/plan/INDEX.md 2>/dev/null || find .bb-spec/docs/plan/ -name "*
 
 ### 步骤 7：自检
 
-**方案质检**：
 - [ ] 步骤 3 根源性质检已完成？每份 plan 是最直接的实施路径？
 - [ ] 无 spec 未要求的抽象层、中间件、工具函数？
-
-**格式自检**：
 - [ ] 每份 plan 只解决一个独立问题，正文 ≤ 200 行？
 - [ ] 函数清单有函数名 + 文件路径 + 职责，无参数和实现？
 - [ ] 仅凭此文件即可正确编码，无"详见 spec"式引用？
 - [ ] 两级 INDEX.md 已同步？PROGRESS.md 已生成？
 
----
-
 ## 执行恢复协议
 
-AI 执行 plan 时**必须**遵守：启动前读 PROGRESS.md，从第一个非 `done` 步骤开始；每步完成后立即更新 PROGRESS.md（标 `done` + 时间戳）；遇阻塞记录原因并标 `blocked`；上下文耗尽重启后读 PROGRESS.md → 读对应 plan 文件 → 继续。
-
----
+启动前读 PROGRESS.md，从第一个非 `done` 步骤开始；每步完成后立即更新（标 `done` + 时间戳）；遇阻塞记录原因并标 `blocked`；上下文耗尽重启后读 PROGRESS.md → 读对应 plan 文件 → 继续。
 
 ## 单文档模板
 
@@ -170,12 +155,10 @@ description: <一句话概括，≤ 80 字>
 
 ## 索引与进度模板
 
-**根 INDEX.md**（`plan/INDEX.md`）— 一行一主题，已完成主题仅作历史审计，AI 未经用户允许不得读取：
+**根 INDEX.md**（`plan/INDEX.md`）— 已完成主题仅作历史审计，AI 未经用户允许不得读取：
 
 ```markdown
 # Plan 索引
-> 已完成主题仅作历史审计留存，AI 未经用户明确允许不得读取其内容。
-
 | 主题 | 概述 | 状态 | 完成时间 |
 |---|---|---|---|
 | [add-user-dashboard](2026-05-25.add-user-dashboard/INDEX.md) | 用户仪表盘功能 | 进行中 | — |
@@ -200,16 +183,11 @@ description: <一句话概括，≤ 80 字>
 |---|---|---|---|
 | 01 | project-bootstrap | done | 2026-05-25 |
 | 02 | domain-types | in-progress | — |
-| 03 | api-handlers | pending | — |
-
 ## 当前
 正在执行 `02-domain-types.md`：已完成函数清单中 3/5 个函数。
-
 ## 阻塞
 （无）
 ```
-
----
 
 ## 反面案例
 
@@ -217,7 +195,5 @@ description: <一句话概括，≤ 80 字>
 - ❌ 函数清单写了详细参数签名、返回类型或函数体实现
 - ❌ "详见 spec"式引用，未内联复述相关规则
 - ❌ "先完成 plan A 才能理解本文档"——每份必须独立可读
-- ❌ 没有摸清项目结构就凭空设计文件路径和函数名
 - ❌ 一个 spec 固定对应一个 plan——应按实施关注点拆分
-- ❌ 所有 plan 挤在根 INDEX / 扁平放在 `plan/` 根目录——必须用主题子目录 + 两级索引
 - ❌ 执行 plan 时不读/不更新 PROGRESS.md，进度丢失或从头开始
