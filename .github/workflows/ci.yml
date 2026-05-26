@@ -1,0 +1,19 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate structure
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Run structural validation
+        run: bash tests/validate.sh

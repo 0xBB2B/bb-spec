@@ -128,6 +128,18 @@
 
 ---
 
+## 测试
+
+```bash
+bash tests/validate.sh
+```
+
+校验 105 项结构性规则：agent frontmatter 完整性（必填字段、name 一致性、agent-type 合法值、安全基线段落）、skill SKILL.md 格式、hooks.json 有效性及脚本存在性、plugin.json 字段、个人路径泄露检测。
+
+CI 在 PR 和 push 到 main 时自动运行（`.github/workflows/ci.yml`）。
+
+---
+
 ## 推荐配套
 
 ### CLAUDE.md 模板
