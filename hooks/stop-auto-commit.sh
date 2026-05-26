@@ -4,7 +4,7 @@
 #   - hook 不再自己 commit。Shell 脚本看不懂 diff 语义，只能拼"时间戳 + stat"模板，
 #     缺少"做了什么 / 为什么"的信息——commit 历史价值约等于零。
 #     只有 AI 清楚本轮改动的意图，由 AI 写 message 才是合适的。
-#   - 只 commit，不 push（符合 git-workflow-discipline："阶段性 commit 仅本地保存"）。
+#   - 只 commit，不 push（符合 git-workflow："阶段性 commit 仅本地保存"）。
 #   - 提示 AI 用 `git add -u`：仅暂存已追踪文件的修改 / 删除；untracked 由 AI 判断是否纳入。
 #   - 不在 main / master / detached HEAD 上触发（与 block-main-commit.sh 保持一致）。
 # 触发条件：

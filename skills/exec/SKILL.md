@@ -1,27 +1,54 @@
 ---
 name: exec
-description: 按 PROGRESS.md 断点恢复或从头执行 plan 实施计划，每完成一步立即持久化进度，支持 token 耗尽后无损续接。常见触发：用户输入 `/exec`、"开始实施"、"继续执行 plan"、"从上次断点继续"。
+description: 三 Agent 隔离执行 plan 实施计划（Test→Impl→Review），每完成一步立即持久化进度到 PROGRESS.md，支持 token 耗尽后无损续接。常见触发：用户输入 `/exec`、"开始实施"、"继续执行 plan"、"从上次断点继续"。
 user-invocable: true
+argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 ---
 
 # Exec 计划执行
 
-读取 plan 实施计划，逐步编码实现。核心保证：**每步完成后持久化进度到 PROGRESS.md**，token 耗尽或中断后再次 `/exec` 可从断点无损续接。
+读取 plan 实施计划，以**三 Agent 隔离**方式逐步编码实现：Test Agent 写测试（Red）→ Impl Agent 写实现（Green）→ Review Agent 对照 spec 检查合规。角色隔离消除"自己写测试自己写代码"的自我偏见。
+
+核心保证：**每步完成后持久化进度到 PROGRESS.md**，token 耗尽或中断后再次 `/exec` 可从断点无损续接。
 
 ## 核心原则
 
 1. **逐步执行**：一次只实现一个 plan 文件，验证通过再进入下一步
-2. **进度即时持久化**：每步完成后立即更新 PROGRESS.md，不攒批
-3. **Plan 即合同**：严格按 plan 文件的函数清单和业务规则实现，不自行扩展
-4. **断点无损**：PROGRESS.md 是唯一进度事实源，重启后仅凭此文件恢复上下文
-5. **验证驱动**：每步完成后执行 plan 中的"验证方式"，失败则修复后再标 done
+2. **角色隔离**：三个 Agent 各看各的输入，互不可见
+3. **进度即时持久化**：每步完成后立即更新 PROGRESS.md，不攒批
+4. **Plan 即合同**：严格按 plan 文件的函数清单和业务规则实现，不自行扩展
+5. **断点无损**：PROGRESS.md 是唯一进度事实源，重启后仅凭此文件恢复上下文
+
+## Agent 定义
+
+三个 Agent 的 prompt 模板位于插件根目录 `agents/` 下，派工前用 Read 读取对应文件填充模板变量：
+
+| Agent | 定义文件 | 角色 |
+|---|---|---|
+| Test Agent | `agents/test-engineer.md` | 测试工程师：只读 spec 写测试 |
+| Impl Agent | `agents/impl-engineer.md` | 实现工程师：只看测试写实现 |
+| Review Agent | `agents/spec-reviewer.md` | 合规审查者：对照 spec 检查产出 |
+
+**信息隔离矩阵**：
+
+| 输入 | Test Agent | Impl Agent | Review Agent |
+|---|---|---|---|
+| spec 规则（plan「业务规则」区） | ✅ | ❌ | ✅ |
+| 行为预期（plan「验证方式」区） | ✅ | ❌ | ✅ |
+| 函数清单 + 文件路径 | ❌ | ✅ | ❌ |
+| 协作关系 | ❌ | ✅ | ❌ |
+| 项目测试惯例 | ✅ | ❌ | ❌ |
+| Test Agent 写的测试文件 | — | ✅ | ✅ |
+| Impl Agent 写的代码 | — | — | ✅ |
+
+---
 
 ## 工作流
 
 ### 步骤 0：解析参数与定位目标
 
 ```bash
-cat .bb-channel/docs/plan/INDEX.md 2>/dev/null
+cat .bb-spec/docs/plan/INDEX.md 2>/dev/null
 ```
 
 **参数形式**：
@@ -41,7 +68,7 @@ cat .bb-channel/docs/plan/INDEX.md 2>/dev/null
 ### 步骤 1：确定执行范围
 
 ```bash
-cat .bb-channel/docs/plan/<YYYY-MM-DD>.<主题>/PROGRESS.md 2>/dev/null
+cat .bb-spec/docs/plan/<YYYY-MM-DD>.<主题>/PROGRESS.md 2>/dev/null
 ```
 
 读取 PROGRESS.md（不存在则初始化，所有步骤标 `pending`）。
@@ -54,12 +81,32 @@ cat .bb-channel/docs/plan/<YYYY-MM-DD>.<主题>/PROGRESS.md 2>/dev/null
 
 ### 步骤 2：执行当前步骤
 
-1. **读 plan 文件**：读取当前步骤对应的 plan `.md` 文件
-2. **摸清现状**：用 codegraph 或 find 确认 plan 中"涉及文件"的当前状态
-3. **编码实现**：按函数清单逐个实现，遵守业务规则和协作关系
-4. **验证**：执行 plan 文件中"验证方式"列出的检查项（测试、类型检查等）
+读取当前步骤对应的 plan `.md` 文件，按隔离矩阵拆为三份 Agent 输入。同时扫描项目已有测试文件，提取测试惯例（框架、目录、命名风格）。
 
-> 验证失败 → 修复 → 重新验证，循环直到通过。
+**2a. Test Agent — Red**
+
+读取 `test-engineer` agent 定义，填入「业务规则」+「验证方式」+ 项目测试惯例，派 `general-purpose` Agent。
+
+主 Agent 验证：
+- 编译通过 + 断言失败 → ✅ Red，进入 2b
+- 编译失败 → 主 Agent 修 import/类型后重跑
+- 意外全 PASS → 行为已存在则跳过，测试错误则修正
+
+**2b. Impl Agent — Green**
+
+读取 `impl-engineer` agent 定义，填入「函数清单 + 文件路径 + 协作关系」+ 测试文件路径，派 `general-purpose` Agent。
+
+主 Agent 验证：
+- 全部通过 → ✅ Green，进入 2c
+- 有失败 → 反馈错误给 Impl Agent 重试（最多 1 次）→ 仍失败报告用户
+
+**2c. Review Agent — Spec 合规**
+
+读取 `spec-reviewer` agent 定义，填入「业务规则」+「验证方式」+ 所有变更文件路径，派 `general-purpose` Agent。
+
+主 Agent 处理：
+- 全 ✅ → 通过，进入步骤 3
+- 有 ❌ 或 ⚠️ → 展示给用户：**修复**（先改测试→FAIL→改实现→PASS）/ **接受**（记录到 PROGRESS.md）/ **暂停**（标 blocked）
 
 ### 步骤 3：持久化进度
 
@@ -112,15 +159,37 @@ cat .bb-channel/docs/plan/<YYYY-MM-DD>.<主题>/PROGRESS.md 2>/dev/null
 
 ---
 
+## 失败处理
+
+| 阶段 | 失败情况 | 处理 |
+|---|---|---|
+| Red | 编译失败 | 主 Agent 修 import/类型，重跑 |
+| Red | 意外全 PASS | 行为已存在 → 跳过；测试错误 → 修正 |
+| Green | 测试不过 | 反馈错误给 Impl Agent 重试 1 次 → 仍失败报告用户 |
+| Review | 发现违规 | 展示用户：修复 / 接受 / 暂停 |
+| Review | 测试遗漏 | 展示用户：补测试 / 接受 |
+
+---
+
 ## 与其他 skill 的协作
 
 exec 不重复其他 skill 的规则，但执行时**必须遵守已激活的 skill 约束**：
 
 | 场景 | 行为 |
 |---|---|
-| 项目有 TDD skill | 新增/修改业务代码时遵循 Red-Green-Refactor |
 | 项目有语言测试 skill（如 golang-testing） | 测试代码遵循该语言惯用法 |
-| 项目有编码约束 skill（如 go-project-constraints） | 遵守架构与编码约束 |
+| 项目有编码约束 skill（如 golang-constraints） | 遵守架构与编码约束 |
+
+---
+
+## 硬约束
+
+- Test Agent **禁看**函数清单和实现路径
+- Impl Agent **禁看** spec 原文
+- Review Agent **禁止**修改文件
+- Agent prompt 自包含（不依赖对话上下文）
+- 三个 Agent **必须串行**（Test → Impl → Review）
+- 输出中文
 
 ---
 
@@ -132,3 +201,5 @@ exec 不重复其他 skill 的规则，但执行时**必须遵守已激活的 sk
 - ❌ 自行扩展 plan 未描述的功能——额外需求走 `/spec` → `/plan`
 - ❌ 验证失败就标 done——必须修复通过后才能推进
 - ❌ 阻塞时静默跳过——必须记录并告知用户
+- ❌ Test Agent 看到函数清单——破坏隔离，测试会按实现思路写
+- ❌ Impl Agent 看到 spec 原文——应该只关注让测试通过
