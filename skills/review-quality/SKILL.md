@@ -60,7 +60,7 @@ disable-model-invocation: true
 
 ### Agent 5 — Codex 跨模型（codex:codex-rescue）
 
-GPT-5.5 独立审视：架构合理性？设计取舍说清楚？语言习惯？测试覆盖？Claude 偏好盲点？≤ 1200 字。
+读取 `agents/review-codex.md` 定义，填入目标目录和项目档案摘要。
 降级：`which codex` 失败 → 4 个 agent，报告中说明。
 
 ---

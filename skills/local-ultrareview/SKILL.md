@@ -30,27 +30,17 @@ disable-model-invocation: true
 
 ## 2. 并行派工（5 个 Agent，同一条消息并发）
 
-每个 agent prompt 包含：review 范围、修复主题摘要、约束清单、"不修改代码"指令。
+每个 agent prompt 由对应定义文件（插件根目录 `agents/`）+ 本次 review 上下文（范围、主题摘要、约束清单）组合而成。派工前用 Read 读取 agent 定义，填充模板变量。
 
-### Agent 1 — 代码质量 / 架构 / 测试覆盖（general-purpose）
+| Agent | 定义文件 | 角色 |
+|---|---|---|
+| Agent 1 | `agents/review-code-quality.md` | 代码质量 / 架构 / 测试覆盖 |
+| Agent 2 | `agents/review-security.md` | 安全视角（攻击者视角 + POC 思路） |
+| Agent 3 | `agents/review-anti-baggage.md` | 反历史包袱（标注"本 PR 引入"或"顺手该清"） |
+| Agent 4 | `agents/review-overdesign.md` | 过度设计（删除测试 / 单实现测试 / 可追溯性测试） |
+| Agent 5 | `agents/review-codex.md` | Codex 跨模型（`codex:codex-rescue`） |
 
-维度：命名、错误处理、架构合理性、测试覆盖（mock 合理？边界遗漏？）、commit 拆分、TDD 严格度、可观测性。≤ 1500 字。
-
-### Agent 2 — 安全视角（general-purpose）
-
-以攻击者视角：绕过场景、fail-close 真闭锁？、缓存中毒/TOCTOU、并发竞态、错误码歧义、信任锚错位、残余 TTL。编可复现 POC 思路。≤ 1500 字。
-
-### Agent 3 — 反历史包袱（general-purpose）
-
-只看改动文件及附近：死代码/unused/过渡式实现/反向依赖描述/无负责人 TODO/v1v2 双轨/已弃用残留。标注"本 PR 引入"或"顺手该清"。禁止给过渡式建议。≤ 1500 字。
-
-### Agent 4 — 过度设计（general-purpose）
-
-只看新增/修改代码：投机性实现、单实现 interface、改动膨胀（与问题规模不匹配）、冗余防御检查、架构早熟。判定：删除测试 / 单实现测试 / 可追溯性测试。≤ 1500 字。
-
-### Agent 5 — Codex 跨模型（codex:codex-rescue）
-
-GPT-5.5 独立 review：根源 vs 表层？备选方案合理性？语言习惯？测试覆盖？Claude 常见偏好盲点？≤ 1200 字。
+Agent 1-4 为 `general-purpose`，Agent 5 为 `codex:codex-rescue`。
 降级：`which codex` 失败 → 只跑 4 个 Claude agent，报告中说明。
 
 ---
