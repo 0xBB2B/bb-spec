@@ -73,7 +73,7 @@
 
 ---
 
-## Skills 一览（15 个）
+## Skills 一览（12 个）
 
 ### 通用纪律
 
@@ -95,12 +95,9 @@
 
 - **`frontend-vue-constraints`** — Vue 3 + TypeScript + Vite + Tailwind + bun 强约束
 
-### 本地 Review 套件（差异化亮点）
+### 本地 Review
 
 - **`local-ultrareview`** — 当前分支 vs base：5 代理并行（质量/安全/反包袱/过度设计/Codex 跨模型）
-- **`review-quality`** — 任意仓库整体质量审视：5 代理并行
-- **`review-doc`** — Markdown 文档审查：机械层自动修复 + 语义层双代理
-- **`review-code-doc-consistency`** — 代码与文档一致性审查
 
 ---
 
