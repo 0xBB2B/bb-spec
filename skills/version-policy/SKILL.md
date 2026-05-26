@@ -1,5 +1,5 @@
 ---
-name: dependency-version-policy
+name: version-policy
 description: 引入或升级任何外部依赖前必须遵守的版本选择策略——覆盖语言包（npm/Go/PyPI/Cargo/Maven）、运行时与工具链、GitHub/GitLab CI Actions、容器镜像、IaC provider、Helm chart、CLI 工具。强制要求"写入版本号前先用官方渠道查最新版本"，禁止凭训练记忆或既往项目经验填写版本号。TRIGGER when：编辑 package.json / go.mod / requirements.txt / Cargo.toml / pom.xml / Dockerfile / docker-compose.yaml / .github/workflows/*.yaml / .gitlab-ci.yaml / Terraform / Helm chart / .nvmrc / .tool-versions 等任何会钉死外部资产版本号的文件；或用户要求 "升级依赖" / "加个 xxx 库" / "bump 版本" / "更新 Actions" 等。
 ---
 

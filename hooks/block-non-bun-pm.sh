@@ -54,7 +54,7 @@ fi
 
 [ "$BLOCK" -eq 1 ] || exit 0
 
-REASON=$(printf '前端约束（frontend-vue-constraints）：禁止使用 %s 做包管理动作，请改用 bun 等价命令：%s。如确实需要保留原命令，请在本回合明确说明理由再继续。' "$FIRST" "$SUGGEST")
+REASON=$(printf '前端约束（vue-constraints）：禁止使用 %s 做包管理动作，请改用 bun 等价命令：%s。如确实需要保留原命令，请在本回合明确说明理由再继续。' "$FIRST" "$SUGGEST")
 
 jq -nc --arg reason "$REASON" '{
   "hookSpecificOutput": {

@@ -178,7 +178,7 @@ exec 不重复其他 skill 的规则，但执行时**必须遵守已激活的 sk
 | 场景 | 行为 |
 |---|---|
 | 项目有语言测试 skill（如 golang-testing） | 测试代码遵循该语言惯用法 |
-| 项目有编码约束 skill（如 go-project-constraints） | 遵守架构与编码约束 |
+| 项目有编码约束 skill（如 golang-constraints） | 遵守架构与编码约束 |
 
 ---
 

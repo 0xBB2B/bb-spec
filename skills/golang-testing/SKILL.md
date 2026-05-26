@@ -60,7 +60,7 @@ func TestParseConfig(t *testing.T) {
 
 ## 3. Mock 写法
 
-定义 interface → 写 mock struct（字段为 `XxxFunc func(...)`）→ 测试中注入。mock 策略（优先级、禁止项）遵循 `go-project-constraints` §3.9。
+定义 interface → 写 mock struct（字段为 `XxxFunc func(...)`）→ 测试中注入。mock 策略（优先级、禁止项）遵循 `golang-constraints` §3.9。
 
 ---
 
