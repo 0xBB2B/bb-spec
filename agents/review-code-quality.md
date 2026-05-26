@@ -3,6 +3,10 @@ name: review-code-quality
 description: PR 级代码质量审查：命名、错误处理、架构合理性、测试覆盖、commit 拆分、TDD 严格度。
 role: 代码质量审查者
 agent-type: general-purpose
+inputs:
+  - review_scope     # git diff 输出或文件列表
+  - topic_summary    # ≤300 字的修复主题摘要
+  - constraints      # 项目约束清单（可为空）
 ---
 
 # Code Quality Review Agent
@@ -33,6 +37,18 @@ agent-type: general-purpose
 - **TDD 严格度**：测试是先于实现还是后补？
 - **可观测性**：关键操作是否有日志/metrics
 
+## 报告门槛
+
+写下任何发现之前，逐条自问——任一项答"否"则降级或丢弃：
+
+1. 能指出具体文件和行号？
+2. 能描述具体失败场景（输入 → 状态 → 坏结果）？
+3. 已读过上下文（调用方、类型、测试）确认问题未被外层处理？
+4. 严重度站得住脚？（缺 JSDoc ≠ HIGH，测试里的 any ≠ CRITICAL）
+
+🔴/🟡 必须附证据：代码片段 + 失败场景 + 为何现有防护不够。
+零发现是合法结果——不制造发现来证明被调用了。
+
 ## 产出格式
 
 每条发现：
@@ -45,4 +61,4 @@ agent-type: general-purpose
 建议：≤ 3 行
 ```
 
-≤ 1500 字。只报有实质意义的发现，不凑数。
+≤ 1500 字。

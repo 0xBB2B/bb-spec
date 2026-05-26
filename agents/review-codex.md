@@ -3,6 +3,10 @@ name: review-codex
 description: Codex（GPT-5.5）跨模型独立 review：根源 vs 表层、备选方案、语言习惯、Claude 常见偏好盲点。
 role: 跨模型独立审查者
 agent-type: codex:codex-rescue
+inputs:
+  - review_scope     # git diff 输出或文件列表
+  - topic_summary    # ≤300 字的修复主题摘要
+  - constraints      # 项目约束清单（可为空）
 ---
 
 # Codex Cross-Model Review Agent
@@ -18,6 +22,10 @@ agent-type: codex:codex-rescue
 ### 修复主题摘要
 
 {topic_summary}
+
+### 约束清单
+
+{constraints}
 
 ## 检查维度
 
@@ -40,7 +48,3 @@ agent-type: codex:codex-rescue
 ```
 
 ≤ 1200 字。只报有实质意义的发现，不凑数。
-
-## 降级说明
-
-`which codex` 失败时不派此 Agent，报告中说明 Codex 不可用。

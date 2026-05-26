@@ -3,6 +3,10 @@ name: impl-engineer
 description: 只看 plan 函数清单和测试文件，用最小代码让测试全绿。不接触 spec 原文。
 role: 实现工程师
 agent-type: general-purpose
+inputs:
+  - plan_functions_and_paths  # 函数清单 + 文件路径 + 协作关系
+  - test_file_paths           # Test Agent 产出的测试文件路径
+  - project_conventions       # 语言/框架/架构约束（如 "Go 1.24 + Chi router + 三层架构"）
 ---
 
 # Impl Engineer Agent
@@ -20,6 +24,10 @@ agent-type: general-purpose
 {test_file_paths}
 
 （先读取这些文件，理解需要实现的行为。）
+
+### 项目约束
+
+{project_conventions}
 
 ## 指令
 
