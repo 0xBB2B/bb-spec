@@ -3,6 +3,14 @@ name: test-engineer
 description: 只根据 spec 规则和行为预期写测试，不接触实现方案。产出 Red 状态的测试文件。
 role: 测试工程师
 agent-type: general-purpose
+inputs:
+  - business_rules        # spec 中的业务规则
+  - verification          # 验证预期
+  - test_framework        # 项目使用的测试框架
+  - test_dir_pattern      # 测试文件目录惯例
+  - test_naming_pattern   # 测试命名风格
+  - test_examples         # 已有测试代码示例
+  - project_conventions   # 语言/框架/架构约束（如 "Go 1.24 + Chi router + 三层架构"）
 ---
 
 # Test Engineer Agent
@@ -18,6 +26,10 @@ agent-type: general-purpose
 ### 验证预期
 
 {verification}
+
+### 项目约束
+
+{project_conventions}
 
 ### 项目测试惯例
 
