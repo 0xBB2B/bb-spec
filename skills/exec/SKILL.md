@@ -98,7 +98,9 @@ cat .bb-spec/docs/plan/<YYYY-MM-DD>.<主题>/PROGRESS.md 2>/dev/null
 派 Agent（`subagent_type: "bb-spec:impl-engineer"`），prompt 中传入「函数清单 + 文件路径 + 协作关系」+ 测试文件路径。
 
 主 Agent 验证：
-- 全部通过 → ✅ Green，进入 2c
+- 全部通过 → 简洁性审视：代码是否用最少实现解决问题，有无 plan 未要求的抽象/防御/功能
+  - 发现过度设计 → 反馈给 Impl Agent 简化后重跑测试
+  - 通过 → ✅ Green，进入 2c
 - 有失败 → 反馈错误给 Impl Agent 重试（最多 1 次）→ 仍失败报告用户
 
 **2c. Review Agent — Spec 合规**
@@ -167,6 +169,7 @@ cat .bb-spec/docs/plan/<YYYY-MM-DD>.<主题>/PROGRESS.md 2>/dev/null
 | Red | 编译失败 | 主 Agent 修 import/类型，重跑 |
 | Red | 意外全 PASS | 行为已存在 → 跳过；测试错误 → 修正 |
 | Green | 测试不过 | 反馈错误给 Impl Agent 重试 1 次 → 仍失败报告用户 |
+| Green | 过度设计 | 反馈给 Impl Agent 简化后重跑测试 |
 | Review | 发现违规 | 展示用户：修复 / 接受 / 暂停 |
 | Review | 测试遗漏 | 展示用户：补测试 / 接受 |
 
