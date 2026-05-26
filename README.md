@@ -73,7 +73,7 @@
 
 ---
 
-## Skills 一览（16 个）
+## Skills 一览（15 个）
 
 ### 通用纪律
 
@@ -83,8 +83,7 @@
 - **`git-push-pr`** — 用户主动触发的多仓库批量/选择性推送 PR 流程
 - **`spec`** — 需求拆解与文档化：一文一规则、≤100 行、输出至 `.bb-channel/docs/spec/`
 - **`plan`** — 读取 spec 产出分步实施计划：一文一单元、函数级详细、输出至 `.bb-channel/docs/plan/`
-- **`exec`** — 按 plan 逐步编码，PROGRESS.md 断点恢复，支持 token 耗尽续接
-- **`tdd-pipeline`** — 三 Agent 隔离执行 plan：Test Agent 写测试（Red）→ Impl Agent 写实现（Green）→ Review Agent 检查 spec 合规
+- **`exec`** — 三 Agent 隔离执行 plan（Test→Impl→Review），PROGRESS.md 断点恢复
 - **`api-design`** — REST API 设计：资源命名、状态码、分页、错误响应、版本化
 
 ### Go 后端
