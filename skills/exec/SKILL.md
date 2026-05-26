@@ -21,13 +21,13 @@ argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 
 ## Agent 定义
 
-三个 Agent 的 prompt 模板位于插件根目录 `agents/` 下，派工前用 Read 读取对应文件填充模板变量：
+三个 Agent 通过 plugin 注册的 `subagent_type` 派工，数据通过 `prompt` 传入：
 
-| Agent | 定义文件 | 角色 |
+| Agent | subagent_type | 角色 |
 |---|---|---|
-| Test Agent | `agents/test-engineer.md` | 测试工程师：只读 spec 写测试 |
-| Impl Agent | `agents/impl-engineer.md` | 实现工程师：只看测试写实现 |
-| Review Agent | `agents/spec-reviewer.md` | 合规审查者：对照 spec 检查产出 |
+| Test Agent | `bb-spec:test-engineer` | 测试工程师：只读 spec 写测试 |
+| Impl Agent | `bb-spec:impl-engineer` | 实现工程师：只看测试写实现 |
+| Review Agent | `bb-spec:spec-reviewer` | 合规审查者：对照 spec 检查产出 |
 
 **信息隔离矩阵**：
 
@@ -86,7 +86,7 @@ cat .bb-spec/docs/plan/<YYYY-MM-DD>.<主题>/PROGRESS.md 2>/dev/null
 
 **2a. Test Agent — Red**
 
-读取 `test-engineer` agent 定义，填入「业务规则」+「验证方式」+ 项目测试惯例，派 `general-purpose` Agent。
+派 Agent（`subagent_type: "bb-spec:test-engineer"`），prompt 中传入「业务规则」+「验证方式」+ 项目测试惯例。
 
 主 Agent 验证：
 - 编译通过 + 断言失败 → ✅ Red，进入 2b
@@ -95,7 +95,7 @@ cat .bb-spec/docs/plan/<YYYY-MM-DD>.<主题>/PROGRESS.md 2>/dev/null
 
 **2b. Impl Agent — Green**
 
-读取 `impl-engineer` agent 定义，填入「函数清单 + 文件路径 + 协作关系」+ 测试文件路径，派 `general-purpose` Agent。
+派 Agent（`subagent_type: "bb-spec:impl-engineer"`），prompt 中传入「函数清单 + 文件路径 + 协作关系」+ 测试文件路径。
 
 主 Agent 验证：
 - 全部通过 → ✅ Green，进入 2c
@@ -103,7 +103,7 @@ cat .bb-spec/docs/plan/<YYYY-MM-DD>.<主题>/PROGRESS.md 2>/dev/null
 
 **2c. Review Agent — Spec 合规**
 
-读取 `spec-reviewer` agent 定义，填入「业务规则」+「验证方式」+ 所有变更文件路径，派 `general-purpose` Agent。
+派 Agent（`subagent_type: "bb-spec:spec-reviewer"`），prompt 中传入「业务规则」+「验证方式」+ 所有变更文件路径。
 
 主 Agent 处理：
 - 全 ✅ → 通过，进入步骤 3
