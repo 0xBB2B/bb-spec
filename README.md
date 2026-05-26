@@ -1,4 +1,4 @@
-# bb-spec
+# BB-Spec
 
 > 中文优先的 Claude Code 工作流约束套装：**Go + Vue + bun 技术栈强约束**、**TDD / 反历史包袱铁律**、**多代理本地 review 套件**。
 
