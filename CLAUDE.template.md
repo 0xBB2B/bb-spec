@@ -1,6 +1,6 @@
 # CLAUDE.md 模板
 
-> 这是配套 `0xBB2B/skills` plugin 的 `CLAUDE.md` 参考模板。复制到 `~/.claude/CLAUDE.md`（全局）或项目根 `CLAUDE.md`（按项目），按需裁剪。
+> 这是配套 `0xBB2B/bb-spec` plugin 的 `CLAUDE.md` 参考模板。复制到 `~/.claude/CLAUDE.md`（全局）或项目根 `CLAUDE.md`（按项目），按需裁剪。
 
 ---
 

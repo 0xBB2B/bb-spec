@@ -11,7 +11,7 @@
 在 Claude Code 里执行：
 
 ```bash
-/plugin marketplace add 0xBB2B/skills
+/plugin marketplace add 0xBB2B/bb-spec
 /plugin install bb-spec@0xbb2b
 ```
 
@@ -21,7 +21,7 @@
 {
   "extraKnownMarketplaces": {
     "0xbb2b": {
-      "source": { "source": "github", "repo": "0xBB2B/skills" }
+      "source": { "source": "github", "repo": "0xBB2B/bb-spec" }
     }
   },
   "enabledPlugins": {
