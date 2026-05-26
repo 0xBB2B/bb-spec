@@ -21,6 +21,16 @@ argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 
 使用同一套 plan 目录和 PROGRESS.md。区别：exec = 单 Agent 自律 TDD；tdd-pipeline = 三 Agent 他律 TDD。同一 plan 步骤不要混用。
 
+## Agent 定义
+
+三个 Agent 的完整 prompt 模板位于插件根目录 `agents/` 下，派工前用 Read 工具读取对应文件：
+
+| Agent | 定义文件 | 角色 |
+|---|---|---|
+| Test Agent | `agents/test-engineer.md` | 测试工程师：只读 spec 写测试 |
+| Impl Agent | `agents/impl-engineer.md` | 实现工程师：只看测试写实现 |
+| Review Agent | `agents/spec-reviewer.md` | 合规审查者：对照 spec 检查产出 |
+
 ---
 
 ## 信息隔离矩阵
@@ -57,13 +67,7 @@ argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 
 ### 步骤 2：Test Agent — Red
 
-派一个 `general-purpose` Agent：
-
-**Prompt 要点**：
-- 角色：测试工程师，只根据行为预期写测试，不考虑实现方案
-- 输入：spec 规则 + 验证预期 + 项目测试惯例（框架/目录/命名/1-2 个示例片段）
-- 指令：每条 spec 规则至少一个测试用例，覆盖正常 + 边界 + 错误；运行测试确认 FAIL
-- 产出报告：测试文件路径、用例数量、Red 状态确认
+读取 `test-engineer` agent 定义，用 plan 中提取的「业务规则」和「验证方式」填充模板变量，派一个 `general-purpose` Agent。
 
 **主 Agent 验证**：
 - 编译通过 + 断言失败 → ✅ Red，进入步骤 3
@@ -72,13 +76,7 @@ argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 
 ### 步骤 3：Impl Agent — Green
 
-派一个 `general-purpose` Agent：
-
-**Prompt 要点**：
-- 角色：实现工程师，目标是让所有测试通过，最小代码实现
-- 输入：plan 的函数清单 + 文件路径 + 协作关系 + 测试文件路径列表
-- 指令：先读测试理解预期行为 → 按函数清单实现 → 跑测试确认全 PASS
-- 产出报告：实现文件/函数列表、测试结果
+读取 `impl-engineer` agent 定义，用 plan 中提取的「函数清单 + 文件路径 + 协作关系」和步骤 2 产出的测试文件路径填充模板变量，派一个 `general-purpose` Agent。
 
 **主 Agent 验证**：
 - 全部通过 → ✅ Green，进入步骤 4
@@ -86,21 +84,7 @@ argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 
 ### 步骤 4：Review Agent — Spec 合规检查
 
-派一个 `general-purpose` Agent：
-
-**Prompt 要点**：
-- 角色：spec 合规审查者，不修改文件
-- 输入：spec 规则 + 验证预期 + 本步骤所有新增/修改文件（测试 + 实现）
-- 指令：逐条规则核对实现合规性 + 检查每条规则是否有测试覆盖
-
-**产出格式**：
-
-```
-## Spec 合规检查
-- ✅ 规则 1：<规则描述> — 实现合规，测试覆盖
-- ❌ 规则 2：<规则描述> — 违规：<问题>，建议：<方向>
-- ⚠️ 规则 3：<规则描述> — 实现合规但测试未覆盖此规则
-```
+读取 `spec-reviewer` agent 定义，用 plan 中提取的「业务规则」和「验证方式」以及步骤 2-3 产出的所有变更文件路径填充模板变量，派一个 `general-purpose` Agent。
 
 **主 Agent 处理**：
 - 全 ✅ → 通过，进入步骤 5
