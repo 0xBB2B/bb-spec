@@ -132,6 +132,22 @@ cat ${DOCS_DIR}/plan/INDEX.md 2>/dev/null || find ${DOCS_DIR}/plan/ -name "*.md"
 - [ ] 仅凭此文件即可正确编码，无"详见 spec"式引用？
 - [ ] 两级 INDEX.md 已同步？PROGRESS.md 已生成？
 
+### 步骤 8：完成简报
+
+自检通过后，向用户输出：
+
+```
+## Plan 完成简报
+
+- 主题：<YYYY-MM-DD.主题>
+- 产出：N 份 plan，分 M 个阶段
+- 文件清单：
+  - <序号>-<名称>.md — <一句话描述>
+- Spec 变更覆盖：<已覆盖全部 spec 变更 / 未覆盖项列表>
+- 待解决：<问题列表，无则写"无">
+- 下一步：运行 `/exec <主题>` 开始实施
+```
+
 ## 执行恢复协议
 
 启动前读 PROGRESS.md，从第一个非 `done` 步骤开始；每步完成后立即更新（标 `done` + 时间戳）；遇阻塞记录原因并标 `blocked`；上下文耗尽重启后读 PROGRESS.md → 读对应 plan 文件 → 继续。

@@ -52,6 +52,14 @@ Agent 1-4 为 `general-purpose`，Agent 5 为 `codex:codex-rescue`。
 - 严重度分歧取最高
 - 按 🔴 → 🟡 → 🟢 重排，每档内交叉验证优先
 
+### 测试缺陷类 finding 处理
+
+当 finding 指向**测试本身**（断言写错、用例设计不合理、覆盖场景缺失）而非实现代码时：
+
+- 在该 finding 标题后追加 `[测试缺陷]` 标签
+- 处理建议表中，处理方式统一写 `走 /bug 诊断（测试层 impl-defect）`
+- 若 finding 暗示 spec 对预期行为描述不清导致测试写错，处理方式写 `走 /bug 诊断（疑似 spec-defect）`
+
 ---
 
 ## 4. 输出
