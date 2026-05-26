@@ -94,13 +94,21 @@
   │
   ▼
 /git-push-pr  pre-review → 推送 → 开 PR
+
+  ┌─────────────────────────────┐
+  │ /bug  异常处理（随时介入）  │
+  │ 诊断归因 → 定向修复 → 回归 │
+  └──┬──────────┬───────────┬──┘
+     ↓          ↓           ↓
+   /spec      /exec      /review
+  （spec-defect 回 spec，impl-defect 回 exec，review 发现问题回修）
 ```
 
 被动约束（hooks，自动生效）：拦截 npm/yarn、拦截 main commit、依赖版本自检、stop 四项自检。
 
 ---
 
-## Skills 一览（12 个）
+## Skills 一览（13 个）
 
 ### 通用纪律
 
@@ -111,6 +119,7 @@
 - **`spec`** — 需求拆解与文档化：一文一规则、≤100 行、输出至 `.bb-spec/docs/spec/`
 - **`plan`** — 读取 spec 产出分步实施计划：一文一单元、函数级详细、输出至 `.bb-spec/docs/plan/`
 - **`exec`** — 三 Agent 隔离执行 plan（Test→Impl→Review），PROGRESS.md 断点恢复
+- **`bug`** — 流水线异常处理：三类归因（spec-defect / impl-defect / requirement-change）→ 定向修复 → 回归验证
 - **`api-design`** — REST API 设计：资源命名、状态码、分页、错误响应、版本化
 
 ### Go 后端
