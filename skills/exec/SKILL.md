@@ -7,9 +7,7 @@ argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 
 # Exec 计划执行
 
-读取 plan 实施计划，以**三 Agent 隔离**方式逐步编码实现：Test Agent 写测试（Red）→ Impl Agent 写实现（Green）→ Review Agent 对照 spec 检查合规。角色隔离消除"自己写测试自己写代码"的自我偏见。
-
-核心保证：**每步完成后持久化进度到 PROGRESS.md**，token 耗尽或中断后再次 `/exec` 可从断点无损续接。
+三 Agent 隔离执行 plan：Test(Red) → Impl(Green) → Review(合规)，每步完成持久化到 PROGRESS.md，支持断点续接。
 
 ## 核心原则
 
@@ -42,17 +40,11 @@ argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 | Test Agent 写的测试文件 | — | ✅ | ✅ |
 | Impl Agent 写的代码 | — | — | ✅ |
 
----
-
 ## 工作流
 
 ### 步骤 0：解析参数与定位目标
 
-```bash
-cat .bb-spec/docs/plan/INDEX.md 2>/dev/null
-```
-
-**参数形式**：
+读取 `plan/INDEX.md`，按参数形式决定行为：
 
 | 调用方式 | 行为 |
 |---|---|
@@ -68,11 +60,7 @@ cat .bb-spec/docs/plan/INDEX.md 2>/dev/null
 
 ### 步骤 1：确定执行范围
 
-```bash
-cat .bb-spec/docs/plan/<YYYY-MM-DD>.<主题>/PROGRESS.md 2>/dev/null
-```
-
-读取 PROGRESS.md（不存在则初始化，所有步骤标 `pending`）。
+读取 `PROGRESS.md`（不存在则初始化，所有步骤标 `pending`）。
 
 **指定了单个 plan**：直接跳到该 plan 执行，不影响其他步骤状态。
 
@@ -109,15 +97,24 @@ cat .bb-spec/docs/plan/<YYYY-MM-DD>.<主题>/PROGRESS.md 2>/dev/null
 
 主 Agent 处理：
 - 全 ✅ → 通过，进入步骤 3
-- 有 ❌ 或 ⚠️ → 展示给用户：**修复**（先改测试→FAIL→改实现→PASS）/ **接受**（记录到 PROGRESS.md）/ **暂停**（标 blocked）
+- 有 ❌ 或 ⚠️ → 展示给用户：**修复** / **接受**（记录到 PROGRESS.md）/ **暂停**（标 blocked）
+
+选择"修复"时，先诊断归因再动手：
+
+1. **归因**：对照 spec → plan → 实现 → 测试的链路，判定根因在哪层：
+   - **spec-defect**：spec/plan 没有正确描述预期行为（定义层出错）
+   - **impl-defect**：spec 正确但实现不符合（实现层出错）
+   - **requirement-change**：用户实际需要与现有 spec 不同（需求层变化）
+2. **确认**：向用户展示归因 + 证据，确认后再修
+3. **按类型修复**：
+   - spec-defect → 改 spec → 级联 plan → TDD 重新实现（Test→Impl→Review）
+   - impl-defect → 补测试(Red) → 改实现(Green) → 重新 Review
+   - requirement-change → 用户确认新需求 → 更新 spec → 级联 plan + 实现
+4. **回归验证**：全量测试 + spec 合规检查
 
 ### 步骤 3：持久化进度
 
-验证通过后**立即**更新 PROGRESS.md：
-
-1. 当前步骤状态改为 `done`，填入完成时间
-2. "当前"区更新为下一步骤信息（或"全部完成"）
-3. 清除已解决的阻塞项
+验证通过后**立即**更新 PROGRESS.md：当前步骤标 `done` + 填完成时间、"当前"区更新为下一步骤、清除已解决阻塞项。
 
 ### 步骤 4：循环或收尾
 
@@ -131,13 +128,7 @@ cat .bb-spec/docs/plan/<YYYY-MM-DD>.<主题>/PROGRESS.md 2>/dev/null
 
 ### 遇到阻塞时
 
-无法继续（缺少依赖、需求不明确、外部服务不可用等）：
-
-1. 在 PROGRESS.md 当前步骤标记 `blocked`
-2. 在"阻塞"区记录原因
-3. 告知用户具体阻塞原因，等待指示
-
----
+在 PROGRESS.md 当前步骤标 `blocked`、"阻塞"区记录原因、告知用户等待指示。
 
 ## PROGRESS.md 操作规范
 
@@ -145,22 +136,17 @@ cat .bb-spec/docs/plan/<YYYY-MM-DD>.<主题>/PROGRESS.md 2>/dev/null
 
 ```markdown
 # 执行进度
-
 | 序号 | Plan | 状态 | 完成时间 |
 |---|---|---|---|
 | 01 | <name-from-index> | pending | — |
 | 02 | <name-from-index> | pending | — |
-
 ## 当前
 准备执行 `01-<name>.md`。
-
 ## 阻塞
 （无）
 ```
 
-**更新**（步骤 3 每次写入）：只改变三处——当前步骤状态行、"当前"区、"阻塞"区。不重写整个文件。
-
----
+**更新**（步骤 3）：只改三处——当前步骤状态行、"当前"区、"阻塞"区。不重写整个文件。
 
 ## 失败处理
 
@@ -170,21 +156,10 @@ cat .bb-spec/docs/plan/<YYYY-MM-DD>.<主题>/PROGRESS.md 2>/dev/null
 | Red | 意外全 PASS | 行为已存在 → 跳过；测试错误 → 修正 |
 | Green | 测试不过 | 反馈错误给 Impl Agent 重试 1 次 → 仍失败报告用户 |
 | Green | 过度设计 | 反馈给 Impl Agent 简化后重跑测试 |
-| Review | 发现违规 | 展示用户：修复 / 接受 / 暂停 |
-| Review | 测试遗漏 | 展示用户：补测试 / 接受 |
+| Review | 发现违规 | 诊断归因（spec-defect/impl-defect/requirement-change）→ 确认 → 按类型修复 |
+| Review | 测试遗漏 | impl-defect → 补测试(Red) → 改实现(Green) → 重新 Review |
 
----
-
-## 与其他 skill 的协作
-
-exec 不重复其他 skill 的规则，但执行时**必须遵守已激活的 skill 约束**：
-
-| 场景 | 行为 |
-|---|---|
-| 项目有语言测试 skill（如 golang-testing） | 测试代码遵循该语言惯用法 |
-| 项目有编码约束 skill（如 golang-constraints） | 遵守架构与编码约束 |
-
----
+exec 不重复其他 skill 的规则，但执行时**必须遵守已激活的 skill 约束**（如 golang-testing 的测试惯用法、golang-constraints 的架构约束等）。
 
 ## 硬约束
 
@@ -194,8 +169,6 @@ exec 不重复其他 skill 的规则，但执行时**必须遵守已激活的 sk
 - Agent prompt 自包含（不依赖对话上下文）
 - 三个 Agent **必须串行**（Test → Impl → Review）
 - 输出中文
-
----
 
 ## 反面案例
 
