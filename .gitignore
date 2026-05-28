@@ -5,3 +5,6 @@
 .idea/
 .vscode/
 *.log
+
+# 个人项目级偏好，不分发
+CLAUDE.md
