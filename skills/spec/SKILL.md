@@ -79,9 +79,11 @@ cat ${DOCS_DIR}/spec/INDEX.md 2>/dev/null || ls ${DOCS_DIR}/spec/ 2>/dev/null
 
 ### 步骤 4：产出文档
 
-在 `${DOCS_DIR}/spec/` 下创建，命名二选一（同领域一致）：
-- 扁平：`<领域>-<动作>.md`
-- 子目录：`<领域>/<动作>.md`（相关主题多时）
+在 `${DOCS_DIR}/spec/` 下创建，**强制按领域建子目录**：`<领域>/<动作>.md`。
+
+- 禁止扁平放置（如 `<领域>-<动作>.md` 或直接 `<动作>.md` 在根目录）
+- 即便领域当前只有 1 条规则也建子目录，预留扩展位、避免后续重排
+- `<领域>` 用 kebab-case，与 INDEX.md 分组标题一一对应
 
 ### 步骤 5：更新 INDEX.md
 
@@ -107,6 +109,7 @@ cat ${DOCS_DIR}/spec/INDEX.md 2>/dev/null || ls ${DOCS_DIR}/spec/ 2>/dev/null
 - [ ] 有具体可验证例子？
 - [ ] INDEX.md 已同步？
 - [ ] 未引用其他 spec 文档？
+- [ ] 所有新文件均放在 `<领域>/` 子目录下，无扁平根目录文件？
 
 ### 步骤 8：完成简报
 
@@ -162,5 +165,5 @@ description: <一句话，≤ 80 字>
 
 ## <领域>
 
-- [name](file.md) — description
+- [name](<领域>/<name>.md) — description
 ```
