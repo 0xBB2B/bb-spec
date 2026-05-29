@@ -6,7 +6,7 @@ user-invocable: true
 
 # Init 反向 Spec 化
 
-`/spec` 是从对话正向产出规则；`/init` 是**从已有代码与文档反向提炼规则**。落点完全对齐 `/spec`：同一份 `INDEX.md`、同一套 frontmatter、同一份 ≤ 100 行的"一文一规则"格式，使得 `/plan`、`/exec`、`/bug` 可直接接力。
+`/spec` 是从对话正向产出规则；`/init` 是**从已有代码与文档反向提炼规则**。落点完全对齐 `/spec`：同一份 `INDEX.md`、同一套 frontmatter、同一份 ≤ 100 行的"一文一规则"格式，使得 `/plan`、`/exec`、`/revise` 可直接接力。
 
 ## 核心原则
 

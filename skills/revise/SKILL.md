@@ -1,23 +1,25 @@
 ---
-name: bug
-description: 诊断 spec→plan→exec 产出的 bug 根因（定义问题 / 实现偏离 / 需求变更），按分类走对应修复流程。常见触发：用户输入 `/bug`、"这里有 bug"、"结果不对"、"和预期不符"、review 发现违规需修复。
+name: revise
+description: 诊断 spec→plan→exec 产出与预期的偏差根因（定义问题 / 实现偏离 / 需求变更），按分类走对应修正流程；覆盖修 bug、产出优化、需求变更三类场景。常见触发：用户输入 `/revise`、"这里有 bug"、"结果不对"、"和预期不符"、"这个产出需要优化"、review 发现违规需修复。
 user-invocable: true
-argument-hint: <bug 描述>
+argument-hint: <问题或优化诉求描述>
 ---
 
-# Bug 诊断与修复
+# 产出修订（Revise）：诊断 → 定向修正 → 回归验证
 
-对 spec→plan→exec 流水线产出的问题做**根因归类 → 定向修复 → 回归验证**。所有 review 发现 bug 需修复时，统一走此流程。
+对 spec→plan→exec 流水线产出与预期的偏差做**根因归类 → 定向修正 → 回归验证**，覆盖修 bug、产出优化、需求变更三类场景。所有 review 发现问题需修正时，统一走此流程。
+
+> 仅处理"对既有产出的修正"。若是与对错无关的**纯新增需求**，走 `/spec` → `/plan`，不进本流程。
 
 ## 核心原则
 
-1. **先诊断再修复**：禁止跳过归因直接改代码
-2. **三类归因**：每个 bug 必须归入 spec-defect / impl-defect / requirement-change 之一
-3. **修复闭环**：修复后必须验证（测试通过 + spec 合规）
-4. **最小影响**：只改必须改的层，不借修 bug 之名扩展功能或重构
-5. **TDD 修复**：涉及代码修改时必须先有失败测试再改实现
+1. **先诊断再修正**：禁止跳过归因直接改代码
+2. **三类归因**：每个问题必须归入 spec-defect / impl-defect / requirement-change 之一
+3. **修正闭环**：修正后必须验证（测试通过 + spec 合规）
+4. **最小影响**：只改必须改的层，不借修正之名扩展功能或重构
+5. **TDD 修正**：涉及代码修改时必须先有失败测试再改实现
 
-## Bug 三类归因
+## 三类归因
 
 | 类型 | 含义 | 根因在哪层 | 修复起点 |
 |---|---|---|---|
@@ -29,9 +31,9 @@ argument-hint: <bug 描述>
 
 ## 工作流
 
-### 步骤 0：收集 bug 信息
+### 步骤 0：收集问题信息
 
-**有参数**（`$ARGUMENTS` 非空）：直接使用用户传入的 bug 描述。
+**有参数**（`$ARGUMENTS` 非空）：直接使用用户传入的问题/优化描述。
 
 **无参数**：向用户提问（一次 2-3 个问题）：
 - 预期行为是什么？
@@ -51,7 +53,7 @@ cat ${DOCS_DIR}/spec/INDEX.md 2>/dev/null
 cat ${DOCS_DIR}/plan/INDEX.md 2>/dev/null
 ```
 
-根据 bug 描述定位四层资产：
+根据问题描述定位四层资产：
 
 | 资产 | 定位方式 | 目的 |
 |---|---|---|
@@ -78,15 +80,15 @@ cat ${DOCS_DIR}/plan/INDEX.md 2>/dev/null
 3. 实现是否符合 plan + spec？
    ├─ 否 → impl-defect
    └─ 是 →
-4. 测试是否覆盖了出 bug 的场景？
+4. 测试是否覆盖了出问题的场景？
    ├─ 否（测试遗漏）→ impl-defect
    └─ 是（测试断言有误）→ impl-defect
 ```
 
-**向用户展示诊断结果**（必须确认后才修复）：
+**向用户展示诊断结果**（必须确认后才修正）：
 
 ```
-## Bug 诊断
+## 诊断结果
 
 - 归因：<spec-defect / impl-defect / requirement-change>
 - 证据：
@@ -171,7 +173,7 @@ spec 正确，只需修实现层。
 ### 步骤 5：完成简报
 
 ```
-## Bug 完成简报
+## 修订完成简报
 
 - 归因：<spec-defect / impl-defect / requirement-change>
 - 根因：<一句话>
@@ -206,7 +208,7 @@ spec 正确，只需修实现层。
 - impl-defect 修复必须先有失败测试再改实现（TDD）
 - spec-defect 必须先改 spec 再改代码，禁止只改代码不改 spec
 - requirement-change 必须用户确认新需求后再动手
-- 修复范围不超出 bug 影响范围，不借修 bug 之名加功能
+- 修正范围不超出问题影响范围，不借修正之名加功能
 - Agent 隔离规则同 exec（Test 不看实现，Impl 不看 spec，Review 只读）
 - 输出中文
 

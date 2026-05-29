@@ -32,14 +32,6 @@
 
 ## 版本与更新 / Versioning
 
-本 plugin 采用 **SemVer + Git tag** 版本模式。`plugin.json` 里的 `version` 必须与 Git tag 去掉 `v` 前缀后保持一致；例如当前首个版本是 `0.1.0`，对应 tag 是 `v0.1.0`。
-
-发布新版本时，在 GitHub Actions 里手动运行 `Release Plugin Version`，输入 `0.1.0` 或 `v0.1.0`。该 workflow 会完成三件事：
-
-1. 同步更新 `.claude-plugin/plugin.json` 的 `version`
-2. 提交 `release: vX.Y.Z`
-3. 在该提交上创建并推送 `vX.Y.Z` tag
-
 更新已安装插件：
 
 ```bash
@@ -98,9 +90,9 @@
   ▼
 /git-push-pr  pre-review → 推送 → 开 PR
 
-  ┌─────────────────────────────┐
-  │ /bug  异常处理（随时介入）  │
-  │ 诊断归因 → 定向修复 → 回归 │
+  ┌────────────────────────────┐
+  │  /revise 异常处理（随时介入） │
+  │  诊断归因 → 定向修正 → 回归   │
   └──┬──────────┬───────────┬──┘
      ↓          ↓           ↓
    /spec      /exec      /review
@@ -123,7 +115,7 @@
 - **`spec`** — 需求拆解与文档化：一文一规则、≤100 行、输出至 `.bb-spec/docs/spec/`
 - **`plan`** — 读取 spec 产出分步实施计划：一文一单元、函数级详细、输出至 `.bb-spec/docs/plan/`
 - **`exec`** — 三 Agent 隔离执行 plan（Test→Impl→Review），PROGRESS.md 断点恢复
-- **`bug`** — 流水线异常处理：三类归因（spec-defect / impl-defect / requirement-change）→ 定向修复 → 回归验证
+- **`revise`** — 产出修订（修 bug / 优化 / 需求变更）：三类归因（spec-defect / impl-defect / requirement-change）→ 定向修正 → 回归验证
 - **`api-design`** — REST API 设计：资源命名、状态码、分页、错误响应、版本化
 
 ### Go 后端
