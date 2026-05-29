@@ -132,7 +132,16 @@ cat ${DOCS_DIR}/plan/INDEX.md 2>/dev/null || find ${DOCS_DIR}/plan/ -name "*.md"
 - [ ] 仅凭此文件即可正确编码，无"详见 spec"式引用？
 - [ ] 两级 INDEX.md 已同步？PROGRESS.md 已生成？
 
-### 步骤 8：完成简报
+### 步骤 8：本地 commit
+
+自检通过后，把本次 plan 产出做一次**本地** commit：
+
+- 先 `git branch --show-current` 确认分支——**在 main 上则跳过自动 commit**，提示用户按 git-workflow 先建分支再继续
+- 只提交本次涉及的文件（plan 文档 + 两级 `INDEX.md` + `PROGRESS.md`）
+- commit message 遵循仓库历史风格（先 `git log --oneline -10` 看一眼），不硬编码类型前缀
+- **仅本地、不自动 push**（推送门槛见 git-workflow：功能全完成 + 测试过 + 用户确认）
+
+### 步骤 9：完成简报
 
 自检通过后，向用户输出：
 

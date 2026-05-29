@@ -122,6 +122,13 @@ cat .bb-spec.yaml 2>/dev/null
 
 验证通过后**立即**更新 PROGRESS.md：当前步骤标 `done` + 填完成时间、"当前"区更新为下一步骤、清除已解决阻塞项。
 
+PROGRESS.md 更新后，把本步骤产出做一次**本地** commit：
+
+- 先 `git branch --show-current` 确认分支——**在 main 上则跳过自动 commit**，提示用户按 git-workflow 先建分支
+- 只提交本步骤涉及的文件（实现 + 测试 + `PROGRESS.md`）
+- commit message 遵循仓库历史风格（先 `git log --oneline -10`），不硬编码类型前缀
+- **仅本地、不自动 push**；blocked / 未通过的步骤不 commit
+
 ### 步骤 4：循环或收尾
 
 - **单个 plan 模式**：当前 plan 完成即停，输出完成简报
@@ -130,7 +137,8 @@ cat .bb-spec.yaml 2>/dev/null
   1. 更新根 `plan/INDEX.md`，将该主题状态改为 `已完成`，填入完成时间
   2. 运行全量测试确认无回归
   3. **归档确认**：确认已删除的 spec 已从 `spec/INDEX.md` 移除；spec 文件内容与实现一致
-  4. 输出完成简报（见下方格式）
+  4. 把收尾改动（`plan/INDEX.md` 等）做一次**本地** commit（守卫同步骤 3：先确认不在 main、仅本地不 push）
+  5. 输出完成简报（见下方格式）
 
 **完成简报格式**（单个 plan 模式和全部完成均使用）：
 
@@ -191,6 +199,7 @@ exec 不重复其他 skill 的规则，但执行时**必须遵守已激活的 sk
 - Review Agent **禁止**修改文件
 - Agent prompt 自包含（不依赖对话上下文）
 - 三个 Agent **必须串行**（Test → Impl → Review）
+- 每步本地 commit 后**禁止自动 push**；在 main 分支上**禁止自动 commit**
 - 输出中文
 
 ## 反面案例

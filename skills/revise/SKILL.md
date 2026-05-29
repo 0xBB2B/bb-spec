@@ -169,6 +169,7 @@ spec 正确，只需修实现层。
 1. **全量测试**：运行项目全量测试，确认无回归
 2. **spec 合规**：检查修复是否引入新的 spec 违规
 3. **索引同步**：确认 spec/plan INDEX.md 与文件实际状态一致
+4. **本地 commit**：上述验证通过后，把本次修订产出做一次**本地** commit——先 `git branch --show-current` 确认分支（**在 main 上则跳过**并提示用户按 git-workflow 先建分支），只提交本次涉及的文件（spec/plan/实现/测试），commit message 遵循仓库历史风格（先 `git log --oneline -10`）、不硬编码类型前缀，**仅本地、不自动 push**
 
 ### 步骤 5：完成简报
 

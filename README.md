@@ -2,8 +2,6 @@
 
 > 中文优先的 Claude Code 工作流约束套装：**Go + Vue + bun 技术栈强约束**、**TDD / 反历史包袱铁律**、**多代理本地 review 套件**。
 
-**English TL;DR**: A Claude Code plugin for opinionated, Chinese-first dev workflow. Hard guards against `npm`/`yarn`/`pnpm` & direct `main` commits, mandatory dependency-version checks, anti-legacy-baggage discipline, and a local multi-agent code review suite. Skills cover Go backend, Vue 3 + bun frontend, TDD, REST API design, and Git workflow.
-
 ---
 
 ## Claude Code 安装 / Install
@@ -59,7 +57,7 @@
 | Hook | 作用 | 启用方式 |
 |---|---|---|
 | `stop-auto-tests.sh` | Stop 后在 Go 项目（有 `go.mod`）自动跑 `vet` / `golangci-lint` / `test -race` / `make test-integration`，失败回灌给 AI | `export CLAUDE_ENABLE_AUTO_TESTS=1` 或项目根 `touch .enable-auto-tests` |
-| `stop-auto-commit.sh` | Stop 后在 git 仓库自动 commit 已追踪改动（仅 `git add -u`，非 main/master，不 push） | `export CLAUDE_ENABLE_AUTO_COMMIT=1` 或仓库根 `touch .enable-auto-commit` |
+| `stop-auto-commit.sh` | Stop 后检测到未提交的已追踪改动，回灌指令让 **AI 用语义化 message 自行 commit**（默认 `git add -u`，非 main/master，不 push） | `export CLAUDE_ENABLE_AUTO_COMMIT=1` 或仓库根 `touch .enable-auto-commit` |
 
 环境变量是会话级 / 全局级启用（写进 shell rc），标记文件是项目级启用，二选一或并用。停用：`unset` 环境变量 或 `rm` 标记文件即可。
 
