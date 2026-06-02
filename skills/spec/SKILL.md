@@ -1,7 +1,6 @@
 ---
 name: spec
 description: 通过对话细化用户需求，将庞大需求拆解为多个"小规则"，并在当前目录 `.bb-spec/docs/spec/` 下产出一规则一文档的简洁规格说明（每文档 ≤ 100 行，只说一件事 + 一个例子）；所有文档头部带 `name + description` frontmatter，由 `.bb-spec/docs/spec/INDEX.md` 汇成轻量索引，读者先扫索引再按需加载具体文件。常见触发：用户输入 `/spec`、"帮我整理需求"、"把这个功能写成 spec"、"做需求拆解"。
-user-invocable: true
 ---
 
 # Spec 需求拆解与文档化

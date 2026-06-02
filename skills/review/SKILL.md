@@ -2,7 +2,6 @@
 name: review
 description: 对当前分支 vs base 分支的改动做"多代理并行 + 跨模型"本地 review。默认 base = main,可用 /review <base-branch> 指定。并发 spawn 5 个 Agent(代码质量、安全视角、代码简洁性、文档同步、Codex 跨模型独立 review),汇总去重后按 BLOCKER / IMPORTANT / NIT 输出,交叉验证项标强信号。只读审视,不自动修改代码。
 argument-hint: <base-branch>
-user-invocable: true
 disable-model-invocation: true
 ---
 

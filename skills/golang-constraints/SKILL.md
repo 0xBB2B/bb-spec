@@ -1,6 +1,7 @@
 ---
 name: golang-constraints
 description: Go 后端项目全生命周期规范约束：贯穿编码、文档、PRD、规划、设计、review；统一三层架构、禁过度抽象、禁过渡方案、测试服从生产设计（禁为测试包装 var 或新增 interface，需要 mock 时优先用已有低层注入点）。
+user-invocable: false
 ---
 
 # Go 项目规范约束

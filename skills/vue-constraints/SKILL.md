@@ -1,6 +1,7 @@
 ---
 name: vue-constraints
 description: 前端项目技术栈与工具链强制约束——默认技术栈统一为 Vue 3 + TypeScript + Vite + Tailwind CSS，包管理器统一为 bun（禁用 npm / yarn / pnpm）。TRIGGER when：新建前端项目、编辑 package.json / vite.config.* / tailwind.config.* / tsconfig.json / .vue / .ts / .tsx 文件、运行前端构建或安装命令、用户提到"前端"/"vue"/"vite"/"tailwind"/"npm install"/"yarn add"/"pnpm" 等场景。
+user-invocable: false
 ---
 
 # 前端技术栈约束

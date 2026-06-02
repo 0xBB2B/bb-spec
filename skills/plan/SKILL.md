@@ -1,7 +1,6 @@
 ---
 name: plan
 description: 读取 `.bb-spec/docs/spec/` 中的规格说明，结合项目现有代码结构，在 `.bb-spec/docs/plan/<YYYY-MM-DD>.<主题>/` 下产出自包含的分步实施计划；每个文件只解决一个独立问题，详细到函数名与职责但不写具体参数与实现，任何 AI 在清空上下文后仅凭该文件即可正确编码。常见触发：用户输入 `/plan`、"生成实施计划"、"怎么落地这些 spec"。
-user-invocable: true
 ---
 
 # Plan 实施计划生成
