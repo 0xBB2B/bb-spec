@@ -1,7 +1,6 @@
 ---
 name: init
 description: 项目初始化反向 spec 化。当目标项目还没有 `.bb-spec/docs/spec/INDEX.md` 时，阅读现存代码与文档，把"已经在执行的隐式规范"沉淀为一组 ≤ 100 行的 spec 文档，纳入与 `/spec` 完全一致的目录与索引结构。庞大项目按独立功能区拆 subagent 并发提取。常见触发：用户输入 `/init`、"给现有项目反向生成 spec"、"把现有规范文档化"、"项目要接入 bb-spec 工作流"。
-user-invocable: true
 ---
 
 # Init 反向 Spec 化

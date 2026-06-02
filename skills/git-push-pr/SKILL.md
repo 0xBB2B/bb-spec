@@ -1,7 +1,6 @@
 ---
 name: git-push-pr
 description: Use when 用户想把本地代码通过 PR 流程推送到远程仓库。自动检测单 / 多仓库，支持批量或选择性处理；用户也可通过参数指定单个仓库目录。推送前若仓库根或项目根（CWD）存在 `.bb-spec/docs/spec/INDEX.md`，会自动跑一次**分支规范自查（pre-review）**——派 subagent 拿 spec 比对当前分支 vs main 的 diff，违规由主 agent 直接修复并循环复审，通过后生成一份**简洁的 6 段 PR 描述草稿**（背景 / 需求 / 方案 / 结果 / 测试 / 规范，整体不超过 50 行），直接用作创建 PR 的 body。常见触发："push 一下"、"提个 PR"、"代码推上去"、"准备发 PR"、"开 PR 之前帮我自查一下"、"对照规范看下这个分支"。
-user-invocable: true
 ---
 
 # 仓库提交与 PR 流程
