@@ -1,6 +1,6 @@
 ---
 name: init
-description: 项目初始化反向 spec 化。当目标项目还没有 `.bb-spec/docs/spec/INDEX.md` 时，阅读现存代码与文档，把"已经在执行的隐式规范"沉淀为一组 ≤ 100 行的 spec 文档，纳入与 `/spec` 完全一致的目录与索引结构。庞大项目按独立功能区拆 subagent 并发提取。常见触发：用户输入 `/init`、"给现有项目反向生成 spec"、"把现有规范文档化"、"项目要接入 bb-spec 工作流"。
+description: Reverse-spec-ification for onboarding. When the target project has no .bb-spec/docs/spec/INDEX.md, read existing code and docs and distill the already-enforced implicit conventions into a set of ≤100-line spec documents, in the exact directory and index structure /spec uses. Split large projects into parallel subagents by functional area. TRIGGER — /init / reverse-generate specs for an existing project / document existing conventions / onboard a project to the bb-spec workflow. ｜ 项目初始化反向 spec 化。当目标项目还没有 `.bb-spec/docs/spec/INDEX.md` 时，阅读现存代码与文档，把"已经在执行的隐式规范"沉淀为一组 ≤ 100 行的 spec 文档，纳入与 `/spec` 完全一致的目录与索引结构。庞大项目按独立功能区拆 subagent 并发提取。常见触发：用户输入 `/init`、"给现有项目反向生成 spec"、"把现有规范文档化"、"项目要接入 bb-spec 工作流"。
 ---
 
 # Init 反向 Spec 化
@@ -16,7 +16,7 @@ description: 项目初始化反向 spec 化。当目标项目还没有 `.bb-spec
 5. **用户裁决拆分**：分区清单先给用户确认再派工，避免基于错误切分跑一长串无效 agent
 6. **纯净现态**：只写**当前代码已在执行**的规则，禁写"应该但还没做"或"历史遗留"（用户想补"应然"则提示走 `/spec`）
 7. **冲突不自决**：代码本身的冲突一律抛给用户裁决
-8. **单文件 ≤ 100 行、禁跨文档引用、中文优先**：超 100 行即拆；每份 spec 自包含不写"详见 X.md"；正文中文，标识符/API/错误码保持英文
+8. **单文件 ≤ 100 行、禁跨文档引用、语言跟随用户**：超 100 行即拆；每份 spec 自包含不写"详见 X.md"；正文用用户的工作语言，标识符/API/错误码保持英文
 
 ---
 

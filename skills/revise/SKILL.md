@@ -1,6 +1,6 @@
 ---
 name: revise
-description: 诊断 spec→plan→exec 产出与预期的偏差根因（定义问题 / 实现偏离 / 需求变更），按分类走对应修正流程；覆盖修 bug、产出优化、需求变更三类场景。常见触发：用户输入 `/revise`、"这里有 bug"、"结果不对"、"和预期不符"、"这个产出需要优化"、review 发现违规需修复。
+description: Diagnose the root cause of a deviation between spec→plan→exec output and expectation (definition problem / implementation drift / requirement change) and route to the matching fix flow; covers bug fixes, output optimization, and requirement changes. TRIGGER — /revise / there's a bug here / the result is wrong / doesn't match expectations / this output needs optimizing / a review found a violation to fix. ｜ 诊断 spec→plan→exec 产出与预期的偏差根因（定义问题 / 实现偏离 / 需求变更），按分类走对应修正流程；覆盖修 bug、产出优化、需求变更三类场景。常见触发：用户输入 `/revise`、"这里有 bug"、"结果不对"、"和预期不符"、"这个产出需要优化"、review 发现违规需修复。
 argument-hint: <问题或优化诉求描述>
 ---
 

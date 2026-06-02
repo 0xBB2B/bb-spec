@@ -1,6 +1,6 @@
 ---
 name: exec
-description: 三 Agent 隔离执行 plan 实施计划（Test→Impl→Review），每完成一步立即持久化进度到 PROGRESS.md，支持 token 耗尽后无损续接。常见触发：用户输入 `/exec`、"开始实施"、"继续执行 plan"、"从上次断点继续"。
+description: Three-agent isolated execution of a plan (Test→Impl→Review), persisting progress to PROGRESS.md after every step, with lossless resume after token exhaustion. TRIGGER — /exec / start implementing / continue executing the plan / resume from the last checkpoint. ｜ 三 Agent 隔离执行 plan 实施计划（Test→Impl→Review），每完成一步立即持久化进度到 PROGRESS.md，支持 token 耗尽后无损续接。常见触发：用户输入 `/exec`、"开始实施"、"继续执行 plan"、"从上次断点继续"。
 argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 ---
 

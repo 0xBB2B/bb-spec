@@ -1,6 +1,6 @@
 ---
 name: vue-constraints
-description: 前端项目技术栈与工具链强制约束——默认技术栈统一为 Vue 3 + TypeScript + Vite + Tailwind CSS，包管理器统一为 bun（禁用 npm / yarn / pnpm）。TRIGGER when：新建前端项目、编辑 package.json / vite.config.* / tailwind.config.* / tsconfig.json / .vue / .ts / .tsx 文件、运行前端构建或安装命令、用户提到"前端"/"vue"/"vite"/"tailwind"/"npm install"/"yarn add"/"pnpm" 等场景。
+description: Hard stack and toolchain constraints for frontend projects — the default stack is unified as Vue 3 + TypeScript + Vite + Tailwind CSS, and the package manager is unified as bun (npm / yarn / pnpm forbidden). TRIGGER when creating a frontend project, editing package.json / vite.config.* / tailwind.config.* / tsconfig.json / .vue / .ts / .tsx, running a frontend build or install command, or the user mentions frontend / vue / vite / tailwind / npm install / yarn add / pnpm. ｜ 前端项目技术栈与工具链强制约束——默认技术栈统一为 Vue 3 + TypeScript + Vite + Tailwind CSS，包管理器统一为 bun（禁用 npm / yarn / pnpm）。TRIGGER when：新建前端项目、编辑 package.json / vite.config.* / tailwind.config.* / tsconfig.json / .vue / .ts / .tsx 文件、运行前端构建或安装命令、用户提到"前端"/"vue"/"vite"/"tailwind"/"npm install"/"yarn add"/"pnpm" 等场景。
 user-invocable: false
 ---
 
@@ -133,7 +133,7 @@ user-invocable: false
 ## 4. 与其他规范的协作
 
 - **依赖版本选择**：所有新增 / 升级依赖时，版本号选择遵循 `version-policy` skill（先查官方最新版本，不凭记忆填写）。
-- **TypeScript 函数注释**：遵循 JSDoc/TSDoc 风格，使用中文（详见全局编码风格）。
+- **TypeScript 函数注释**：遵循 JSDoc/TSDoc 风格，使用用户的工作语言（详见全局编码风格）。
 - **Git 工作流**：前端项目同样遵循 `git-workflow` skill（分支策略、PR 三段式等）。
 
 ---

@@ -1,6 +1,6 @@
 ---
 name: spec
-description: 通过对话细化用户需求，将庞大需求拆解为多个"小规则"，并在当前目录 `.bb-spec/docs/spec/` 下产出一规则一文档的简洁规格说明（每文档 ≤ 100 行，只说一件事 + 一个例子）；所有文档头部带 `name + description` frontmatter，由 `.bb-spec/docs/spec/INDEX.md` 汇成轻量索引，读者先扫索引再按需加载具体文件。常见触发：用户输入 `/spec`、"帮我整理需求"、"把这个功能写成 spec"、"做需求拆解"。
+description: Refine the user's requirement through dialogue, break a large requirement into many small rules, and produce concise specs (one rule per document, ≤100 lines, one thing + one example each) under .bb-spec/docs/spec/; every doc carries name + description frontmatter and is indexed by a lightweight INDEX.md readers scan first, then load specific files on demand. TRIGGER — /spec / help me organize requirements / write this feature as a spec / do requirement breakdown. ｜ 通过对话细化用户需求，将庞大需求拆解为多个"小规则"，并在当前目录 `.bb-spec/docs/spec/` 下产出一规则一文档的简洁规格说明（每文档 ≤ 100 行，只说一件事 + 一个例子）；所有文档头部带 `name + description` frontmatter，由 `.bb-spec/docs/spec/INDEX.md` 汇成轻量索引，读者先扫索引再按需加载具体文件。常见触发：用户输入 `/spec`、"帮我整理需求"、"把这个功能写成 spec"、"做需求拆解"。
 ---
 
 # Spec 需求拆解与文档化
@@ -15,7 +15,7 @@ description: 通过对话细化用户需求，将庞大需求拆解为多个"小
 4. **强制拆解**：发现多个关注点时拆为多份文档
 5. **按需加载结构**：frontmatter `name + description` → `INDEX.md` 索引
 6. **自主独立**：每份自包含，**禁止跨文档引用**（无"详见/参见/复用 xxx.md"）
-7. **中文优先**：正文中文，标识符/API 名/错误码保持英文
+7. **语言跟随用户**：正文用用户的工作语言（默认随对话语言），标识符/API 名/错误码保持英文
 8. **纯净现态**：spec 只描述当前系统行为，不携带变更历史或过渡标记；废弃规则直接删文件，git 是变更追溯的唯一来源
 
 ---
