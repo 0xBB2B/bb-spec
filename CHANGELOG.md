@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.0.0](https://github.com/0xBB2B/bb-spec/compare/v2.1.0...v3.0.0) (2026-06-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* skill 产出的默认语言从「强制中文」变为「跟随用户工作语言」。 同样的 /spec、/plan、/init 等调用，对非中文用户现在会产出其工作语言的文档与注释而非中文； 中文用户行为不变（用中文对话即得中文产出）。如需固定某语言，请在自己的 CLAUDE.md 中声明语言偏好。
+
+### Features
+
+* 工作流产出改为语言无关，不再强制中文输出 ([#45](https://github.com/0xBB2B/bb-spec/issues/45)) ([7107afe](https://github.com/0xBB2B/bb-spec/commit/7107afee985ca9ed5fb8a9eb633025105759b844))
+
 ## [2.1.0](https://github.com/0xBB2B/bb-spec/compare/v2.0.0...v2.1.0) (2026-06-02)
 
 
