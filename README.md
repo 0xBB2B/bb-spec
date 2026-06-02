@@ -1,19 +1,23 @@
 # BB-Spec
 
-> 中文优先的 Claude Code 工作流约束套装：**Go + Vue + bun 技术栈强约束**、**TDD / 反历史包袱铁律**、**多代理本地 review 套件**。
+**English** | [中文](./README.zh.md)
+
+> A language-agnostic Claude Code workflow constraint suite: **hard Go + Vue + bun stack constraints**, **TDD / anti-legacy-cruft iron rules**, and a **multi-agent local review kit**.
+
+> Output follows your working language. The skills do **not** hardcode an output language — docs, comments, and commit messages come out in whatever language you work in (identifiers, API names, and error codes stay English). Every skill triggers on both English and Chinese phrases.
 
 ---
 
-## Claude Code 安装 / Install
+## Install
 
-在 Claude Code 里执行：
+Run inside Claude Code:
 
 ```bash
 /plugin marketplace add 0xBB2B/bb-spec
 /plugin install bb-spec@0xbb2b
 ```
 
-或手动添加到 `~/.claude/settings.json`：
+Or add it manually to `~/.claude/settings.json`:
 
 ```json
 {
@@ -28,148 +32,149 @@
 }
 ```
 
-## 版本与更新 / Versioning
+## Versioning
 
-更新已安装插件：
+Update an installed plugin:
 
 ```bash
-/plugin update              # 检查并更新所有已装 plugin
-/plugin update bb-spec   # 仅更新本 plugin
+/plugin update              # check and update every installed plugin
+/plugin update bb-spec   # update only this plugin
 ```
 
 ---
 
-## 默认启用的 Hooks（开箱即用）
+## Hooks enabled by default (out of the box)
 
-| Hook | 触发时机 | 作用 |
+| Hook | Trigger | Effect |
 |---|---|---|
-| `block-non-bun-pm` | PreToolUse(Bash) | 拦截 `npm` / `yarn` / `pnpm` 的包管理动作，强制 `bun` |
-| `block-main-commit` | PreToolUse(Bash) | 拦截 `main` / `master` 分支的 `git commit` |
-| `dep-version-check` | PostToolUse(Write\|Edit) | 编辑依赖文件后注入"先查官方最新版"自检提示 |
-| `stop-self-check` | Stop | 任务结束前强制四项自检：临时文件 / 改动范围 / 孤立残留 / 历史包袱 |
+| `block-non-bun-pm` | PreToolUse(Bash) | Blocks `npm` / `yarn` / `pnpm` package-manager actions, enforcing `bun` |
+| `block-main-commit` | PreToolUse(Bash) | Blocks `git commit` on the `main` / `master` branch |
+| `dep-version-check` | PostToolUse(Write\|Edit) | After editing a dependency file, injects a "check the official latest version first" reminder |
+| `stop-self-check` | Stop | Forces a four-point self-check before a task ends: temp files / change scope / orphaned leftovers / legacy cruft |
 
 ---
 
-## 高级选项：可选 Hooks（默认关，按需启用）
+## Advanced: optional Hooks (off by default, opt-in)
 
-仓库还附带两个**副作用较大**的 Stop hook，已随 plugin 一起注册，但脚本顶部有启用门槛，**默认不跑**——必须显式启用：
+The repo ships two **higher-impact** Stop hooks. They are registered with the plugin but gated at the top of each script, so they **do not run by default** — you must enable them explicitly:
 
-| Hook | 作用 | 启用方式 |
+| Hook | Effect | How to enable |
 |---|---|---|
-| `stop-auto-tests.sh` | Stop 后在 Go 项目（有 `go.mod`）自动跑 `vet` / `golangci-lint` / `test -race` / `make test-integration`，失败回灌给 AI | `export CLAUDE_ENABLE_AUTO_TESTS=1` 或项目根 `touch .enable-auto-tests` |
-| `stop-auto-commit.sh` | Stop 后检测到未提交的已追踪改动，回灌指令让 **AI 用语义化 message 自行 commit**（默认 `git add -u`，非 main/master，不 push） | `export CLAUDE_ENABLE_AUTO_COMMIT=1` 或仓库根 `touch .enable-auto-commit` |
+| `stop-auto-tests.sh` | On Stop, in a Go project (with `go.mod`) automatically runs `vet` / `golangci-lint` / `test -race` / `make test-integration` and feeds failures back to the AI | `export CLAUDE_ENABLE_AUTO_TESTS=1` or `touch .enable-auto-tests` in the project root |
+| `stop-auto-commit.sh` | On Stop, when uncommitted tracked changes are detected, feeds back an instruction for the **AI to commit them itself with a semantic message** (defaults to `git add -u`, non-main/master, no push) | `export CLAUDE_ENABLE_AUTO_COMMIT=1` or `touch .enable-auto-commit` in the repo root |
 
-环境变量是会话级 / 全局级启用（写进 shell rc），标记文件是项目级启用，二选一或并用。停用：`unset` 环境变量 或 `rm` 标记文件即可。
+The environment variable enables a hook at session / global scope (written into your shell rc); the marker file enables it at project scope — use either or both. To disable: `unset` the env var or `rm` the marker file.
 
 ---
 
-## 工作流
+## Workflow
 
 ```
-/init  存量项目反向 spec 化（仅首次接入时跑一次；并发分区提取）
+/init  Reverse-spec an existing project (run once on first adoption; parallel partitioned extraction)
   │
   ▼
-/spec  需求拆解 → 一规则一文档
+/spec  Requirement breakdown → one rule per document
   │
   ▼
-/plan  spec → 函数级实施计划
+/plan  spec → function-level implementation plan
   │
   ▼
-/exec  三 Agent 隔离执行
-  │  Test Agent (Red)   — 只读 spec 规则 → 写测试
-  │  Impl Agent (Green) — 只看测试+函数清单 → 写实现
-  │  Review Agent       — 对照 spec 检查 → 只读不写
-  │  PROGRESS.md 持久化（断点恢复）
+/exec  Three-agent isolated execution
+  │  Test Agent (Red)   — reads spec rules only → writes tests
+  │  Impl Agent (Green) — sees tests + function list only → writes implementation
+  │  Review Agent       — checks against spec → read-only
+  │  PROGRESS.md persistence (resume from checkpoint)
   │
   ▼
-/review  5 agent 并行 PR 级 review
-  │  质量 / 安全 / 反包袱 / 过度设计 / Codex
+/review  5-agent parallel PR-level review
+  │  quality / security / anti-cruft / over-engineering / Codex
   │
   ▼
-/git-push-pr  pre-review → 推送 → 开 PR
+/git-push-pr  pre-review → push → open PR
 
-  ┌────────────────────────────┐
-  │  /revise 异常处理（随时介入） │
-  │  诊断归因 → 定向修正 → 回归   │
-  └──┬──────────┬───────────┬──┘
-     ↓          ↓           ↓
-   /spec      /exec      /review
-  （spec-defect 回 spec，impl-defect 回 exec，review 发现问题回修）
+  ┌──────────────────────────────────────┐
+  │  /revise  exception handling (anytime) │
+  │  diagnose root cause → targeted fix →  │
+  │  regression                            │
+  └──┬──────────────┬──────────────┬──────┘
+     ↓              ↓              ↓
+   /spec          /exec          /review
+  (spec-defect → spec, impl-defect → exec, review findings → fix)
 ```
 
-被动约束（hooks，自动生效）：拦截 npm/yarn、拦截 main commit、依赖版本自检、stop 四项自检。
+Passive constraints (hooks, automatic): block npm/yarn, block main commit, dependency version self-check, Stop four-point self-check.
 
 ---
 
-## Skills 一览（14 个）
+## Skills overview (14)
 
-### 通用纪律
+### Universal discipline
 
-- **`tdd-workflow`** — 通用 TDD 纪律：Red-Green-Refactor、增/改/删三场景标准流程
-- **`version-policy`** — 引入/升级依赖前必须官方渠道查最新版，禁凭训练记忆
-- **`git-workflow`** — 分支决策、阶段性 commit、PR 三段式描述、合并后清理
-- **`git-push-pr`** — 用户主动触发的多仓库批量/选择性推送 PR 流程
-- **`init`** — 存量项目反向 spec 化：阅读现有代码与文档反推规则，按分区并发提取，落点与 `/spec` 完全对齐（仅首次接入时使用）
-- **`spec`** — 需求拆解与文档化：一文一规则、≤100 行、输出至 `.bb-spec/docs/spec/`
-- **`plan`** — 读取 spec 产出分步实施计划：一文一单元、函数级详细、输出至 `.bb-spec/docs/plan/`
-- **`exec`** — 三 Agent 隔离执行 plan（Test→Impl→Review），PROGRESS.md 断点恢复
-- **`revise`** — 产出修订（修 bug / 优化 / 需求变更）：三类归因（spec-defect / impl-defect / requirement-change）→ 定向修正 → 回归验证
-- **`api-design`** — REST API 设计：资源命名、状态码、分页、错误响应、版本化
+- **`tdd-workflow`** — Universal TDD discipline: Red-Green-Refactor, standard flows for the add/modify/delete scenarios
+- **`version-policy`** — Before adding/upgrading a dependency you must check the official latest version; no relying on training memory
+- **`git-workflow`** — Branch decisions, incremental commits, the PR three-section description, post-merge cleanup
+- **`git-push-pr`** — User-triggered multi-repo batch / selective push-and-PR flow
+- **`init`** — Reverse-spec an existing project: read existing code and docs to infer rules, extract in parallel by partition, landing fully aligned with `/spec` (first adoption only)
+- **`spec`** — Requirement breakdown and documentation: one rule per file, ≤100 lines, output to `.bb-spec/docs/spec/`
+- **`plan`** — Read specs and produce a step-by-step implementation plan: one unit per file, function-level detail, output to `.bb-spec/docs/plan/`
+- **`exec`** — Three-agent isolated plan execution (Test→Impl→Review), PROGRESS.md checkpoint recovery
+- **`revise`** — Output revision (bug fix / optimization / requirement change): three root-cause classes (spec-defect / impl-defect / requirement-change) → targeted fix → regression
+- **`api-design`** — REST API design: resource naming, status codes, pagination, error responses, versioning
 
-### Go 后端
+### Go backend
 
-- **`golang-constraints`** — Go 项目全生命周期约束：三层架构、禁过度抽象、测试服从生产设计
-- **`golang-testing`** — Go 测试组织：table-driven、subtests、benchmark、fuzz
+- **`golang-constraints`** — Whole-lifecycle Go constraints: three-layer architecture, no over-abstraction, tests subordinate to production design
+- **`golang-testing`** — Go test organization: table-driven, subtests, benchmark, fuzz
 
-### 前端
+### Frontend
 
-- **`vue-constraints`** — Vue 3 + TypeScript + Vite + Tailwind + bun 强约束
+- **`vue-constraints`** — Vue 3 + TypeScript + Vite + Tailwind + bun hard constraints
 
-### 本地 Review
+### Local review
 
-- **`review`** — 当前分支 vs base：5 代理并行（质量/安全/反包袱/过度设计/Codex 跨模型）
+- **`review`** — Current branch vs base: 5 agents in parallel (quality / security / anti-cruft / over-engineering / Codex cross-model)
 
 ---
 
-## 测试
+## Tests
 
 ```bash
 bash tests/validate.sh
 ```
 
-校验 105 项结构性规则：agent frontmatter 完整性（必填字段、name 一致性、agent-type 合法值、安全基线段落）、skill SKILL.md 格式、hooks.json 有效性及脚本存在性、plugin.json 字段、个人路径泄露检测。
+Validates 105 structural rules: agent frontmatter integrity (required fields, name consistency, valid agent-type values, security-baseline section), skill SKILL.md format, hooks.json validity and script existence, plugin.json fields, and personal-path leak detection.
 
-CI 在 PR 和 push 到 main 时自动运行（`.github/workflows/ci.yml`）。
+CI runs automatically on PRs and pushes to main (`.github/workflows/ci.yml`).
 
 ---
 
-## 推荐配套
+## Recommended companions
 
-### CLAUDE.md 模板
+### CLAUDE.md template
 
-仓库根目录的 [`CLAUDE.template.md`](./CLAUDE.template.md) 是配套的"铁律索引"参考。**不会自动安装**——按需复制到你的 `~/.claude/CLAUDE.md` 或项目根 `CLAUDE.md`，按需裁剪。
+The repo-root [`CLAUDE.template.md`](./CLAUDE.template.md) is a companion "iron-rule index" reference. It is **not installed automatically** — copy it to your `~/.claude/CLAUDE.md` or a project-root `CLAUDE.md` as needed and trim to taste.
 
-### .bb-spec.yaml 项目配置
+### .bb-spec.yaml project config
 
-`/spec` 和 `/plan` 默认输出至 `.bb-spec/docs/spec/`、`.bb-spec/docs/plan/`。在项目根目录创建 `.bb-spec.yaml` 可覆盖基础路径：
+`/spec` and `/plan` output to `.bb-spec/docs/spec/` and `.bb-spec/docs/plan/` by default. Create a `.bb-spec.yaml` in the project root to override the base path:
 
 ```yaml
-docs_dir: my/custom/docs  # → my/custom/docs/spec/、my/custom/docs/plan/
+docs_dir: my/custom/docs  # → my/custom/docs/spec/, my/custom/docs/plan/
 ```
 
-参考模板：[`.bb-spec.template.yaml`](./.bb-spec.template.yaml)。
+Reference template: [`.bb-spec.template.yaml`](./.bb-spec.template.yaml).
 
 ---
 
-## Hook 开关速查
+## Hook switch cheat sheet
 
-| 场景 | 开关 |
+| Scenario | Switch |
 |---|---|
-| 临时允许 npm / yarn / pnpm | 暂未提供，建议临时禁用 plugin |
-| 临时允许 main commit | 同上 |
-| 跳过 Stop 自检 | 当前无开关——这是核心铁律，不建议跳过 |
-| 启用 stop-auto-tests | `CLAUDE_ENABLE_AUTO_TESTS=1` 或项目根 `.enable-auto-tests` |
-| 启用 stop-auto-commit | `CLAUDE_ENABLE_AUTO_COMMIT=1` 或仓库根 `.enable-auto-commit` |
+| Temporarily allow npm / yarn / pnpm | Not provided yet; disable the plugin temporarily |
+| Temporarily allow main commit | Same as above |
+| Skip the Stop self-check | No switch — this is a core iron rule, skipping is discouraged |
+| Enable stop-auto-tests | `CLAUDE_ENABLE_AUTO_TESTS=1` or `.enable-auto-tests` in the project root |
+| Enable stop-auto-commit | `CLAUDE_ENABLE_AUTO_COMMIT=1` or `.enable-auto-commit` in the repo root |
 
 ---
 
