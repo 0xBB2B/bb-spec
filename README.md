@@ -92,11 +92,11 @@ The environment variable enables a hook at session / global scope (written into 
   ▼
 /git-push-pr  pre-review → push → open PR
 
-  ┌──────────────────────────────────────┐
+  ┌────────────────────────────────────────┐
   │  /revise  exception handling (anytime) │
   │  diagnose root cause → targeted fix →  │
   │  regression                            │
-  └──┬──────────────┬──────────────┬──────┘
+  └──┬──────────────┬──────────────┬───────┘
      ↓              ↓              ↓
    /spec          /exec          /review
   (spec-defect → spec, impl-defect → exec, review findings → fix)
