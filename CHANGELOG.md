@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.0](https://github.com/0xBB2B/bb-spec/compare/v3.0.0...v3.1.0) (2026-06-05)
+
+
+### Features
+
+* **vue-constraints,hooks:** 既有 lockfile 项目跟随原包管理器，不再强制 bun ([#48](https://github.com/0xBB2B/bb-spec/issues/48)) ([fe1114e](https://github.com/0xBB2B/bb-spec/commit/fe1114eee1d4c0fe9bad6dcac0cf98007b326757))
+
 ## [3.0.0](https://github.com/0xBB2B/bb-spec/compare/v2.1.0...v3.0.0) (2026-06-02)
 
 
