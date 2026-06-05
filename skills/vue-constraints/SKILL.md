@@ -1,6 +1,6 @@
 ---
 name: vue-constraints
-description: Hard stack and toolchain constraints for frontend projects — the default stack is unified as Vue 3 + TypeScript + Vite + Tailwind CSS, and the package manager is unified as bun (npm / yarn / pnpm forbidden). TRIGGER when creating a frontend project, editing package.json / vite.config.* / tailwind.config.* / tsconfig.json / .vue / .ts / .tsx, running a frontend build or install command, or the user mentions frontend / vue / vite / tailwind / npm install / yarn add / pnpm. ｜ 前端项目技术栈与工具链强制约束——默认技术栈统一为 Vue 3 + TypeScript + Vite + Tailwind CSS，包管理器统一为 bun（禁用 npm / yarn / pnpm）。TRIGGER when：新建前端项目、编辑 package.json / vite.config.* / tailwind.config.* / tsconfig.json / .vue / .ts / .tsx 文件、运行前端构建或安装命令、用户提到"前端"/"vue"/"vite"/"tailwind"/"npm install"/"yarn add"/"pnpm" 等场景。
+description: Hard stack and toolchain constraints for frontend projects — the default stack is unified as Vue 3 + TypeScript + Vite + Tailwind CSS; bun is the default package manager (mandatory for new projects), while existing projects with another lockfile (e.g. package-lock.json) keep their current manager without forced migration. TRIGGER when creating a frontend project, editing package.json / vite.config.* / tailwind.config.* / tsconfig.json / .vue / .ts / .tsx, running a frontend build or install command, or the user mentions frontend / vue / vite / tailwind / npm install / yarn add / pnpm. ｜ 前端项目技术栈与工具链强制约束——默认技术栈统一为 Vue 3 + TypeScript + Vite + Tailwind CSS；包管理器默认 bun（新项目强制），既有项目若已存在其它 lockfile（如 package-lock.json）则跟随现有工具，不强制迁移。TRIGGER when：新建前端项目、编辑 package.json / vite.config.* / tailwind.config.* / tsconfig.json / .vue / .ts / .tsx 文件、运行前端构建或安装命令、用户提到"前端"/"vue"/"vite"/"tailwind"/"npm install"/"yarn add"/"pnpm" 等场景。
 user-invocable: false
 ---
 
@@ -16,7 +16,7 @@ user-invocable: false
 
 - **新建前端项目**：用户要求"做个前端"/"起个 Vue 项目"/"搭个管理后台"/"建个网站" 等
 - **编辑前端关键文件**：
-  - `package.json`、`bun.lockb`
+  - `package.json`、`bun.lock`（旧版 bun 为 `bun.lockb`）
   - `vite.config.ts` / `vite.config.js`
   - `tailwind.config.ts` / `tailwind.config.js`
   - `tsconfig.json` / `tsconfig.*.json`
@@ -26,7 +26,7 @@ user-invocable: false
 - **用户口语触发**：
   - "前端" / "frontend" / "UI"
   - "vue" / "vite" / "tailwind" / "ts"
-  - "npm install X" / "yarn add X" / "pnpm add X"（应纠正为 bun）
+  - "npm install X" / "yarn add X" / "pnpm add X"（bun 项目应纠正为 bun，见 3.5）
 
 **SKIP**（以下情况本约束不适用）：
 
@@ -45,7 +45,7 @@ user-invocable: false
 | 语言 | **TypeScript** |
 | 构建工具 | **Vite** |
 | CSS | **Tailwind CSS** |
-| 包管理器 | **bun** |
+| 包管理器 | **bun**（新项目强制；既有项目见第 3 节判定规则） |
 
 ### 1.1 Vue 3
 
@@ -82,7 +82,7 @@ user-invocable: false
 | webpack / rollup 直配 | Vite | HMR 速度、配置复杂度、开箱即用 |
 | styled-components / emotion / 手写 SCSS 体系 | Tailwind CSS | 设计系统一致性、原子类心智模型 |
 | Vuex | Pinia | Vue 3 官方推荐，TS 支持更好 |
-| npm / yarn / pnpm | bun | 速度、统一工具链（详见第 3 节） |
+| npm / yarn / pnpm（新项目） | bun | 速度、统一工具链；既有项目跟随现有 lockfile（详见第 3 节） |
 
 如确需引入额外方案，**必须先与用户确认**，并在 PR 描述中写明：
 - 业务必要性
@@ -90,15 +90,26 @@ user-invocable: false
 
 ---
 
-## 3. 包管理器：bun（强制）
+## 3. 包管理器：bun 默认，既有项目跟随 lockfile
 
-### 3.1 唯一指定
+### 3.1 判定规则（以 lockfile 为准）
 
-所有前端项目**必须使用 `bun`** 作为包管理器和脚本运行工具。
+| 项目状态 | 包管理器 |
+|---|---|
+| 新建项目 | **bun**（强制） |
+| 既有项目，有 `bun.lock` / `bun.lockb` | **bun**（强制） |
+| 既有项目，无任何 lockfile | **bun**（默认） |
+| 既有项目，有 `package-lock.json` | **npm**（跟随，不强制迁移） |
+| 既有项目，有 `yarn.lock` | **yarn**（跟随，不强制迁移） |
+| 既有项目，有 `pnpm-lock.yaml` | **pnpm**（跟随，不强制迁移） |
 
-### 3.2 禁止使用
+- 既有项目以仓库内现存 lockfile 为唯一判定依据：**用什么 lockfile，就用什么工具**，禁止混用（如在 npm 项目里跑 `bun add`，会产生第二份 lockfile）。
+- 多种 lockfile 并存时属于异常状态，**停下问用户**以哪个为准，确认后删除其余。
+- 迁移到 bun **仅在用户明确要求时**进行，禁止 Agent 自作主张迁移。
 
-`npm` / `yarn` / `pnpm` **一律禁止**用于前端项目：
+### 3.2 bun 管理的项目：禁止 npm / yarn / pnpm
+
+在 bun 管理的项目（含新建项目）中，`npm` / `yarn` / `pnpm` **一律禁止**：
 
 - ❌ `npm install <pkg>` / `npm run <script>` / `npx <cmd>`
 - ❌ `yarn add <pkg>` / `yarn <script>` / `yarn dlx <cmd>`
@@ -119,14 +130,16 @@ user-invocable: false
 
 ### 3.4 lockfile
 
-- 提交 `bun.lockb` 进版本控制
-- **禁止**同时存在 `package-lock.json` / `yarn.lock` / `pnpm-lock.yaml`（发现立即删除）
+- bun 项目：提交 `bun.lock`（旧版 bun 为 `bun.lockb`）进版本控制，**禁止**混存 `package-lock.json` / `yarn.lock` / `pnpm-lock.yaml`（发现立即删除）
+- 非 bun 既有项目：保留其原有 lockfile，**禁止**删除或替换为 `bun.lock`
 
-### 3.5 用户口语自动纠正
+### 3.5 用户口语自动纠正（仅 bun 项目）
 
-当用户说 "`npm install X`" / "`yarn add X`" / "`pnpm add X`" 时，Agent 应：
+在 bun 管理的项目中，当用户说 "`npm install X`" / "`yarn add X`" / "`pnpm add X`" 时，Agent 应：
 1. 自动改为 `bun add X` 执行
 2. 在回复中**简短提示一次**（不重复唠叨）："已使用 bun 替代，按前端规范"
+
+在跟随既有 lockfile 的项目（npm / yarn / pnpm）中，直接按项目现有工具执行，不做纠正。
 
 ---
 
@@ -170,6 +183,6 @@ bun run dev
 - [ ] 语言是 **TypeScript**（启用 strict）
 - [ ] 构建工具是 **Vite**（不是 webpack/rollup 直配）
 - [ ] CSS 方案是 **Tailwind CSS**（不是 styled-components / 手写 SCSS 体系）
-- [ ] 包管理器是 **bun**（不是 npm/yarn/pnpm）
-- [ ] `bun.lockb` 已提交，无其他 lockfile 残留
+- [ ] 包管理器符合第 3.1 节判定规则（新项目 bun；既有项目跟随现存 lockfile）
+- [ ] lockfile 唯一：bun 项目仅 `bun.lock` 已提交；非 bun 既有项目保留原 lockfile 未被替换
 - [ ] 偏离默认栈的部分已与用户确认并写明原因

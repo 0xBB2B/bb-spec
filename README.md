@@ -47,7 +47,7 @@ Update an installed plugin:
 
 | Hook | Trigger | Effect |
 |---|---|---|
-| `block-non-bun-pm` | PreToolUse(Bash) | Blocks `npm` / `yarn` / `pnpm` package-manager actions, enforcing `bun` |
+| `block-non-bun-pm` | PreToolUse(Bash) | Blocks `npm` / `yarn` / `pnpm` package-manager actions, enforcing `bun`; existing projects with a matching lockfile (e.g. `package-lock.json`) are allowed through |
 | `block-main-commit` | PreToolUse(Bash) | Blocks `git commit` on the `main` / `master` branch |
 | `dep-version-check` | PostToolUse(Write\|Edit) | After editing a dependency file, injects a "check the official latest version first" reminder |
 | `stop-self-check` | Stop | Forces a four-point self-check before a task ends: temp files / change scope / orphaned leftovers / legacy cruft |
