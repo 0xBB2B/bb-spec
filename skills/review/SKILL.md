@@ -1,15 +1,15 @@
 ---
 name: review
-description: Multi-agent parallel + cross-model local review of the changes on the current branch vs a base branch. Base defaults to main; override with /review <base-branch>. Concurrently spawns 5 agents (code quality, security, simplicity, doc sync, Codex cross-model independent review), dedupes, and outputs findings as BLOCKER / IMPORTANT / NIT with cross-validated items flagged as strong signals. Read-only — never auto-edits code. ｜ 对当前分支 vs base 分支的改动做"多代理并行 + 跨模型"本地 review。默认 base = main,可用 /review <base-branch> 指定。并发 spawn 5 个 Agent(代码质量、安全视角、代码简洁性、文档同步、Codex 跨模型独立 review),汇总去重后按 BLOCKER / IMPORTANT / NIT 输出,交叉验证项标强信号。只读审视,不自动修改代码。
+description: Workflow-orchestrated adversarially-verified local review of the current branch vs a base branch (requires Claude Code >= 2.1.154 for the Workflow tool). Base defaults to main; override with /review <base-branch>. Phase 1 spawns 5 finders in parallel (code quality, security, simplicity, doc sync, Codex cross-model independent review) with schema-enforced structured findings; findings are deduped in plain code, then every BLOCKER/IMPORTANT finding is adversarially verified by 3 independent skeptic lenses (importance / root-cause / risk-if-unfixed) with majority vote deciding keep-or-drop. Read-only — never auto-edits code. ｜ 用 Workflow 工具编排的"多代理 + 对抗验证"本地 review（依赖 Workflow 工具，要求 Claude Code ≥ 2.1.154）。默认 base = main，可用 /review <base-branch> 指定。Phase 1 并发 5 个 finder（代码质量、安全视角、代码简洁性、文档同步、Codex 跨模型独立 review），schema 强制结构化发现；纯代码去重后，每条 🔴/🟡 发现交由 3 个独立怀疑视角（重要性 / 根源性 / 不修风险）对抗验证，多数决定去留。只读审视，不自动修改代码。
 argument-hint: <base-branch>
 disable-model-invocation: true
 ---
 
 # 本地 ultrareview
 
-跨模型、多代理、只读的 PR 级 review 协调者。
+跨模型、多代理、对抗验证、只读的 PR 级 review 协调者。
 
-**核心原则**：跨模型独立 / prompt 自包含 / 只读不写 / 抓重点不凑数 / 基于 `file:line` 事实。
+**核心原则**：跨模型独立 / prompt 自包含 / 只读不写 / 发现者与验证者隔离 / 基于 `file:line` 事实。
 
 ---
 
@@ -17,39 +17,159 @@ disable-model-invocation: true
 
 `$ARGUMENTS` = base 分支名（默认 `main`，不存在则 `master`，再不存在则提示用户）。
 
-前置检查：确认 git 仓库 / 当前分支 ≠ base / base 存在 / 未提交改动仅警告不中止。
+前置检查：
+
+- 确认 git 仓库 / 当前分支 ≠ base / base 存在 / 未提交改动仅警告不中止
+- **Workflow 工具**：本 skill 依赖 Workflow 工具（Claude Code ≥ 2.1.154）。当前环境工具列表中没有 Workflow → **中止**，提示用户升级 Claude Code，不降级执行
+- **Codex 探测**：`which codex` 失败 → finder 缩为 4 个（去掉 Codex），报告中说明
 
 回显：`review 范围：<base> .. HEAD | 分支：<name> | commits：N | diff：M 文件 +L1/-L2`
 
 ### 修复主题摘要（≤ 300 字）
 
-从 commit messages + CLAUDE.md 提取"想解决什么 / 修复策略 / 关键约束"，注入每个 agent prompt。
+从 commit messages + CLAUDE.md 提取"想解决什么 / 修复策略 / 关键约束"，注入每个 finder prompt。
 
 ---
 
-## 2. 并行派工（5 个 Agent，同一条消息并发）
+## 2. 组装 finder
 
-每个 agent prompt 由对应定义文件（插件根目录 `agents/`）+ 本次 review 上下文（范围、主题摘要、约束清单）组合而成。派工前用 Read 读取 agent 定义，填充模板变量。
+每个 finder prompt 由对应定义文件（插件根目录 `agents/`）+ 本次 review 上下文（范围、主题摘要、约束清单）组合而成。派工前用 Read 读取 agent 定义，填充 `{review_scope}` / `{topic_summary}` / `{constraints}` 模板变量。
 
-| Agent | 定义文件 | 角色 |
+| key | 定义文件 | agentType |
 |---|---|---|
-| Agent 1 | `agents/review-code-quality.md` | 代码质量 / 架构 / 测试覆盖 |
-| Agent 2 | `agents/review-security.md` | 安全视角（攻击者视角 + POC 思路） |
-| Agent 3 | `agents/review-simplicity.md` | 代码简洁性（反过度设计 + 反历史包袱） |
-| Agent 4 | `agents/review-doc-sync.md` | 文档同步（代码改了文档没跟上） |
-| Agent 5 | `agents/review-codex.md` | Codex 跨模型（`codex:codex-rescue`） |
+| quality | `agents/review-code-quality.md` | （默认） |
+| security | `agents/review-security.md` | （默认） |
+| simplicity | `agents/review-simplicity.md` | （默认） |
+| doc-sync | `agents/review-doc-sync.md` | （默认） |
+| codex | `agents/review-codex.md` | `codex:codex-rescue` |
 
-Agent 1-4 为 `general-purpose`，Agent 5 为 `codex:codex-rescue`。
-降级：`which codex` 失败 → 只跑 4 个 Claude agent，报告中说明。
+构造 `finders` 数组：`[{key, prompt, agentType?}, ...]`（Codex 不可用则不含 codex 项）。
 
 ---
 
-## 3. 汇总与去重
+## 3. Workflow 编排
 
-- 同 `file:lines` + 相似 title → 合并
-- 多 agent 指出同一问题 → **⭐ 交叉验证**（强信号，优先级提升一档）
-- 严重度分歧取最高
-- 按 🔴 → 🟡 → 🟢 重排，每档内交叉验证优先
+调用 Workflow 工具，`args` 传 `{finders, context}`（`context` = 一段自包含的 review 上下文文本：范围 `<base>..HEAD`、主题摘要、约束清单），`script` 用下面模板：
+
+```js
+export const meta = {
+  name: 'local-ultrareview',
+  description: '多维 finder 并行审查 + 逐条对抗验证的本地 review',
+  phases: [
+    { title: 'Find', detail: '多维 finder 并行审查' },
+    { title: 'Verify', detail: '每条 🔴/🟡 × 3 个独立怀疑视角对抗验证' },
+  ],
+}
+
+// finder 的结构化发现 schema
+const FINDINGS = {
+  type: 'object', required: ['findings'],
+  properties: {
+    findings: {
+      type: 'array',
+      items: {
+        type: 'object',
+        required: ['title', 'file', 'lines', 'severity', 'fact', 'impact', 'suggestion'],
+        properties: {
+          title: { type: 'string' },
+          file: { type: 'string', description: '相对仓库根的文件路径' },
+          lines: { type: 'string', description: '行号或区间，如 "12" / "12-34"' },
+          severity: { type: 'string', enum: ['BLOCKER', 'IMPORTANT', 'NIT'] },
+          fact: { type: 'string', description: '3-5 行事实描述' },
+          impact: { type: 'string', description: '正确性/安全/可维护性/可读性影响' },
+          suggestion: { type: 'string', description: '≤3 行修复建议' },
+        },
+      },
+    },
+  },
+}
+
+// 验证者的裁决 schema
+const VERDICT = {
+  type: 'object', required: ['valid', 'reason'],
+  properties: {
+    valid: { type: 'boolean', description: '该发现在本仲裁视角下是否站得住脚' },
+    reason: { type: 'string', description: '一句话裁决理由' },
+  },
+}
+
+phase('Find')
+const rounds = await parallel(args.finders.map(f => () =>
+  agent(f.prompt, {
+    label: `find:${f.key}`, phase: 'Find', schema: FINDINGS,
+    ...(f.agentType ? { agentType: f.agentType } : {}),
+  })
+))
+
+// 展平并标注发现者（agent 被跳过/出错时 rounds 对应项为 null）
+const raw = rounds
+  .map((r, i) => (r ? r.findings.map(x => ({ ...x, by: args.finders[i].key })) : []))
+  .flat()
+
+// 纯代码去重：同文件且行区间重叠 → 合并（发现者并集、严重度取最高）
+// 去重必须等全部 finder 完成（跨条目操作），此处 barrier 是合法的
+function span(lines) {
+  const m = String(lines).match(/(\d+)\D*(\d+)?/)
+  const a = m ? +m[1] : 0
+  return [a, m && m[2] ? +m[2] : a]
+}
+const SEV = { BLOCKER: 3, IMPORTANT: 2, NIT: 1 }
+const merged = []
+for (const f of raw) {
+  const [s, e] = span(f.lines)
+  const dup = merged.find(g =>
+    g.file === f.file && span(g.lines)[0] <= e && s <= span(g.lines)[1])
+  if (dup) {
+    dup.by = [...new Set([...dup.by, f.by])]
+    if (SEV[f.severity] > SEV[dup.severity]) dup.severity = f.severity
+  } else {
+    merged.push({ ...f, by: [f.by] })
+  }
+}
+
+// NIT 不值得验证成本，直接带回报告；🔴/🟡 逐条进对抗验证
+const nits = merged.filter(f => f.severity === 'NIT')
+const toVerify = merged.filter(f => f.severity !== 'NIT')
+log(`去重后 ${merged.length} 条：🔴/🟡 ${toVerify.length} 条进入对抗验证，🟢 ${nits.length} 条直接列出`)
+
+phase('Verify')
+// 三个独立怀疑视角，每个只裁决一个维度，多数决（≥2/3）定去留
+const LENSES = [
+  { key: 'importance', q: '这个问题对用户/业务/维护者真的重要吗，还是风格偏好或凑数？' },
+  { key: 'root-cause', q: '它指出的是根因还是表层症状？建议是根本修复还是缓解/绕过？' },
+  { key: 'risk', q: '不修复会在真实场景触发正确性/安全/重大可维护性问题吗？' },
+]
+const verified = await parallel(toVerify.map(f => () =>
+  parallel(LENSES.map(l => () =>
+    agent(
+      `你是独立的 review 仲裁者，立场是怀疑：优先尝试否决下面这条发现，证据不足或站不住脚就判 valid=false。\n\n` +
+      `仲裁视角（只回答这一个维度）：${l.q}\n\n` +
+      `Review 上下文：\n${args.context}\n\n` +
+      `待仲裁发现（由 ${f.by.join('/')} 提出）：\n` +
+      `标题：${f.title}\n位置：${f.file}:${f.lines}\n严重度：${f.severity}\n` +
+      `事实：${f.fact}\n影响：${f.impact}\n建议：${f.suggestion}\n\n` +
+      `要求：先用 Read/Grep 实地核对 ${f.file} 相关代码再裁决，不得仅凭描述判断。只读，不修改任何文件、不操作 git。`,
+      { label: `verify:${l.key}:${f.file}`, phase: 'Verify', schema: VERDICT },
+    )
+  )).then(vs => {
+    const votes = vs.map((v, i) => (v ? { lens: LENSES[i].key, ...v } : null)).filter(Boolean)
+    return { ...f, votes, pass: votes.filter(v => v.valid).length >= 2 }
+  })
+))
+
+const kept = verified.filter(Boolean)
+return {
+  confirmed: kept.filter(f => f.pass),
+  rejected: kept.filter(f => !f.pass),
+  nits,
+}
+```
+
+---
+
+## 4. 输出
+
+主 agent 拿 workflow 返回值（`confirmed` / `rejected` / `nits`）写最终报告。
 
 ### 测试缺陷类 finding 处理
 
@@ -59,75 +179,44 @@ Agent 1-4 为 `general-purpose`，Agent 5 为 `codex:codex-rescue`。
 - 处理建议表中，处理方式统一写 `走 /revise 诊断（测试层 impl-defect）`
 - 若 finding 暗示 spec 对预期行为描述不清导致测试写错，处理方式写 `走 /revise 诊断（疑似 spec-defect）`
 
----
-
-## 4. 质量自检（输出前强制门槛）
-
-**核心要求**：不是个问题就给用户。汇总去重后、写最终报告前，对**每一条** finding 逐条自检三个维度，综合评分 < 80 直接进"已过滤"摘要，**只有 ≥ 80 才进入正式输出**。
-
-### 三维评分（每项 0-100）
-
-| 维度 | 含义 | 评分锚点 |
-|---|---|---|
-| **重要性 (importance)** | 这个问题真的重要吗？用户 / 业务 / 维护者会受影响吗？ | 90+：会直接影响线上行为或核心可维护性；70-89：明显改善质量但非紧迫；< 70：风格 / 偏好 / 凑数 |
-| **根源性 (root_cause)** | 指出的是根源还是表层症状？修复建议会触根因吗？ | 90+：精确定位根因且建议是根本修复；70-89：定位准确但建议偏缓解；< 70：只描述症状或建议是绕过 / 加防御补丁 |
-| **不修风险 (risk_if_unfixed)** | 不修复会引发安全 / 正确性 / 重大可维护性塌方吗？ | 90+：不修必然出事（数据损坏、安全漏洞、线上故障）；70-89：在特定场景下会触发问题；< 70：基本无后果，纯洁癖 |
-
-### 综合评分公式
-
-```
-综合 = 0.3 × 重要性 + 0.3 × 根源性 + 0.4 × 不修风险
-```
-
-**门槛**：综合 ≥ 80 才进入正式输出（第 5 节）。
-
-### 严重度与评分一致性校验
-
-评分完成后，对照原严重度标签做一次反向校验：
-
-- **🔴 但综合 < 80** → 严重度虚高，**降级**到 🟡 重新评分；仍 < 80 则丢入"已过滤"
-- **🟢 但综合 ≥ 90** → 严重度偏低，**升级**到 🟡 后输出
-- **⭐ 交叉验证** 项目：不修风险维度 +5 分（多 agent 共识本身就是信号）
-
-### 已过滤摘要（透明化）
-
-被过滤项不彻底隐藏，在最终报告末尾以**单行列表**呈现，让用户可质询：
-
-```
-已过滤 N 条低价值发现（综合 < 80，未展开）：
-- [原 🟡] 命名 stutter（重要性 60 / 根源 85 / 风险 30 → 综合 55）
-- [原 🟢] 注释少一个句号（重要性 20 / 根源 90 / 风险 10 → 综合 36）
-- ...
-```
-
-用户回复 `展开过滤项` / `展开第 N 项` 才给完整内容。
-
----
-
-## 5. 输出
-
 ### 概览
 
 ```
 本地 ultrareview 完成
 范围：<base>..HEAD (N commits, M 文件, +L1/-L2)
-agent：代码质量 / 安全 / 简洁性 / 文档同步 / Codex
-合并去重后 N 条 → 自检过滤后保留 M 条（过滤 N-M 条低价值发现）
-保留分布：🔴 a(⭐a') / 🟡 b(⭐b') / 🟢 c
-交叉验证强信号：<列表>
+finder：代码质量 / 安全 / 简洁性 / 文档同步 / Codex
+去重后 N 条 → 对抗验证通过 A 条 / 否决 B 条 / 🟢 未验证 C 条
+确认分布：🔴 a(⭐a') / 🟡 b(⭐b')
+交叉验证强信号：<by ≥ 2 个 finder 的项>
 ```
 
-### 详细报告（每条，仅综合 ≥ 80 的进入这里）
+### 详细报告（每条 confirmed，按 🔴 → 🟡 重排，⭐ 优先）
 
 ```
-### [🔴/🟡/🟢] 项N · 标题 [⭐ 交叉验证]
+### [🔴/🟡] 项N · 标题 [⭐ 交叉验证]
 位置：file:lines
-发现者：Agent X / Y
-自检：重要性 X / 根源 Y / 风险 Z → 综合 W
+发现者：<by>
+对抗验证：X/3 票通过（重要性 ✓/✗ · 根源性 ✓/✗ · 风险 ✓/✗）
 事实：3-5 行
 影响：正确性/安全/可维护性/可读性
 建议：≤ 3 行
 ```
+
+### 🟢 NIT 简表（未验证，单行列出）
+
+```
+- file:lines · 标题（by <finder>）
+```
+
+### 被否决项（透明化，单行列出，用户可质询）
+
+```
+对抗验证否决 N 条（多数视角判不成立，未展开）：
+- [原 🟡] 标题（重要性 ✗：<reason> / 根源性 ✓ / 风险 ✗）
+- ...
+```
+
+用户回复 `展开否决项` / `展开第 N 项` 才给完整内容。
 
 ### 处理建议表
 
@@ -140,16 +229,16 @@ agent：代码质量 / 安全 / 简洁性 / 文档同步 / Codex
 `接下来怎么办？回复以下任一项：`
 `  · 项目编号（如 "1 3 5"）→ 只修这几个`
 `  · "全修红色" → 一次性修掉所有严重项（🔴）`
-`  · "展开过滤项" → 看看刚才被判定不重要、藏起来的那些，怕我漏判`
+`  · "展开否决项" → 看看被对抗验证否决的那些，怕误杀`
 `  · "结束" → 看完了，不修了`
 
 ---
 
-## 6. 硬约束
+## 5. 硬约束
 
 - 不修代码、不操作 git、不扩大范围（只看 base..HEAD）
-- prompt 自包含（agent 看不到本对话）
-- 5 agent 必须单消息并发
-- Codex 不可用时降级为 4 个
-- **自检过滤强制执行**：综合 < 80 不进正式报告，只入"已过滤"摘要；不得跳过自检直接输出
-- 输出中文
+- finder / 验证者 prompt 自包含（agent 看不到本对话）
+- 编排必须走 Workflow 工具；环境无 Workflow 工具 → 中止提示升级，禁止退回主 agent 手工派工
+- 发现者与验证者隔离：验证者必须实地核对代码，不得只复读 finding 描述
+- Codex 不可用时 finder 缩为 4 个
+- 输出语言跟随用户工作语言
