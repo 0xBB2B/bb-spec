@@ -86,8 +86,9 @@
   │  PROGRESS.md 持久化（断点恢复）
   │
   ▼
-/review  5 agent 并行 PR 级 review
+/review  Workflow 编排：多 finder 并行 + 对抗验证
   │  质量 / 安全 / 反包袱 / 过度设计 / Codex
+  │  每条 🔴/🟡 经 3 个独立怀疑视角多数决
   │
   ▼
 /git-push-pr  pre-review → 推送 → 开 PR
@@ -131,7 +132,7 @@
 
 ### 本地 Review
 
-- **`review`** — 当前分支 vs base：5 代理并行（质量/安全/反包袱/过度设计/Codex 跨模型）
+- **`review`** — 当前分支 vs base：Workflow 编排，5 finder 并行（质量/安全/反包袱/过度设计/Codex 跨模型），每条 🔴/🟡 发现经 3 个独立怀疑视角（重要性/根源性/不修风险）对抗验证、多数决定去留。要求 Claude Code ≥ 2.1.154（Workflow 工具）
 
 ---
 

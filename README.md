@@ -86,8 +86,9 @@ The environment variable enables a hook at session / global scope (written into 
   │  PROGRESS.md persistence (resume from checkpoint)
   │
   ▼
-/review  5-agent parallel PR-level review
+/review  Workflow-orchestrated: parallel finders + adversarial verify
   │  quality / security / anti-cruft / over-engineering / Codex
+  │  every 🔴/🟡 majority-voted by 3 independent skeptic lenses
   │
   ▼
 /git-push-pr  pre-review → push → open PR
@@ -132,7 +133,7 @@ Passive constraints (hooks, automatic): block npm/yarn, block main commit, depen
 
 ### Local review
 
-- **`review`** — Current branch vs base: 5 agents in parallel (quality / security / anti-cruft / over-engineering / Codex cross-model)
+- **`review`** — Current branch vs base: Workflow-orchestrated, 5 finders in parallel (quality / security / anti-cruft / over-engineering / Codex cross-model), every BLOCKER/IMPORTANT finding adversarially verified by 3 independent skeptic lenses (importance / root-cause / risk-if-unfixed) with majority vote. Requires Claude Code ≥ 2.1.154 (Workflow tool)
 
 ---
 
