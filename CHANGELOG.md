@@ -1,5 +1,16 @@
 # Changelog
 
+## [4.0.0](https://github.com/0xBB2B/bb-spec/compare/v3.1.0...v4.0.0) (2026-06-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* **review:** /review 的执行机制由"5 agent 并行 + 主 agent 三维自评分过滤"替换为 Workflow 工具编排——Find 阶段 5 个 finder 并行产出 schema 结构化发现，纯代码去重与交叉验证标记后，每条 BLOCKER/IMPORTANT 发现交由 3 个独立怀疑视角（重要性/根源性/不修风险）对抗验证、多数决定去留。原三维评分公式与"已过滤摘要"机制删除，被否决项改以对抗验证 verdict 单行透明化呈现。本 skill 自此依赖 Workflow 工具，要求 Claude Code ≥ 2.1.154，低于该版本 /review 不可用且不提供降级路径。迁移：升级 Claude Code 至 2.1.154+ 即可，命令用法（/review <base-branch>）不变。另清理 v3.0.0 语言无关化漏改的"输出中文"残留。
+
+### Features
+
+* **review:** /review 改为 Workflow 编排的多维审查 + 对抗性验证 ([#50](https://github.com/0xBB2B/bb-spec/issues/50)) ([b166c71](https://github.com/0xBB2B/bb-spec/commit/b166c710890e331a6f233461958b74125f6cb37d))
+
 ## [3.1.0](https://github.com/0xBB2B/bb-spec/compare/v3.0.0...v3.1.0) (2026-06-05)
 
 
