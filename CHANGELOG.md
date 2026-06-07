@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.1.0](https://github.com/0xBB2B/bb-spec/compare/v4.0.0...v4.1.0) (2026-06-07)
+
+
+### Features
+
+* **skills:** 拆出 database-constraints，错误码并入 api-design ([#52](https://github.com/0xBB2B/bb-spec/issues/52)) ([642d438](https://github.com/0xBB2B/bb-spec/commit/642d438c18d3d2cdcfdbf9adb0244212bdc67802))
+
 ## [4.0.0](https://github.com/0xBB2B/bb-spec/compare/v3.1.0...v4.0.0) (2026-06-05)
 
 
