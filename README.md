@@ -107,7 +107,7 @@ Passive constraints (hooks, automatic): block npm/yarn, block main commit, depen
 
 ---
 
-## Skills overview (14)
+## Skills overview (15)
 
 ### Universal discipline
 
@@ -120,7 +120,8 @@ Passive constraints (hooks, automatic): block npm/yarn, block main commit, depen
 - **`plan`** — Read specs and produce a step-by-step implementation plan: one unit per file, function-level detail, output to `.bb-spec/docs/plan/`
 - **`exec`** — Three-agent isolated plan execution (Test→Impl→Review), PROGRESS.md checkpoint recovery
 - **`revise`** — Output revision (bug fix / optimization / requirement change): three root-cause classes (spec-defect / impl-defect / requirement-change) → targeted fix → regression
-- **`api-design`** — REST API design: resource naming, status codes, pagination, error responses, versioning
+- **`api-design`** — REST API design: resource naming, status codes, pagination, error responses with structured `A-BBB-CCCC` error codes, versioning
+- **`database-constraints`** — Relational DB conventions: app-generated UUIDv7 primary keys, soft delete with composite UNIQUE, DB-managed timestamps, UTC everywhere; dialect-agnostic principles + MySQL / PostgreSQL implementation tables
 
 ### Go backend
 
