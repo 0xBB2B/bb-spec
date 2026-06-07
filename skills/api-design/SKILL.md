@@ -1,6 +1,6 @@
 ---
 name: api-design
-description: REST API design patterns including resource naming, status codes, pagination, filtering, error responses, versioning, and rate limiting for production APIs.
+description: REST API design patterns including resource naming, status codes, pagination, filtering, error responses with structured A-BBB-CCCC error codes, versioning, and rate limiting for production APIs.
 user-invocable: false
 ---
 
@@ -59,12 +59,14 @@ user-invocable: false
 ```json
 {
   "error": {
-    "code": "validation_error",
+    "code": "1-001-0001",
     "message": "Request validation failed",
-    "details": [{ "field": "email", "message": "Must be valid", "code": "invalid_format" }]
+    "details": [{ "field": "email", "message": "Must be valid" }]
   }
 }
 ```
+
+**错误码格式 `A-BBB-CCCC`**：`A` = 来源（1 用户端 / 2 系统 / 3 第三方），`BBB` = 三位模块号，`CCCC` = 四位模块内编号。`error.code` 只允许此格式；禁止自由格式（`validation_error` 等语义字符串）、跨模块复用编号、两套错误码体系并存。
 
 ---
 
@@ -122,7 +124,7 @@ user-invocable: false
 - [ ] URL 命名规范（复数、kebab-case、无动词）
 - [ ] 正确 HTTP 方法与状态码
 - [ ] 输入校验（schema 验证）
-- [ ] 错误响应标准格式
+- [ ] 错误响应标准格式（`error.code` 用 `A-BBB-CCCC`）
 - [ ] 列表端点有分页
 - [ ] 认证 + 授权
 - [ ] 限流配置

@@ -106,7 +106,7 @@
 
 ---
 
-## Skills 一览（14 个）
+## Skills 一览（15 个）
 
 ### 通用纪律
 
@@ -119,7 +119,8 @@
 - **`plan`** — 读取 spec 产出分步实施计划：一文一单元、函数级详细、输出至 `.bb-spec/docs/plan/`
 - **`exec`** — 三 Agent 隔离执行 plan（Test→Impl→Review），PROGRESS.md 断点恢复
 - **`revise`** — 产出修订（修 bug / 优化 / 需求变更）：三类归因（spec-defect / impl-defect / requirement-change）→ 定向修正 → 回归验证
-- **`api-design`** — REST API 设计：资源命名、状态码、分页、错误响应、版本化
+- **`api-design`** — REST API 设计：资源命名、状态码、分页、错误响应与 `A-BBB-CCCC` 结构化错误码、版本化
+- **`database-constraints`** — 关系型数据库约定：应用层生成 UUIDv7 主键、软删除 + 联合 UNIQUE、DB 管理时间戳、全链路 UTC；方言无关原则 + MySQL / PostgreSQL 落地表
 
 ### Go 后端
 

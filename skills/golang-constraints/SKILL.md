@@ -132,37 +132,27 @@ user-invocable: false
 
 ---
 
-## 四、数据库约定（MySQL）
+## 四、数据库访问（Go 侧绑定）
 
 ### 4.1 UUIDv7 主键
 
-Go 层 `uuid.UUID` / DB 层 `BINARY(16)` / 接口层 `string`。handler 层做双向转换，service/repository 只接受 `uuid.UUID`。
+应用层生成 UUIDv7：Go 层 `uuid.UUID` / 接口层 `string`。handler 层做双向转换，service/repository 只接受 `uuid.UUID`。
 
 ### 4.2 软删除
 
-`deleted BIGINT NOT NULL DEFAULT 0`。删除标记 = UTC 微秒时间戳（`time.Now().UTC().UnixMicro()`）。所有 UNIQUE KEY 必须与 `deleted` 联合。常规查询必须带 `WHERE deleted = 0`。
+软删除标记用 `time.Now().UTC().UnixMicro()` 写入 `deleted` 列。常规查询必须带 `WHERE deleted = 0`。
 
 ### 4.3 时间戳
 
-`created_at` / `updated_at` 由 MySQL `CURRENT_TIMESTAMP(6)` + `ON UPDATE` 自动管理。禁止 INSERT/UPDATE 显式写、Service 层手动赋值。写入后**必须回读**获取 DB 生成值。
+`created_at` / `updated_at` 由 DB 自动管理。禁止 INSERT/UPDATE 显式写、Service 层手动赋值。写入后**必须回读**获取 DB 生成值。
 
 ### 4.4 时区
 
-DSN 固定 `?parseTime=true&loc=UTC&time_zone=%27%2B00:00%27`。Go 用 `time.Now().UTC()`，SQL 用 `UTC_TIMESTAMP(6)`。
-
-### 4.5 字符集
-
-建库建表必须显式声明 `utf8mb4` + `utf8mb4_0900_ai_ci`。
+MySQL DSN 固定 `?parseTime=true&loc=UTC&time_zone=%27%2B00:00%27`。Go 用 `time.Now().UTC()`，SQL 用 `UTC_TIMESTAMP(6)`。
 
 ---
 
-## 五、错误码
-
-格式 `A-BBB-CCCC`：`A` = 来源（1 用户端 / 2 系统 / 3 第三方），`BBB` = 三位模块号，`CCCC` = 四位模块内编号。禁止自由格式、跨模块复用。
-
----
-
-## 六、跨场景通用约束
+## 五、跨场景通用约束
 
 以下规则不仅适用于编码，也适用于文档 / PRD / 规划 / 设计 / review：
 
