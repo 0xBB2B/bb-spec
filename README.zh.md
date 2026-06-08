@@ -106,7 +106,7 @@
 
 ---
 
-## Skills 一览（17 个）
+## Skills 一览（18 个）
 
 ### 通用纪律
 
@@ -122,6 +122,7 @@
 - **`api-design`** — REST API 设计：资源命名、状态码、分页、错误响应与 `A-BBB-CCCC` 结构化错误码、版本化
 - **`database-constraints`** — 关系型数据库约定：应用层生成 UUIDv7 主键、软删除 + 联合 UNIQUE、DB 管理时间戳、全链路 UTC；方言无关原则 + MySQL / PostgreSQL 落地表
 - **`auth-constraints`** — 认证与会话（只做 authN）：双 token（access 短期 JWT + refresh 不透明串落库）、强制 refresh 轮换 + 重放检测、滑动续期 + 绝对过期上限、UUIDv4 device_id（UA 仅展示）、argon2id；钉死机制骨架，多设备策略留给项目
+- **`authz-constraints`** — 授权（authZ，与 auth-constraints 配对）：默认拒绝 / fail-close、后端必校而前端权限仅 UX、判定集中（禁散落 `if role==`）、两级检查（粗粒度角色/权限 + 细粒度资源 ownership 防 IDOR）、多租户时租户隔离下沉数据层、401/403 语义 + 枚举防护、拒绝审计；钉死机制骨架，权限模型（RBAC/ABAC/ReBAC）/ 策略引擎 / 角色 / 租户模型留给项目
 - **`observability-constraints`** — 后端可观测性（日志 / 链路 / 指标）：三信号一处装配 + 全局注册，OTel 为标准、各信号 exporter 可独立开关（本地 provider 常驻保证 trace_id 稳定），JSON 日志带 trace_id / span_id，级别语义（WARN=业务 / ERROR=系统），分布式链路传播，指标命名 + label 基数有限，body 截断 + 凭证脱敏；钉死机制骨架，采样率 / 后端 / 指标 / 告警阈值留给项目
 
 ### Go 后端
@@ -145,7 +146,7 @@
 bash tests/validate.sh
 ```
 
-校验 120 项结构性规则：agent frontmatter 完整性（必填字段、name 一致性、agent-type 合法值、安全基线段落）、skill SKILL.md 格式、hooks.json 有效性及脚本存在性、plugin.json 字段、个人路径泄露检测。
+校验 123 项结构性规则：agent frontmatter 完整性（必填字段、name 一致性、agent-type 合法值、安全基线段落）、skill SKILL.md 格式、hooks.json 有效性及脚本存在性、plugin.json 字段、个人路径泄露检测。
 
 CI 在 PR 和 push 到 main 时自动运行（`.github/workflows/ci.yml`）。
 
