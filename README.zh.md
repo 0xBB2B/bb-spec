@@ -106,7 +106,7 @@
 
 ---
 
-## Skills 一览（15 个）
+## Skills 一览（16 个）
 
 ### 通用纪律
 
@@ -121,6 +121,7 @@
 - **`revise`** — 产出修订（修 bug / 优化 / 需求变更）：三类归因（spec-defect / impl-defect / requirement-change）→ 定向修正 → 回归验证
 - **`api-design`** — REST API 设计：资源命名、状态码、分页、错误响应与 `A-BBB-CCCC` 结构化错误码、版本化
 - **`database-constraints`** — 关系型数据库约定：应用层生成 UUIDv7 主键、软删除 + 联合 UNIQUE、DB 管理时间戳、全链路 UTC；方言无关原则 + MySQL / PostgreSQL 落地表
+- **`auth-constraints`** — 认证与会话（只做 authN）：双 token（access 短期 JWT + refresh 不透明串落库）、强制 refresh 轮换 + 重放检测、滑动续期 + 绝对过期上限、UUIDv4 device_id（UA 仅展示）、argon2id；钉死机制骨架，多设备策略留给项目
 
 ### Go 后端
 
@@ -143,7 +144,7 @@
 bash tests/validate.sh
 ```
 
-校验 105 项结构性规则：agent frontmatter 完整性（必填字段、name 一致性、agent-type 合法值、安全基线段落）、skill SKILL.md 格式、hooks.json 有效性及脚本存在性、plugin.json 字段、个人路径泄露检测。
+校验 117 项结构性规则：agent frontmatter 完整性（必填字段、name 一致性、agent-type 合法值、安全基线段落）、skill SKILL.md 格式、hooks.json 有效性及脚本存在性、plugin.json 字段、个人路径泄露检测。
 
 CI 在 PR 和 push 到 main 时自动运行（`.github/workflows/ci.yml`）。
 

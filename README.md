@@ -107,7 +107,7 @@ Passive constraints (hooks, automatic): block npm/yarn, block main commit, depen
 
 ---
 
-## Skills overview (15)
+## Skills overview (16)
 
 ### Universal discipline
 
@@ -122,6 +122,7 @@ Passive constraints (hooks, automatic): block npm/yarn, block main commit, depen
 - **`revise`** — Output revision (bug fix / optimization / requirement change): three root-cause classes (spec-defect / impl-defect / requirement-change) → targeted fix → regression
 - **`api-design`** — REST API design: resource naming, status codes, pagination, error responses with structured `A-BBB-CCCC` error codes, versioning
 - **`database-constraints`** — Relational DB conventions: app-generated UUIDv7 primary keys, soft delete with composite UNIQUE, DB-managed timestamps, UTC everywhere; dialect-agnostic principles + MySQL / PostgreSQL implementation tables
+- **`auth-constraints`** — Authentication & session (authN only): dual-token (short-lived JWT access + opaque server-side refresh), mandatory refresh rotation with replay detection, sliding expiry capped by an absolute lifetime, UUIDv4 device_id (UA for display only), argon2id; mechanism skeleton pinned, multi-device policy left to the project
 
 ### Go backend
 
@@ -144,7 +145,7 @@ Passive constraints (hooks, automatic): block npm/yarn, block main commit, depen
 bash tests/validate.sh
 ```
 
-Validates 105 structural rules: agent frontmatter integrity (required fields, name consistency, valid agent-type values, security-baseline section), skill SKILL.md format, hooks.json validity and script existence, plugin.json fields, and personal-path leak detection.
+Validates 117 structural rules: agent frontmatter integrity (required fields, name consistency, valid agent-type values, security-baseline section), skill SKILL.md format, hooks.json validity and script existence, plugin.json fields, and personal-path leak detection.
 
 CI runs automatically on PRs and pushes to main (`.github/workflows/ci.yml`).
 
