@@ -106,7 +106,7 @@
 
 ---
 
-## Skills 一览（15 个）
+## Skills 一览（20 个）
 
 ### 通用纪律
 
@@ -121,6 +121,10 @@
 - **`revise`** — 产出修订（修 bug / 优化 / 需求变更）：三类归因（spec-defect / impl-defect / requirement-change）→ 定向修正 → 回归验证
 - **`api-design`** — REST API 设计：资源命名、状态码、分页、错误响应与 `A-BBB-CCCC` 结构化错误码、版本化
 - **`database-constraints`** — 关系型数据库约定：应用层生成 UUIDv7 主键、软删除 + 联合 UNIQUE、DB 管理时间戳、全链路 UTC；方言无关原则 + MySQL / PostgreSQL 落地表
+- **`auth-constraints`** — 认证与会话（只做 authN）：双 token（access 短期 JWT + refresh 不透明串落库）、强制 refresh 轮换 + 重放检测、滑动续期 + 绝对过期上限、UUIDv4 device_id（UA 仅展示）、argon2id；钉死机制骨架，多设备策略留给项目
+- **`authz-constraints`** — 授权（authZ，与 auth-constraints 配对）：默认拒绝 / fail-close、后端必校而前端权限仅 UX、判定集中（禁散落 `if role==`）、两级检查（粗粒度角色/权限 + 细粒度资源 ownership 防 IDOR）、多租户时租户隔离下沉数据层、401/403 语义 + 枚举防护、拒绝审计；钉死机制骨架，权限模型（RBAC/ABAC/ReBAC）/ 策略引擎 / 角色 / 租户模型留给项目
+- **`observability-constraints`** — 后端可观测性（日志 / 链路 / 指标）：三信号一处装配 + 全局注册，OTel 为标准、各信号 exporter 可独立开关（本地 provider 常驻保证 trace_id 稳定），JSON 日志带 trace_id / span_id，级别语义（WARN=业务 / ERROR=系统），分布式链路传播，指标命名 + label 基数有限，body 截断 + 凭证脱敏；钉死机制骨架，采样率 / 后端 / 指标 / 告警阈值留给项目
+- **`service-constraints`** — 后端服务运行时治理（区别于 golang-constraints）：配置与密钥经 env 注入 + 启动校验 fail-fast（禁硬编码 secret），优雅生命周期（readiness vs liveness、SIGTERM 排空 + LIFO 释放），写操作幂等键，跨进程调用必设超时 + context 取消传播 + 安全重试（退避 / 抖动 / 上限、仅幂等），错误传播保留链（%w）、仅边界层转 api-design 错误码；钉死机制骨架，具体超时 / 重试 / 健康检查 / 配置中心选型留给项目
 
 ### Go 后端
 
@@ -130,6 +134,7 @@
 ### 前端
 
 - **`vue-constraints`** — Vue 3 + TypeScript + Vite + Tailwind + bun 强约束
+- **`frontend-constraints`** — 前端工程约定（约定层，区别于 vue-constraints 技术栈层）：构建注入 env 全部公开（禁放 secret）、统一请求 client（组件禁裸 fetch）、错误码→UI 映射集中、路由守卫仅 UX（后端仍必校）、状态管理边界（Pinia 只放共享客户端/会话态）、表单双层校验（前端即时/后端权威）、API 类型来自契约（禁 any）；钉死约定骨架，UI 库/目录/i18n/查询缓存选型留给项目
 
 ### 本地 Review
 
@@ -143,7 +148,7 @@
 bash tests/validate.sh
 ```
 
-校验 105 项结构性规则：agent frontmatter 完整性（必填字段、name 一致性、agent-type 合法值、安全基线段落）、skill SKILL.md 格式、hooks.json 有效性及脚本存在性、plugin.json 字段、个人路径泄露检测。
+校验 129 项结构性规则：agent frontmatter 完整性（必填字段、name 一致性、agent-type 合法值、安全基线段落）、skill SKILL.md 格式、hooks.json 有效性及脚本存在性、plugin.json 字段、个人路径泄露检测。
 
 CI 在 PR 和 push 到 main 时自动运行（`.github/workflows/ci.yml`）。
 

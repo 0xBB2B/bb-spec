@@ -107,7 +107,7 @@ Passive constraints (hooks, automatic): block npm/yarn, block main commit, depen
 
 ---
 
-## Skills overview (15)
+## Skills overview (20)
 
 ### Universal discipline
 
@@ -122,6 +122,10 @@ Passive constraints (hooks, automatic): block npm/yarn, block main commit, depen
 - **`revise`** — Output revision (bug fix / optimization / requirement change): three root-cause classes (spec-defect / impl-defect / requirement-change) → targeted fix → regression
 - **`api-design`** — REST API design: resource naming, status codes, pagination, error responses with structured `A-BBB-CCCC` error codes, versioning
 - **`database-constraints`** — Relational DB conventions: app-generated UUIDv7 primary keys, soft delete with composite UNIQUE, DB-managed timestamps, UTC everywhere; dialect-agnostic principles + MySQL / PostgreSQL implementation tables
+- **`auth-constraints`** — Authentication & session (authN only): dual-token (short-lived JWT access + opaque server-side refresh), mandatory refresh rotation with replay detection, sliding expiry capped by an absolute lifetime, UUIDv4 device_id (UA for display only), argon2id; mechanism skeleton pinned, multi-device policy left to the project
+- **`authz-constraints`** — Authorization (authZ, companion to auth-constraints): deny by default / fail-close, backend always enforces while frontend gating is UX only, centralized policy decision (no scattered `if role==`), two-tier checks (coarse role/permission + fine-grained resource ownership to stop IDOR), data-layer tenant isolation when multi-tenant, 401/403 semantics with an enumeration guard, denial auditing; mechanism skeleton pinned, permission model (RBAC/ABAC/ReBAC) / policy engine / roles / tenancy left to the project
+- **`observability-constraints`** — Backend observability (logs / traces / metrics): three signals assembled once + globally registered, OTel as the standard with per-signal exporter toggles (local providers stay resident so trace_id is stable), structured JSON logs carrying trace_id / span_id, log-level semantics (WARN = business / ERROR = system), distributed-trace propagation, metric naming + bounded label cardinality, body truncation + credential redaction; mechanism skeleton pinned, sampling / backend / metrics / alert thresholds left to the project
+- **`service-constraints`** — Backend service runtime governance (distinct from golang-constraints): config & secrets via env with fail-fast startup validation (no hardcoded secrets), graceful lifecycle (readiness vs liveness, SIGTERM drain + LIFO release), write idempotency via idempotency keys, mandatory cross-process timeouts + context cancel propagation + safe retries (backoff / jitter / cap, idempotent only), error propagation preserving the chain (%w) and converting to api-design codes only at the boundary; mechanism skeleton pinned, concrete timeout / retry / health-check / config-center choices left to the project
 
 ### Go backend
 
@@ -131,6 +135,7 @@ Passive constraints (hooks, automatic): block npm/yarn, block main commit, depen
 ### Frontend
 
 - **`vue-constraints`** — Vue 3 + TypeScript + Vite + Tailwind + bun hard constraints
+- **`frontend-constraints`** — Frontend engineering conventions (convention layer vs vue-constraints' stack layer): build-injected env vars are public (no secrets), one unified request client (no raw fetch in components), centralized error-code → UI mapping, route guards are UX only (backend still enforces), state-management boundary (Pinia for shared client / session state only), two-tier form validation (client instant / server authoritative), API types from the contract (no any); convention skeleton pinned, UI-lib / directory / i18n / query-cache choices left to the project
 
 ### Local review
 
@@ -144,7 +149,7 @@ Passive constraints (hooks, automatic): block npm/yarn, block main commit, depen
 bash tests/validate.sh
 ```
 
-Validates 105 structural rules: agent frontmatter integrity (required fields, name consistency, valid agent-type values, security-baseline section), skill SKILL.md format, hooks.json validity and script existence, plugin.json fields, and personal-path leak detection.
+Validates 129 structural rules: agent frontmatter integrity (required fields, name consistency, valid agent-type values, security-baseline section), skill SKILL.md format, hooks.json validity and script existence, plugin.json fields, and personal-path leak detection.
 
 CI runs automatically on PRs and pushes to main (`.github/workflows/ci.yml`).
 
