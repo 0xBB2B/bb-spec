@@ -10,14 +10,26 @@
 
 ## Claude Code 安装 / Install
 
-在 Claude Code 里执行：
+BB-Spec 拆成**四个可独立安装的子 plugin**——只装你需要的约束层。
+
+先添加一次 marketplace（在 Claude Code 里执行）：
 
 ```bash
 /plugin marketplace add 0xBB2B/bb-spec
-/plugin install bb-spec@0xbb2b
 ```
 
-或手动添加到 `~/.claude/settings.json`：
+再按需安装对应层：
+
+| 子 plugin | 装了得到什么 | 安装命令 |
+|---|---|---|
+| **bb-spec-core** _(推荐基座)_ | TDD / 版本策略 / Git 纪律 + 3 个被动 hook | `/plugin install bb-spec-core@0xbb2b` |
+| **bb-spec-workflow** | spec → plan → exec → review → revise → git-push-pr、init 反向 spec + 8 个 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-backend** | Go / REST API / 数据库 / 认证 / 授权 / 可观测性 / 服务治理约束 | `/plugin install bb-spec-backend@0xbb2b` |
+| **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun 技术栈与工程约定（含 bun hook） | `/plugin install bb-spec-frontend@0xbb2b` |
+
+按需取用——例如只要纪律与工作流、不要技术栈意见：装 `bb-spec-core` + `bb-spec-workflow`；想要全套：四个全装。
+
+或手动添加到 `~/.claude/settings.json`（只 enable 你想要的）：
 
 ```json
 {
@@ -27,36 +39,43 @@
     }
   },
   "enabledPlugins": {
-    "bb-spec@0xbb2b": true
+    "bb-spec-core@0xbb2b": true,
+    "bb-spec-workflow@0xbb2b": true,
+    "bb-spec-backend@0xbb2b": false,
+    "bb-spec-frontend@0xbb2b": false
   }
 }
 ```
 
+> **从旧的单个 `bb-spec` plugin（≤ 4.x）升级？** 它已被拆成上面四个子 plugin。先 `/plugin uninstall bb-spec` 卸掉旧的，再装你需要的层。
+
 ## 版本与更新 / Versioning
 
-更新已安装插件：
-
 ```bash
-/plugin update              # 检查并更新所有已装 plugin
-/plugin update bb-spec   # 仅更新本 plugin
+/plugin update                  # 检查并更新所有已装 plugin
+/plugin update bb-spec-core     # 仅更新某个子 plugin
 ```
+
+四个子 plugin 共用同一条同步版本线。
 
 ---
 
 ## 默认启用的 Hooks（开箱即用）
 
-| Hook | 触发时机 | 作用 |
-|---|---|---|
-| `block-non-bun-pm` | PreToolUse(Bash) | 拦截 `npm` / `yarn` / `pnpm` 的包管理动作，强制 `bun`；既有项目已存在匹配 lockfile（如 `package-lock.json`）时放行 |
-| `block-main-commit` | PreToolUse(Bash) | 拦截 `main` / `master` 分支的 `git commit` |
-| `dep-version-check` | PostToolUse(Write\|Edit) | 编辑依赖文件后注入"先查官方最新版"自检提示 |
-| `stop-self-check` | Stop | 任务结束前强制四项自检：临时文件 / 改动范围 / 孤立残留 / 历史包袱 |
+每个 hook 随"负责该关注点的子 plugin"一起发布——装了对应 plugin 才有。
+
+| Hook | 所属子 plugin | 触发时机 | 作用 |
+|---|---|---|---|
+| `block-non-bun-pm` | bb-spec-frontend | PreToolUse(Bash) | 拦截 `npm` / `yarn` / `pnpm` 的包管理动作，强制 `bun`；既有项目已存在匹配 lockfile（如 `package-lock.json`）时放行 |
+| `block-main-commit` | bb-spec-core | PreToolUse(Bash) | 拦截 `main` / `master` 分支的 `git commit` |
+| `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | 编辑依赖文件后注入"先查官方最新版"自检提示 |
+| `stop-self-check` | bb-spec-core | Stop | 任务结束前强制四项自检：临时文件 / 改动范围 / 孤立残留 / 历史包袱 |
 
 ---
 
 ## 高级选项：可选 Hooks（默认关，按需启用）
 
-仓库还附带两个**副作用较大**的 Stop hook，已随 plugin 一起注册，但脚本顶部有启用门槛，**默认不跑**——必须显式启用：
+**bb-spec-workflow** 还附带两个**副作用较大**的 Stop hook，已随该 plugin 一起注册，但脚本顶部有启用门槛，**默认不跑**——必须显式启用：
 
 | Hook | 作用 | 启用方式 |
 |---|---|---|
@@ -106,19 +125,30 @@
 
 ---
 
-## Skills 一览（20 个）
+## Skills 一览（20 个，按子 plugin 分组）
 
-### 通用纪律
+### bb-spec-core — 通用纪律
 
 - **`tdd-workflow`** — 通用 TDD 纪律：Red-Green-Refactor、增/改/删三场景标准流程
 - **`version-policy`** — 引入/升级依赖前必须官方渠道查最新版，禁凭训练记忆
 - **`git-workflow`** — 分支决策、阶段性 commit、PR 三段式描述、合并后清理
-- **`git-push-pr`** — 用户主动触发的多仓库批量/选择性推送 PR 流程
-- **`init`** — 存量项目反向 spec 化：阅读现有代码与文档反推规则，按分区并发提取，落点与 `/spec` 完全对齐（仅首次接入时使用）
+
+### bb-spec-workflow — spec→ship 全流程
+
 - **`spec`** — 需求拆解与文档化：一文一规则、≤100 行、输出至 `.bb-spec/docs/spec/`
 - **`plan`** — 读取 spec 产出分步实施计划：一文一单元、函数级详细、输出至 `.bb-spec/docs/plan/`
 - **`exec`** — 三 Agent 隔离执行 plan（Test→Impl→Review），PROGRESS.md 断点恢复
 - **`revise`** — 产出修订（修 bug / 优化 / 需求变更）：三类归因（spec-defect / impl-defect / requirement-change）→ 定向修正 → 回归验证
+- **`review`** — 当前分支 vs base：Workflow 编排，5 finder 并行（质量/安全/反包袱/过度设计/Codex 跨模型），每条 🔴/🟡 发现经 3 个独立怀疑视角（重要性/根源性/不修风险）对抗验证、多数决定去留。要求 Claude Code ≥ 2.1.154（Workflow 工具）
+- **`init`** — 存量项目反向 spec 化：阅读现有代码与文档反推规则，按分区并发提取，落点与 `/spec` 完全对齐（仅首次接入时使用）
+- **`git-push-pr`** — 用户主动触发的多仓库批量/选择性推送 PR 流程
+
+附带 8 个编排 subagent：`test-engineer` / `impl-engineer` / `spec-reviewer` / `review-code-quality` / `review-security` / `review-simplicity` / `review-doc-sync` / `review-codex`。
+
+### bb-spec-backend — 后端技术框架约束
+
+- **`golang-constraints`** — Go 项目全生命周期约束：三层架构、禁过度抽象、测试服从生产设计
+- **`golang-testing`** — Go 测试组织：table-driven、subtests、benchmark、fuzz
 - **`api-design`** — REST API 设计：资源命名、状态码、分页、错误响应与 `A-BBB-CCCC` 结构化错误码、版本化
 - **`database-constraints`** — 关系型数据库约定：应用层生成 UUIDv7 主键、软删除 + 联合 UNIQUE、DB 管理时间戳、全链路 UTC；方言无关原则 + MySQL / PostgreSQL 落地表
 - **`auth-constraints`** — 认证与会话（只做 authN）：双 token（access 短期 JWT + refresh 不透明串落库）、强制 refresh 轮换 + 重放检测、滑动续期 + 绝对过期上限、客户端稳定 device_id 不强制 UUID（UA 仅展示）、argon2id；钉死机制骨架，多设备策略留给项目
@@ -126,19 +156,10 @@
 - **`observability-constraints`** — 后端可观测性（日志 / 链路 / 指标）：三信号一处装配 + 全局注册，OTel 为标准、各信号 exporter 可独立开关（本地 provider 常驻保证 trace_id 稳定），JSON 日志带 trace_id / span_id，级别语义（WARN=业务 / ERROR=系统），分布式链路传播，指标命名 + label 基数有限，body 截断 + 凭证脱敏；钉死机制骨架，采样率 / 后端 / 指标 / 告警阈值留给项目
 - **`service-constraints`** — 后端服务运行时治理（区别于 golang-constraints）：配置与密钥经 env 注入 + 启动校验 fail-fast（禁硬编码 secret），优雅生命周期（readiness vs liveness、SIGTERM 排空 + LIFO 释放），写操作幂等键，跨进程调用必设超时 + context 取消传播 + 安全重试（退避 / 抖动 / 上限、仅幂等），错误传播保留链（%w）、仅边界层转 api-design 错误码；钉死机制骨架，具体超时 / 重试 / 健康检查 / 配置中心选型留给项目
 
-### Go 后端
-
-- **`golang-constraints`** — Go 项目全生命周期约束：三层架构、禁过度抽象、测试服从生产设计
-- **`golang-testing`** — Go 测试组织：table-driven、subtests、benchmark、fuzz
-
-### 前端
+### bb-spec-frontend — 前端技术框架约束
 
 - **`vue-constraints`** — Vue 3 + TypeScript + Vite + Tailwind + bun 强约束
 - **`frontend-constraints`** — 前端工程约定（约定层，区别于 vue-constraints 技术栈层）：构建注入 env 全部公开（禁放 secret）、统一请求 client（组件禁裸 fetch）、错误码→UI 映射集中、路由守卫仅 UX（后端仍必校）、状态管理边界（Pinia 只放共享客户端/会话态）、表单双层校验（前端即时/后端权威）、API 类型来自契约（禁 any）；钉死约定骨架，UI 库/目录/i18n/查询缓存选型留给项目
-
-### 本地 Review
-
-- **`review`** — 当前分支 vs base：Workflow 编排，5 finder 并行（质量/安全/反包袱/过度设计/Codex 跨模型），每条 🔴/🟡 发现经 3 个独立怀疑视角（重要性/根源性/不修风险）对抗验证、多数决定去留。要求 Claude Code ≥ 2.1.154（Workflow 工具）
 
 ---
 
@@ -148,7 +169,7 @@
 bash tests/validate.sh
 ```
 
-校验 129 项结构性规则：agent frontmatter 完整性（必填字段、name 一致性、agent-type 合法值、安全基线段落）、skill SKILL.md 格式、hooks.json 有效性及脚本存在性、plugin.json 字段、个人路径泄露检测。
+校验多 plugin 结构：marketplace.json 有效性与 plugin 条目一致性（每个 `source` 都指向真实存在、且 name 匹配的 plugin 目录）、各子 plugin 的 plugin.json 字段、agent frontmatter 完整性（必填字段、name 一致性、agent-type 合法值、安全基线段落）、skill SKILL.md 格式、hooks.json 有效性及脚本存在性、个人路径泄露检测。
 
 CI 在 PR 和 push 到 main 时自动运行（`.github/workflows/ci.yml`）。
 
@@ -176,8 +197,8 @@ docs_dir: my/custom/docs  # → my/custom/docs/spec/、my/custom/docs/plan/
 
 | 场景 | 开关 |
 |---|---|
-| 临时允许 npm / yarn / pnpm | 暂未提供，建议临时禁用 plugin |
-| 临时允许 main commit | 同上 |
+| 临时允许 npm / yarn / pnpm | 暂未提供，建议临时禁用 `bb-spec-frontend` |
+| 临时允许 main commit | 暂未提供，建议临时禁用 `bb-spec-core` |
 | 跳过 Stop 自检 | 当前无开关——这是核心铁律，不建议跳过 |
 | 启用 stop-auto-tests | `CLAUDE_ENABLE_AUTO_TESTS=1` 或项目根 `.enable-auto-tests` |
 | 启用 stop-auto-commit | `CLAUDE_ENABLE_AUTO_COMMIT=1` 或仓库根 `.enable-auto-commit` |

@@ -6,9 +6,24 @@
   },
   "plugins": [
     {
-      "name": "bb-spec",
-      "source": "./",
-      "description": "Language-agnostic Claude Code workflow constraint suite: hard Go + Vue + bun stack constraints, TDD / anti-legacy-cruft iron rules, multi-agent local review kit; output follows your working language. | 语言无关的 Claude Code 工作流约束套装：Go + Vue + bun 技术栈强约束、TDD/反历史包袱铁律、多代理本地 review 套件；产出跟随你的工作语言。"
+      "name": "bb-spec-core",
+      "source": "./plugins/bb-spec-core",
+      "description": "BB-Spec 核心纪律（推荐基座）：TDD 红绿重构、依赖版本策略、Git 分支与提交纪律；含 block-main-commit / dep-version-check / stop-self-check 三个被动 hook。| BB-Spec core discipline (recommended base): TDD, dependency version policy, Git branch & commit discipline; ships three passive hooks."
+    },
+    {
+      "name": "bb-spec-workflow",
+      "source": "./plugins/bb-spec-workflow",
+      "description": "BB-Spec 工作流：spec → plan → exec（三 Agent 隔离）→ review（多代理对抗）→ revise → git-push-pr，含 init 反向 spec 化与 8 个编排 subagent。| BB-Spec workflow: spec → plan → exec → review → revise → git-push-pr, plus init reverse-spec and 8 orchestration subagents."
+    },
+    {
+      "name": "bb-spec-backend",
+      "source": "./plugins/bb-spec-backend",
+      "description": "BB-Spec 后端技术框架约束：Go 三层架构与测试、REST API 设计与结构化错误码、关系型数据库、认证/授权、可观测性、服务运行时治理。| BB-Spec backend stack constraints: Go architecture & testing, REST API & error codes, relational DB, authN/authZ, observability, service runtime governance."
+    },
+    {
+      "name": "bb-spec-frontend",
+      "source": "./plugins/bb-spec-frontend",
+      "description": "BB-Spec 前端技术框架约束：Vue 3 + TypeScript + Vite + Tailwind + bun 技术栈与前端工程约定；含 block-non-bun-pm hook 强制 bun。| BB-Spec frontend stack constraints: Vue 3 + TypeScript + Vite + Tailwind + bun stack and engineering conventions; ships block-non-bun-pm hook."
     }
   ]
 }

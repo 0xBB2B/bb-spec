@@ -1,0 +1,12 @@
+{
+  "name": "bb-spec-backend",
+  "version": "4.1.0",
+  "description": "BB-Spec 后端技术框架约束：Go 三层架构与测试、REST API 设计与结构化错误码、关系型数据库、认证/授权、可观测性、服务运行时治理。| BB-Spec backend stack constraints: Go architecture & testing, REST API design & structured error codes, relational DB, authN/authZ, observability, service runtime governance.",
+  "author": {
+    "name": "0xBB2B",
+    "url": "https://github.com/0xBB2B"
+  },
+  "homepage": "https://github.com/0xBB2B/bb-spec",
+  "repository": "https://github.com/0xBB2B/bb-spec",
+  "license": "MIT"
+}
