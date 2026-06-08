@@ -1,5 +1,23 @@
 # Changelog
 
+## [5.0.0](https://github.com/0xBB2B/bb-spec/compare/v4.1.0...v5.0.0) (2026-06-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* **plugin:** 单个 bb-spec plugin 已拆为 bb-spec-core / bb-spec-workflow / bb-spec-backend / bb-spec-frontend 四个子 plugin。老用户需先 /plugin uninstall bb-spec，再按需重装对应子 plugin。
+
+### Features
+
+* **plugin:** 拆分为 core/workflow/backend/frontend 四个可独立安装的子 plugin ([#58](https://github.com/0xBB2B/bb-spec/issues/58)) ([b7de60a](https://github.com/0xBB2B/bb-spec/commit/b7de60a60d0cc7b3ac6e6b6a412cfeff4a6ebeab))
+* **spec,init:** 需求澄清改递进式深挖 + 加可证伪红线挡空泛规则 ([#54](https://github.com/0xBB2B/bb-spec/issues/54)) ([faa3c76](https://github.com/0xBB2B/bb-spec/commit/faa3c768bcad61e98c295d0b5e4865ba123f2570))
+* 新增全栈技术框架约束套件（认证/授权/可观测/服务工程/前端） ([#56](https://github.com/0xBB2B/bb-spec/issues/56)) ([e636896](https://github.com/0xBB2B/bb-spec/commit/e6368963c14e323f62be13e92b561ff5f204c5bd))
+
+
+### Bug Fixes
+
+* **auth-constraints:** device_id 不强制 UUID 格式，兼容 Android ID 等平台标识 ([#57](https://github.com/0xBB2B/bb-spec/issues/57)) ([68a9609](https://github.com/0xBB2B/bb-spec/commit/68a9609c51ea31a14d1cfba164bec95752003256))
+
 ## [4.1.0](https://github.com/0xBB2B/bb-spec/compare/v4.0.0...v4.1.0) (2026-06-07)
 
 
