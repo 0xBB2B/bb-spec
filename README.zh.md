@@ -106,7 +106,7 @@
 
 ---
 
-## Skills 一览（19 个）
+## Skills 一览（20 个）
 
 ### 通用纪律
 
@@ -134,6 +134,7 @@
 ### 前端
 
 - **`vue-constraints`** — Vue 3 + TypeScript + Vite + Tailwind + bun 强约束
+- **`frontend-constraints`** — 前端工程约定（约定层，区别于 vue-constraints 技术栈层）：构建注入 env 全部公开（禁放 secret）、统一请求 client（组件禁裸 fetch）、错误码→UI 映射集中、路由守卫仅 UX（后端仍必校）、状态管理边界（Pinia 只放共享客户端/会话态）、表单双层校验（前端即时/后端权威）、API 类型来自契约（禁 any）；钉死约定骨架，UI 库/目录/i18n/查询缓存选型留给项目
 
 ### 本地 Review
 
@@ -147,7 +148,7 @@
 bash tests/validate.sh
 ```
 
-校验 126 项结构性规则：agent frontmatter 完整性（必填字段、name 一致性、agent-type 合法值、安全基线段落）、skill SKILL.md 格式、hooks.json 有效性及脚本存在性、plugin.json 字段、个人路径泄露检测。
+校验 129 项结构性规则：agent frontmatter 完整性（必填字段、name 一致性、agent-type 合法值、安全基线段落）、skill SKILL.md 格式、hooks.json 有效性及脚本存在性、plugin.json 字段、个人路径泄露检测。
 
 CI 在 PR 和 push 到 main 时自动运行（`.github/workflows/ci.yml`）。
 

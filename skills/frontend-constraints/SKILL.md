@@ -1,0 +1,96 @@
+---
+name: frontend-constraints
+description: Frontend engineering conventions (the convention layer, distinct from vue-constraints' stack/toolchain layer) — build-injected env vars are public in the bundle so no secrets ever go in them; one unified request client (no raw fetch in components) handling auth header, error-code parsing, and token refresh; backend A-BBB-CCCC error codes parsed once and mapped to UI text centrally (no per-component `if code===`); route guards declare required permissions but are UX only (the backend still enforces — see authz-constraints); state-management boundary (Pinia holds shared client/session state, not every local state or API response); two-tier form validation where the client is instant feedback and the server is authoritative; request/response typed from the contract (no any / as-any escape). Pins the convention skeleton (hard) while leaving UI-library, directory layout, i18n, form-lib, and query-cache choices to each project (soft). Examples use Vue 3 + TS. TRIGGER when building the request layer, wiring routes / guards, designing stores, mapping API errors to UI, handling forms, or managing frontend env vars. ｜ 前端工程约定（约定层，区别于 vue-constraints 的技术栈 / 工具链层）——构建注入的 env 全部公开进 bundle，禁放任何 secret；统一请求 client（组件内禁裸 fetch），集中处理鉴权头 / 错误码解析 / token 刷新；后端 A-BBB-CCCC 错误码在请求层单点解析并集中映射 UI 文案（禁组件各自 `if code===`）；路由守卫声明所需权限但仅为 UX（后端仍必校，见 authz-constraints）；状态管理边界（Pinia 只放跨组件共享的客户端 / 会话态，非每个局部 state 或 API 响应）；表单双层校验（前端即时反馈、后端权威）；请求 / 响应类型来自契约（禁 any / as any 绕过）。钉死约定骨架（硬），把 UI 库、目录结构、i18n、表单库、查询缓存选型留给项目（软）。示例用 Vue 3 + TS。TRIGGER：搭建请求层、配置路由 / 守卫、设计 store、API 错误映射 UI、处理表单、管理前端 env。
+user-invocable: false
+---
+
+# 前端工程约定
+
+适用于：前端项目的请求层、路由与鉴权守卫、状态管理、表单校验、错误处理、环境变量等**工程约定**的设计、实现、文档与 review。示例用 Vue 3 + TS。
+
+> 边界（去耦合，避免重复）：技术栈 / 工具链选型 → `vue-constraints`；token 刷新 single-flight 机制 → `auth-constraints`；"前端权限仅 UX、后端必校"原理 → `authz-constraints`；错误码 `A-BBB-CCCC` 体系 → `api-design`。本 skill 只管它们未覆盖的「前端约定骨架」。
+
+> 定位：**技术框架定型，钉死「约定骨架」（【硬】必守），不绑「业务策略」（【软】给能力、由项目按业务选）。**
+
+## 0. 触发与跳过
+
+**TRIGGER**：搭建/修改请求层封装、路由与守卫、Pinia store、表单校验、API 错误映射 UI、前端环境变量；文档 / 设计 / review 涉及上述。
+**SKIP**：技术栈/工具链选型（→ vue-constraints）、纯样式/视觉、与工程约定无关的业务组件逻辑。
+
+---
+
+## 1. 环境变量公开性【硬】
+
+- **构建注入的前端 env（如 `VITE_*`）全部打进 bundle、浏览器可见**——它们是**公开**的，不是配置密文。
+- **禁放任何 secret**：私钥、服务端 token、数据库口令、第三方 secret key 一律禁入前端 env；只放公开配置（API base URL、公开 publishable key、特性开关）。
+- 呼应 `service-constraints` 密钥管理：secret 只存在于后端。
+
+---
+
+## 2. 请求层统一封装【硬】
+
+- **组件内禁裸调 `fetch` / `axios`**；所有请求经**统一 client**，集中处理：base URL、鉴权头注入、错误码解析、token 刷新（机制见 `auth-constraints`）、超时。
+- 组件只调用**领域方法**（`api.orders.get(id)`），不关心 HTTP 细节。
+
+```ts
+// ✅ 统一 client，组件调领域方法
+const order = await api.orders.get(id)
+// ❌ 组件内裸请求：绕过鉴权头 / 错误码 / 刷新
+const res = await fetch(`/api/v1/orders/${id}`)
+```
+
+---
+
+## 3. 错误码 → UI 映射集中【硬】
+
+- 后端 `A-BBB-CCCC` 错误码在**请求层单点解析**为领域错误对象，再集中映射为 i18n 文案。
+- **禁组件各自 `if (code === '1-002-0001')` 散落判断**——同 `observability` / `authz` 的"单点映射"原则，避免文案与判断漂移。
+- 未识别错误码有兜底文案，禁直接把后端原始 message 抛给用户。
+
+---
+
+## 4. 路由鉴权守卫（仅 UX）【硬】
+
+- 路由 `meta` 声明所需登录态 / 权限；全局 guard 做未登录跳转、无权限隐藏/重定向。
+- **守卫只决定"显示什么"，不构成安全边界**——同一数据/操作**后端必校**（原理见 `authz-constraints`）。禁把前端守卫当访问控制。
+
+---
+
+## 5. 状态管理边界【硬】
+
+- **区分两类状态**：服务端状态（来自 API 的数据）vs 客户端状态（UI / 会话态）。
+- **Pinia store 只放跨组件共享的客户端态 + 会话态**（如登录用户、主题、购物车）。
+- **禁**：把每个组件的局部 state 无脑提升到全局 store；把一次性 API 响应长期挂在全局 store 当缓存（服务端数据宜按需拉取 + 失效重取，可选查询缓存库）。
+
+---
+
+## 6. 表单校验双层【硬】
+
+- **前端校验 = 即时反馈**（体验）；**后端校验 = 权威**。
+- 前端校验通过**不等于**数据可信——后端必须独立校验（呼应 `service` / `authz` 的"前端不可信"）。
+- 禁只做前端校验就省略后端校验；前端校验规则应与后端约束**语义一致**（同样的必填/格式/范围），避免两侧打架。
+
+---
+
+## 7. API 类型来自契约【硬】
+
+- 请求/响应用**显式 TS 类型**，**禁 `any`、禁 `as any` 绕过**（呼应 `vue-constraints` 的 `strict`）。
+- 类型**优先从后端契约生成或前后端共享**（OpenAPI / proto 生成），而非手抄——手抄会随后端演进漂移。
+
+---
+
+## 8. 留给项目的【软】
+
+框架不钉死，由各项目按业务/设计定：UI 组件库选型、目录/模块组织结构、i18n 方案、表单校验库、查询缓存库（TanStack Query 等）、HTTP 客户端底层实现。
+
+---
+
+## 9. 自检清单
+
+- [ ] 前端 env 无任何 secret（`VITE_*` 仅公开配置）
+- [ ] 组件内无裸 `fetch`/`axios`；请求走统一 client（鉴权头 / 错误码 / 刷新集中）
+- [ ] 错误码在请求层单点解析 + 集中映射文案；无组件散落 `if code===`
+- [ ] 路由守卫仅做 UX（显示控制）；对应数据/操作后端必校，未当安全边界
+- [ ] Pinia 只放共享客户端/会话态；无局部 state 无脑全局化、无 API 响应长期挂全局
+- [ ] 表单前后端双层校验，规则语义一致；前端未被当权威
+- [ ] API 请求/响应有显式类型，无 `any`/`as any`；类型来自契约而非手抄

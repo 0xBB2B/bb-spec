@@ -107,7 +107,7 @@ Passive constraints (hooks, automatic): block npm/yarn, block main commit, depen
 
 ---
 
-## Skills overview (19)
+## Skills overview (20)
 
 ### Universal discipline
 
@@ -135,6 +135,7 @@ Passive constraints (hooks, automatic): block npm/yarn, block main commit, depen
 ### Frontend
 
 - **`vue-constraints`** — Vue 3 + TypeScript + Vite + Tailwind + bun hard constraints
+- **`frontend-constraints`** — Frontend engineering conventions (convention layer vs vue-constraints' stack layer): build-injected env vars are public (no secrets), one unified request client (no raw fetch in components), centralized error-code → UI mapping, route guards are UX only (backend still enforces), state-management boundary (Pinia for shared client / session state only), two-tier form validation (client instant / server authoritative), API types from the contract (no any); convention skeleton pinned, UI-lib / directory / i18n / query-cache choices left to the project
 
 ### Local review
 
@@ -148,7 +149,7 @@ Passive constraints (hooks, automatic): block npm/yarn, block main commit, depen
 bash tests/validate.sh
 ```
 
-Validates 126 structural rules: agent frontmatter integrity (required fields, name consistency, valid agent-type values, security-baseline section), skill SKILL.md format, hooks.json validity and script existence, plugin.json fields, and personal-path leak detection.
+Validates 129 structural rules: agent frontmatter integrity (required fields, name consistency, valid agent-type values, security-baseline section), skill SKILL.md format, hooks.json validity and script existence, plugin.json fields, and personal-path leak detection.
 
 CI runs automatically on PRs and pushes to main (`.github/workflows/ci.yml`).
 
