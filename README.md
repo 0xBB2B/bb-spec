@@ -2,7 +2,7 @@
 
 **English** | [中文](./README.zh.md)
 
-> A language-agnostic Claude Code workflow constraint suite: **hard Go + Vue + bun stack constraints**, **TDD / anti-legacy-cruft iron rules**, and a **multi-agent local review kit**.
+> A language-agnostic, **spec-driven Claude Code workflow** — `spec → plan → exec → review → revise → git-push-pr` is the core pipeline — backed by **companion stack-constraint suites** (Go / Vue + bun / TDD / git discipline) and a **multi-agent adversarial review kit**.
 
 > Output follows your working language. The skills do **not** hardcode an output language — docs, comments, and commit messages come out in whatever language you work in (identifiers, API names, and error codes stay English). Every skill triggers on both English and Chinese phrases.
 
@@ -23,7 +23,7 @@ Then install whichever layers you want:
 | Sub-plugin | What it gives you | Command |
 |---|---|---|
 | **bb-spec-core** _(recommended base)_ | TDD / version-policy / git-workflow discipline + 3 passive hooks | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** | spec → plan → exec → review → revise → git-push-pr, init reverse-spec + 8 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(core)_ | spec → plan → exec → review → revise → git-push-pr, init reverse-spec + 8 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / authN / authZ / observability / service constraints | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun stack & engineering conventions (+ bun hook) | `/plugin install bb-spec-frontend@0xbb2b` |
 
@@ -86,7 +86,9 @@ The environment variable enables a hook at session / global scope (written into 
 
 ---
 
-## Workflow
+## Core — the Workflow pipeline (`spec → ship`)
+
+> **This is the heart of BB-Spec.** A closed-loop, spec-driven pipeline that carries a fuzzy requirement all the way to reviewed, shipped code — every stage traceable, resumable, and adversarially verified. The three constraint suites further down (core / backend / frontend) are **companions** that feed rules into this loop; the loop is the product.
 
 ```
 /init  Reverse-spec an existing project (run once on first adoption; parallel partitioned extraction)
@@ -122,45 +124,51 @@ The environment variable enables a hook at session / global scope (written into 
   (spec-defect → spec, impl-defect → exec, review findings → fix)
 ```
 
+**How the stages connect.** The pipeline is a relay, and every handoff is a *file on disk* — not a memory in the chat — which is exactly what makes it resumable, AI-swappable, and auditable end to end: `/spec` turns a fuzzy ask into spec docs under `.bb-spec/docs/spec/` (**what to build**) → `/plan` reads those and emits a function-level plan under `.bb-spec/docs/plan/` (**how to build it**) → `/exec` drives the plan through Test→Impl→Review into tests + code, checkpointing to `PROGRESS.md` → `/review` judges the resulting diff → `/git-push-pr` self-checks against the spec and opens the PR.
+
+Two branches close the loop: **`/init`** is the *on-ramp* for existing projects — it reverse-derives the spec first, then merges into the mainline; **`/revise`** is the *return path* — on any deviation it routes you back to the **right** stage by root cause (spec-defect → `/spec`, impl-drift → `/exec`), not a blind redo.
+
+Each stage, and what sets it apart:
+
+- **`/init`** — *Reverse*-spec an existing project: read the current code + docs and distill the **already-enforced implicit conventions** into ≤100-line, one-rule-per-file specs, landing in the exact structure `/spec` uses so the rest of the pipeline can pick up. Large projects are partitioned across parallel subagents. Run once, on first adoption.
+- **`/spec`** — Requirement breakdown through dialogue: clarify a fuzzy ask, then split it into many small, non-overlapping rules — one rule per file, ≤100 lines, *one thing + one example* each — fronted by a lightweight `INDEX.md` readers scan before loading specifics. Answers **"what to build."**
+- **`/plan`** — spec → a self-contained, **function-level** implementation plan: each file solves one independent problem, detailed down to function names and responsibilities (but not concrete code), so any AI can implement it from that file alone after a context reset. Answers **"how to build it."**
+- **`/exec`** — **Three-agent isolated execution.** A *Test* agent reads only the spec rules and writes failing tests (Red); an *Impl* agent sees only those tests + the function list and writes code (Green) — it never sees the spec, so it can't quietly "teach to intent"; a *Review* agent checks the result against the spec, read-only. Progress is written to `PROGRESS.md` after every step, so a token-exhausted run **resumes losslessly** from the last checkpoint.
+- **`/review`** — **Workflow-orchestrated, adversarially-verified** local PR review (current branch vs base). Phase 1 fans out **5 finders in parallel** — code quality, security, simplicity / anti-cruft, doc sync, and a **Codex cross-model independent** pass — with schema-enforced structured findings; after plain-code dedup, **every BLOCKER / IMPORTANT finding is re-judged by 3 independent skeptic lenses** (importance / root-cause / risk-if-unfixed) and kept or dropped by majority vote. Read-only — never auto-edits. Requires Claude Code ≥ 2.1.154 (Workflow tool).
+- **`/revise`** — The exception handler, callable anytime: diagnose a deviation's **root cause** into one of three classes — *spec-defect* (→ back to `/spec`), *impl-drift* (→ back to `/exec`), or *requirement-change* — then apply a targeted fix + regression check. Every review finding that needs fixing funnels through here.
+- **`/git-push-pr`** — User-triggered push-and-PR flow (single or multi-repo, batch or selective). When a spec `INDEX.md` exists it first runs a **branch-spec self-check (pre-review)**: a subagent diffs the branch vs main against the spec, violations are fixed and re-reviewed in a loop, then a concise **6-section PR description** is drafted (background / requirement / approach / result / tests / spec, < 50 lines) and used directly as the PR body.
+
+Ships **8 orchestration subagents** the stages above drive: `test-engineer` / `impl-engineer` / `spec-reviewer` / `review-code-quality` / `review-security` / `review-simplicity` / `review-doc-sync` / `review-codex`.
+
 Passive constraints (hooks, automatic): block npm/yarn, block main commit, dependency version self-check, Stop four-point self-check.
 
 ---
 
-## Skills overview (20, grouped by sub-plugin)
+## Companion constraint skills
+
+These feed rules into the pipeline above — install only the layers you need; each skill in one line.
 
 ### bb-spec-core — universal discipline
 
-- **`tdd-workflow`** — Universal TDD discipline: Red-Green-Refactor, standard flows for the add/modify/delete scenarios
-- **`version-policy`** — Before adding/upgrading a dependency you must check the official latest version; no relying on training memory
-- **`git-workflow`** — Branch decisions, incremental commits, the PR three-section description, post-merge cleanup
-
-### bb-spec-workflow — the spec→ship pipeline
-
-- **`spec`** — Requirement breakdown and documentation: one rule per file, ≤100 lines, output to `.bb-spec/docs/spec/`
-- **`plan`** — Read specs and produce a step-by-step implementation plan: one unit per file, function-level detail, output to `.bb-spec/docs/plan/`
-- **`exec`** — Three-agent isolated plan execution (Test→Impl→Review), PROGRESS.md checkpoint recovery
-- **`revise`** — Output revision (bug fix / optimization / requirement change): three root-cause classes (spec-defect / impl-defect / requirement-change) → targeted fix → regression
-- **`review`** — Current branch vs base: Workflow-orchestrated, 5 finders in parallel (quality / security / anti-cruft / over-engineering / Codex cross-model), every BLOCKER/IMPORTANT finding adversarially verified by 3 independent skeptic lenses (importance / root-cause / risk-if-unfixed) with majority vote. Requires Claude Code ≥ 2.1.154 (Workflow tool)
-- **`init`** — Reverse-spec an existing project: read existing code and docs to infer rules, extract in parallel by partition, landing fully aligned with `/spec` (first adoption only)
-- **`git-push-pr`** — User-triggered multi-repo batch / selective push-and-PR flow
-
-Ships 8 orchestration subagents: `test-engineer` / `impl-engineer` / `spec-reviewer` / `review-code-quality` / `review-security` / `review-simplicity` / `review-doc-sync` / `review-codex`.
+- **`tdd-workflow`** — Red-Green-Refactor discipline with standard flows for the add / modify / delete scenarios
+- **`version-policy`** — Check a dependency's official latest version before pinning it; never trust training memory
+- **`git-workflow`** — Branch decisions, incremental commits, the six-section PR description, post-merge cleanup
 
 ### bb-spec-backend — backend stack constraints
 
-- **`golang-constraints`** — Whole-lifecycle Go constraints: three-layer architecture, no over-abstraction, tests subordinate to production design
+- **`golang-constraints`** — Whole-lifecycle Go: three-layer architecture, no over-abstraction, tests subordinate to production design
 - **`golang-testing`** — Go test organization: table-driven, subtests, benchmark, fuzz
-- **`api-design`** — REST API design: resource naming, status codes, pagination, error responses with structured `A-BBB-CCCC` error codes, versioning
-- **`database-constraints`** — Relational DB conventions: app-generated UUIDv7 primary keys, soft delete with composite UNIQUE, DB-managed timestamps, UTC everywhere; dialect-agnostic principles + MySQL / PostgreSQL implementation tables
-- **`auth-constraints`** — Authentication & session (authN only): dual-token (short-lived JWT access + opaque server-side refresh), mandatory refresh rotation with replay detection, sliding expiry capped by an absolute lifetime, client-held device_id not required to be UUID (UA for display only), argon2id; mechanism skeleton pinned, multi-device policy left to the project
-- **`authz-constraints`** — Authorization (authZ, companion to auth-constraints): deny by default / fail-close, backend always enforces while frontend gating is UX only, centralized policy decision (no scattered `if role==`), two-tier checks (coarse role/permission + fine-grained resource ownership to stop IDOR), data-layer tenant isolation when multi-tenant, 401/403 semantics with an enumeration guard, denial auditing; mechanism skeleton pinned, permission model (RBAC/ABAC/ReBAC) / policy engine / roles / tenancy left to the project
-- **`observability-constraints`** — Backend observability (logs / traces / metrics): three signals assembled once + globally registered, OTel as the standard with per-signal exporter toggles (local providers stay resident so trace_id is stable), structured JSON logs carrying trace_id / span_id, log-level semantics (WARN = business / ERROR = system), distributed-trace propagation, metric naming + bounded label cardinality, body truncation + credential redaction; mechanism skeleton pinned, sampling / backend / metrics / alert thresholds left to the project
-- **`service-constraints`** — Backend service runtime governance (distinct from golang-constraints): config & secrets via env with fail-fast startup validation (no hardcoded secrets), graceful lifecycle (readiness vs liveness, SIGTERM drain + LIFO release), write idempotency via idempotency keys, mandatory cross-process timeouts + context cancel propagation + safe retries (backoff / jitter / cap, idempotent only), error propagation preserving the chain (%w) and converting to api-design codes only at the boundary; mechanism skeleton pinned, concrete timeout / retry / health-check / config-center choices left to the project
+- **`api-design`** — REST design: resource naming, status codes, pagination, and structured `A-BBB-CCCC` error codes
+- **`database-constraints`** — App-generated UUIDv7 PKs, soft delete + composite UNIQUE, DB-managed timestamps, UTC end to end
+- **`auth-constraints`** — Authentication (authN): dual-token JWT + opaque refresh with rotation & replay detection, sliding expiry, argon2id
+- **`authz-constraints`** — Authorization (authZ): deny-by-default, centralized decision, two-tier role + resource-ownership checks to stop IDOR
+- **`observability-constraints`** — Logs / traces / metrics on OTel: one-time assembly, structured JSON with stable trace_id, bounded label cardinality
+- **`service-constraints`** — Runtime governance: env-injected secrets with fail-fast, graceful lifecycle, write idempotency, timeouts + safe retries
 
 ### bb-spec-frontend — frontend stack constraints
 
-- **`vue-constraints`** — Vue 3 + TypeScript + Vite + Tailwind + bun hard constraints
-- **`frontend-constraints`** — Frontend engineering conventions (convention layer vs vue-constraints' stack layer): build-injected env vars are public (no secrets), one unified request client (no raw fetch in components), centralized error-code → UI mapping, route guards are UX only (backend still enforces), state-management boundary (Pinia for shared client / session state only), two-tier form validation (client instant / server authoritative), API types from the contract (no any); convention skeleton pinned, UI-lib / directory / i18n / query-cache choices left to the project
+- **`vue-constraints`** — Vue 3 + TypeScript + Vite + Tailwind + bun hard stack constraints
+- **`frontend-constraints`** — Conventions: one unified request client, centralized error-code → UI mapping, UX-only route guards, types from the contract
 
 ---
 
