@@ -19,7 +19,7 @@
 /spec  Requirement breakdown → one rule per document
   │
   ▼
-/plan  spec → function-level implementation plan
+/plan  spec → function-level implementation plan (auto-batched ROADMAP, lazy expansion for large scopes)
   │
   ▼
 /exec  Three-agent isolated execution
@@ -46,7 +46,7 @@
   (spec-defect → spec, impl-defect → exec, review findings → fix)
 ```
 
-**How the stages connect.** The pipeline is a relay, and every handoff is a *file on disk* — not a memory in the chat — which is exactly what makes it resumable, AI-swappable, and auditable end to end: `/spec` turns a fuzzy ask into spec docs under `.bb-spec/docs/spec/` (**what to build**) → `/plan` reads those and emits a function-level plan under `.bb-spec/docs/plan/` (**how to build it**) → `/exec` drives the plan through Test→Impl→Review into tests + code, checkpointing to `PROGRESS.md` → `/review` judges the resulting diff → `/git-push-pr` self-checks against the spec and opens the PR.
+**How the stages connect.** The pipeline is a relay, and every handoff is a *file on disk* — not a memory in the chat — which is exactly what makes it resumable, AI-swappable, and auditable end to end: `/spec` turns a fuzzy ask into spec docs under `.bb-spec/docs/spec/` (**what to build**) → `/plan` reads those and emits a function-level plan under `.bb-spec/docs/plan/` (**how to build it**; large scopes auto-split into a batched ROADMAP that expands one batch at a time, with the next batch generated only after the current one clears its verification gate) → `/exec` drives the plan through Test→Impl→Review into tests + code, checkpointing to `PROGRESS.md` → `/review` judges the resulting diff → `/git-push-pr` self-checks against the spec and opens the PR.
 
 Two branches close the loop: **`/init`** is the *on-ramp* for existing projects — it reverse-derives the spec first, then merges into the mainline; **`/revise`** is the *return path* — on any deviation it routes you back to the **right** stage by root cause (spec-defect → `/spec`, impl-drift → `/exec`), not a blind redo.
 
@@ -54,7 +54,7 @@ Each stage, and what sets it apart:
 
 - **`/init`** — *Reverse*-spec an existing project: read the current code + docs and distill the **already-enforced implicit conventions** into ≤100-line, one-rule-per-file specs, landing in the exact structure `/spec` uses so the rest of the pipeline can pick up. Large projects are partitioned across parallel subagents. Run once, on first adoption.
 - **`/spec`** — Requirement breakdown through dialogue: clarify a fuzzy ask, then split it into many small, non-overlapping rules — one rule per file, ≤100 lines, *one thing + one example* each — fronted by a lightweight `INDEX.md` readers scan before loading specifics. Answers **"what to build."**
-- **`/plan`** — spec → a self-contained, **function-level** implementation plan: each file solves one independent problem, detailed down to function names and responsibilities (but not concrete code), so any AI can implement it from that file alone after a context reset. Answers **"how to build it."**
+- **`/plan`** — spec → a self-contained, **function-level** implementation plan: each file solves one independent problem, detailed down to function names and responsibilities (but not concrete code), so any AI can implement it from that file alone after a context reset. Answers **"how to build it."** Invocation enters **plan mode for read-only alignment** (scale triage / split / roadmap all stay in plan mode until you approve, then files are written); scale is auto-detected — single-domain small scopes go single-topic, while multi-domain / bootstrap / large spec drops switch to a **batched roadmap**: a `ROADMAP.md` with dependency arrows and **verification gates** (observable end-to-end capabilities) is emitted, only the current batch is expanded, and re-running `/plan` after the batch clears its gate auto-locates and expands the next.
 - **`/exec`** — **Three-agent isolated execution.** A *Test* agent reads only the spec rules and writes failing tests (Red); an *Impl* agent sees only those tests + the function list and writes code (Green) — it never sees the spec, so it can't quietly "teach to intent"; a *Review* agent checks the result against the spec, read-only. Progress is written to `PROGRESS.md` after every step, so a token-exhausted run **resumes losslessly** from the last checkpoint.
 - **`/review`** — **Workflow-orchestrated, adversarially-verified** local PR review (current branch vs base). Phase 1 fans out **5 finders in parallel** — code quality, security, simplicity / anti-cruft, doc sync, and a **Codex cross-model independent** pass — with schema-enforced structured findings; after plain-code dedup, **every BLOCKER / IMPORTANT finding is re-judged by 3 independent skeptic lenses** (importance / root-cause / risk-if-unfixed) and kept or dropped by majority vote. Read-only — never auto-edits. Requires Claude Code ≥ 2.1.154 (Workflow tool).
 - **`/revise`** — The exception handler, callable anytime: diagnose a deviation's **root cause** into one of three classes — *spec-defect* (→ back to `/spec`), *impl-drift* (→ back to `/exec`), or *requirement-change* — then apply a targeted fix + regression check. Every review finding that needs fixing funnels through here.
