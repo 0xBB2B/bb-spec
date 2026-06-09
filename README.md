@@ -8,84 +8,6 @@
 
 ---
 
-## Install
-
-BB-Spec ships as **four independently installable sub-plugins** — install only the constraint layers you need.
-
-First add the marketplace once, inside Claude Code:
-
-```bash
-/plugin marketplace add 0xBB2B/bb-spec
-```
-
-Then install whichever layers you want:
-
-| Sub-plugin | What it gives you | Command |
-|---|---|---|
-| **bb-spec-core** _(recommended base)_ | TDD / version-policy / git-workflow discipline + 3 passive hooks | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(core)_ | spec → plan → exec → review → revise → git-push-pr, init reverse-spec + 8 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
-| **bb-spec-backend** | Go / REST API / DB / authN / authZ / observability / service constraints | `/plugin install bb-spec-backend@0xbb2b` |
-| **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun stack & engineering conventions (+ bun hook) | `/plugin install bb-spec-frontend@0xbb2b` |
-
-Pick by need — e.g. just the disciplines and workflow without any stack opinions: install `bb-spec-core` + `bb-spec-workflow`. Want everything: install all four.
-
-Or add it manually to `~/.claude/settings.json` (enable only what you want):
-
-```json
-{
-  "extraKnownMarketplaces": {
-    "0xbb2b": {
-      "source": { "source": "github", "repo": "0xBB2B/bb-spec" }
-    }
-  },
-  "enabledPlugins": {
-    "bb-spec-core@0xbb2b": true,
-    "bb-spec-workflow@0xbb2b": true,
-    "bb-spec-backend@0xbb2b": false,
-    "bb-spec-frontend@0xbb2b": false
-  }
-}
-```
-
-> **Upgrading from the old single `bb-spec` plugin (≤ 4.x)?** It has been split into the four sub-plugins above. Remove the old one with `/plugin uninstall bb-spec`, then install the layers you need.
-
-## Versioning
-
-```bash
-/plugin update                  # check and update every installed plugin
-/plugin update bb-spec-core     # update only one sub-plugin
-```
-
-The four sub-plugins share a single synchronized version line.
-
----
-
-## Hooks enabled by default (out of the box)
-
-Each hook ships with the sub-plugin that owns its concern — install that plugin to get it.
-
-| Hook | Sub-plugin | Trigger | Effect |
-|---|---|---|---|
-| `block-non-bun-pm` | bb-spec-frontend | PreToolUse(Bash) | Blocks `npm` / `yarn` / `pnpm` package-manager actions, enforcing `bun`; existing projects with a matching lockfile (e.g. `package-lock.json`) are allowed through |
-| `block-main-commit` | bb-spec-core | PreToolUse(Bash) | Blocks `git commit` on the `main` / `master` branch |
-| `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | After editing a dependency file, injects a "check the official latest version first" reminder |
-| `stop-self-check` | bb-spec-core | Stop | Forces a four-point self-check before a task ends: temp files / change scope / orphaned leftovers / legacy cruft |
-
----
-
-## Advanced: optional Hooks (off by default, opt-in)
-
-**bb-spec-workflow** ships two **higher-impact** Stop hooks. They are registered with that plugin but gated at the top of each script, so they **do not run by default** — you must enable them explicitly:
-
-| Hook | Effect | How to enable |
-|---|---|---|
-| `stop-auto-tests.sh` | On Stop, in a Go project (with `go.mod`) automatically runs `vet` / `golangci-lint` / `test -race` / `make test-integration` and feeds failures back to the AI | `export CLAUDE_ENABLE_AUTO_TESTS=1` or `touch .enable-auto-tests` in the project root |
-| `stop-auto-commit.sh` | On Stop, when uncommitted tracked changes are detected, feeds back an instruction for the **AI to commit them itself with a semantic message** (defaults to `git add -u`, non-main/master, no push) | `export CLAUDE_ENABLE_AUTO_COMMIT=1` or `touch .enable-auto-commit` in the repo root |
-
-The environment variable enables a hook at session / global scope (written into your shell rc); the marker file enables it at project scope — use either or both. To disable: `unset` the env var or `rm` the marker file.
-
----
-
 ## Core — the Workflow pipeline (`spec → ship`)
 
 > **This is the heart of BB-Spec.** A closed-loop, spec-driven pipeline that carries a fuzzy requirement all the way to reviewed, shipped code — every stage traceable, resumable, and adversarially verified. The three constraint suites further down (core / backend / frontend) are **companions** that feed rules into this loop; the loop is the product.
@@ -169,6 +91,84 @@ These feed rules into the pipeline above — install only the layers you need; e
 
 - **`vue-constraints`** — Vue 3 + TypeScript + Vite + Tailwind + bun hard stack constraints
 - **`frontend-constraints`** — Conventions: one unified request client, centralized error-code → UI mapping, UX-only route guards, types from the contract
+
+---
+
+## Install
+
+BB-Spec ships as **four independently installable sub-plugins** — install only the constraint layers you need.
+
+First add the marketplace once, inside Claude Code:
+
+```bash
+/plugin marketplace add 0xBB2B/bb-spec
+```
+
+Then install whichever layers you want:
+
+| Sub-plugin | What it gives you | Command |
+|---|---|---|
+| **bb-spec-core** _(recommended base)_ | TDD / version-policy / git-workflow discipline + 3 passive hooks | `/plugin install bb-spec-core@0xbb2b` |
+| **bb-spec-workflow** _(core)_ | spec → plan → exec → review → revise → git-push-pr, init reverse-spec + 8 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-backend** | Go / REST API / DB / authN / authZ / observability / service constraints | `/plugin install bb-spec-backend@0xbb2b` |
+| **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun stack & engineering conventions (+ bun hook) | `/plugin install bb-spec-frontend@0xbb2b` |
+
+Pick by need — e.g. just the disciplines and workflow without any stack opinions: install `bb-spec-core` + `bb-spec-workflow`. Want everything: install all four.
+
+Or add it manually to `~/.claude/settings.json` (enable only what you want):
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "0xbb2b": {
+      "source": { "source": "github", "repo": "0xBB2B/bb-spec" }
+    }
+  },
+  "enabledPlugins": {
+    "bb-spec-core@0xbb2b": true,
+    "bb-spec-workflow@0xbb2b": true,
+    "bb-spec-backend@0xbb2b": false,
+    "bb-spec-frontend@0xbb2b": false
+  }
+}
+```
+
+> **Upgrading from the old single `bb-spec` plugin (≤ 4.x)?** It has been split into the four sub-plugins above. Remove the old one with `/plugin uninstall bb-spec`, then install the layers you need.
+
+## Versioning
+
+```bash
+/plugin update                  # check and update every installed plugin
+/plugin update bb-spec-core     # update only one sub-plugin
+```
+
+The four sub-plugins share a single synchronized version line.
+
+---
+
+## Hooks enabled by default (out of the box)
+
+Each hook ships with the sub-plugin that owns its concern — install that plugin to get it.
+
+| Hook | Sub-plugin | Trigger | Effect |
+|---|---|---|---|
+| `block-non-bun-pm` | bb-spec-frontend | PreToolUse(Bash) | Blocks `npm` / `yarn` / `pnpm` package-manager actions, enforcing `bun`; existing projects with a matching lockfile (e.g. `package-lock.json`) are allowed through |
+| `block-main-commit` | bb-spec-core | PreToolUse(Bash) | Blocks `git commit` on the `main` / `master` branch |
+| `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | After editing a dependency file, injects a "check the official latest version first" reminder |
+| `stop-self-check` | bb-spec-core | Stop | Forces a four-point self-check before a task ends: temp files / change scope / orphaned leftovers / legacy cruft |
+
+---
+
+## Advanced: optional Hooks (off by default, opt-in)
+
+**bb-spec-workflow** ships two **higher-impact** Stop hooks. They are registered with that plugin but gated at the top of each script, so they **do not run by default** — you must enable them explicitly:
+
+| Hook | Effect | How to enable |
+|---|---|---|
+| `stop-auto-tests.sh` | On Stop, in a Go project (with `go.mod`) automatically runs `vet` / `golangci-lint` / `test -race` / `make test-integration` and feeds failures back to the AI | `export CLAUDE_ENABLE_AUTO_TESTS=1` or `touch .enable-auto-tests` in the project root |
+| `stop-auto-commit.sh` | On Stop, when uncommitted tracked changes are detected, feeds back an instruction for the **AI to commit them itself with a semantic message** (defaults to `git add -u`, non-main/master, no push) | `export CLAUDE_ENABLE_AUTO_COMMIT=1` or `touch .enable-auto-commit` in the repo root |
+
+The environment variable enables a hook at session / global scope (written into your shell rc); the marker file enables it at project scope — use either or both. To disable: `unset` the env var or `rm` the marker file.
 
 ---
 
