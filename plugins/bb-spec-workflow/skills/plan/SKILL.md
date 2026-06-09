@@ -1,6 +1,6 @@
 ---
 name: plan
-description: Read the specs under .bb-spec/docs/spec/, combine them with the project's existing code structure, and produce a self-contained step-by-step implementation plan under .bb-spec/docs/plan/<YYYY-MM-DD>.<topic>/; each file solves one independent problem, detailed to function names and responsibilities but without concrete parameters or implementation, so any AI can code correctly from that file alone after a context reset. TRIGGER — /plan / generate an implementation plan / how to land these specs. ｜ 读取 `.bb-spec/docs/spec/` 中的规格说明，结合项目现有代码结构，在 `.bb-spec/docs/plan/<YYYY-MM-DD>.<主题>/` 下产出自包含的分步实施计划；每个文件只解决一个独立问题，详细到函数名与职责但不写具体参数与实现，任何 AI 在清空上下文后仅凭该文件即可正确编码。常见触发：用户输入 `/plan`、"生成实施计划"、"怎么落地这些 spec"。
+description: Read the specs under .bb-spec/docs/spec/, combine them with the project's existing code structure, and produce a self-contained step-by-step implementation plan under .bb-spec/docs/plan/<YYYY-MM-DD>.<topic>/. Auto-enters Claude Code plan mode on invocation to align the split/roadmap read-only before writing files. Auto-detects requirement scale and switches into batched-roadmap mode (a multi-batch ROADMAP with dependency arrows and verification gates, lazily expanding one batch at a time) for project bootstrap or other large-scale spec drops. TRIGGER — /plan / generate an implementation plan / how to land these specs / 分批实施 / 路线图. ｜ 读取 `.bb-spec/docs/spec/` 中的规格说明，结合项目现有代码结构，在 `.bb-spec/docs/plan/<YYYY-MM-DD>.<主题>/` 下产出自包含的分步实施计划；调用时自动进入 Claude Code 的 plan 模式，先在只读态对齐拆分/分批方案，批准后才落盘。自动识别需求规模：冷启动 / 多领域 / 大批 spec 涌入时切到「分批路线图」模式，产出含依赖链和验证门的 ROADMAP，懒生成（一次只展开一批 topic），该批 exec 验证门通过后再下一批。常见触发：用户输入 `/plan`、"生成实施计划"、"怎么落地这些 spec"、"分批实施"、"路线图"。
 ---
 
 # Plan 实施计划生成
@@ -9,39 +9,50 @@ description: Read the specs under .bb-spec/docs/spec/, combine them with the pro
 
 ## 核心原则（兼反面案例）
 
-1. **一文一单元**：每个 plan 文件只解决一个独立的实施问题，不混入不相关逻辑（❌ 一份 plan 同涉数据库/业务逻辑/HTTP 三层）
-2. **自包含可执行**：仅凭该文件 + 项目现有代码即可正确编码，无需对话历史或其他 plan（❌ "先完成 plan A 才能理解本文档"）
-3. **函数级详细**：指明函数名与职责，**不写参数签名和函数体**（❌ 写详细参数/返回类型/实现）
-4. **尊重现有代码**：基于真实代码路径和命名风格产出，而非凭空设计
-5. **按关注点拆分**：一个 spec 可对应多个 plan，按实施关注点拆（❌ 一个 spec 固定对应一个 plan）；INDEX 给执行顺序和依赖，但每份内部独立可读
-6. **单文件 ≤ 200 行**（不含 frontmatter），超过则拆分
-7. **可断点恢复**：执行进度持久化到 PROGRESS.md，token 耗尽后从断点继续（❌ 执行时不读/不更新 PROGRESS.md）
+1. **方案先对齐再落盘**：`/plan` 启动即调用 `EnterPlanMode` 进入 plan 模式，规模判断/拆分方案/分批路线图全部在**只读态**对齐，用户批准（`ExitPlanMode`）后才写任何文件（❌ 一进来就开始写 plan 文档）
+2. **规模分流**：根据 spec 变更规模自动判断走「单 topic」还是「分批路线图」，不让单个 topic 塞进多领域大需求（❌ 把账号+计费+审核+管理后台全堆进一个 topic）
+3. **懒生成**：分批模式下一次只详细展开**当前批**的 plan 文档，其余批次仅在 ROADMAP 占位；该批 exec 验证门通过后再 `/plan` 生成下一批（❌ 一次性把所有批次 plan 全写出来——后续批依赖前批落地代码，提前写是空中楼阁）
+4. **一文一单元**：每个 plan 文件只解决一个独立实施问题（❌ 一份 plan 同涉数据库/业务逻辑/HTTP 三层）
+5. **自包含可执行**：仅凭该文件 + 项目现有代码即可正确编码，无需对话历史或其他 plan（❌ "先完成 plan A 才能理解本文档"）
+6. **函数级详细**：指明函数名与职责，**不写参数签名和函数体**（❌ 写详细参数/返回类型/实现）
+7. **尊重现有代码**：基于真实代码路径和命名风格产出，而非凭空设计
+8. **按关注点拆分**：一个 spec 可对应多个 plan，按实施关注点拆（❌ 一个 spec 固定对应一个 plan）；INDEX 给执行顺序和依赖，但每份内部独立可读
+9. **单文件 ≤ 200 行**（不含 frontmatter），超过则拆分
+10. **可断点恢复**：执行进度持久化到 PROGRESS.md，token 耗尽后从断点继续（❌ 执行时不读/不更新 PROGRESS.md）
 
 ## 输出目录与命名
 
 **统一格式**：`{DOCS_DIR}/plan/<YYYY-MM-DD>.<主题>/<序号>-<名称>.md`
 
-- `<YYYY-MM-DD>`：plan 创建当天日期；`<主题>`：默认取当前 git 分支名（去 `feature/`、`fix/` 等前缀），用户可在步骤 2 覆盖
+- `<YYYY-MM-DD>`：plan 创建当天日期；`<主题>`：单 topic 默认取当前 git 分支名（去 `feature/`、`fix/` 等前缀）、分批模式取批次领域名（与 spec 子目录同名，kebab-case）
 - `<序号>`：两位数字前缀，表示同主题内推荐执行顺序（`01-`、`02-`…）；`<名称>`：kebab-case 关注点描述
 - 禁止扁平放在 `plan/` 根目录下
 
-**两级索引 + 进度文件**：
+**三级索引 + 进度文件**（ROADMAP 仅分批模式产生，单 topic 模式不生成、保持现有结构）：
 
-| 文件 | 职责 | 规模 |
-|---|---|---|
-| `plan/INDEX.md` | 列主题目录 + 状态，一行一主题 | 永远 < 50 行 |
-| `plan/<主题>/INDEX.md` | 列该主题内 plan，含阶段分组和依赖 | 通常 < 30 行 |
-| `plan/<主题>/PROGRESS.md` | 执行断点唯一事实源，执行前必读、每步完成必更新 | — |
+| 文件 | 何时存在 | 职责 | 规模 |
+|---|---|---|---|
+| `plan/ROADMAP.md` | 仅分批模式 | 批次切分 + 依赖 + 验证门 + 批次状态 + 执行总链路 | < 80 行 |
+| `plan/INDEX.md` | 始终 | 列主题目录 + 状态（分批模式下增「所属批次」列） | < 50 行 |
+| `plan/<主题>/INDEX.md` | 始终 | 该主题内阶段分组 + plan 列表 + 依赖 | < 30 行 |
+| `plan/<主题>/PROGRESS.md` | 始终 | 执行断点唯一事实源 | — |
 
 ## 工作流
 
-### 步骤 0：读取配置 + 识别 spec 变更范围
+> **总览**：步骤 0~4 在 **plan 模式内**（只读对齐），步骤 5~9 在 **plan 模式外**（落盘 + commit）。
 
-`cat .bb-spec.yaml 2>/dev/null` 取 `docs_dir`（缺省 `.bb-spec/docs`），记作 `${DOCS_DIR}`，后续路径基于此。运行 `git diff main...HEAD --name-status -- '${DOCS_DIR}/spec/'` 检查变更：
+### 步骤 0a：进入 plan 模式（强制第一步）
 
-- **不在 git 仓库 / 无 main 分支 / spec 目录不存在**：告知"建议先运行 `/spec`"并终止
-- **diff 为空**：告知"当前分支相对 main 无 spec 变更，无需生成 plan"，终止
-- **有变更**：按类型处理——新增(A)读 spec 正文；修改(M)读正文 + `git diff` 差异聚焦变更部分；删除(D)用 `git show main:<path>` 读旧内容生成清理计划。同时读 `INDEX.md` 了解全局
+**立即调用 `EnterPlanMode`**。后续 0~4 步在只读态完成：识别 spec 变更、摸现状、判规模、设计拆分/路线图。**禁止**在 plan 模式内创建、写入或修改任何项目文件（plan 模式自身的 plan 文件除外，那是 plan mode 工作产物，非本 skill 的产出）。
+
+### 步骤 0b：读取配置 + 识别 spec 变更范围
+
+`cat .bb-spec.yaml 2>/dev/null` 取 `docs_dir`（缺省 `.bb-spec/docs`），记作 `${DOCS_DIR}`。运行 `git diff main...HEAD --name-status -- '${DOCS_DIR}/spec/'` 检查变更：
+
+- **不在 git 仓库 / 无 main 分支 / spec 目录不存在**：告知"建议先运行 `/spec`"，`ExitPlanMode` 终止
+- **diff 为空 + 无 `plan/ROADMAP.md`**：告知"当前分支相对 main 无 spec 变更，无需生成 plan"，`ExitPlanMode` 终止
+- **diff 为空 + 存在 `plan/ROADMAP.md` 且有未完成批次**：进入「分批续作」分支（见步骤 2b）
+- **有变更**：新增(A)读 spec 正文；修改(M)读正文 + `git diff` 差异聚焦变更部分；删除(D)用 `git show main:<path>` 读旧内容生成清理计划。同时读 `spec/INDEX.md` 了解全局
 
 ### 步骤 1：摸清项目现状
 
@@ -52,7 +63,7 @@ description: Read the specs under .bb-spec/docs/spec/, combine them with the pro
 
 > 新项目跳过已有代码分析，但需根据 spec 技术约束推断合理结构。
 
-**代码 vs Spec 冲突检测**：步骤 0 的 spec 规则 + 步骤 1 的代码行为若存在不一致，必须在步骤 2 之前列出所有冲突，每个冲突附简报：
+**代码 vs Spec 冲突检测**：步骤 0b 的 spec 规则 + 步骤 1 的代码行为若存在不一致，必须在拆分方案呈现之前列出所有冲突，每个冲突附简报：
 
 ```
 ### 冲突：<一句话描述>
@@ -65,58 +76,93 @@ description: Read the specs under .bb-spec/docs/spec/, combine them with the pro
 - **代价**：<选该方向的改动范围与风险>
 ```
 
-用户裁决后，按结论调整后续 plan 方向（改代码适配 spec / 改 spec 适配代码）。
+用户裁决后，按结论调整后续 plan 方向。
 
-### 步骤 2：规划拆分策略
+### 步骤 2a：规模分流判断
 
-拆分维度（按优先级）：按层 → 按功能 → 按横切关注点。每份 plan 对应一个可独立完成和验证的实施单元，宁可多拆小文件，不要一份大文件塞多个关注点。简单 spec（< 5 个函数）可合并到相关 plan。
+综合以下信号判断 spec 变更的规模，给出**分流结论 + 理由**让用户确认：
 
-### 步骤 3：方案质检
+- **领域数**：spec 变更涉及多少个 `spec/<领域>/` 子目录
+- **spec 文件总数**：本次新增/修改的 spec 文件数量
+- **是否冷启动**：项目是否处于无现有业务代码状态
+- **跨领域依赖**：领域间是否存在明显的上下游依赖（如「账号」是「角色卡」「计费」前置）
 
-向用户展示拆分方案**之前**逐条自问：
+**两条路径**：
+
+| 路径 | 触发条件（启发式） | 产出 |
+|---|---|---|
+| 单 topic | 领域 ≤ 1，或 spec 改动聚焦单一关注点，或非冷启动小变更 | 一个 topic 目录 + 阶段分组（现有模式） |
+| 分批路线图 | 多领域 + 大批 spec（如冷启动一次性写入几十个 spec），或跨领域依赖链显著 | `plan/ROADMAP.md` + 仅展开当前批的 topic |
+
+启发式不达标即默认走单 topic。结论必须**说明依据**，由用户确认；用户可强制覆盖（如「我只想要一批」或「拆得再细一点」）。
+
+### 步骤 2b：分批模式 / 续作分支
+
+**首次进入分批模式**：基于步骤 0b/1 的信息，设计批次切分——列出每批的领域归属、所含 spec、依赖关系、**验证门**（exec 完成该批后必须达到的可观察能力，必须是端到端用例 / 健康指标 / 关键链路打通这类**可观察行为**，不能是「代码写完」「测试通过」这种过程指标），以及执行总链路（如 `B0 → B1 → {B2,B3 并行} → B4 → …`）。**当前批 = 依赖已满足且未完成的最前批次**（首次通常是 B0）。
+
+**分批续作**（步骤 0b 检测到 ROADMAP 存在 + 有未完成批次）：读 ROADMAP，按依赖关系定位**下一个可生成的批次**（其依赖批次状态均为 `已完成`）。若多个候选可并行启动，列出让用户选。
+
+### 步骤 3：规划拆分策略 + 根源质检
+
+**当前批 / 单 topic** 内部按拆分维度（按优先级）：按层 → 按功能 → 按横切关注点。每份 plan 对应一个可独立完成和验证的实施单元，宁可多拆小文件，不要一份大文件塞多个关注点。简单 spec（< 5 个函数）可合并到相关 plan。
+
+向用户呈现之前逐条自问：
 
 1. **是否最优实施路径**：当前拆分和实施顺序是否最直接？有无更少步骤、更少文件改动的做法？
 2. **是否触及根源**：每份 plan 解决的是实际需求，还是绕过不合理的既有设计？发现后者先提出重构既有设计的 plan
 3. **有无过度设计**：是否引入了 spec 未要求的抽象层、中间件、工具函数？spec 没说的不做
+4. **分批切分是否合理**（仅分批模式）：批次粒度是否过粗（一批扛太多领域）/ 过细（拆出无意义的小批）？依赖链是否真实？验证门是否可观察？
 
-质检通过后向用户**展示拆分方案**（文件名 + 一句话描述），等待确认再动手写。
+### 步骤 4：呈现待批方案 → ExitPlanMode
 
-### 步骤 4：盘点已有 plan
+向用户呈现：
 
-读 `${DOCS_DIR}/plan/INDEX.md`（缺失则 `find ${DOCS_DIR}/plan/ -name "*.md"`）。已有 plan 存在时，识别冲突/可复用/需修订项，呈现给用户裁决。
+- **单 topic**：拆分方案（文件名 + 一句话描述 + 阶段分组 + 依赖）
+- **分批模式**：ROADMAP（批次表 + 依赖 + 验证门 + 总链路）+ **当前批**的拆分方案；其余批次仅占位
+- 同时盘点已有 plan（读 `${DOCS_DIR}/plan/INDEX.md`），指出冲突/可复用/需修订项
+
+调用 `ExitPlanMode`。用户批准后进入落盘阶段（步骤 5）；用户驳回则在 plan 模式内根据反馈调整后重新呈现。
 
 ### 步骤 5：产出 plan 文档
 
 每份含 frontmatter + 正文六块（见下方模板）。**函数清单写法**：每个函数写**函数名 + 所在文件路径 + 一句话职责**，说明函数间**调用关系**和依赖的**外部接口**；**不写**参数列表、返回值类型、函数体实现；函数名和路径必须符合项目已有命名风格。
 
-### 步骤 6：更新索引与进度文件
+**分批模式下只产出当前批的 plan 文件**，其余批次留空待后续 `/plan` 调用懒生成。
+
+### 步骤 6：更新索引、ROADMAP 与进度文件
 
 - **主题 INDEX.md**：每条一行 `- [<name>](<文件名>) — <description>`；用 `## <阶段>` 分组表示执行顺序（同阶段可并行）；依赖标注 `[依赖: <name>]`
-- **根 INDEX.md**：表格 主题|概述|状态|完成时间；状态 `进行中`|`已完成`（完成填日期）；已完成主题仅作历史审计，AI 未经允许不得读取其内容
-- **PROGRESS.md**：初始生成时所有步骤标 `pending`（格式见下方模板）
+- **根 INDEX.md**：表格 主题|概述|状态|完成时间（分批模式追加「所属批次」列）；状态 `进行中`|`已完成`（完成填日期）；已完成主题仅作历史审计，AI 未经允许不得读取其内容
+- **ROADMAP.md**（仅分批模式）：首次创建时写入全部批次表 + 执行总链路；续作时只更新当前批状态 `待生成 → 生成中`；其余批次保持 `待生成` 不动
+- **PROGRESS.md**：初始生成时所有步骤标 `pending`
 
 ### 步骤 7：自检
 
+- [ ] 步骤 0a~4 全程在 plan 模式内，未提前落盘任何文件？
+- [ ] 规模分流结论已经过用户确认？
 - [ ] 步骤 3 根源性质检已完成？每份 plan 是最直接的实施路径，无 spec 未要求的抽象/中间件/工具函数？
 - [ ] 每份 plan 只解决一个独立问题，正文 ≤ 200 行？
 - [ ] 函数清单有函数名 + 文件路径 + 职责，无参数和实现？
 - [ ] 仅凭此文件即可正确编码，无"详见 spec"式引用？
-- [ ] 两级 INDEX.md 已同步？PROGRESS.md 已生成？
+- [ ] 索引/ROADMAP/PROGRESS 已同步？
+- [ ] 分批模式下，**只**展开了当前批，后续批次未提前生成 plan 文件？
 
 ### 步骤 8：本地 commit
 
-自检通过后做一次**本地** commit：先 `git branch --show-current` 确认分支（**在 main 上则跳过自动 commit**，提示按 git-workflow 先建分支再继续）；只提交本次涉及文件（plan 文档 + 两级 `INDEX.md` + `PROGRESS.md`）；message 遵循仓库历史风格（先 `git log --oneline -10`）、不硬编码类型前缀；**仅本地不自动 push**（推送门槛见 git-workflow）。
+自检通过后做一次**本地** commit：先 `git branch --show-current` 确认分支（**在 main 上则跳过自动 commit**，提示按 git-workflow 先建分支再继续）；只提交本次涉及文件（plan 文档 + ROADMAP + 两级 `INDEX.md` + `PROGRESS.md`）；message 遵循仓库历史风格（先 `git log --oneline -10`）、不硬编码类型前缀；**仅本地不自动 push**（推送门槛见 git-workflow）。
 
 ### 步骤 9：完成简报
 
 ```
 ## Plan 完成简报
+- 模式：单 topic / 分批路线图（当前批 X / 总 N 批）
 - 主题：<YYYY-MM-DD.主题>
 - 产出：N 份 plan，分 M 个阶段
 - 文件清单：<序号>-<名称>.md — <一句话描述>
 - Spec 变更覆盖：<已覆盖全部 / 未覆盖项列表>
+- 验证门（仅分批模式）：<本批 exec 完成后必须达成的可观察能力>
 - 待解决：<问题列表，无则"无">
-- 下一步：运行 `/exec <主题>` 开始实施
+- 下一步：运行 `/exec <主题>` 开始实施（plan 与 exec 上下文强关联，建议同窗口连续运行）；本批 exec 完成且验证门通过后，**先 `/clear` 清空上下文，再运行 `/plan` 生成下一批**（跨批次状态全部外置在 ROADMAP/INDEX/PROGRESS 与落地代码里，无需上下文延续）
 ```
 
 ## 执行恢复协议
@@ -158,17 +204,38 @@ description: <一句话概括，≤ 80 字>
 - [ ] <验证项 2>
 ```
 
+## ROADMAP.md 模板（仅分批模式）
+
+```markdown
+# <项目/主需求> 分批路线图
+
+| 批次 | 领域 | spec 数 | 依赖 | 验证门 | 状态 |
+|---|---|---|---|---|---|
+| B0 | <基础设施领域> | N | — | <可观察的端到端能力，如「核心服务起来且健康检查通过」> | 生成中 |
+| B1 | <领域 A> | N | B0 | <该领域核心用例端到端跑通> | 待生成 |
+| B2 | <领域 B> | N | B1 | <该领域核心用例端到端跑通> | 待生成 |
+| B3 | <领域 C> | N | B0 | <该领域核心用例端到端跑通> | 待生成 |
+
+**执行总链路**：B0 → B1 → {B2, B3 可并行} → …
+
+> 验证门必须是**可观察的能力**（用例跑通、健康检查通过、关键链路打通），不能写成「代码写完」「测试通过」这种过程指标。
+
+> 每批一个独立 topic 目录；该批 exec 验证门通过后，再次 `/plan` 自动定位并展开下一批。
+```
+
 ## 索引与进度模板
 
 **根 INDEX.md** — 已完成主题仅作历史审计，AI 未经用户允许不得读取：
 
 ```markdown
 # Plan 索引
-| 主题 | 概述 | 状态 | 完成时间 |
-|---|---|---|---|
-| [add-user-dashboard](2026-05-25.add-user-dashboard/INDEX.md) | 用户仪表盘功能 | 进行中 | — |
-| [auth-refactor](2026-05-15.auth-refactor/INDEX.md) | 认证模块重构 | 已完成 | 2026-05-20 |
+| 主题 | 所属批次 | 概述 | 状态 | 完成时间 |
+|---|---|---|---|---|
+| [tooling-platform](2026-06-09.tooling-platform/INDEX.md) | B0 | 基础设施搭建 | 进行中 | — |
+| [auth-refactor](2026-05-15.auth-refactor/INDEX.md) | — | 认证模块重构 | 已完成 | 2026-05-20 |
 ```
+
+> 单 topic 模式可省「所属批次」列。
 
 **主题 INDEX.md** — 按阶段分组，同阶段可并行：
 
