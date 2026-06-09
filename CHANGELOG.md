@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.1.0](https://github.com/0xBB2B/bb-spec/compare/v5.0.0...v5.1.0) (2026-06-09)
+
+
+### Features
+
+* **plan,exec:** plan 模式 gate + 规模分流 + 分批懒生成路线图 ([#61](https://github.com/0xBB2B/bb-spec/issues/61)) ([a352225](https://github.com/0xBB2B/bb-spec/commit/a352225f02bd699476b30832ec5cd75a4a5879bc))
+
 ## [5.0.0](https://github.com/0xBB2B/bb-spec/compare/v4.1.0...v5.0.0) (2026-06-08)
 
 
