@@ -47,7 +47,7 @@ user-invocable: false
 1. 领域 service 不得持有别领域的 repository 或别的 service
 2. 事务只能在 service 层发起；handler / repository 禁止
 3. 编排 service 必须用 `TxManager.InTx(ctx, fn)` 闭包；事务句柄通过 `ctx` 传递，**不通过方法参数**
-4. repository 方法签名禁止显式传 `*sql.Tx` / `*gorm.DB`；从 `ctx` 取事务句柄
+4. repository 方法签名禁止显式传 `*sql.Tx` 等事务句柄；从 `ctx` 取
 5. 禁止循环依赖：编排 → 领域单向
 
 **何时抽编排 service**：修改 ≥ 2 个领域数据 / 需跨领域事务一致性 / 语义本身是动词流程。
@@ -91,7 +91,7 @@ user-invocable: false
 
 ### 3.3 context
 
-请求链路方法**必须**以 `context.Context` 作为第一参数。禁止用 `context.Background()` 替代上游 ctx、把 `gin.Context` 传入 repository、把 ctx 存入 struct。
+请求链路方法**必须**以 `context.Context` 作为第一参数。禁止用 `context.Background()` 替代上游 ctx、把 Web 框架专属 context 传入 repository、把 ctx 存入 struct。
 
 ### 3.4 错误处理
 
