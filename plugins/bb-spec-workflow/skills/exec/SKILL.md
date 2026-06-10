@@ -1,6 +1,6 @@
 ---
 name: exec
-description: Three-agent isolated execution of a plan (Test→Impl→Review), persisting progress to PROGRESS.md after every step, with lossless resume after token exhaustion. TRIGGER — /exec / start implementing / continue executing the plan / resume from the last checkpoint. ｜ 三 Agent 隔离执行 plan 实施计划（Test→Impl→Review），每完成一步立即持久化进度到 PROGRESS.md，支持 token 耗尽后无损续接。常见触发：用户输入 `/exec`、"开始实施"、"继续执行 plan"、"从上次断点继续"。
+description: Three-agent isolated execution of a plan (Test→Impl→Review), persisting progress to PROGRESS.md after every step, with lossless resume across sessions or after /clear. TRIGGER — /exec / start implementing / continue executing the plan / resume from the last checkpoint. ｜ 三 Agent 隔离执行 plan 实施计划（Test→Impl→Review），每完成一步立即持久化进度到 PROGRESS.md，支持跨会话 / `/clear` 后无损续接。常见触发：用户输入 `/exec`、"开始实施"、"继续执行 plan"、"从上次断点继续"。
 argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 ---
 
@@ -62,7 +62,7 @@ argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 读 `PROGRESS.md`（不存在则初始化，所有步骤标 `pending`）。
 
 - **指定了单个 plan**：直接跳到该 plan 执行，不影响其他步骤状态
-- **未指定**：展示进度概况（已完成 N/M 步），询问范围——**全部执行**（从第一个非 `done` 步骤依次到最后）或**选择单个**（列出未完成步骤让用户选）
+- **未指定**：展示进度概况（已完成 N/M 步），用 AskUserQuestion 询问范围——**全部执行**（从第一个非 `done` 步骤依次到最后）或**选择单个**（列出未完成步骤让用户选）
 
 ### 步骤 2：执行当前步骤
 
@@ -72,7 +72,7 @@ argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 
 **2b. Impl Agent — Green**：派 `bb-spec:impl-engineer`，prompt 传「函数清单 + 文件路径 + 协作关系」+ 测试文件路径。主 Agent 验证：全部通过 → 简洁性审视（是否用最少实现解决问题、有无 plan 未要求的抽象/防御/功能），发现过度设计则反馈 Impl Agent 简化后重跑、通过则 ✅ Green 进 2c；有失败 → 反馈错误给 Impl Agent 重试（最多 1 次）→ 仍失败报告用户。
 
-**2c. Review Agent — Spec 合规**：派 `bb-spec:spec-reviewer`，prompt 传「业务规则」+「验证方式」+ 所有变更文件路径。主 Agent 处理：全 ✅ → 进步骤 3；有 ❌ 或 ⚠️ → 展示给用户选 **修复** / **接受**（记录到 PROGRESS.md）/ **暂停**（标 blocked）。
+**2c. Review Agent — Spec 合规**：派 `bb-spec:spec-reviewer`，prompt 传「业务规则」+「验证方式」+ 所有变更文件路径。主 Agent 处理：全 ✅ → 进步骤 3；有 ❌ 或 ⚠️ → 用 AskUserQuestion 让用户选 **修复** / **接受**（记录到 PROGRESS.md）/ **暂停**（标 blocked）。
 
 选"修复"时先诊断归因再动手：
 

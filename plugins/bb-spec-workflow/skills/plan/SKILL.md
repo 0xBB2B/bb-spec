@@ -18,7 +18,7 @@ description: Read the specs under .bb-spec/docs/spec/, combine them with the pro
 7. **尊重现有代码**：基于真实代码路径和命名风格，非凭空设计
 8. **按关注点拆分**：一个 spec 可对应多个 plan，按实施关注点拆（❌ 一对一固定映射）
 9. **单文件 ≤ 200 行**（不含 frontmatter），超过则拆分
-10. **可断点恢复**：进度持久化到 `PROGRESS.md`，token 耗尽后从断点继续（❌ 执行时不读/不更新）
+10. **可断点恢复**：进度持久化到 `PROGRESS.md`，跨会话 / `/clear` 后从断点继续（❌ 执行时不读/不更新）
 
 ## 输出目录与命名
 
@@ -31,7 +31,7 @@ description: Read the specs under .bb-spec/docs/spec/, combine them with the pro
 | `plan/ROADMAP.md` | 仅分批模式 | 批次切分 + 依赖 + 验证门 + 状态 + 执行总链路 | < 80 行 |
 | `plan/INDEX.md` | 始终 | 主题目录 + 状态（分批模式增「所属批次」列） | < 50 行 |
 | `plan/<主题>/INDEX.md` | 始终 | 主题内阶段分组 + plan 列表 + 依赖 | < 30 行 |
-| `plan/<主题>/PROGRESS.md` | 始终 | 执行断点唯一事实源，token 耗尽后据此恢复 | — |
+| `plan/<主题>/PROGRESS.md` | 始终 | 执行断点唯一事实源，跨会话 / `/clear` 后据此恢复 | — |
 
 ## 工作流
 
@@ -58,7 +58,7 @@ description: Read the specs under .bb-spec/docs/spec/, combine them with the pro
 
 ### 步骤 2a：规模分流
 
-综合**领域数**（涉及多少 `spec/<领域>/` 子目录）、**spec 文件总数**、**是否冷启动**、**跨领域依赖**给出分流结论 + 理由，由用户确认（可强制覆盖）：
+综合**领域数**（涉及多少 `spec/<领域>/` 子目录）、**spec 文件总数**、**是否冷启动**、**跨领域依赖**给出分流结论 + 理由，用 AskUserQuestion 让用户确认（可强制覆盖）：
 
 | 路径 | 触发条件（启发式） | 产出 |
 |---|---|---|
