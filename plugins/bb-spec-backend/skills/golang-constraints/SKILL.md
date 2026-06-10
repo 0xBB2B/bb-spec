@@ -30,9 +30,11 @@ user-invocable: false
 
 ## 二、分层契约
 
-### 2.1 允许的分层
+### 2.1 允许的包
 
-`handler` / `service` / `repository` / `model`（或 `entity`）/ `dto` / `config` / `pkg`
+**业务分层**（受 §2.3 职责约束，构成 handler → service → repository 调用链）：`handler` / `service` / `repository` / `model`（或 `entity`）/ `dto`
+
+**支撑包**（不参与分层调用链，任何层可用）：`config` / `pkg`
 
 **禁止擅自引入**：`manager` / `facade` / `adapter` / `domain` / `application` / `controller`。**`usecase` 一律禁止**。
 
