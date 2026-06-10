@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.4.0](https://github.com/0xBB2B/bb-spec/compare/v5.3.0...v5.4.0) (2026-06-10)
+
+
+### Features
+
+* **plan,exec:** 声明式产物强制内联成品，禁散文转述 ([#68](https://github.com/0xBB2B/bb-spec/issues/68)) ([551237a](https://github.com/0xBB2B/bb-spec/commit/551237a22240749d93bf1eda860a4388954fc19e))
+
 ## [5.3.0](https://github.com/0xBB2B/bb-spec/compare/v5.2.0...v5.3.0) (2026-06-10)
 
 
