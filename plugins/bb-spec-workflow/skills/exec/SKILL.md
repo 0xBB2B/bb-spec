@@ -14,7 +14,7 @@ argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 2. **角色隔离**：三个 Agent 各看各的输入互不可见——Test **禁看**函数清单和实现路径，Impl **禁看** spec 原文，Review **禁止**修改文件
 3. **三 Agent 串行**：必须 Test → Impl → Review 顺序；每个 Agent prompt 自包含，不依赖对话上下文
 4. **进度即时持久化**：每步完成后立即更新 PROGRESS.md（不攒批），它是唯一进度事实源，重启后仅凭此文件恢复
-5. **Plan 即合同**：严格按 plan 的函数清单和业务规则实现，不自行扩展（额外需求走 `/spec` → `/plan`）
+5. **Plan 即合同**：严格按 plan 的函数清单和业务规则实现，不自行扩展（额外需求走 `/spec` → `/plan`）；新增第三方库以 plan「新增第三方依赖」清单为上限——该清单已在 plan 批准时获用户授权，清单外需要新库时必须停下询问用户，**禁自行 import**
 6. **如实上报**：验证失败禁标 done；阻塞禁静默跳过——必须记录并告知用户
 7. **commit 守卫**：每步本地 commit 后**禁止自动 push**；在 main 分支上**禁止自动 commit**
 8. **遵守已激活 skill 约束**：exec 不重复其他 skill 的规则，但执行时必须遵守已激活约束（如 golang-testing 测试惯用法、golang-constraints 架构约束）
@@ -38,6 +38,7 @@ argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 | 行为预期（plan「验证方式」区） | ✅ | ❌ | ✅ |
 | 函数清单 + 文件路径 | ❌ | ✅ | ❌ |
 | 成品定义（plan「成品定义」区，如有） | ❌ | ✅ | ❌ |
+| 新增第三方依赖清单（plan「新增第三方依赖」区，如有） | ❌ | ✅ | ❌ |
 | 协作关系 | ❌ | ✅ | ❌ |
 | 项目约束（语言/框架/架构） | ✅ | ✅ | ❌ |
 | 项目测试惯例 | ✅ | ❌ | ❌ |
@@ -71,7 +72,7 @@ argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 
 **2a. Test Agent — Red**：派 `bb-spec:test-engineer`，prompt 传「业务规则」+「验证方式」+ 项目测试惯例。主 Agent 验证：编译通过 + 断言失败 → ✅ Red 进 2b；编译失败 → 主 Agent 修 import/类型后重跑；意外全 PASS → 行为已存在则跳过，测试错误则修正。
 
-**2b. Impl Agent — Green**：派 `bb-spec:impl-engineer`，prompt 传「函数清单 + 文件路径 + 协作关系 + 成品定义（如有）」+ 测试文件路径。主 Agent 验证：全部通过 → 简洁性审视（是否用最少实现解决问题、有无 plan 未要求的抽象/防御/功能），发现过度设计则反馈 Impl Agent 简化后重跑、通过则 ✅ Green 进 2c；有失败 → 反馈错误给 Impl Agent 重试（最多 1 次）→ 仍失败报告用户。
+**2b. Impl Agent — Green**：派 `bb-spec:impl-engineer`，prompt 传「函数清单 + 文件路径 + 协作关系 + 成品定义（如有）+ 新增第三方依赖清单（如有）」+ 测试文件路径。主 Agent 验证：全部通过 → **依赖守卫**（diff `go.mod` / `package.json` 等依赖文件，新增第三方库不得超出 plan「新增第三方依赖」清单；超出则令 Impl Agent 改用标准库 / 已有依赖重跑，确属必需时停下询问用户、同意后先补录 plan 清单再继续）+ 简洁性审视（是否用最少实现解决问题、有无 plan 未要求的抽象/防御/功能），发现过度设计则反馈 Impl Agent 简化后重跑、通过则 ✅ Green 进 2c；有失败 → 反馈错误给 Impl Agent 重试（最多 1 次）→ 仍失败报告用户。
 
 **2c. Review Agent — Spec 合规**：派 `bb-spec:spec-reviewer`，prompt 传「业务规则」+「验证方式」+ 所有变更文件路径。主 Agent 处理：全 ✅ → 进步骤 3；有 ❌ 或 ⚠️ → 用 AskUserQuestion 让用户选 **修复** / **接受**（记录到 PROGRESS.md）/ **暂停**（标 blocked）。
 

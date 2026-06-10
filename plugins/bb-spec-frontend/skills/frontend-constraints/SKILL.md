@@ -29,7 +29,7 @@ user-invocable: false
 
 ## 2. 请求层统一封装【硬】
 
-- **组件内禁裸调 `fetch` / `axios`**；所有请求经**统一 client**，集中处理：base URL、鉴权头注入、错误码解析、token 刷新（机制见 `auth-constraints`）、超时。
+- **组件内禁裸调 `fetch` 或任何 HTTP 库**；所有请求经**统一 client**，集中处理：base URL、鉴权头注入、错误码解析、token 刷新（机制见 `auth-constraints`）、超时。
 - 组件只调用**领域方法**（`api.orders.get(id)`），不关心 HTTP 细节。
 
 ```ts
@@ -88,7 +88,7 @@ const res = await fetch(`/api/v1/orders/${id}`)
 ## 9. 自检清单
 
 - [ ] 前端 env 无任何 secret（`VITE_*` 仅公开配置）
-- [ ] 组件内无裸 `fetch`/`axios`；请求走统一 client（鉴权头 / 错误码 / 刷新集中）
+- [ ] 组件内无裸 `fetch` / HTTP 库直调；请求走统一 client（鉴权头 / 错误码 / 刷新集中）
 - [ ] 错误码在请求层单点解析 + 集中映射文案；无组件散落 `if code===`
 - [ ] 路由守卫仅做 UX（显示控制）；对应数据/操作后端必校，未当安全边界
 - [ ] Pinia 只放共享客户端/会话态；无局部 state 无脑全局化、无 API 响应长期挂全局
