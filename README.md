@@ -73,7 +73,7 @@ These feed rules into the pipeline above — install only the layers you need; e
 ### bb-spec-core — universal discipline
 
 - **`tdd-workflow`** — Red-Green-Refactor discipline with standard flows for the add / modify / delete scenarios
-- **`version-policy`** — Check a dependency's official latest version before pinning it; never trust training memory
+- **`version-policy`** — Standard/official libraries first — importing a new third-party library requires explicit user consent; check a dependency's official latest version before pinning it; never trust training memory
 - **`git-workflow`** — Branch decisions, incremental commits, the six-section PR description, post-merge cleanup
 
 ### bb-spec-backend — backend stack constraints

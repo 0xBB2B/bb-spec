@@ -1,14 +1,14 @@
 ---
 name: version-policy
-description: Version-selection policy to follow before adding or upgrading any external dependency — language packages (npm/Go/PyPI/Cargo/Maven), runtimes, toolchains, GitHub/GitLab CI Actions, container images, IaC providers, Helm charts, CLI tools. Always check the official latest version before writing a version number; never rely on training memory. TRIGGER when editing package.json / go.mod / requirements.txt / Cargo.toml / pom.xml / Dockerfile / docker-compose.yaml / .github/workflows/*.yaml / Terraform / Helm chart / .nvmrc / .tool-versions, or the user asks to upgrade a dependency / add a library / bump a version / update Actions. ｜ 引入或升级任何外部依赖前必须遵守的版本选择策略——覆盖语言包（npm/Go/PyPI/Cargo/Maven）、运行时与工具链、GitHub/GitLab CI Actions、容器镜像、IaC provider、Helm chart、CLI 工具。强制要求"写入版本号前先用官方渠道查最新版本"，禁止凭训练记忆或既往项目经验填写版本号。TRIGGER when：编辑 package.json / go.mod / requirements.txt / Cargo.toml / pom.xml / Dockerfile / docker-compose.yaml / .github/workflows/*.yaml / .gitlab-ci.yaml / Terraform / Helm chart / .nvmrc / .tool-versions 等任何会钉死外部资产版本号的文件；或用户要求 "升级依赖" / "加个 xxx 库" / "bump 版本" / "更新 Actions" 等。
+description: Dependency-introduction and version-selection policy to follow before adding or upgrading any external dependency — language packages (npm/Go/PyPI/Cargo/Maven), runtimes, toolchains, GitHub/GitLab CI Actions, container images, IaC providers, Helm charts, CLI tools. Standard/official libraries first (e.g. Go's database/sql and net/http); importing a NEW third-party library requires asking the user and getting explicit consent BEFORE writing any import or dependency-file change. Always check the official latest version before writing a version number; never rely on training memory. TRIGGER when editing package.json / go.mod / requirements.txt / Cargo.toml / pom.xml / Dockerfile / docker-compose.yaml / .github/workflows/*.yaml / Terraform / Helm chart / .nvmrc / .tool-versions, adding any import that pulls a new package, or the user asks to upgrade a dependency / add a library / bump a version / update Actions. ｜ 引入或升级任何外部依赖前必须遵守的依赖引入与版本选择策略——覆盖语言包（npm/Go/PyPI/Cargo/Maven）、运行时与工具链、GitHub/GitLab CI Actions、容器镜像、IaC provider、Helm chart、CLI 工具。强制"官方库 / 标准库优先"（如 Go 的 database/sql、net/http）；新增第三方库必须先询问用户并获明确同意，才能写入 import 或依赖文件。强制要求"写入版本号前先用官方渠道查最新版本"，禁止凭训练记忆或既往项目经验填写版本号。TRIGGER when：编辑 package.json / go.mod / requirements.txt / Cargo.toml / pom.xml / Dockerfile / docker-compose.yaml / .github/workflows/*.yaml / .gitlab-ci.yaml / Terraform / Helm chart / .nvmrc / .tool-versions 等任何会钉死外部资产版本号的文件、新增会拉入新包的 import；或用户要求 "升级依赖" / "加个 xxx 库" / "bump 版本" / "更新 Actions" 等。
 user-invocable: false
 ---
 
-# 依赖版本管理策略
+# 依赖引入与版本管理策略
 
 适用于：**一切会被钉死到项目文件里的外部资产版本号 / tag / digest 的引入与升级**。
 
-> 核心理念：**训练数据有截止时间，凭记忆填写的"最新版本号"几乎总是过时的。** 任何版本号在写入文件前都必须经官方渠道验证。
+> 核心理念：**先问"该不该引入"，再问"引入哪个版本"。** 官方库 / 标准库优先，新增第三方库须经用户同意；任何版本号在写入文件前都必须经官方渠道验证（训练数据有截止时间，凭记忆填写的"最新版本号"几乎总是过时的）。
 
 ## 0. 触发场景
 
@@ -54,7 +54,41 @@ user-invocable: false
 
 ---
 
-## 2. 引入前必查最新版本（强制）
+## 2. 引入门槛：官方库优先，第三方库须用户同意（强制）
+
+本节是版本选择的**前置门**——先通过这道门，才进入后续"查版本、选版本"流程。
+
+### 默认顺序
+
+实现任何功能时，按以下优先级选取依赖来源：
+
+1. **标准库 / 语言官方库**（如 Go 的 `database/sql`、`net/http`，Python 的 `json`、`http.server`）
+2. **项目已有依赖**（已在 `go.mod` / `package.json` / lockfile 中的库，继续使用不算新增）
+3. **新增第三方库**——最后手段，且**必须先经用户同意**
+
+### 新增第三方库的同意流程
+
+在写入任何 `import` 语句或依赖文件**之前**，必须先向用户说明并获得**明确同意**：
+
+- **为什么标准库 / 官方库 / 已有依赖不能满足**（缺能力？实现成本过高？）
+- **候选库是什么**（名称、用途、维护状态）
+
+用户同意后才能导入；用户拒绝则改用标准库或现有依赖实现。
+
+### 豁免
+
+- 用户在对话中**主动点名**要求使用某个第三方库 → 视为已同意，直接引入（版本仍按 §3 查最新）
+- 使用项目**已有**第三方依赖 → 不需重复审批
+
+### 严禁的做法
+
+- ❌ 未经询问直接 `import` 新第三方库，再事后告知
+- ❌ 标准库可满足却默认引入第三方封装（如用第三方 HTTP 框架替代 `net/http` 而未经用户同意）
+- ❌ 以"业界常用""更优雅"为由跳过询问
+
+---
+
+## 3. 引入前必查最新版本（强制）
 
 **在写入版本号之前**，Agent 必须先通过**官方渠道**查询当前最新版本。
 
@@ -121,7 +155,7 @@ helm search repo <chart> --versions
 
 ---
 
-## 3. 版本选择优先级
+## 4. 版本选择优先级
 
 除用户特殊声明外，按以下顺序选取版本：
 
@@ -138,7 +172,7 @@ helm search repo <chart> --versions
 
 ---
 
-## 4. 偏离须说明
+## 5. 偏离须说明
 
 如确需锁定到非最新版本，必须在 **PR 描述或 commit message** 中写明：
 
@@ -149,7 +183,7 @@ helm search repo <chart> --versions
 
 ---
 
-## 5. 升级既有依赖
+## 6. 升级既有依赖
 
 为已有项目升级依赖时同样适用本策略，**不因"只是升级"而豁免查询**：
 
@@ -162,7 +196,7 @@ helm search repo <chart> --versions
 
 ---
 
-## 6. 与其他规范的关系
+## 7. 与其他规范的关系
 
 - **包管理器选择**：前端统一使用 `bun`（详见前端规范），不在本 skill 范围内
 - **Go 依赖同步**：每次 `import` 变更后必须 `go mod tidy`（详见 Go 项目规范）
@@ -170,10 +204,12 @@ helm search repo <chart> --versions
 
 ---
 
-## 7. 自检清单（写入版本号前）
+## 8. 自检清单（写入版本号前）
 
 在保存任何含版本号的文件前，逐项确认：
 
+- [ ] 已确认标准库 / 官方库 / 项目已有依赖**无法满足**，才考虑新增第三方库
+- [ ] 新增第三方库**已向用户说明理由并获明确同意**（或用户主动点名）
 - [ ] 已通过**官方渠道**（命令或官方网站）查询最新版本，**未**凭记忆填写
 - [ ] 已确认选用的是**最新稳定版**或**最新 LTS**（依据该依赖是否有 LTS 概念）
 - [ ] **不是** alpha / beta / rc / nightly / preview / snapshot 预发布版本

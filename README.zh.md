@@ -72,7 +72,7 @@
 ### bb-spec-core — 通用纪律
 
 - **`tdd-workflow`** — Red-Green-Refactor 纪律，覆盖增 / 改 / 删三场景标准流程
-- **`version-policy`** — 钉版本前先查依赖官方最新版，禁凭训练记忆
+- **`version-policy`** — 官方库 / 标准库优先，新增第三方库须经用户明确同意；钉版本前先查依赖官方最新版，禁凭训练记忆
 - **`git-workflow`** — 分支决策、阶段性 commit、六段式 PR 描述、合并后清理
 
 ### bb-spec-backend — 后端技术框架约束
