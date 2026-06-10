@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.6.0](https://github.com/0xBB2B/bb-spec/compare/v5.5.0...v5.6.0) (2026-06-10)
+
+
+### Features
+
+* **golang-constraints:** 区分业务分层与支撑包 ([#72](https://github.com/0xBB2B/bb-spec/issues/72)) ([e45642e](https://github.com/0xBB2B/bb-spec/commit/e45642e6a56aa782bbb6e798e063556e345acdfb))
+
 ## [5.5.0](https://github.com/0xBB2B/bb-spec/compare/v5.4.0...v5.5.0) (2026-06-10)
 
 
