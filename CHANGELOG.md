@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.3.0](https://github.com/0xBB2B/bb-spec/compare/v5.2.0...v5.3.0) (2026-06-10)
+
+
+### Features
+
+* **version-policy,golang-constraints:** 官方库优先，新增第三方库须用户同意 ([#66](https://github.com/0xBB2B/bb-spec/issues/66)) ([6a4df87](https://github.com/0xBB2B/bb-spec/commit/6a4df870bacd90a74139805601e3fe4647279dc8))
+
 ## [5.2.0](https://github.com/0xBB2B/bb-spec/compare/v5.1.0...v5.2.0) (2026-06-10)
 
 
