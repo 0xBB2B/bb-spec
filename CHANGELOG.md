@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.5.0](https://github.com/0xBB2B/bb-spec/compare/v5.4.0...v5.5.0) (2026-06-10)
+
+
+### Features
+
+* **plan,exec,version-policy:** plan 批准即授权新增第三方依赖清单，exec 不得超出 ([#70](https://github.com/0xBB2B/bb-spec/issues/70)) ([a444eb6](https://github.com/0xBB2B/bb-spec/commit/a444eb6a2902d468e697ef86236d9d4f43dc93ed))
+
 ## [5.4.0](https://github.com/0xBB2B/bb-spec/compare/v5.3.0...v5.4.0) (2026-06-10)
 
 
