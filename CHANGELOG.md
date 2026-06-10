@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.2.0](https://github.com/0xBB2B/bb-spec/compare/v5.1.0...v5.2.0) (2026-06-10)
+
+
+### Features
+
+* **spec,plan,exec:** 断点恢复叙事更新为跨会话续接，裁决点接入 AskUserQuestion ([#64](https://github.com/0xBB2B/bb-spec/issues/64)) ([4205e2b](https://github.com/0xBB2B/bb-spec/commit/4205e2b3dafa0f353afb803680f9d2b3dc7ab742))
+
 ## [5.1.0](https://github.com/0xBB2B/bb-spec/compare/v5.0.0...v5.1.0) (2026-06-09)
 
 
