@@ -76,6 +76,8 @@ These feed rules into the pipeline above — install only the layers you need; e
 
 - **`prd`** — PM / requester brainstorms with AI: challenge first (rejection is a valid outcome) → diverge → converge, producing a self-contained PRD — goals / non-goals, prioritized user stories (every P0 carries concrete use cases and acceptance criteria), and open questions left for engineers; needs no git repo or code context, consumed directly by `/spec`
 
+> **PMs don't need Claude Code**: every release auto-packages [`bb-spec-prd-skill.zip`](https://github.com/0xBB2B/bb-spec/releases/latest/download/bb-spec-prd-skill.zip) — download it and upload via **Settings → Customize → Skills** on claude.ai web / desktop to use the skill standalone (paid plan with code execution required); the resulting PRD is delivered to engineers as a downloadable file.
+
 ### bb-spec-core — universal discipline
 
 - **`tdd-workflow`** — Red-Green-Refactor discipline with standard flows for the add / modify / delete scenarios

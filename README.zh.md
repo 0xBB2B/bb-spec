@@ -75,6 +75,8 @@
 
 - **`prd`** — PM / 需求方与 AI 头脑风暴：质疑前置（允许否决）→ 发散 → 收敛，产出自包含 PRD——目标 / 非目标、带优先级的用户故事（每条 P0 挂具体用例与验收标准）、留给工程师的开放问题；不依赖 git 仓库与代码上下文，`/spec` 直接消费
 
+> **PM 不用装 Claude Code**：每次发版自动打包 [`bb-spec-prd-skill.zip`](https://github.com/0xBB2B/bb-spec/releases/latest/download/bb-spec-prd-skill.zip)，下载后在 claude.ai 网页版 / 桌面版的 **Settings → Customize → Skills** 上传即可单独使用（需付费计划并启用代码执行），产出的 PRD 以可下载文件交付给工程师。
+
 ### bb-spec-core — 通用纪律
 
 - **`tdd-workflow`** — Red-Green-Refactor 纪律，覆盖增 / 改 / 删三场景标准流程
