@@ -49,7 +49,7 @@ disable-model-invocation: true
 
 ## 3. Workflow 编排
 
-调用 Workflow 工具，`args` 传 `{finders, context}`（`context` = 一段自包含的 review 上下文文本：范围 `<base>..HEAD`、主题摘要、约束清单），`script` 用下面模板：
+调用 Workflow 工具，**不使用 `args` 传参**（大对象经 args 易被序列化成字符串导致脚本取不到字段），把数据直接内嵌进脚本：将模板顶部的 `FINDERS` 替换为组装好的 finders 数组、`CONTEXT` 替换为一段自包含的 review 上下文文本（范围 `<base>..HEAD`、主题摘要、约束清单）。内嵌长文本用模板字符串时注意转义内容中的 `` ` `` 与 `${`。`script` 用下面模板：
 
 ```js
 export const meta = {
@@ -60,6 +60,10 @@ export const meta = {
     { title: 'Verify', detail: '每条 🔴/🟡 × 3 个独立怀疑视角对抗验证' },
   ],
 }
+
+// ===== review 输入（派工前由协调者填充，禁用 args 传参） =====
+const FINDERS = [/* {key, prompt, agentType?}, ... */]
+const CONTEXT = `/* 自包含 review 上下文：范围、主题摘要、约束清单 */`
 
 // finder 的结构化发现 schema
 const FINDINGS = {
@@ -94,7 +98,7 @@ const VERDICT = {
 }
 
 phase('Find')
-const rounds = await parallel(args.finders.map(f => () =>
+const rounds = await parallel(FINDERS.map(f => () =>
   agent(f.prompt, {
     label: `find:${f.key}`, phase: 'Find', schema: FINDINGS,
     ...(f.agentType ? { agentType: f.agentType } : {}),
@@ -103,7 +107,7 @@ const rounds = await parallel(args.finders.map(f => () =>
 
 // 展平并标注发现者（agent 被跳过/出错时 rounds 对应项为 null）
 const raw = rounds
-  .map((r, i) => (r ? r.findings.map(x => ({ ...x, by: args.finders[i].key })) : []))
+  .map((r, i) => (r ? r.findings.map(x => ({ ...x, by: FINDERS[i].key })) : []))
   .flat()
 
 // 纯代码去重：同文件且行区间重叠 → 合并（发现者并集、严重度取最高）
@@ -144,7 +148,7 @@ const verified = await parallel(toVerify.map(f => () =>
     agent(
       `你是独立的 review 仲裁者，立场是怀疑：优先尝试否决下面这条发现，证据不足或站不住脚就判 valid=false。\n\n` +
       `仲裁视角（只回答这一个维度）：${l.q}\n\n` +
-      `Review 上下文：\n${args.context}\n\n` +
+      `Review 上下文：\n${CONTEXT}\n\n` +
       `待仲裁发现（由 ${f.by.join('/')} 提出）：\n` +
       `标题：${f.title}\n位置：${f.file}:${f.lines}\n严重度：${f.severity}\n` +
       `事实：${f.fact}\n影响：${f.impact}\n建议：${f.suggestion}\n\n` +
