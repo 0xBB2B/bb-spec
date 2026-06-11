@@ -1,6 +1,6 @@
 {
   "name": "bb-spec-product",
-  "version": "5.9.0",
+  "version": "5.10.0",
   "description": "BB-Spec 产品需求：/prd 与 AI 头脑风暴，质疑前置、发散收敛，产出含具体用例的自包含 PRD 文档，供工程师在 /spec 中直接消费。| BB-Spec product requirements: /prd brainstorms with AI — challenge-first, diverge then converge — and produces a self-contained PRD with concrete use cases, consumable directly by /spec.",
   "author": {
     "name": "0xBB2B",
