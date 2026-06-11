@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.11.0](https://github.com/0xBB2B/bb-spec/compare/v5.10.0...v5.11.0) (2026-06-11)
+
+
+### Features
+
+* **review:** 报告简表表格化并为 finder 分配身份图标 ([#85](https://github.com/0xBB2B/bb-spec/issues/85)) ([c880141](https://github.com/0xBB2B/bb-spec/commit/c880141bcce2574a60954eaa51338fa92fc49c77))
+
 ## [5.10.0](https://github.com/0xBB2B/bb-spec/compare/v5.9.0...v5.10.0) (2026-06-11)
 
 
