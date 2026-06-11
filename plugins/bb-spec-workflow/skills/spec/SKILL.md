@@ -22,13 +22,25 @@ description: Refine the user's requirement through dialogue, break a large requi
 
 ## 工作流
 
-### 步骤 0：读取项目配置 + 盘点已有 spec
+### 步骤 0：读取项目配置 + 盘点 PRD 与已有 spec
 
 ```bash
 cat .bb-spec.yaml 2>/dev/null
 ```
 
 有 `docs_dir` → 用其值作为基础路径（如 `docs_dir: my/docs` → spec 目录为 `my/docs/spec/`）；文件不存在或无该字段 → 默认 `.bb-spec/docs`。后续所有路径基于此值。
+
+**盘点待消费 PRD**（PRD 由 `/prd` 头脑风暴产出，是本次需求的上游输入）：
+
+```bash
+ls ${DOCS_DIR}/prd/ 2>/dev/null
+```
+
+- 不存在/为空 → 跳过
+- 存在 → 列出文件，用 AskUserQuestion 让用户选择是否以某份 PRD 作为本次需求输入。选定后完整读取：
+  - PRD 已明确的内容（目标 / 非目标 / 用户故事 / 用例 / 验收）视为已澄清，步骤 1 不重复提问
+  - PRD 的"开放问题"并入下方**待确认**清单，随三类点一起请用户裁决
+  - 步骤 9 完成简报标注来源 PRD 文件名
 
 ```bash
 cat ${DOCS_DIR}/spec/INDEX.md 2>/dev/null || ls ${DOCS_DIR}/spec/ 2>/dev/null
@@ -61,6 +73,8 @@ cat ${DOCS_DIR}/spec/INDEX.md 2>/dev/null || ls ${DOCS_DIR}/spec/ 2>/dev/null
 ### 步骤 1：递进式澄清（核心环节，禁止脑补）
 
 **铁律**：用户没明说的每个细节都是"未定项"，必须问出来——禁止用"常见做法/合理默认"替用户拍板。
+
+**已选定 PRD 时**：先从 PRD 的用户故事、用例、验收中提取各维度答案，只对 PRD 未覆盖的维度提问——这是 PRD 的价值兑现点，禁止重复问 PRD 已回答的问题。
 
 **怎么问**：逐维度深挖，不要一次撒一堆问题。每轮锁定 1 个维度，问 1-3 个递进问题；用户回答后判断粒度——
 
@@ -141,6 +155,7 @@ cat ${DOCS_DIR}/spec/INDEX.md 2>/dev/null || ls ${DOCS_DIR}/spec/ 2>/dev/null
 ```
 ## Spec 完成简报
 
+- 来源 PRD：<文件名，未消费 PRD 则写"无">
 - 产出：新增 N 条 / 修改 M 条 / 删除 K 条 spec
 - 文件清单：
   - <新增/修改/删除> <路径> — <一句话描述>

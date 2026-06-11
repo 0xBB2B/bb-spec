@@ -15,6 +15,11 @@
         },
         {
           "type": "json",
+          "path": "plugins/bb-spec-product/.claude-plugin/plugin.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
           "path": "plugins/bb-spec-backend/.claude-plugin/plugin.json",
           "jsonpath": "$.version"
         },
