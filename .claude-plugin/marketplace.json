@@ -16,6 +16,11 @@
       "description": "BB-Spec 工作流：spec → plan → exec（三 Agent 隔离）→ review（多代理对抗）→ revise → git-push-pr，含 init 反向 spec 化与 8 个编排 subagent。| BB-Spec workflow: spec → plan → exec → review → revise → git-push-pr, plus init reverse-spec and 8 orchestration subagents."
     },
     {
+      "name": "bb-spec-product",
+      "source": "./plugins/bb-spec-product",
+      "description": "BB-Spec 产品需求：/prd 与 AI 头脑风暴，质疑前置、发散收敛，产出含具体用例的自包含 PRD 文档，供工程师在 /spec 中直接消费。| BB-Spec product requirements: /prd brainstorms with AI — challenge-first, diverge then converge — and produces a self-contained PRD with concrete use cases, consumable directly by /spec."
+    },
+    {
       "name": "bb-spec-backend",
       "source": "./plugins/bb-spec-backend",
       "description": "BB-Spec 后端技术框架约束：Go 三层架构与测试、REST API 设计与结构化错误码、关系型数据库、认证/授权、可观测性、服务运行时治理。| BB-Spec backend stack constraints: Go architecture & testing, REST API & error codes, relational DB, authN/authZ, observability, service runtime governance."
