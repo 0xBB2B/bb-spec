@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.10.0](https://github.com/0xBB2B/bb-spec/compare/v5.9.0...v5.10.0) (2026-06-11)
+
+
+### Features
+
+* **review:** 逐个解决模式重组为四段展开并新增根源性自检 ([#83](https://github.com/0xBB2B/bb-spec/issues/83)) ([2d77ee1](https://github.com/0xBB2B/bb-spec/commit/2d77ee165038c18be48be7bd0e8e517459e2cda2))
+
 ## [5.9.0](https://github.com/0xBB2B/bb-spec/compare/v5.8.0...v5.9.0) (2026-06-11)
 
 
