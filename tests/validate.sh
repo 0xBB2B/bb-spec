@@ -11,15 +11,29 @@ pass() { PASS=$((PASS + 1)); }
 fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 
 # ─── 辅助：提取 frontmatter 字段值（首次匹配）───
+# 单进程 awk 实现：禁用 sed | grep -m1/-q 管道——grep 提前退出会让 sed 吃 SIGPIPE，
+# 在 set -o pipefail 下整条管道判失败，导致 CI 竞态性崩溃（exit 4）
 fm_value() {
   local file="$1" key="$2"
-  sed -n '/^---$/,/^---$/p' "$file" | grep -m1 "^${key}:" | sed "s/^${key}:[[:space:]]*//"
+  awk -v k="$key" '
+    /^---$/ { n++; if (n == 2) exit; next }
+    n == 1 && index($0, k ":") == 1 {
+      v = substr($0, length(k) + 2)
+      gsub(/^[[:space:]]+/, "", v)
+      print v
+      exit
+    }
+  ' "$file"
 }
 
 # 检查 frontmatter 是否包含指定 key
 fm_has() {
   local file="$1" key="$2"
-  sed -n '/^---$/,/^---$/p' "$file" | grep -q "^${key}:"
+  awk -v k="$key" '
+    /^---$/ { n++; if (n == 2) exit; next }
+    n == 1 && index($0, k ":") == 1 { found = 1; exit }
+    END { exit found ? 0 : 1 }
+  ' "$file"
 }
 
 # ─────────────────────────────────────────────
