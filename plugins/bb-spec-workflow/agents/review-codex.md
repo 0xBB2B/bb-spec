@@ -3,6 +3,7 @@ name: review-codex
 description: Codex（GPT-5.5）跨模型独立 review：根源 vs 表层、备选方案、语言习惯、Claude 常见偏好盲点。
 role: 跨模型独立审查者
 agent-type: codex:codex-rescue
+model: opus
 inputs:
   - review_scope     # git diff 输出或文件列表
   - topic_summary    # ≤300 字的修复主题摘要

@@ -3,6 +3,7 @@ name: review-security
 description: 以攻击者视角审查 PR：注入、硬编码凭据、绕过场景、fail-close、缓存中毒、TOCTOU、并发竞态、信任锚错位。
 role: 安全审查者
 agent-type: general-purpose
+model: opus
 inputs:
   - review_scope     # git diff 输出或文件列表
   - topic_summary    # ≤300 字的修复主题摘要

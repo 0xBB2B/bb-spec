@@ -3,6 +3,7 @@ name: spec-reviewer
 description: 对照 spec 规则检查实现合规性和测试覆盖率，只读不写。
 role: Spec 合规审查者
 agent-type: general-purpose
+model: opus
 inputs:
   - business_rules      # spec 中的业务规则
   - verification        # 验证预期
