@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.12.0](https://github.com/0xBB2B/bb-spec/compare/v5.11.0...v5.12.0) (2026-06-11)
+
+
+### Features
+
+* **review:** 报告表格 by 列图标后附 finder 文字名 ([#87](https://github.com/0xBB2B/bb-spec/issues/87)) ([755ba77](https://github.com/0xBB2B/bb-spec/commit/755ba77652f730c70dfedb311166fc8219deeec0))
+
 ## [5.11.0](https://github.com/0xBB2B/bb-spec/compare/v5.10.0...v5.11.0) (2026-06-11)
 
 
