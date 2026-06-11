@@ -13,10 +13,12 @@
 > **This is the heart of BB-Spec.** A closed-loop, spec-driven pipeline that carries a fuzzy requirement all the way to reviewed, shipped code — every stage traceable, resumable, and adversarially verified. The three constraint suites further down (core / backend / frontend) are **companions** that feed rules into this loop; the loop is the product.
 
 ```
+/prd   Requirement brainstorm → PRD doc (optional upstream; for PMs / requesters, shipped separately as bb-spec-product)
+  ┊
 /init  Reverse-spec an existing project (run once on first adoption; parallel partitioned extraction)
   │
   ▼
-/spec  Requirement breakdown → one rule per document
+/spec  Requirement breakdown → one rule per document (consumes a PRD directly when present, no re-clarification)
   │
   ▼
 /plan  spec → function-level implementation plan (auto-batched ROADMAP, lazy expansion for large scopes)
@@ -46,7 +48,7 @@
   (spec-defect → spec, impl-defect → exec, review findings → fix)
 ```
 
-**How the stages connect.** The pipeline is a relay, and every handoff is a *file on disk* — not a memory in the chat — which is exactly what makes it resumable, AI-swappable, and auditable end to end: `/spec` turns a fuzzy ask into spec docs under `.bb-spec/docs/spec/` (**what to build**) → `/plan` reads those and emits a function-level plan under `.bb-spec/docs/plan/` (**how to build it**; large scopes auto-split into a batched ROADMAP that expands one batch at a time, with the next batch generated only after the current one clears its verification gate) → `/exec` drives the plan through Test→Impl→Review into tests + code, checkpointing to `PROGRESS.md` → `/review` judges the resulting diff → `/git-push-pr` self-checks against the spec and opens the PR.
+**How the stages connect.** The pipeline is a relay, and every handoff is a *file on disk* — not a memory in the chat — which is exactly what makes it resumable, AI-swappable, and auditable end to end: (optionally) `/prd` lets a PM / requester brainstorm a fuzzy idea into a PRD doc under `.bb-spec/docs/prd/` (**why build it, and to what extent** — with concrete use cases and acceptance criteria, so `/spec` only asks about what the PRD left uncovered) → `/spec` turns a fuzzy ask into spec docs under `.bb-spec/docs/spec/` (**what to build**) → `/plan` reads those and emits a function-level plan under `.bb-spec/docs/plan/` (**how to build it**; large scopes auto-split into a batched ROADMAP that expands one batch at a time, with the next batch generated only after the current one clears its verification gate) → `/exec` drives the plan through Test→Impl→Review into tests + code, checkpointing to `PROGRESS.md` → `/review` judges the resulting diff → `/git-push-pr` self-checks against the spec and opens the PR.
 
 Two branches close the loop: **`/init`** is the *on-ramp* for existing projects — it reverse-derives the spec first, then merges into the mainline; **`/revise`** is the *return path* — on any deviation it routes you back to the **right** stage by root cause (spec-defect → `/spec`, impl-drift → `/exec`), not a blind redo.
 
@@ -69,6 +71,10 @@ Passive constraints (hooks, automatic): block npm/yarn, block main commit, depen
 ## Companion constraint skills
 
 These feed rules into the pipeline above — install only the layers you need; each skill in one line.
+
+### bb-spec-product — product requirements (pipeline upstream)
+
+- **`prd`** — PM / requester brainstorms with AI: challenge first (rejection is a valid outcome) → diverge → converge, producing a self-contained PRD — goals / non-goals, prioritized user stories (every P0 carries concrete use cases and acceptance criteria), and open questions left for engineers; needs no git repo or code context, consumed directly by `/spec`
 
 ### bb-spec-core — universal discipline
 
@@ -96,7 +102,7 @@ These feed rules into the pipeline above — install only the layers you need; e
 
 ## Install
 
-BB-Spec ships as **four independently installable sub-plugins** — install only the constraint layers you need.
+BB-Spec ships as **five independently installable sub-plugins** — install only the constraint layers you need.
 
 First add the marketplace once, inside Claude Code:
 
@@ -110,10 +116,11 @@ Then install whichever layers you want:
 |---|---|---|
 | **bb-spec-core** _(recommended base)_ | TDD / version-policy / git-workflow discipline + 3 passive hooks | `/plugin install bb-spec-core@0xbb2b` |
 | **bb-spec-workflow** _(core)_ | spec → plan → exec → review → revise → git-push-pr, init reverse-spec + 8 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-product** | /prd requirement brainstorm → PRD doc with concrete use cases (for PMs / requesters) | `/plugin install bb-spec-product@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / authN / authZ / observability / service constraints | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun stack & engineering conventions (+ bun hook) | `/plugin install bb-spec-frontend@0xbb2b` |
 
-Pick by need — e.g. just the disciplines and workflow without any stack opinions: install `bb-spec-core` + `bb-spec-workflow`. Want everything: install all four.
+Pick by need — e.g. just the disciplines and workflow without any stack opinions: install `bb-spec-core` + `bb-spec-workflow`. On a PM's / requester's machine: just `bb-spec-product`. Want everything: install all five.
 
 Or add it manually to `~/.claude/settings.json` (enable only what you want):
 
@@ -127,13 +134,14 @@ Or add it manually to `~/.claude/settings.json` (enable only what you want):
   "enabledPlugins": {
     "bb-spec-core@0xbb2b": true,
     "bb-spec-workflow@0xbb2b": true,
+    "bb-spec-product@0xbb2b": false,
     "bb-spec-backend@0xbb2b": false,
     "bb-spec-frontend@0xbb2b": false
   }
 }
 ```
 
-> **Upgrading from the old single `bb-spec` plugin (≤ 4.x)?** It has been split into the four sub-plugins above. Remove the old one with `/plugin uninstall bb-spec`, then install the layers you need.
+> **Upgrading from the old single `bb-spec` plugin (≤ 4.x)?** It has been split into the sub-plugins above. Remove the old one with `/plugin uninstall bb-spec`, then install the layers you need.
 
 ## Versioning
 
@@ -142,7 +150,7 @@ Or add it manually to `~/.claude/settings.json` (enable only what you want):
 /plugin update bb-spec-core     # update only one sub-plugin
 ```
 
-The four sub-plugins share a single synchronized version line.
+The five sub-plugins share a single synchronized version line.
 
 ---
 
@@ -192,10 +200,10 @@ The repo-root [`CLAUDE.template.md`](./CLAUDE.template.md) is a companion "iron-
 
 ### .bb-spec.yaml project config
 
-`/spec` and `/plan` output to `.bb-spec/docs/spec/` and `.bb-spec/docs/plan/` by default. Create a `.bb-spec.yaml` in the project root to override the base path:
+`/prd`, `/spec` and `/plan` output to `.bb-spec/docs/prd/`, `.bb-spec/docs/spec/` and `.bb-spec/docs/plan/` by default. Create a `.bb-spec.yaml` in the project root to override the base path:
 
 ```yaml
-docs_dir: my/custom/docs  # → my/custom/docs/spec/, my/custom/docs/plan/
+docs_dir: my/custom/docs  # → my/custom/docs/prd/, my/custom/docs/spec/, my/custom/docs/plan/
 ```
 
 Reference template: [`.bb-spec.template.yaml`](./.bb-spec.template.yaml).
