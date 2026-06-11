@@ -3,6 +3,7 @@ name: review-doc-sync
 description: 审查代码改动后文档是否同步：签名 vs 注释脱节、README 过时引用、配置项缺文档、spec 与实现偏离、CLAUDE.md 失效。
 role: 文档同步审查者
 agent-type: general-purpose
+model: opus
 inputs:
   - review_scope     # git diff 输出或文件列表
   - topic_summary    # ≤300 字的修复主题摘要

@@ -3,6 +3,7 @@ name: impl-engineer
 description: 只看 plan 函数清单和测试文件，用最小代码让测试全绿。不接触 spec 原文。
 role: 实现工程师
 agent-type: general-purpose
+model: opus
 inputs:
   - plan_functions_and_paths  # 函数清单 + 文件路径 + 协作关系 + 成品定义（如有）
   - test_file_paths           # Test Agent 产出的测试文件路径

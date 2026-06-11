@@ -3,6 +3,7 @@ name: review-simplicity
 description: 审查代码简洁性：既查新增的过度设计（投机性实现、单实现 interface、架构早熟），也查改动文件附近的历史包袱（死代码、过渡式实现、弃用残留）。
 role: 代码简洁性审查者
 agent-type: general-purpose
+model: opus
 inputs:
   - review_scope     # git diff 输出或文件列表
   - topic_summary    # ≤300 字的修复主题摘要
