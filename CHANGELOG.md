@@ -1,5 +1,18 @@
 # Changelog
 
+## [5.8.0](https://github.com/0xBB2B/bb-spec/compare/v5.7.0...v5.8.0) (2026-06-11)
+
+
+### Features
+
+* 新增 bb-spec-product 插件，/prd 头脑风暴产出 PRD 并打通 /spec 消费 ([#77](https://github.com/0xBB2B/bb-spec/issues/77)) ([2b0d817](https://github.com/0xBB2B/bb-spec/commit/2b0d8174461ebe99fe611987a20bd6b88e6f4799))
+
+
+### Bug Fixes
+
+* **review:** workflow 输入改为脚本内嵌，砍掉 args 传参通道 ([#80](https://github.com/0xBB2B/bb-spec/issues/80)) ([ab4e65e](https://github.com/0xBB2B/bb-spec/commit/ab4e65e8988bfa39c5f5541723a0718068bcc900))
+* validate.sh frontmatter 提取改单进程 awk，消除 CI SIGPIPE 竞态 ([#79](https://github.com/0xBB2B/bb-spec/issues/79)) ([68385b7](https://github.com/0xBB2B/bb-spec/commit/68385b7955777af1222a8067314fdc37d08fc47c))
+
 ## [5.7.0](https://github.com/0xBB2B/bb-spec/compare/v5.6.0...v5.7.0) (2026-06-11)
 
 
