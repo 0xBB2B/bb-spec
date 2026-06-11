@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.7.0](https://github.com/0xBB2B/bb-spec/compare/v5.6.0...v5.7.0) (2026-06-11)
+
+
+### Features
+
+* **exec,review:** impl-engineer 与各 review agent 固化 model: opus ([#75](https://github.com/0xBB2B/bb-spec/issues/75)) ([b9de213](https://github.com/0xBB2B/bb-spec/commit/b9de213cbe8be8035817505f04ebf8f1e525d329))
+
 ## [5.6.0](https://github.com/0xBB2B/bb-spec/compare/v5.5.0...v5.6.0) (2026-06-10)
 
 
