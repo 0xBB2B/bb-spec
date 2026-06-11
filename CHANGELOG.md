@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.9.0](https://github.com/0xBB2B/bb-spec/compare/v5.8.0...v5.9.0) (2026-06-11)
+
+
+### Features
+
+* **review:** review 报告改为逐个对话解决模式 ([#81](https://github.com/0xBB2B/bb-spec/issues/81)) ([4bc4497](https://github.com/0xBB2B/bb-spec/commit/4bc4497beace4c93a8baf758e4be26b4acd714fd))
+
 ## [5.8.0](https://github.com/0xBB2B/bb-spec/compare/v5.7.0...v5.8.0) (2026-06-11)
 
 
