@@ -13,6 +13,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: googleapis/release-please-action@v5
+        id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      # 发版后打包 prd skill 为 zip 挂到 Release 资产——
+      # 供 PM / 需求方直接上传 claude.ai（Settings → Customize → Skills）单独使用
+      - uses: actions/checkout@v6
+        if: ${{ steps.release.outputs.release_created }}
+
+      - name: Package prd skill zip
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          cd plugins/bb-spec-product/skills
+          zip -r "$GITHUB_WORKSPACE/bb-spec-prd-skill.zip" prd
+
+      - name: Upload zip to release
+        if: ${{ steps.release.outputs.release_created }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ steps.release.outputs.tag_name }}" bb-spec-prd-skill.zip --clobber
