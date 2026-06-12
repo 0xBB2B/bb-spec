@@ -100,10 +100,12 @@ const VERDICT = {
 }
 
 phase('Find')
+// 模型钉死 opus，不继承会话模型（会话可能跑更贵的档位）；
+// codex finder 例外：它只是调 Codex CLI 的壳，沿用其 agentType 定义里的廉价模型
 const rounds = await parallel(FINDERS.map(f => () =>
   agent(f.prompt, {
     label: `find:${f.key}`, phase: 'Find', schema: FINDINGS,
-    ...(f.agentType ? { agentType: f.agentType } : {}),
+    ...(f.agentType ? { agentType: f.agentType } : { model: 'opus' }),
   })
 ))
 
@@ -155,7 +157,7 @@ const verified = await parallel(toVerify.map(f => () =>
       `标题：${f.title}\n位置：${f.file}:${f.lines}\n严重度：${f.severity}\n` +
       `事实：${f.fact}\n影响：${f.impact}\n建议：${f.suggestion}\n\n` +
       `要求：先用 Read/Grep 实地核对 ${f.file} 相关代码再裁决，不得仅凭描述判断。只读，不修改任何文件、不操作 git。`,
-      { label: `verify:${l.key}:${f.file}`, phase: 'Verify', schema: VERDICT },
+      { label: `verify:${l.key}:${f.file}`, phase: 'Verify', schema: VERDICT, model: 'opus' },
     )
   )).then(vs => {
     const votes = vs.map((v, i) => (v ? { lens: LENSES[i].key, ...v } : null)).filter(Boolean)
