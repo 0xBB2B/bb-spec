@@ -68,30 +68,17 @@ description: Reverse-spec-ification for onboarding. When the target project has 
 
 质检后展示最终分区，等"确认"再进步骤 4。
 
-### 步骤 4：并发派工（Explore subagent 提取候选规则）
+### 步骤 4：并发派工（rule-extractor subagent 提取候选规则）
 
-每分区派 1 个 `Explore` agent（只读、便宜），**同一条消息内**并发发出。每个 prompt 自包含：
+每分区派 1 个 `Agent`（`subagent_type: bb-spec-workflow:rule-extractor`，只读、禁写盘，模型由 agent 定义指定），**同一条消息内**并发发出。prompt 传入：
+- `partition_name`：分区名
+- `scan_scope`：扫描范围（目录列表 / glob）
+- `project_stack`：语言、框架（便于判断哪些是框架自带保证）
+- `existing_index`：已有 spec INDEX.md 内容；无则"无既有 spec"
 
-```
-任务：扫描分区 "<分区名>" 在 <目录列表 / glob> 范围内的代码与文档，提炼"当前代码已在执行"的**规则候选**。
-项目栈：<语言、框架，便于判断哪些是框架自带保证>
-已有 spec 索引（便于避免重复）：<贴 INDEX.md 内容；无则"无既有 spec">
+提取任务、输出结构、五条筛选标准与禁止事项均由 agent 定义自包含。
 
-输出（严格 JSON 或等价 Markdown 表，便于主 agent 合并）：每条含
-  name(kebab-case，候选文件名) / domain(分区名) / description(≤80字) / purpose(一句话目的) /
-  logic(3-10行核心逻辑) / constraints[] / example(输入·过程·预期结果) /
-  source_refs[file:line] / confidence(high|medium|low) / rationale(为何是规则而非实现)
-
-筛选标准（必须全满足才输出，否则丢弃）：
-  ① 跨实现的硬约束，不是某函数的具体写法
-  ② 不是语言/框架/工具本身就保证的（如 SQL 注入有 ORM 防护、类型安全有编译器保证）
-  ③ ≥ 2 处代码出现一致写法（孤例不抽规则）
-  ④ 能用一个真实代码场景作例子
-  ⑤ 约束可证伪——能写出"什么输入 → 什么结果"，写不出的（如"代码应健壮/高内聚"）丢弃
-禁止：写盘（Write/Edit） / 凭空抽象（每条 ≥ 1 个 source_refs） / 复述实现细节（如"用 gin.Context 取参"）
-```
-
-降级：项目很小或用户在步骤 3 选"不拆"，主 agent 直接执行一份等价提取任务，跳过并发。
+降级：项目很小或用户在步骤 3 选"不拆"，主 agent 读取插件 `agents/rule-extractor.md` 直接执行一份等价提取任务，跳过并发。
 
 ### 步骤 5：合并、去重、落盘
 
@@ -160,7 +147,7 @@ description: <≤ 80 字>
 
 - 模式：全新生成 / 增量补全 / 全量重做（已备份至 <bak 路径>）
 - 分区：N 个（<逐项列出>）
-- 派工：M 个 Explore agent（并发） / 单 agent 直跑
+- 派工：M 个 rule-extractor agent（并发） / 主 agent 直跑
 - 产出：新增 K 条 spec（<分区>/<name> — <description>）
 - 跳过候选：J 条（理由：框架自带保证 / 孤例 / 实现细节）
 - 待用户裁决冲突：L 条（<一句话描述> — <file:line> vs <file:line>）
