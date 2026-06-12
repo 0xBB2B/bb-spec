@@ -1,6 +1,6 @@
 ---
 name: git-push-pr
-description: Use when the user wants to push local code to a remote via the PR flow. Auto-detects single / multiple repos; supports batch or selective handling; a repo dir can be passed as an argument. Before pushing, if .bb-spec/docs/spec/INDEX.md exists at the repo or project root, runs a branch-spec self-check (pre-review) — a subagent diffs the current branch vs main against the spec, the main agent fixes violations and re-reviews in a loop, then drafts a concise 6-section PR description (background / requirement / approach / result / tests / spec, under 50 lines) used directly as the PR body. TRIGGER — push it / open a PR / ship the code / self-check before a PR / review this branch against the spec. ｜ 用户想把本地代码通过 PR 流程推送到远程仓库。自动检测单 / 多仓库，支持批量或选择性处理；用户也可通过参数指定单个仓库目录。推送前若仓库根或项目根（CWD）存在 `.bb-spec/docs/spec/INDEX.md`，会自动跑一次**分支规范自查（pre-review）**——派 subagent 拿 spec 比对当前分支 vs main 的 diff，违规由主 agent 直接修复并循环复审，通过后生成一份**简洁的 6 段 PR 描述草稿**（背景 / 需求 / 方案 / 结果 / 测试 / 规范，整体不超过 50 行），直接用作创建 PR 的 body。常见触发："push 一下"、"提个 PR"、"代码推上去"、"准备发 PR"、"开 PR 之前帮我自查一下"、"对照规范看下这个分支"。
+description: Use when the user wants to push local code to a remote via the PR flow. Auto-detects single / multiple repos; supports batch or selective handling; a repo dir can be passed as an argument. Before pushing, if .bb-spec/docs/spec/INDEX.md exists at the repo or project root, runs a branch-spec self-check (pre-review) — a subagent diffs the current branch vs main against the spec, violations are fixed via /revise and re-reviewed in a loop, then drafts a concise 6-section PR description (background / requirement / approach / result / tests / spec, under 50 lines) used directly as the PR body. TRIGGER — push it / open a PR / ship the code / self-check before a PR / review this branch against the spec. ｜ 用户想把本地代码通过 PR 流程推送到远程仓库。自动检测单 / 多仓库，支持批量或选择性处理；用户也可通过参数指定单个仓库目录。推送前若仓库根或项目根（CWD）存在 `.bb-spec/docs/spec/INDEX.md`，会自动跑一次**分支规范自查（pre-review）**——派 subagent 拿 spec 比对当前分支 vs main 的 diff，违规经 /revise 修复并循环复审，通过后生成一份**简洁的 6 段 PR 描述草稿**（背景 / 需求 / 方案 / 结果 / 测试 / 规范，整体不超过 50 行），直接用作创建 PR 的 body。常见触发："push 一下"、"提个 PR"、"代码推上去"、"准备发 PR"、"开 PR 之前帮我自查一下"、"对照规范看下这个分支"。
 ---
 
 # 仓库提交与 PR 流程
@@ -56,16 +56,18 @@ description: Use when the user wants to push local code to a remote via the PR f
 
 ### 4.5.1 派 subagent review
 
-`Agent`（`subagent_type: general-purpose`），prompt 包含：
-- `git diff <base>...HEAD` + `git log <base>..HEAD --oneline`
-- 规范来源：**仅** `.bb-spec/docs/spec/` 下内容（禁引入外部最佳实践）
-- 输出格式：`## 结论 PASS|FAIL` → `## 违规项`（file:line + 违反哪条 + 建议修法）→ `## 备注`
-- subagent **只读不改**
+`Agent`（`subagent_type: bb-spec-workflow:pre-reviewer`，模型由 agent 定义指定），prompt 传入：
+- `repo_path`：仓库绝对路径
+- `base_branch`：比对基线分支
+- `spec_dir`：前置探测命中的 spec 目录
+- `diff_summary`：diff 概况（commit 数、规模、审查重点）
 
-### 4.5.2 主 agent 修复
+审查指令、输出格式（`## 结论 PASS|FAIL` → `## 违规项` → `## 备注`）、只读约束均由 agent 定义自包含。
+
+### 4.5.2 经 /revise 修复
 
 - PASS → 跳到 4.5.3
-- FAIL → 逐条按建议 Edit 改代码（只改违规处）→ commit → 重新派 subagent 复审 → ≥ 3 轮仍 FAIL → 停下报告分歧
+- FAIL → 用 Skill 工具调用 `revise`，把本轮全部违规项（file:line + 违反哪条 + 建议修法）作为参数传入；归因诊断、修复、全量测试、本地 commit 由 revise 闭环，禁止绕过 revise 直接改代码 → revise 完成后重新派 subagent 复审 → ≥ 3 轮仍 FAIL → 停下报告分歧
 
 ### 4.5.3 生成 PR 描述草稿（6 段，≤ 50 行）
 
