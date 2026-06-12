@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.15.1](https://github.com/0xBB2B/bb-spec/compare/v5.15.0...v5.15.1) (2026-06-12)
+
+
+### Bug Fixes
+
+* **exec,revise:** 修正 subagent 派发名前缀为 bb-spec-workflow ([#96](https://github.com/0xBB2B/bb-spec/issues/96)) ([4939a99](https://github.com/0xBB2B/bb-spec/commit/4939a99294e272c2f60efd6de824d993c2518124))
+
 ## [5.15.0](https://github.com/0xBB2B/bb-spec/compare/v5.14.0...v5.15.0) (2026-06-12)
 
 
