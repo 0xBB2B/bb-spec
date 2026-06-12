@@ -169,19 +169,6 @@ Each hook ships with the sub-plugin that owns its concern — install that plugi
 
 ---
 
-## Advanced: optional Hooks (off by default, opt-in)
-
-**bb-spec-workflow** ships two **higher-impact** Stop hooks. They are registered with that plugin but gated at the top of each script, so they **do not run by default** — you must enable them explicitly:
-
-| Hook | Effect | How to enable |
-|---|---|---|
-| `stop-auto-tests.sh` | On Stop, in a Go project (with `go.mod`) automatically runs `vet` / `golangci-lint` / `test -race` / `make test-integration` and feeds failures back to the AI | `export CLAUDE_ENABLE_AUTO_TESTS=1` or `touch .enable-auto-tests` in the project root |
-| `stop-auto-commit.sh` | On Stop, when uncommitted tracked changes are detected, feeds back an instruction for the **AI to commit them itself with a semantic message** (defaults to `git add -u`, non-main/master, no push) | `export CLAUDE_ENABLE_AUTO_COMMIT=1` or `touch .enable-auto-commit` in the repo root |
-
-The environment variable enables a hook at session / global scope (written into your shell rc); the marker file enables it at project scope — use either or both. To disable: `unset` the env var or `rm` the marker file.
-
----
-
 ## Tests
 
 ```bash
@@ -219,8 +206,6 @@ Reference template: [`.bb-spec.template.yaml`](./.bb-spec.template.yaml).
 | Temporarily allow npm / yarn / pnpm | Not provided yet; disable `bb-spec-frontend` temporarily |
 | Temporarily allow main commit | Not provided yet; disable `bb-spec-core` temporarily |
 | Skip the Stop self-check | No switch — this is a core iron rule, skipping is discouraged |
-| Enable stop-auto-tests | `CLAUDE_ENABLE_AUTO_TESTS=1` or `.enable-auto-tests` in the project root |
-| Enable stop-auto-commit | `CLAUDE_ENABLE_AUTO_COMMIT=1` or `.enable-auto-commit` in the repo root |
 
 ---
 
