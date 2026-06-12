@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.16.0](https://github.com/0xBB2B/bb-spec/compare/v5.15.1...v5.16.0) (2026-06-12)
+
+
+### Features
+
+* **workflow:** 编排 subagent 全部收口 agents/ 并显式定模，pre-review 修复走 /revise ([#98](https://github.com/0xBB2B/bb-spec/issues/98)) ([540f78b](https://github.com/0xBB2B/bb-spec/commit/540f78b2603ce77cd65092dd94768fef9813f025))
+
 ## [5.15.1](https://github.com/0xBB2B/bb-spec/compare/v5.15.0...v5.15.1) (2026-06-12)
 
 
