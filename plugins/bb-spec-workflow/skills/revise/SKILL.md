@@ -111,7 +111,7 @@ argument-hint: <问题或优化诉求描述>
 
 1. **改 spec**：编辑 spec 文件修正规则（遵守 spec skill 变更判定：修改=编辑原文件，废弃=删文件 + 移除索引条目）
 2. **检查 plan 影响**：需更新则改对应 plan 的业务规则/验证方式，无影响则跳过
-3. **TDD 修复实现**：派 Test Agent（`bb-spec:test-engineer`）按修正后 spec 写/改测试→Red；派 Impl Agent（`bb-spec:impl-engineer`）改实现→Green；派 Review Agent（`bb-spec:spec-reviewer`）验证合规
+3. **TDD 修复实现**：派 Test Agent（`bb-spec-workflow:test-engineer`）按修正后 spec 写/改测试→Red；派 Impl Agent（`bb-spec-workflow:impl-engineer`）改实现→Green；派 Review Agent（`bb-spec-workflow:spec-reviewer`）验证合规
 4. **同步索引**：spec/plan 的 INDEX.md 如有变动则更新
 
 #### 3b. impl-defect — spec 正确，只修实现层
