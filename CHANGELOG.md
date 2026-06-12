@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.15.0](https://github.com/0xBB2B/bb-spec/compare/v5.14.0...v5.15.0) (2026-06-12)
+
+
+### Features
+
+* **hooks:** 移除 stop-auto-tests / stop-auto-commit 可选 hook ([#93](https://github.com/0xBB2B/bb-spec/issues/93)) ([ea9bc8a](https://github.com/0xBB2B/bb-spec/commit/ea9bc8a5dc04cca9eb1cec9fb380e825d967f72d))
+* **review:** 逐个解决模式修复统一走 /revise，文档同步类自动修复，质量/安全优先排序 ([#95](https://github.com/0xBB2B/bb-spec/issues/95)) ([b9603cb](https://github.com/0xBB2B/bb-spec/commit/b9603cb249d6cd64d544059c029d167da77b2652))
+
 ## [5.14.0](https://github.com/0xBB2B/bb-spec/compare/v5.13.0...v5.14.0) (2026-06-12)
 
 
