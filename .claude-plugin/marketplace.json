@@ -13,7 +13,7 @@
     {
       "name": "bb-spec-workflow",
       "source": "./plugins/bb-spec-workflow",
-      "description": "BB-Spec 工作流：spec → plan → exec（三 Agent 隔离）→ review（多代理对抗）→ revise → git-push-pr，含 init 反向 spec 化与 8 个编排 subagent。| BB-Spec workflow: spec → plan → exec → review → revise → git-push-pr, plus init reverse-spec and 8 orchestration subagents."
+      "description": "BB-Spec 工作流：spec → plan → exec（三 Agent 隔离）→ review（多代理对抗）→ revise → git-push-pr，含 init 反向 spec 化与 10 个编排 subagent。| BB-Spec workflow: spec → plan → exec → review → revise → git-push-pr, plus init reverse-spec and 10 orchestration subagents."
     },
     {
       "name": "bb-spec-product",

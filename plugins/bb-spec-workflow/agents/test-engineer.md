@@ -3,6 +3,7 @@ name: test-engineer
 description: 只根据 spec 规则和行为预期写测试，不接触实现方案。产出 Red 状态的测试文件。
 role: 测试工程师
 agent-type: general-purpose
+model: opus
 inputs:
   - business_rules        # spec 中的业务规则
   - verification          # 验证预期

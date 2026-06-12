@@ -62,7 +62,7 @@ Each stage, and what sets it apart:
 - **`/revise`** — The exception handler, callable anytime: diagnose a deviation's **root cause** into one of three classes — *spec-defect* (→ back to `/spec`), *impl-drift* (→ back to `/exec`), or *requirement-change* — then apply a targeted fix + regression check. Every review finding that needs fixing funnels through here.
 - **`/git-push-pr`** — User-triggered push-and-PR flow (single or multi-repo, batch or selective). When a spec `INDEX.md` exists it first runs a **branch-spec self-check (pre-review)**: a subagent diffs the branch vs main against the spec, violations are fixed and re-reviewed in a loop, then a concise **6-section PR description** is drafted (background / requirement / approach / result / tests / spec, < 50 lines) and used directly as the PR body.
 
-Ships **8 orchestration subagents** the stages above drive: `test-engineer` / `impl-engineer` / `spec-reviewer` / `review-code-quality` / `review-security` / `review-simplicity` / `review-doc-sync` / `review-codex`.
+Ships **10 orchestration subagents** the stages above drive: `test-engineer` / `impl-engineer` / `spec-reviewer` / `review-code-quality` / `review-security` / `review-simplicity` / `review-doc-sync` / `review-codex` / `pre-reviewer` / `rule-extractor`.
 
 Passive constraints (hooks, automatic): block npm/yarn, block main commit, dependency version self-check, Stop four-point self-check.
 
@@ -117,7 +117,7 @@ Then install whichever layers you want:
 | Sub-plugin | What it gives you | Command |
 |---|---|---|
 | **bb-spec-core** _(recommended base)_ | TDD / version-policy / git-workflow discipline + 3 passive hooks | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(core)_ | spec → plan → exec → review → revise → git-push-pr, init reverse-spec + 8 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(core)_ | spec → plan → exec → review → revise → git-push-pr, init reverse-spec + 10 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-product** | /prd requirement brainstorm → PRD doc with concrete use cases (for PMs / requesters) | `/plugin install bb-spec-product@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / authN / authZ / observability / service constraints | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun stack & engineering conventions (+ bun hook) | `/plugin install bb-spec-frontend@0xbb2b` |
