@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.14.0](https://github.com/0xBB2B/bb-spec/compare/v5.13.0...v5.14.0) (2026-06-12)
+
+
+### Features
+
+* **review:** 逐个解决模式修复后强制跑一遍项目测试 ([#91](https://github.com/0xBB2B/bb-spec/issues/91)) ([ca9a4c7](https://github.com/0xBB2B/bb-spec/commit/ca9a4c7914c48c321fc6ba855aadc0e880763301))
+
 ## [5.13.0](https://github.com/0xBB2B/bb-spec/compare/v5.12.0...v5.13.0) (2026-06-12)
 
 
