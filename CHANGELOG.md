@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.13.0](https://github.com/0xBB2B/bb-spec/compare/v5.12.0...v5.13.0) (2026-06-12)
+
+
+### Features
+
+* **review:** finder 与验证者派工钉死 opus 模型 ([#89](https://github.com/0xBB2B/bb-spec/issues/89)) ([52a5f4f](https://github.com/0xBB2B/bb-spec/commit/52a5f4fd0d51ea1ed015740c43cbae14f39976e8))
+
 ## [5.12.0](https://github.com/0xBB2B/bb-spec/compare/v5.11.0...v5.12.0) (2026-06-11)
 
 
