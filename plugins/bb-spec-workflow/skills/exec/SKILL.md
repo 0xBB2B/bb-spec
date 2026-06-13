@@ -74,14 +74,16 @@ argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 
 **2b. Impl Agent — Green**：派 `bb-spec-workflow:impl-engineer`，prompt 传「函数清单 + 文件路径 + 协作关系 + 成品定义（如有）+ 新增第三方依赖清单（如有）」+ 测试文件路径。主 Agent 验证：全部通过 → **依赖守卫**（diff `go.mod` / `package.json` 等依赖文件，新增第三方库不得超出 plan「新增第三方依赖」清单；超出则令 Impl Agent 改用标准库 / 已有依赖重跑，确属必需时停下询问用户、同意后先补录 plan 清单再继续）+ 简洁性审视（是否用最少实现解决问题、有无 plan 未要求的抽象/防御/功能），发现过度设计则反馈 Impl Agent 简化后重跑、通过则 ✅ Green 进 2c；有失败 → 反馈错误给 Impl Agent 重试（最多 1 次）→ 仍失败报告用户。
 
-**2c. Review Agent — Spec 合规**：派 `bb-spec-workflow:spec-reviewer`，prompt 传「业务规则」+「验证方式」+ 所有变更文件路径。主 Agent 处理：全 ✅ → 进步骤 3；有 ❌ 或 ⚠️ → 用 AskUserQuestion 让用户选 **修复** / **接受**（记录到 PROGRESS.md）/ **暂停**（标 blocked）。
+**2c. Review Agent — Spec 合规**：派 `bb-spec-workflow:spec-reviewer`，prompt 传「业务规则」+「验证方式」+ 所有变更文件路径。主 Agent 处理：全 ✅ → 进步骤 3；有 ❌ 或 ⚠️ → **先归因，再按根因决定自决还是问用户**——非设计判断自行解决，不打断用户。
 
-选"修复"时先诊断归因再动手：
+**归因**：对照 spec → plan → 实现 → 测试链路，判定根因——spec-defect（定义层出错）/ impl-defect（spec 正确但实现不符）/ requirement-change（用户实际需要与 spec 不同）。
 
-1. **归因**：对照 spec → plan → 实现 → 测试链路，判定根因——spec-defect（定义层出错）/ impl-defect（spec 正确但实现不符）/ requirement-change（用户实际需要与 spec 不同）
-2. **确认**：向用户展示归因 + 证据，确认后再修
-3. **按类型修复**：spec-defect → 改 spec → 级联 plan → TDD 重新实现（Test→Impl→Review）；impl-defect → 补测试(Red) → 改实现(Green) → 重新 Review；requirement-change → 用户确认新需求 → 更新 spec → 级联 plan + 实现
-4. **回归验证**：全量测试 + spec 合规检查
+**按根因分流**：
+
+- **impl-defect 且根因确凿**（纯实现偏差、不触碰 spec）→ 执行层问题，**自行闭环不打断用户**：补测试(Red) → 改实现(Green) → 重新 Review；自修**最多 1 次**仍不过 → 标 blocked 上报用户。无论自修成败都在 PROGRESS.md「当前」区如实记一笔并计入完成简报。
+- **spec-defect / requirement-change，或归因存疑、证据不足以定性** → 触及定义层 / 需求层，属设计判断，**必须停下** AskUserQuestion 让用户选 **修复** / **接受例外**（记录到 PROGRESS.md）/ **暂停**（标 blocked）。「接受例外」等于默许偏离 spec，**只能由用户点头，主 Agent 禁自决接受**。选"修复"时先向用户展示归因 + 证据，确认后再按类型修：spec-defect → 改 spec → 级联 plan → TDD 重新实现（Test→Impl→Review）；requirement-change → 用户确认新需求 → 更新 spec → 级联 plan + 实现。
+
+**回归验证**：修复后跑全量测试 + spec 合规检查。
 
 ### 步骤 3：持久化进度
 
