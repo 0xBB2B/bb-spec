@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.17.0](https://github.com/0xBB2B/bb-spec/compare/v5.16.0...v5.17.0) (2026-06-13)
+
+
+### Features
+
+* **exec:** Review 偏差按归因分流，impl-defect 自决不打断用户 ([#100](https://github.com/0xBB2B/bb-spec/issues/100)) ([b16a3e2](https://github.com/0xBB2B/bb-spec/commit/b16a3e25dab1b959c0d95763b16b9733d784f228))
+
 ## [5.16.0](https://github.com/0xBB2B/bb-spec/compare/v5.15.1...v5.16.0) (2026-06-12)
 
 
