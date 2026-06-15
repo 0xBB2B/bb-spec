@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.19.0](https://github.com/0xBB2B/bb-spec/compare/v5.18.0...v5.19.0) (2026-06-15)
+
+
+### Features
+
+* **test-webview:** 新增网页交互验证工作流，plan/exec 联动生成用例 ([#104](https://github.com/0xBB2B/bb-spec/issues/104)) ([8f7223a](https://github.com/0xBB2B/bb-spec/commit/8f7223a805b3c663c7b464efa315fec0ff357641))
+
 ## [5.18.0](https://github.com/0xBB2B/bb-spec/compare/v5.17.0...v5.18.0) (2026-06-15)
 
 
