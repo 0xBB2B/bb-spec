@@ -31,6 +31,12 @@
   │  PROGRESS.md 持久化（断点恢复）
   │
   ▼
+/test-webview  网页交互验证（前端项目；可选）
+  │  Docker 整栈拉起（确认一次后记住）→ 跑完清理干净
+  │  每个用例派隔离串行 subagent 跑浏览器 MCP（不爆上下文）
+  │  失败转 /revise
+  │
+  ▼
 /review  Workflow 编排：多 finder 并行 + 对抗验证
   │  质量 / 安全 / 反包袱 / 过度设计 / Codex
   │  每条 🔴/🟡 经 3 个独立怀疑视角多数决
@@ -47,7 +53,7 @@
   （spec-defect 回 spec，impl-defect 回 exec，review 发现问题回修）
 ```
 
-**它们如何衔接。** 这条流水线是一场接力，而每一次交接物都是**磁盘上的文档**、不是会话里的临时记忆——这正是它能断点续、能换个 AI 接手、能逐级追溯的根本：（可选）`/prd` 让 PM / 需求方先把模糊想法头脑风暴成 `.bb-spec/docs/prd/` 下的 PRD 文档（**为什么做、做到什么程度**——含具体用例与验收标准，`/spec` 消费时只问 PRD 未覆盖的点）→ `/spec` 把模糊需求落成 `.bb-spec/docs/spec/` 下的 spec 文档（**做什么**）→ `/plan` 读这些 spec、产出 `.bb-spec/docs/plan/` 下的函数级计划（**怎么做**；大需求自动切分批路线图 ROADMAP，一次只展开当前批，逐批验证门通过后再生成下一批）→ `/exec` 拿 plan 走 Test→Impl→Review、产出测试 + 代码、进度写入 `PROGRESS.md` → `/review` 审最终 diff → `/git-push-pr` 对照 spec 自查后开 PR。
+**它们如何衔接。** 这条流水线是一场接力，而每一次交接物都是**磁盘上的文档**、不是会话里的临时记忆——这正是它能断点续、能换个 AI 接手、能逐级追溯的根本：（可选）`/prd` 让 PM / 需求方先把模糊想法头脑风暴成 `.bb-spec/docs/prd/` 下的 PRD 文档（**为什么做、做到什么程度**——含具体用例与验收标准，`/spec` 消费时只问 PRD 未覆盖的点）→ `/spec` 把模糊需求落成 `.bb-spec/docs/spec/` 下的 spec 文档（**做什么**）→ `/plan` 读这些 spec、产出 `.bb-spec/docs/plan/` 下的函数级计划（**怎么做**；大需求自动切分批路线图 ROADMAP，一次只展开当前批，逐批验证门通过后再生成下一批）→ `/exec` 拿 plan 走 Test→Impl→Review、产出测试 + 代码、进度写入 `PROGRESS.md` →（前端项目）`/test-webview` 用 Docker 整栈拉起应用、逐用例驱动真实浏览器做网页交互验收 → `/review` 审最终 diff → `/git-push-pr` 对照 spec 自查后开 PR。
 
 两条支线让它闭环：**`/init`** 是存量项目的*入口匝道*——先反向推导出 spec，再汇入主线；**`/revise`** 是*回头路*——任何偏差都按根因把你送回**正确的那一步**（spec 缺陷 → `/spec`，实现偏离 → `/exec`），而非无脑重跑。
 
@@ -57,11 +63,12 @@
 - **`/spec`** — 通过对话做需求拆解：先澄清模糊诉求，再拆成多条互不重叠的小规则——一文一规则、≤100 行、只说一件事 + 一个例子——由轻量 `INDEX.md` 统领，读者先扫索引再按需加载。回答**"做什么"**。
 - **`/plan`** — spec → **自包含、函数级**的实施计划：每个文件只解决一个独立问题，详细到函数名与职责（逻辑不写实现代码；SQL DDL / API 契约 / 配置等**声明式产物则直接内联最终成品**，exec 原样落盘），任何 AI 清空上下文后仅凭该文件即可正确实现。回答**"怎么做"**。调用即进入 **plan 模式只读对齐**（规模分流 / 拆分方案 / 路线图全在批准后才落盘；待批方案中**新增第三方依赖单独成节**——库名 + 用途 + 版本策略，无则写"无"——**批准即视为 version-policy 要求的用户同意**）；自动识别规模——单领域小需求走单 topic，多领域 / 冷启动 / 大批 spec 涌入则切到**分批路线图**：产出含依赖链和**验证门**（端到端可观察能力）的 `ROADMAP.md`、一次只展开当前批，该批 exec 验证门通过后再次 `/plan` 自动定位并展开下一批。
 - **`/exec`** — **三 Agent 隔离执行。** *Test* Agent 只读 spec 规则写失败测试（Red）；*Impl* Agent 只看测试 + 函数清单写实现（Green）——它**看不到 spec**，无法"照着意图作弊"，新增第三方库以 plan 已批依赖清单为上限、超出必须停下询问；*Review* Agent 对照 spec 检查、只读不写。每步进度写入 `PROGRESS.md`，token 耗尽也能从断点**无损续接**。
+- **`/test-webview`** — **网页交互验证**（前端 / 网页项目）。用项目自带的 **Docker 整栈拉起**应用（前端 + 后端 + DB；首次确认拉起方式后记住、之后不再问，跑完 `down -v` 清理干净），再经浏览器 MCP（playwright / chrome-devtools）逐个跑完 `.bb-spec/docs/test/webview/` 下所有用例。**每个用例派一个隔离的串行 subagent**——几百上千用例也不撑爆主上下文；全程串行零并发（浏览器单实例）。用例由 `/plan` 联动生成（声明式 JSON 流），缺失则现场兜底归纳；失败用例转 `/revise` 修复。需浏览器 MCP，未装则提示安装。
 - **`/review`** — **Workflow 编排、对抗验证**的本地 PR review（当前分支 vs base）。Phase 1 并发 **5 个 finder**——代码质量、安全、简洁性 / 反包袱、文档同步、**Codex 跨模型独立** review——schema 强制结构化发现；纯代码去重后，**每条 🔴/🟡 发现交由 3 个独立怀疑视角重判**（重要性 / 根源性 / 不修风险），多数决去留。只读、绝不自动改码。要求 Claude Code ≥ 2.1.154（Workflow 工具）。
 - **`/revise`** — 随时可介入的异常处理：把偏差**归因**为三类之一——*spec 缺陷*（→ 回 `/spec`）、*实现偏离*（→ 回 `/exec`）、*需求变更*——再做定向修正 + 回归验证。所有需修复的 review 发现都汇入此处。
 - **`/git-push-pr`** — 用户触发的推送 + PR 流程（单 / 多仓库、批量或选择性）。当存在 spec `INDEX.md` 时，先跑**分支规范自查（pre-review）**：subagent 拿 spec 比对分支 vs main 的 diff，违规循环修复复审，再起草一份简洁的 **6 段 PR 描述**（背景 / 需求 / 方案 / 结果 / 测试 / 规范，< 50 行），直接用作 PR body。
 
-附带 **10 个编排 subagent**（由上述环节驱动）：`test-engineer` / `impl-engineer` / `spec-reviewer` / `review-code-quality` / `review-security` / `review-simplicity` / `review-doc-sync` / `review-codex` / `pre-reviewer` / `rule-extractor`。
+附带 **11 个编排 subagent**（由上述环节驱动）：`test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-code-quality` / `review-security` / `review-simplicity` / `review-doc-sync` / `review-codex` / `pre-reviewer` / `rule-extractor`。
 
 被动约束（hooks，自动生效）：拦截 npm/yarn、拦截 main commit、依赖版本自检、stop 四项自检。
 

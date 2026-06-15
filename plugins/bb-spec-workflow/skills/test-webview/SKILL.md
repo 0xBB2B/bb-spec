@@ -1,0 +1,137 @@
+---
+name: test-webview
+description: Full-suite web-interaction validation for web projects — bring the app up via the project's own Docker stack (confirmed once, then remembered), then drive a real browser through every test case in .bb-spec/docs/test/webview/ via the browser MCP (playwright / chrome-devtools). Each case runs in an isolated serial subagent so hundreds of cases never blow the main context; failures route to /revise. Requires a browser MCP — prompts to install if absent. TRIGGER — /test-webview / 跑一遍网页交互测试 / 端到端验证前端 / webview 验收. ｜ 针对网页项目的全量网页交互验证——用项目自带的 Docker 整栈拉起应用（首次确认、之后记住），再经浏览器 MCP（playwright / chrome-devtools）驱动真实浏览器逐个跑完 `.bb-spec/docs/test/webview/` 下所有测试用例。每个用例派一个隔离的串行 subagent 执行，几百上千用例也不撑爆主上下文；失败用例转 /revise 修复。依赖浏览器 MCP，未安装则提示安装。常见触发：`/test-webview`、"跑一遍网页交互测试"、"端到端验证前端"、"webview 验收"。
+argument-hint: [category]
+disable-model-invocation: true
+---
+
+# Test-Webview 网页交互验证
+
+用项目自带 Docker 整栈拉起应用，经浏览器 MCP 驱动真实浏览器逐用例验证。核心：**每个用例派一个隔离串行 subagent**，主上下文只留 INDEX + 各用例 verdict 摘要，几百上千用例不爆窗口。
+
+## 核心原则（兼硬约束）
+
+1. **全程串行、零并发**：浏览器 MCP 是单会话共享实例，并发会互相踩状态。主 agent 一次只派一个 subagent，等其返回 verdict 再派下一个
+2. **上下文隔离**：冗长的 MCP 交互全留在 subagent 内，主上下文只累积结构化 verdict 摘要——这是 subagent 化的真实收益（不是提速）
+3. **不调用 Workflow 工具**：派发用普通 Agent 工具逐个串行调用（参照 `/exec` 的逐步执行节奏）
+4. **环境只用项目自己的、不生成**：只检测项目能否用 Docker 整栈拉起；**首次**确认拉起方式后**持久化、下次不再问**；不判断它是不是测试环境
+5. **每次跑完清理干净**：无条件 `docker compose down -v`（含失败 / 中断路径），保证下次拉起的是干净环境与数据
+6. **默认全量**：每次运行完整跑一遍全部用例；`/test-webview <category>` 仅跑某类
+7. **只验证不改业务代码**：失败转 `/revise` 闭环，本 skill 自身不改实现
+8. **输出中文**
+
+## Agent 定义
+
+通过 plugin 注册的 `subagent_type` 派工，数据通过 `prompt` 自包含传入：
+
+| Agent | subagent_type | 角色 |
+|---|---|---|
+| 用例执行者 | `bb-spec-workflow:webview-test-runner` | 解析单个用例 JSON，映射浏览器 MCP 工具执行，返回 verdict |
+
+## 工作流
+
+### 步骤 0：读取配置
+
+`cat .bb-spec.yaml 2>/dev/null` 取 `docs_dir`（缺省 `.bb-spec/docs`），记作 `${DOCS_DIR}`。`$ARGUMENTS` 非空 → 仅跑该 category，否则全量。
+
+### 步骤 1：前置检查（任一不过即中止并给指引）
+
+- **是 web 项目**：`package.json` 含前端依赖（vue / react / vite / svelte 等）或存在 `index.html` + 前端 `src/`。非 web → 告知"本命令仅适用于网页项目"，中止。
+- **浏览器 MCP**：当前工具列表含 `mcp__playwright__*` 或 `mcp__chrome-devtools__*` 任一 → 选定（**优先 playwright**），记为 `${MCP_FAMILY}`。都没有 → **提示安装**（`claude mcp add playwright -- npx @playwright/mcp@latest`，或安装 chrome-devtools MCP），中止。
+- **Docker 可用**：`docker info` 探测；不可用 → **报错终止**（提示安装 / 启动 Docker）。
+
+### 步骤 2：拉起测试环境（Docker，确认一次后记住）
+
+读 `${DOCS_DIR}/test/webview/INDEX.md` frontmatter 的**已确认环境配置**（`up` / `down` 命令 + 前端服务→端口映射）：
+
+- **已有配置** → 直接用，**不再询问**。
+- **首次（无配置）**：探测项目 docker 拉起方式（`compose*.y*ml` / `Makefile` 目标 / `Dockerfile`）+ 识别前端服务及其端口，把"拉起命令 + 各前端服务→端口"呈现给用户，用 `AskUserQuestion` 让其**确认是否正确**（可纠正命令 / 端口）；**不判断是否测试环境、不生成任何环境**。探测不出拉起方式 → 让用户直接给出拉起命令。确认后**持久化到 INDEX.md frontmatter**（INDEX 不存在则在步骤 3 生成时一并写入）。
+
+用确认的命令整栈 `up`（如 `docker compose up -d`）→ 等各服务就绪（健康检查 / 端口探活）→ 每个前端服务的 published port 推出对应 `${BASE_URL}`，建立 `服务名 → BASE_URL` 映射。
+
+### 步骤 3：定位用例
+
+读 `${DOCS_DIR}/test/webview/INDEX.md`：
+
+- **不存在 / 为空 → 兜底生成**：读 `${DOCS_DIR}/spec/`、`${DOCS_DIR}/plan/`、PRD（都没有则项目其他文档）归纳为**可独立拆解的测试步骤**，按类别建子文件夹 + 用例 md（格式见下「测试用例文档规格」），先向用户展示生成清单确认，再落盘，然后继续。
+- **存在 → 全量收集**所有 category 下所有用例（`$ARGUMENTS` 指定了 category 则仅收该类）。
+
+### 步骤 4：串行派发执行
+
+按**依赖拓扑序**串行派工（`dependsOn` 的用例先跑，无依赖关系按 INDEX 顺序）：**一次一个**用 Agent 工具派 `bb-spec-workflow:webview-test-runner`，等返回再派下一个（零并发）。
+
+**派发前的依赖闸门**（执行顺序与依赖规范见 `references/webview-testcase-format.md`）：派某用例前先查它 `dependsOn` 的用例结果——**任一上游 `fail` / `error` / `skipped` → 本用例不派发、直接标 `skipped`，并级联到其传递依赖者**；上游全 `pass` 或本用例无依赖 → 正常派发。**独立用例的失败不影响其它独立用例**，继续跑完全部。检测到依赖成环 → 环内用例全标 `skipped` 并在报告点名。
+
+每个 subagent 的 prompt 自包含，填充：
+
+- `test_case_json`：该用例 md 里的 JSON 流原文
+- `base_url`：该用例 `target` 前端对应的 `${BASE_URL}`（单前端项目即唯一 URL）
+- `mcp_family`：`${MCP_FAMILY}`（playwright | chrome-devtools）
+- `project_context`：技术栈一句话（供选择器 / 等待策略参考）
+
+subagent 返回结构化 verdict：`{ caseId, category, status: pass|fail|error, failedStep, evidence, screenshots[] }`（`skipped` 由主 agent 在依赖闸门处赋予，不派发）。主 agent 只把 verdict 摘要记入内存，**不回读** MCP 交互细节。
+
+### 步骤 5：聚合报告 + 回写状态 + 下一步
+
+汇总各 verdict 写报告，更新 `${DOCS_DIR}/test/webview/INDEX.md` 的 last-run 状态列。
+
+**报告格式**：
+
+```
+## Test-Webview 完成简报
+- 环境：<up 命令> ｜ 前端：<服务名→URL 列表>
+- 范围：<全部 N 用例 / category=X>
+- 结果：✅ 通过 A ｜ ❌ 失败 B ｜ ⚠️ 错误 C ｜ ⏭️ 跳过 D
+- 失败明细：
+  | 用例 | target | 失败步骤 | 证据 |
+  |---|---|---|---|
+  | <caseId> | <前端> | step#K <action> | <一句话 + 截图名> |
+- 跳过明细（仅 D>0）：
+  | 用例 | 因哪个上游失败 |
+  |---|---|
+  | <caseId> | <dependsOn 中失败的 caseId> |
+- 下一步：<见下>
+```
+
+**下一步**：
+
+- **全通过**（无失败 / 错误 / 跳过）→ 收尾完成。
+- **有失败 / 错误**（跳过项是其上游失败的连带，修好上游后重跑即可恢复）→ 用 `AskUserQuestion` 询问是否 `/revise` 修复。用户同意 → 用 Skill 工具调用 `revise`，把失败用例的**标题 / `target` / 失败步骤 / evidence / 截图**作为输入传入，由 revise 诊断归因（spec / impl / 需求哪层）并闭环修复；本 skill 不自行改代码。
+
+### 步骤 6：清理（无条件执行）
+
+无论通过、失败还是中断，都执行环境清理：用记忆的 `down` 命令（缺省 `docker compose down -v`）拆容器 + 删数据卷，保证下次拉起干净。
+
+## 测试产物目录与用例规格
+
+在目标项目 `${DOCS_DIR}/test/` 下，按**类别建文件夹**、根 `INDEX.md` 索引：
+
+```
+${DOCS_DIR}/test/webview/
+  INDEX.md                # frontmatter 存已确认拉起配置；正文为类别→用例表 + last-run 状态
+  <category>/<case>.md    # 类别 = 功能领域（多前端时可按前端再分组）
+```
+
+**INDEX.md frontmatter**（环境记忆，确认后写入）：
+
+```yaml
+---
+env:
+  up: docker compose up -d          # 已确认的整栈拉起命令
+  down: docker compose down -v      # 清理命令（缺省即此）
+  frontends:                        # 前端服务 → published port
+    admin-frontend: 8080
+    frontend: 8081
+---
+```
+
+**每个用例 md 的骨架、JSON 流字段约定、抽象 action 词表**：见规范 `references/webview-testcase-format.md`（插件根目录），与 `/plan` 生成、`webview-test-runner` 执行共用同一事实源；兜底生成时按该规范产出。INDEX `env.frontends` 的服务名即用例 `target` 取值来源。
+
+## 硬约束
+
+- 全程**串行、零并发**；编排用普通 Agent 工具，**禁用 Workflow 工具**
+- 环境只复用项目自带、**不生成**；首次确认后持久化、之后不再问；**不判断是否测试环境**
+- 每次跑完**无条件清理**（含失败 / 中断路径），删容器 + 数据卷
+- subagent prompt 自包含（看不到本对话）
+- 只验证不改业务代码；失败修复一律走 `/revise`
+- 浏览器 MCP / Docker 缺失即中止并给指引，**禁降级**为无环境跑
