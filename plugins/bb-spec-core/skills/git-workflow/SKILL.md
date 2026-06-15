@@ -1,6 +1,6 @@
 ---
 name: git-workflow
-description: Git workflow discipline — branch decisions before a task, an incremental local-commit rhythm (no immediate push), the six-section PR description, on-demand issue creation, and post-merge cleanup (local branch + remote ref + remote branch). Enforces no direct commits to main, no self-initiated worktrees, and pushing only after the whole feature is locally verified. TRIGGER when the user starts any non-main branch task (build a feature / fix a bug / open a branch), prepares to commit/push/open a PR, or cleans up after a merge. ｜ Git 开发流程纪律——覆盖"开始任务前的分支决策"、"阶段性本地 commit 节奏（不立即 push）"、"PR 描述六段式规范"、"按需建 issue 策略"、"合并后清理（本地分支 + 远程引用 + 远程分支）"。强制要求：禁止 main 直接提交、禁止自作主张创建 worktree、整个功能本地验证后才推送。TRIGGER when：用户开始任何非 main 分支开发任务（"做个新功能"/"改 bug"/"开个分支"），或准备 commit/push/开 PR，或 PR 合并完成需要清理时。
+description: Git workflow discipline — branch decisions before a task, an incremental local-commit rhythm (no immediate push), the six-section PR description, on-demand issue creation, and post-merge cleanup (local branch + remote ref + remote branch). Enforces no direct commits to main, isolated git worktrees (kept outside the repo, under ../ or ~/.worktree/), and pushing only after the whole feature is locally verified. TRIGGER when the user starts any non-main branch task (build a feature / fix a bug / open a branch), prepares to commit/push/open a PR, or cleans up after a merge. ｜ Git 开发流程纪律——覆盖"开始任务前的分支决策"、"阶段性本地 commit 节奏（不立即 push）"、"PR 描述六段式规范"、"按需建 issue 策略"、"合并后清理（本地分支 + 远程引用 + 远程分支）"。强制要求：禁止 main 直接提交、worktree 必须与 repo 隔离存放（置于 ../ 或 ~/.worktree/ 下）、整个功能本地验证后才推送。TRIGGER when：用户开始任何非 main 分支开发任务（"做个新功能"/"改 bug"/"开个分支"），或准备 commit/push/开 PR，或 PR 合并完成需要清理时。
 user-invocable: false
 ---
 
@@ -18,7 +18,7 @@ user-invocable: false
 ## 1. 分支策略
 
 - **禁止在 main 直接提交**
-- **禁止自作主张创建 worktree**（用户明确要求才可以）
+- **允许使用 git worktree**，但工作树必须与当前 repo 物理隔离：放在仓库**同级目录**（如 `../<repo>-<branch>`）或集中到 `~/.worktree/` 下统一管理，**禁止嵌套在当前 repo 工作目录内**（避免污染主仓库、被误 add / commit）
 
 ### 开始任务前必查
 

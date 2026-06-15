@@ -23,7 +23,7 @@ CMD=$(jq -r '.tool_input.command // empty' <<<"$INPUT")
 SEGMENTS=$(printf '%s\n' "$CMD" | sed 's/ *&& */\n/g; s/ *|| */\n/g; s/ *; */\n/g')
 
 FOUND=0
-WORKTREE=""
+GIT_C_PATH=""
 
 while IFS= read -r SEG; do
   [ -z "$SEG" ] && continue
@@ -40,7 +40,7 @@ while IFS= read -r SEG; do
   # 处理 `git -C <path> ...` 的工作目录覆盖
   read -r SECOND REST2 <<<"$REST" || true
   if [ "$SECOND" = "-C" ]; then
-    read -r WORKTREE REST3 <<<"$REST2" || true
+    read -r GIT_C_PATH REST3 <<<"$REST2" || true
     read -r SECOND _ <<<"$REST3" || true
   fi
 
@@ -53,8 +53,8 @@ done <<<"$SEGMENTS"
 [ "$FOUND" = "1" ] || exit 0
 
 # 取分支
-if [ -n "$WORKTREE" ]; then
-  BRANCH=$(git -C "$WORKTREE" branch --show-current 2>/dev/null || true)
+if [ -n "$GIT_C_PATH" ]; then
+  BRANCH=$(git -C "$GIT_C_PATH" branch --show-current 2>/dev/null || true)
 else
   BRANCH=$(git branch --show-current 2>/dev/null || true)
 fi
