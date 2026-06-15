@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.1.0](https://github.com/0xBB2B/bb-spec/compare/v6.0.0...v6.1.0) (2026-06-15)
+
+
+### Features
+
+* **hooks:** 临时文件统一放 /tmp 并强制清除 ([#108](https://github.com/0xBB2B/bb-spec/issues/108)) ([c73e792](https://github.com/0xBB2B/bb-spec/commit/c73e79282e13b8298ac44c0f09aaeeb66d852b8a))
+
 ## [6.0.0](https://github.com/0xBB2B/bb-spec/compare/v5.19.0...v6.0.0) (2026-06-15)
 
 
