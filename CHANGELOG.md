@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.18.0](https://github.com/0xBB2B/bb-spec/compare/v5.17.0...v5.18.0) (2026-06-15)
+
+
+### Features
+
+* **git-workflow:** worktree 由禁用改为允许但强制与 repo 隔离存放 ([#102](https://github.com/0xBB2B/bb-spec/issues/102)) ([d741d6b](https://github.com/0xBB2B/bb-spec/commit/d741d6b8b66a76638149b2f4b60f8ef336a979c8))
+
 ## [5.17.0](https://github.com/0xBB2B/bb-spec/compare/v5.16.0...v5.17.0) (2026-06-13)
 
 
