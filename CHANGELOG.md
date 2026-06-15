@@ -1,5 +1,16 @@
 # Changelog
 
+## [6.0.0](https://github.com/0xBB2B/bb-spec/compare/v5.19.0...v6.0.0) (2026-06-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* **test-webview,plan:** 用例落盘路径由 webview/<category>/<case>.md 改为 webview/<frontend>/<category>/<case>.md；target 字段由单前端可省改为始终必填且须与顶层目录段一致。已按旧结构生成的用例需迁移到对应 <frontend>/ 目录下才合规。
+
+### Features
+
+* **test-webview,plan:** webview 用例目录统一按前端分层 ([#106](https://github.com/0xBB2B/bb-spec/issues/106)) ([dfa9b86](https://github.com/0xBB2B/bb-spec/commit/dfa9b86a0f1d4bfe312cb8ea787e6192587200f0))
+
 ## [5.19.0](https://github.com/0xBB2B/bb-spec/compare/v5.18.0...v5.19.0) (2026-06-15)
 
 
