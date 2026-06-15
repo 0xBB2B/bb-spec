@@ -97,14 +97,14 @@ description: Read the specs under .bb-spec/docs/spec/, combine them with the pro
 
 **分批模式下只产出当前批的 plan 文件**，其余批次留空待后续 `/plan` 懒生成。
 
-**前端 / 网页主题额外产出 webview 测试用例**（声明式成品，等同 SQL DDL / API 契约）：把已批的用例场景落盘为 `${DOCS_DIR}/test/webview/<类别>/<用例>.md`，每份含「测试名称 / 简介 / 测试目的 / 测试流程（固定 JSON 流）/ 如何验收」（模板见下方）。JSON 流原样供 `/test-webview` 的 subagent 消费，exec 不重写、不重复生成。
+**前端 / 网页主题额外产出 webview 测试用例**（声明式成品，等同 SQL DDL / API 契约）：把已批的用例场景落盘为 `${DOCS_DIR}/test/webview/<前端>/<类别>/<用例>.md`（顶层永远按前端分，`<前端>` 取自 INDEX `env.frontends` 服务名），每份含「测试名称 / 简介 / 测试目的 / 测试流程（固定 JSON 流）/ 如何验收」（模板见下方）。JSON 流原样供 `/test-webview` 的 subagent 消费，exec 不重写、不重复生成。
 
 ### 步骤 6：更新索引、ROADMAP 与进度文件
 
 - **主题 INDEX.md**：每条 `- [<name>](<文件名>) — <description>`；`## <阶段>` 分组；依赖标 `[依赖: <name>]`
 - **根 INDEX.md**：表格 主题|概述|状态|完成时间（分批模式加「所属批次」列）；已完成主题仅作历史审计，AI 未经允许不得读取
 - **ROADMAP.md**（分批）：首次写全部批次表 + 总链路；续作仅把当前批状态 `待生成 → 生成中`。**PROGRESS.md**：所有步骤初始标 `pending`
-- **test/webview/INDEX.md**（仅前端 / 网页主题）：写/更新类别 → 用例索引（环境 frontmatter 留待 `/test-webview` 首次确认时补写）
+- **test/webview/INDEX.md**（仅前端 / 网页主题）：写/更新前端 → 类别 → 用例索引（环境 frontmatter 留待 `/test-webview` 首次确认时补写）
 
 ### 步骤 7：自检
 
@@ -211,4 +211,4 @@ description: <一句话概括，≤ 80 字>
 （无）
 ```
 
-**webview 测试用例模板**（仅前端 / 网页主题；落盘到 `${DOCS_DIR}/test/webview/<类别>/<用例>.md`，供 `/test-webview` 验收）：用例文档骨架、JSON 流字段约定、抽象 action 词表统一见规范 `references/webview-testcase-format.md`（插件根目录），与 `/test-webview` 派发、`webview-test-runner` 执行共用同一事实源；按该规范逐用例产出即可。
+**webview 测试用例模板**（仅前端 / 网页主题；落盘到 `${DOCS_DIR}/test/webview/<前端>/<类别>/<用例>.md`，供 `/test-webview` 验收）：用例文档骨架、JSON 流字段约定、抽象 action 词表统一见规范 `references/webview-testcase-format.md`（插件根目录），与 `/test-webview` 派发、`webview-test-runner` 执行共用同一事实源；按该规范逐用例产出即可。
