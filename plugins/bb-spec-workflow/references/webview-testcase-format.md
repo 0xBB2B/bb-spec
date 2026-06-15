@@ -4,7 +4,7 @@
 
 ## 用例文档骨架
 
-每个用例一个 md，落盘到 `${DOCS_DIR}/test/webview/<类别>/<用例>.md`：
+每个用例一个 md，落盘到 `${DOCS_DIR}/test/webview/<前端>/<类别>/<用例>.md`（`<前端>` = INDEX `env.frontends` 服务名，顶层永远按前端分，即便只有一个前端）：
 
 ```markdown
 ---
@@ -46,7 +46,7 @@ category: <category>
 
 - `id`：用例唯一标识（kebab-case，与文件名一致）。
 - `category`：功能领域，与所在子文件夹一致。
-- `target`：打哪个前端服务（对应 `test/webview/INDEX.md` frontmatter `env.frontends` 的服务名）；**单前端项目可省**。
+- `target`：打哪个前端服务（对应 `test/webview/INDEX.md` frontmatter `env.frontends` 的服务名）；**始终必填，且须与落盘路径的 `<前端>` 顶层目录段一致**。
 - **无 `baseUrl` 字段**：运行时由 Docker 拉起后 `target` 前端的 published port 注入；仅当某步要访问外部 / 跨源地址时，才在该 step 里写绝对 URL。
 - `setup` / `teardown`：可选的前置 / 清理步骤，结构同 `steps`。
 - `steps`：借鉴 workflow 的**声明式步骤序列**——一串可被独立执行的步骤，subagent 顺序执行、**断言失败即停**。

@@ -65,7 +65,7 @@ disable-model-invocation: true
 每个 subagent 的 prompt 自包含，填充：
 
 - `test_case_json`：该用例 md 里的 JSON 流原文
-- `base_url`：该用例 `target` 前端对应的 `${BASE_URL}`（单前端项目即唯一 URL）
+- `base_url`：该用例 `target` 前端对应的 `${BASE_URL}`（`target` 即用例所在顶层目录段）
 - `mcp_family`：`${MCP_FAMILY}`（playwright | chrome-devtools）
 - `project_context`：技术栈一句话（供选择器 / 等待策略参考）
 
@@ -104,13 +104,15 @@ subagent 返回结构化 verdict：`{ caseId, category, status: pass|fail|error,
 
 ## 测试产物目录与用例规格
 
-在目标项目 `${DOCS_DIR}/test/` 下，按**类别建文件夹**、根 `INDEX.md` 索引：
+在目标项目 `${DOCS_DIR}/test/` 下，**按前端建顶层文件夹、其下按类别分**、根 `INDEX.md` 索引：
 
 ```
 ${DOCS_DIR}/test/webview/
-  INDEX.md                # frontmatter 存已确认拉起配置；正文为类别→用例表 + last-run 状态
-  <category>/<case>.md    # 类别 = 功能领域（多前端时可按前端再分组）
+  INDEX.md                          # frontmatter 存已确认拉起配置；正文为前端→类别→用例表 + last-run 状态
+  <frontend>/<category>/<case>.md   # <frontend> = INDEX env.frontends 的服务名；<category> = 功能领域
 ```
+
+**为什么顶层永远按前端分**（即便当前只有一个前端）：结构不随前端数量变化——加第 N 个前端只是新建一个 `<frontend>/` 顶层目录，已有用例零迁移；同时不同前端下的同名 category（如各自的 `auth`）天然隔离、报告按前端聚合。
 
 **INDEX.md frontmatter**（环境记忆，确认后写入）：
 
@@ -125,7 +127,7 @@ env:
 ---
 ```
 
-**每个用例 md 的骨架、JSON 流字段约定、抽象 action 词表**：见规范 `references/webview-testcase-format.md`（插件根目录），与 `/plan` 生成、`webview-test-runner` 执行共用同一事实源；兜底生成时按该规范产出。INDEX `env.frontends` 的服务名即用例 `target` 取值来源。
+**每个用例 md 的骨架、JSON 流字段约定、抽象 action 词表**：见规范 `references/webview-testcase-format.md`（插件根目录），与 `/plan` 生成、`webview-test-runner` 执行共用同一事实源；兜底生成时按该规范产出。INDEX `env.frontends` 的服务名同时是用例 `target` 取值与落盘路径的 `<frontend>` 顶层目录段（二者必须一致）。
 
 ## 硬约束
 
