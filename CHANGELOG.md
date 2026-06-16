@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.3.0](https://github.com/0xBB2B/bb-spec/compare/v6.2.0...v6.3.0) (2026-06-16)
+
+
+### Features
+
+* webview 用例产出收归 test-webview、跑前覆盖对齐，回退截图 /tmp 约定 ([#113](https://github.com/0xBB2B/bb-spec/issues/113)) ([8860bd6](https://github.com/0xBB2B/bb-spec/commit/8860bd6269b872f9671cfad8c90ceb2938bde33b))
+
 ## [6.2.0](https://github.com/0xBB2B/bb-spec/compare/v6.1.0...v6.2.0) (2026-06-16)
 
 
