@@ -1,5 +1,17 @@
 # Changelog
 
+## [6.2.0](https://github.com/0xBB2B/bb-spec/compare/v6.1.0...v6.2.0) (2026-06-16)
+
+
+### Features
+
+* **webview-test-runner:** 截图统一收进 /tmp 专属临时目录 ([#111](https://github.com/0xBB2B/bb-spec/issues/111)) ([2aa986e](https://github.com/0xBB2B/bb-spec/commit/2aa986ea5a1786af8da059f39bf843ecd6202eec))
+
+
+### Bug Fixes
+
+* **hooks:** 回滚临时文件强制 /tmp 约束 ([#110](https://github.com/0xBB2B/bb-spec/issues/110)) ([cc3ca5d](https://github.com/0xBB2B/bb-spec/commit/cc3ca5d3f384e8f5d978823ad143908a7d3e31d2))
+
 ## [6.1.0](https://github.com/0xBB2B/bb-spec/compare/v6.0.0...v6.1.0) (2026-06-15)
 
 
