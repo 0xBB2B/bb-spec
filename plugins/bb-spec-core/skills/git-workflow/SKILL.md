@@ -1,6 +1,6 @@
 ---
 name: git-workflow
-description: Git workflow discipline — branch decisions before a task, an incremental local-commit rhythm (no immediate push), the six-section PR description, on-demand issue creation, and post-merge cleanup (local branch + remote ref + remote branch). Enforces no direct commits to main, isolated git worktrees (kept outside the repo, under ../ or ~/.worktree/), and pushing only after the whole feature is locally verified. TRIGGER when the user starts any non-main branch task (build a feature / fix a bug / open a branch), prepares to commit/push/open a PR, or cleans up after a merge. ｜ Git 开发流程纪律——覆盖"开始任务前的分支决策"、"阶段性本地 commit 节奏（不立即 push）"、"PR 描述六段式规范"、"按需建 issue 策略"、"合并后清理（本地分支 + 远程引用 + 远程分支）"。强制要求：禁止 main 直接提交、worktree 必须与 repo 隔离存放（置于 ../ 或 ~/.worktree/ 下）、整个功能本地验证后才推送。TRIGGER when：用户开始任何非 main 分支开发任务（"做个新功能"/"改 bug"/"开个分支"），或准备 commit/push/开 PR，或 PR 合并完成需要清理时。
+description: Git workflow discipline — branch decisions before a task, an incremental local-commit rhythm (no immediate push), the six-section PR description, on-demand issue creation, and post-merge cleanup (local branch + remote ref + remote branch). Enforces no direct commits to main, branching directly off a clean main while spinning up an isolated git worktree (kept outside the repo, under ../ or ~/.worktree/) whenever in-flight work already exists, and pushing only after the whole feature is locally verified. TRIGGER when the user starts any non-main branch task (build a feature / fix a bug / open a branch), prepares to commit/push/open a PR, or cleans up after a merge. ｜ Git 开发流程纪律——覆盖"开始任务前的分支决策"、"阶段性本地 commit 节奏（不立即 push）"、"PR 描述六段式规范"、"按需建 issue 策略"、"合并后清理（本地分支 + 远程引用 + 远程分支）"。强制要求：禁止 main 直接提交、main 干净时直接开分支、已有在途工作（不在 main 或工作区有未提交改动）时从 main 新建隔离 worktree（置于 ../ 或 ~/.worktree/ 下）、整个功能本地验证后才推送。TRIGGER when：用户开始任何非 main 分支开发任务（"做个新功能"/"改 bug"/"开个分支"），或准备 commit/push/开 PR，或 PR 合并完成需要清理时。
 user-invocable: false
 ---
 
@@ -18,16 +18,30 @@ user-invocable: false
 ## 1. 分支策略
 
 - **禁止在 main 直接提交**
-- **允许使用 git worktree**，但工作树必须与当前 repo 物理隔离：放在仓库**同级目录**（如 `../<repo>-<branch>`）或集中到 `~/.worktree/` 下统一管理，**禁止嵌套在当前 repo 工作目录内**（避免污染主仓库、被误 add / commit）
+- **worktree 仅用于隔离在途工作**：当手上已有进行中的任务时，新任务从 main 拉一棵 worktree 并行，互不打断。工作树必须与当前 repo 物理隔离：放在仓库**同级目录**（如 `../<repo>-<branch>`）或集中到 `~/.worktree/` 下统一管理，**禁止嵌套在当前 repo 工作目录内**（避免污染主仓库、被误 add / commit）
 
 ### 开始任务前必查
 
 ```bash
-git branch --show-current
+git branch --show-current        # 当前在哪个分支
+git status --short               # 工作区是否有未提交改动
 ```
 
-- **在 main** → `git pull` → 创建新分支
-- **不在 main** → **必须问用户**：①基于当前分支继续/新开子分支 ②切回 main 后再开新分支。得到答复前不自行切换。
+按"是否会干扰在途工作"决定开分支方式：
+
+- **在 main 且工作区干净**（没有在途工作）→ `git pull` → 直接从 main 创建新分支开始工作，**无需 worktree**
+
+  ```bash
+  git pull && git switch -c <branch>
+  ```
+
+- **不在 main，或工作区有未提交改动**（已有在途工作）→ 为保证多任务互不干扰 → **从 main 新建 worktree** 再工作，不切换、不打断、不污染当前分支
+
+  ```bash
+  git worktree add ~/.worktree/<repo>-<branch> -b <branch> main
+  ```
+
+  - **例外**：若本次就是要**延续当前分支的同一任务**（不是开新活儿）→ 直接在当前分支继续，不新建 worktree。无法判断是延续还是新任务时，问用户。
 
 ---
 
