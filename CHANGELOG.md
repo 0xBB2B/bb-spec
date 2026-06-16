@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.4.0](https://github.com/0xBB2B/bb-spec/compare/v6.3.0...v6.4.0) (2026-06-16)
+
+
+### Features
+
+* **git-workflow:** 按在途工作状态决定开分支方式 ([#115](https://github.com/0xBB2B/bb-spec/issues/115)) ([b838326](https://github.com/0xBB2B/bb-spec/commit/b838326121f8200d2abc3b27ca6753b965672beb))
+
 ## [6.3.0](https://github.com/0xBB2B/bb-spec/compare/v6.2.0...v6.3.0) (2026-06-16)
 
 
