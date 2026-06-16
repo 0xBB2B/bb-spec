@@ -36,11 +36,12 @@ inputs:
 ## 指令
 
 1. **加载工具**：经 ToolSearch 加载 `{mcp_family}` 工具族（playwright → `mcp__playwright__browser_*`；chrome-devtools → `mcp__chrome-devtools__*`）。
-2. **顺序执行 steps**：依次把每个 step 的抽象 `action` 映射到对应 MCP 工具调用；先 `setup`，再 `steps`，最后无论成败执行 `teardown`。相对 `target` 用 `{base_url}` 拼接绝对 URL。
-3. **断言即判定**：`assert*` 类 step 不通过 → **立即停止**后续 step，记录失败步骤序号 + action + 期望 vs 实际。
-4. **失败取证**：任一步骤失败或报错 → 截图 + 抓取 console 错误（`assertConsoleNoError` 也据此判定），作为 evidence。
-5. **稳态等待**：交互后用 `waitFor`（元素 / 文本 / 网络空闲）替代固定 sleep，避免假阴性。
-6. **不越界**：只跑本用例步骤，不探索其他页面、不改代码、不操作 git。
+2. **建截图目录**：开跑前用 `mktemp -d "/tmp/bb-webview-shots.XXXXXX"` 建一个本 runner 专属的临时目录（记为 `SHOTS_DIR`）。本次所有截图——失败取证、`screenshot` action——统一写入该目录，文件名 `<caseId>-step<K>.png`。该目录属**临时文件**：每个 runner 一个独立目录、共用 `bb-webview-shots.` 前缀，多项目 / 多用例并发互不冲突；截图须留到整个测试任务结束、由上层统一按前缀清除，**本 runner 内不要自行删除**（否则上层取不到 evidence）。
+3. **顺序执行 steps**：依次把每个 step 的抽象 `action` 映射到对应 MCP 工具调用；先 `setup`，再 `steps`，最后无论成败执行 `teardown`。相对 `target` 用 `{base_url}` 拼接绝对 URL。
+4. **断言即判定**：`assert*` 类 step 不通过 → **立即停止**后续 step，记录失败步骤序号 + action + 期望 vs 实际。
+5. **失败取证**：任一步骤失败或报错 → 截图（写入 `SHOTS_DIR`）+ 抓取 console 错误（`assertConsoleNoError` 也据此判定），作为 evidence。
+6. **稳态等待**：交互后用 `waitFor`（元素 / 文本 / 网络空闲）替代固定 sleep，避免假阴性。
+7. **不越界**：只跑本用例步骤，不探索其他页面、不改代码、不操作 git。
 
 ### 抽象 action → MCP 映射
 
@@ -59,7 +60,7 @@ inputs:
 | assertVisible/assertText | 快照断言 | `browser_snapshot` | `take_snapshot` |
 | assertUrl | URL 断言 | `browser_snapshot`/eval | `evaluate_script` |
 | assertConsoleNoError | 无 console 报错 | `browser_console_messages` | `list_console_messages` |
-| screenshot | 截图 | `browser_take_screenshot` | `take_screenshot` |
+| screenshot | 截图（落点写 `SHOTS_DIR`） | `browser_take_screenshot` | `take_screenshot` |
 | evaluate | 执行脚本断言 | `browser_evaluate` | `evaluate_script` |
 
 ## 产出报告
@@ -73,7 +74,7 @@ inputs:
 - status: pass | fail | error      # fail=断言不通过，error=步骤执行/环境异常
 - failedStep: step#K <action>（pass 则写 —）
 - evidence: <期望 vs 实际 / console 报错摘要 / 一句话；pass 则写 —>
-- screenshots: <截图名列表 / —>
+- screenshots: <SHOTS_DIR 下的截图完整路径列表 / —>
 ```
 
 ## 安全基线
