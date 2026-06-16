@@ -49,12 +49,19 @@ disable-model-invocation: true
 
 用确认的命令整栈 `up`（如 `docker compose up -d`）→ 等各服务就绪（健康检查 / 端口探活）→ 每个前端服务的 published port 推出对应 `${BASE_URL}`，建立 `服务名 → BASE_URL` 映射。
 
-### 步骤 3：定位用例
+### 步骤 3：覆盖对齐 + 定位用例
 
-读 `${DOCS_DIR}/test/webview/INDEX.md`：
+UI 验证用例的生成与覆盖完整性都由本 skill 独占负责。
 
-- **不存在 / 为空 → 兜底生成**：读 `${DOCS_DIR}/spec/`、`${DOCS_DIR}/plan/`、PRD（都没有则项目其他文档）归纳为**可独立拆解的测试步骤**，按类别建子文件夹 + 用例 md（格式见下「测试用例文档规格」），先向用户展示生成清单确认，再落盘，然后继续。
-- **存在 → 全量收集**所有 category 下所有用例（`$ARGUMENTS` 指定了 category 则仅收该类）。
+**覆盖对齐**（仅全量模式执行；`/test-webview <category>` 定向跑某类时跳过本环节，直接收集该类现有用例）：读 `${DOCS_DIR}/spec/`、`${DOCS_DIR}/plan/`、PRD（都没有则项目其他文档），把其中的 UI 交互验收点归纳为「应有场景集」，与 `${DOCS_DIR}/test/webview/` 现有用例比对，算出**缺口**（应测但无对应用例的场景）：
+
+- **现有用例为空** → 缺口即全部，按规范生成全部用例。
+- **有缺口**（部分应有场景无对应用例） → 用 `AskUserQuestion` 展示缺口清单，让用户二选一：①**补全后再跑**（按规范生成缺口用例）②**先跑现有、缺口记入报告**（步骤 5 显式列出，**禁静默漏测**）。
+- **无缺口** → 直接进入收集。
+
+新生成的用例按前端建顶层文件夹、其下按类别分（格式见下「测试用例文档规格」），落盘前先向用户展示清单确认。
+
+**收集执行**：全量收集所有 category 下所有用例（定向模式仅收 `$ARGUMENTS` 指定的 category）。
 
 ### 步骤 4：串行派发执行
 
@@ -81,6 +88,7 @@ subagent 返回结构化 verdict：`{ caseId, category, status: pass|fail|error,
 ## Test-Webview 完成简报
 - 环境：<up 命令> ｜ 前端：<服务名→URL 列表>
 - 范围：<全部 N 用例 / category=X>
+- 覆盖缺口（仅全量模式且用户选择暂不补全时，否则省略本行）：⚠️ E 个应有 UI 场景本轮未覆盖：<场景名列表>
 - 结果：✅ 通过 A ｜ ❌ 失败 B ｜ ⚠️ 错误 C ｜ ⏭️ 跳过 D
 - 失败明细：
   | 用例 | target | 失败步骤 | 证据 |
@@ -127,11 +135,12 @@ env:
 ---
 ```
 
-**每个用例 md 的骨架、JSON 流字段约定、抽象 action 词表**：见规范 `references/webview-testcase-format.md`（插件根目录），与 `/plan` 生成、`webview-test-runner` 执行共用同一事实源；兜底生成时按该规范产出。INDEX `env.frontends` 的服务名同时是用例 `target` 取值与落盘路径的 `<frontend>` 顶层目录段（二者必须一致）。
+**每个用例 md 的骨架、JSON 流字段约定、抽象 action 词表**：见规范 `references/webview-testcase-format.md`（插件根目录），与 `webview-test-runner` 执行共用同一事实源；生成用例时按该规范产出。INDEX `env.frontends` 的服务名同时是用例 `target` 取值与落盘路径的 `<frontend>` 顶层目录段（二者必须一致）。
 
 ## 硬约束
 
 - 全程**串行、零并发**；编排用普通 Agent 工具，**禁用 Workflow 工具**
+- 全量模式跑前**必做覆盖对齐**（对照 spec / plan / PRD 算缺口）；缺口要么补全要么显式记入报告，**禁静默漏测**（定向 category 模式不适用）
 - 环境只复用项目自带、**不生成**；首次确认后持久化、之后不再问；**不判断是否测试环境**
 - 每次跑完**无条件清理**（含失败 / 中断路径），删容器 + 数据卷
 - subagent prompt 自包含（看不到本对话）
