@@ -86,7 +86,6 @@ description: Read the specs under .bb-spec/docs/spec/, combine them with the pro
 - **单 topic**：拆分方案（文件名 + 一句话描述 + 阶段分组 + 依赖）
 - **分批**：ROADMAP（批次表 + 依赖 + 验证门 + 总链路）+ 当前批拆分方案；其余批次仅占位
 - **新增第三方依赖**（**单独成节，必列**）：每项写「库名 + 用途 + 版本策略」；版本策略写选版规则（如「最新稳定版」「最新 LTS」）而非具体版本号，具体版本号由 exec 落盘前经官方渠道查询；无新增则显式写「无」。**批准即授权**：用户批准 ExitPlanMode 即视为对该清单的明确同意（version-policy 要求的新增第三方库同意流程在此一次完成），exec 阶段引入依赖不得超出该清单
-- **webview 测试用例**（**仅前端 / 网页主题**：技术栈含 Vue / React 等，或 PRD 有 UI 交互用例）：列出拟生成的网页交互用例场景（类别 + 用例名 + 一句话），供用户批准。它们是 `/test-webview` 的验收输入，本质是声明式成品（见步骤 5）；非前端主题省略此项
 - 同时盘点已有 plan（读 `${DOCS_DIR}/plan/INDEX.md`），指出冲突 / 可复用 / 需修订项
 
 调用 `ExitPlanMode`。批准后进入步骤 5；驳回则在 plan 模式内调整后重新呈现。
@@ -97,14 +96,11 @@ description: Read the specs under .bb-spec/docs/spec/, combine them with the pro
 
 **分批模式下只产出当前批的 plan 文件**，其余批次留空待后续 `/plan` 懒生成。
 
-**前端 / 网页主题额外产出 webview 测试用例**（声明式成品，等同 SQL DDL / API 契约）：把已批的用例场景落盘为 `${DOCS_DIR}/test/webview/<前端>/<类别>/<用例>.md`（顶层永远按前端分，`<前端>` 取自 INDEX `env.frontends` 服务名），每份含「测试名称 / 简介 / 测试目的 / 测试流程（固定 JSON 流）/ 如何验收」（模板见下方）。JSON 流原样供 `/test-webview` 的 subagent 消费，exec 不重写、不重复生成。
-
 ### 步骤 6：更新索引、ROADMAP 与进度文件
 
 - **主题 INDEX.md**：每条 `- [<name>](<文件名>) — <description>`；`## <阶段>` 分组；依赖标 `[依赖: <name>]`
 - **根 INDEX.md**：表格 主题|概述|状态|完成时间（分批模式加「所属批次」列）；已完成主题仅作历史审计，AI 未经允许不得读取
 - **ROADMAP.md**（分批）：首次写全部批次表 + 总链路；续作仅把当前批状态 `待生成 → 生成中`。**PROGRESS.md**：所有步骤初始标 `pending`
-- **test/webview/INDEX.md**（仅前端 / 网页主题）：写/更新前端 → 类别 → 用例索引（环境 frontmatter 留待 `/test-webview` 首次确认时补写）
 
 ### 步骤 7：自检
 
@@ -112,7 +108,6 @@ description: Read the specs under .bb-spec/docs/spec/, combine them with the pro
 - [ ] 规模分流结论已用户确认？拆分质检 4 项全过？
 - [ ] 每份 plan ≤ 200 行（成品代码块除外），函数清单无参数和实现，声明式产物已内联成品而非散文转述，无"详见 spec"式引用？
 - [ ] 新增第三方依赖已在待批方案中单独成节（无则写「无」）并获批，已批项逐条落入对应 plan 文档？
-- [ ] 前端 / 网页主题：webview 测试用例已落盘 `test/webview/` 并入索引（非前端主题不适用）？
 - [ ] 索引 / ROADMAP / PROGRESS 已同步？
 - [ ] 分批模式下**只**展开了当前批？
 
@@ -128,7 +123,6 @@ description: Read the specs under .bb-spec/docs/spec/, combine them with the pro
 - 主题：<YYYY-MM-DD.主题>
 - 产出：N 份 plan，分 M 个阶段
 - 文件清单：<序号>-<名称>.md — <一句话描述>
-- webview 用例：<前端主题：N 个用例，分 M 类；非前端主题：无>
 - Spec 变更覆盖：<已覆盖全部 / 未覆盖项列表>
 - 验证门（仅分批）：<本批 exec 完成后必须达成的可观察能力>
 - 待解决：<问题列表 / 无>
@@ -210,5 +204,3 @@ description: <一句话概括，≤ 80 字>
 ## 阻塞
 （无）
 ```
-
-**webview 测试用例模板**（仅前端 / 网页主题；落盘到 `${DOCS_DIR}/test/webview/<前端>/<类别>/<用例>.md`，供 `/test-webview` 验收）：用例文档骨架、JSON 流字段约定、抽象 action 词表统一见规范 `references/webview-testcase-format.md`（插件根目录），与 `/test-webview` 派发、`webview-test-runner` 执行共用同一事实源；按该规范逐用例产出即可。

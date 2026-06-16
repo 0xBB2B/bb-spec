@@ -1,6 +1,6 @@
 # Webview 测试用例格式（规范）
 
-`/plan`（生成用例）、`/test-webview`（兜底生成 + 派发）、`webview-test-runner` agent（执行）三方共用的**单一事实源**。改格式只改本文件，三方自动对齐。
+`/test-webview`（生成用例 + 派发）、`webview-test-runner` agent（执行）共用的**单一事实源**。改格式只改本文件，两方自动对齐。
 
 ## 用例文档骨架
 
