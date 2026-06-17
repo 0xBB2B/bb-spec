@@ -1,5 +1,12 @@
 # Changelog
 
+## [7.3.0](https://github.com/0xBB2B/bb-spec/compare/v7.2.0...v7.3.0) (2026-06-17)
+
+
+### Features
+
+* **git-workflow:** 多 repo 工作区统一父目录 + 每 repo 各拉 worktree ([#123](https://github.com/0xBB2B/bb-spec/issues/123)) ([ab92615](https://github.com/0xBB2B/bb-spec/commit/ab92615cd3fa7398053c1f7531b6b62b54ecab1e))
+
 ## [7.2.0](https://github.com/0xBB2B/bb-spec/compare/v7.1.0...v7.2.0) (2026-06-17)
 
 
