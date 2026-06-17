@@ -1,6 +1,6 @@
 {
   "name": "bb-spec-core",
-  "version": "7.0.0",
+  "version": "7.1.0",
   "description": "BB-Spec 核心纪律：TDD 红绿重构、依赖版本策略、Git 分支与提交纪律；含 block-main-commit / dep-version-check / stop-self-check 三个被动 hook，是其余子套件的推荐基座。| BB-Spec core discipline: TDD red-green-refactor, dependency version policy, Git branch & commit discipline; ships block-main-commit / dep-version-check / stop-self-check passive hooks. Recommended base for the suite.",
   "author": {
     "name": "0xBB2B",

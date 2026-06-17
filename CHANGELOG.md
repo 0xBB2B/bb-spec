@@ -1,5 +1,12 @@
 # Changelog
 
+## [7.1.0](https://github.com/0xBB2B/bb-spec/compare/v7.0.0...v7.1.0) (2026-06-17)
+
+
+### Features
+
+* **workflow,core,frontend:** 封闭式多选项交互统一改用 AskUserQuestion ([#119](https://github.com/0xBB2B/bb-spec/issues/119)) ([2258f58](https://github.com/0xBB2B/bb-spec/commit/2258f5839d2bee0df8ae279c3e284c5821942790))
+
 ## [7.0.0](https://github.com/0xBB2B/bb-spec/compare/v6.4.0...v7.0.0) (2026-06-17)
 
 
