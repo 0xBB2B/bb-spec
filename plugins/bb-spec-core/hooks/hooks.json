@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/block-main-commit.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/git-workflow-guard.sh"
           }
         ]
       }

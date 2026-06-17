@@ -8,7 +8,7 @@
     {
       "name": "bb-spec-core",
       "source": "./plugins/bb-spec-core",
-      "description": "BB-Spec 核心纪律（推荐基座）：TDD 红绿重构、依赖版本策略、Git 分支与提交纪律；含 block-main-commit / dep-version-check / stop-self-check 三个被动 hook。| BB-Spec core discipline (recommended base): TDD, dependency version policy, Git branch & commit discipline; ships three passive hooks."
+      "description": "BB-Spec 核心纪律（推荐基座）：TDD 红绿重构、依赖版本策略、Git 分支与提交纪律；含 git-workflow-guard / dep-version-check / stop-self-check 三个被动 hook。| BB-Spec core discipline (recommended base): TDD, dependency version policy, Git branch & commit discipline; ships three passive hooks."
     },
     {
       "name": "bb-spec-workflow",
