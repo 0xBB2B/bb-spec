@@ -1,6 +1,6 @@
 ---
 name: git-workflow
-description: Git workflow discipline — branch decisions before a task, an incremental local-commit rhythm (no immediate push), the six-section PR description, on-demand issue creation, and post-merge cleanup (local branch + remote ref + remote branch). Enforces no direct commits to main, branching directly off a clean main while spinning up an isolated git worktree (kept outside the repo, under ../ or ~/.worktree/) whenever in-flight work already exists, and pushing only after the whole feature is locally verified. TRIGGER when the user starts any non-main branch task (build a feature / fix a bug / open a branch), prepares to commit/push/open a PR, or cleans up after a merge. ｜ Git 开发流程纪律——覆盖"开始任务前的分支决策"、"阶段性本地 commit 节奏（不立即 push）"、"PR 描述六段式规范"、"按需建 issue 策略"、"合并后清理（本地分支 + 远程引用 + 远程分支）"。强制要求：禁止 main 直接提交、main 干净时直接开分支、已有在途工作（不在 main 或工作区有未提交改动）时从 main 新建隔离 worktree（置于 ../ 或 ~/.worktree/ 下）、整个功能本地验证后才推送。TRIGGER when：用户开始任何非 main 分支开发任务（"做个新功能"/"改 bug"/"开个分支"），或准备 commit/push/开 PR，或 PR 合并完成需要清理时。
+description: Git workflow discipline — branch decisions before a task, an incremental local-commit rhythm (no immediate push), the six-section PR description, on-demand issue creation, and post-merge cleanup (local branch + remote ref + remote branch). Enforces no direct commits to main, and for every new task asks the user (via AskUserQuestion, default worktree) whether to spin up an isolated git worktree off main (kept outside the repo, centralized under ~/.bb-spec/worktrees/) or just branch directly off a clean main, pushing only after the whole feature is locally verified. TRIGGER when the user starts any non-main branch task (build a feature / fix a bug / open a branch), prepares to commit/push/open a PR, or cleans up after a merge. ｜ Git 开发流程纪律——覆盖"开始任务前的分支决策"、"阶段性本地 commit 节奏（不立即 push）"、"PR 描述六段式规范"、"按需建 issue 策略"、"合并后清理（本地分支 + 远程引用 + 远程分支）"。强制要求：禁止 main 直接提交、每个新任务都用 AskUserQuestion 询问用户开分支方式（默认 worktree：从 main 新建隔离 worktree 统一置于 ~/.bb-spec/worktrees/ 下；或直接从干净的 main 切分支）、整个功能本地验证后才推送。TRIGGER when：用户开始任何非 main 分支开发任务（"做个新功能"/"改 bug"/"开个分支"），或准备 commit/push/开 PR，或 PR 合并完成需要清理时。
 user-invocable: false
 ---
 
@@ -18,7 +18,7 @@ user-invocable: false
 ## 1. 分支策略
 
 - **禁止在 main 直接提交**
-- **worktree 仅用于隔离在途工作**：当手上已有进行中的任务时，新任务从 main 拉一棵 worktree 并行，互不打断。工作树必须与当前 repo 物理隔离：放在仓库**同级目录**（如 `../<repo>-<branch>`）或集中到 `~/.worktree/` 下统一管理，**禁止嵌套在当前 repo 工作目录内**（避免污染主仓库、被误 add / commit）
+- **worktree 用于隔离并行工作**：从 main 拉一棵 worktree，与当前分支互不打断。工作树必须与当前 repo 物理隔离：统一集中到 `~/.bb-spec/worktrees/` 下管理，**禁止嵌套在当前 repo 工作目录内**（避免污染主仓库、被误 add / commit）
 
 ### 开始任务前必查
 
@@ -27,21 +27,23 @@ git branch --show-current        # 当前在哪个分支
 git status --short               # 工作区是否有未提交改动
 ```
 
-按"是否会干扰在途工作"决定开分支方式：
+### 开新任务一律询问开分支方式
 
-- **在 main 且工作区干净**（没有在途工作）→ `git pull` → 直接从 main 创建新分支开始工作，**无需 worktree**
+开任何新任务前，用 **AskUserQuestion** 让用户选开分支方式，**默认 worktree**：
+
+- **worktree（默认）** → 从 main 新建隔离 worktree 并行，不切换、不打断、不污染当前分支
+
+  ```bash
+  git worktree add ~/.bb-spec/worktrees/<repo>-<branch> -b <branch> main
+  ```
+
+- **直接切分支** → 在当前 repo 直接从 main 创建新分支开始工作（要求当前工作区干净）
 
   ```bash
   git pull && git switch -c <branch>
   ```
 
-- **不在 main，或工作区有未提交改动**（已有在途工作）→ 为保证多任务互不干扰 → **从 main 新建 worktree** 再工作，不切换、不打断、不污染当前分支
-
-  ```bash
-  git worktree add ~/.worktree/<repo>-<branch> -b <branch> main
-  ```
-
-  - **例外**：若本次就是要**延续当前分支的同一任务**（不是开新活儿）→ 直接在当前分支继续，不新建 worktree。无法判断是延续还是新任务时，用 AskUserQuestion 让用户选：「延续当前分支」（同一任务接着干）/「从 main 新建 worktree」（开新活儿、隔离并行）。
+**唯一例外（不问）**：本次是**延续当前分支的同一任务**（不是开新活儿）→ 直接在当前分支继续，既不新建 worktree 也不切分支。无法判断是延续还是新任务时，照常 AskUserQuestion 询问。
 
 ### 多 repo 工作区（go.work / pnpm-workspace / Cargo / Gradle composite 等）
 
@@ -52,9 +54,9 @@ git status --short               # 工作区是否有未提交改动
 - 正确做法：**建一个统一父目录（普通目录、非 repo），对每个参与 workspace 的成员 repo 各拉一棵 worktree 到该父目录下，复原原有相对布局**。每个 repo 仍是真 worktree（改动可追踪、可独立 commit/push、与主仓库共享对象、`git worktree remove` 一键清理）。
 
   ```bash
-  mkdir -p ~/.worktree/<project>-<branch>
-  git -C <repo-root>/service-a worktree add ~/.worktree/<project>-<branch>/service-a -b <branch> main
-  git -C <repo-root>/service-b worktree add ~/.worktree/<project>-<branch>/service-b -b <branch> main
+  mkdir -p ~/.bb-spec/worktrees/<project>-<branch>
+  git -C <repo-root>/service-a worktree add ~/.bb-spec/worktrees/<project>-<branch>/service-a -b <branch> main
+  git -C <repo-root>/service-b worktree add ~/.bb-spec/worktrees/<project>-<branch>/service-b -b <branch> main
   ```
 
 - **工作区根文件**（`go.work` / `pnpm-workspace.yaml` 等）位于非 repo 的容器层、不被任何 git 跟踪，拉 worktree 时不会自动带过来——**需手动放一份到统一父目录**（相对路径原样可用，无需改）。
