@@ -168,7 +168,7 @@ Each hook ships with the sub-plugin that owns its concern — install that plugi
 | Hook | Sub-plugin | Trigger | Effect |
 |---|---|---|---|
 | `block-non-bun-pm` | bb-spec-frontend | PreToolUse(Bash) | Blocks `npm` / `yarn` / `pnpm` package-manager actions, enforcing `bun`; existing projects with a matching lockfile (e.g. `package-lock.json`) are allowed through |
-| `block-main-commit` | bb-spec-core | PreToolUse(Bash) | Blocks `git commit` on the `main` / `master` branch |
+| `git-workflow-guard` | bb-spec-core | PreToolUse(Bash) | Blocks `git commit` on `main` / `master`; for other git flow actions (branch / push / worktree / merge / PR) allows them through and injects the git-workflow discipline plus live git status |
 | `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | After editing a dependency file, injects a "check the official latest version first" reminder |
 | `stop-self-check` | bb-spec-core | Stop | Forces a four-point self-check before a task ends: temp files / change scope / orphaned leftovers / legacy cruft |
 
