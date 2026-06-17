@@ -1,5 +1,16 @@
 # Changelog
 
+## [7.0.0](https://github.com/0xBB2B/bb-spec/compare/v6.4.0...v7.0.0) (2026-06-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* **plugin:** .bb-spec.yaml 配置键 docs_dir 重命名为 base_dir，值不再含 docs 后缀。 迁移：将 `docs_dir: <path>/docs` 改为 `base_dir: <path>`（去掉键名，值去掉尾部 /docs）。 未创建 .bb-spec.yaml 的项目默认行为不变（仍输出至 .bb-spec/docs/）。
+
+### Features
+
+* **plugin:** 配置上提为 base_dir，docs 与 .cache 平级、瞬态产物收归 .cache ([#117](https://github.com/0xBB2B/bb-spec/issues/117)) ([5f6e1d1](https://github.com/0xBB2B/bb-spec/commit/5f6e1d16124b5b6f9b724627ba75c577956f405b))
+
 ## [6.4.0](https://github.com/0xBB2B/bb-spec/compare/v6.3.0...v6.4.0) (2026-06-16)
 
 
