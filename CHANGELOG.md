@@ -1,5 +1,12 @@
 # Changelog
 
+## [7.4.0](https://github.com/0xBB2B/bb-spec/compare/v7.3.0...v7.4.0) (2026-06-17)
+
+
+### Features
+
+* **git-workflow:** 开新任务用 AskUserQuestion 询问 worktree/切分支（默认 worktree），worktree 统一收敛到 ~/.bb-spec/worktrees/ ([#125](https://github.com/0xBB2B/bb-spec/issues/125)) ([390ceca](https://github.com/0xBB2B/bb-spec/commit/390ceca3f3f64b40aed6394e235347e9b33bd574))
+
 ## [7.3.0](https://github.com/0xBB2B/bb-spec/compare/v7.2.0...v7.3.0) (2026-06-17)
 
 
