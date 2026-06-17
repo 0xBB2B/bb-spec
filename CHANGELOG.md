@@ -1,5 +1,12 @@
 # Changelog
 
+## [7.5.0](https://github.com/0xBB2B/bb-spec/compare/v7.4.0...v7.5.0) (2026-06-17)
+
+
+### Features
+
+* **hooks:** block-main-commit 升级为 git-workflow-guard，git 流程操作放行并注入 git-workflow 纪律 ([#127](https://github.com/0xBB2B/bb-spec/issues/127)) ([0d0e416](https://github.com/0xBB2B/bb-spec/commit/0d0e41661eb9548887cb462ca7476e7f2b608e54))
+
 ## [7.4.0](https://github.com/0xBB2B/bb-spec/compare/v7.3.0...v7.4.0) (2026-06-17)
 
 
