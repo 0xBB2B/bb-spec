@@ -29,7 +29,7 @@ description: Reverse-spec-ification for onboarding. When the target project has 
 `ls ${DOCS_DIR}/spec/INDEX.md 2>/dev/null`：
 
 - **不存在 / 为空** → 进步骤 1
-- **已存在且非空** → 绝不静默覆盖，向用户三选一：
+- **已存在且非空** → 绝不静默覆盖，用 AskUserQuestion 让用户三选一：
   - `跳过`：告知"已有 INDEX.md，未做任何改动"并退出
   - `增量补全`：读完现有 INDEX.md + 全部已有 spec 后，仅提炼"既有未覆盖的规则"，与既有文档**互不重叠**
   - `全量重做`：先 `mv ${DOCS_DIR}/spec ${DOCS_DIR}/spec.bak.<时间戳>` 备份再走全流程，过程中可参考 `.bak`
@@ -55,7 +55,7 @@ description: Reverse-spec-ification for onboarding. When the target project has 
 4. **横切关注点**：日志 / 错误码 / 配置 / 鉴权 / 限流 / 缓存 / 监控（**单独一区**，跨模块共享的硬约束几乎都落这里）
 5. **运维 / CI**：Docker / GitHub Actions / 部署脚本
 
-输出分区候选清单（分区名 + 一句话描述 + 大致涉及目录），并把横切关注点单列一区，询问用户：`确认 / 调整分区 / 合并 / 拆分？`
+输出分区候选清单（分区名 + 一句话描述 + 大致涉及目录），并把横切关注点单列一区，用 AskUserQuestion 让用户选：`确认 / 调整分区 / 合并 / 拆分`
 
 ### 步骤 3：方案质检（向用户确认前的自检）
 

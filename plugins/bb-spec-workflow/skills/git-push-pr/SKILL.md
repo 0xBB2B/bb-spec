@@ -94,7 +94,7 @@ description: Use when the user wants to push local code to a remote via the PR f
 
 ## 7. 处理 PR
 
-创建后询问用户（除非已显式声明）：
+创建后用 AskUserQuestion 让用户选（除非已显式声明）：
 
 1. **自动合并**：`gh pr merge --squash --auto --delete-branch`（GitLab 用 `--auto-merge --remove-source-branch`）
 2. **已合并**：查询状态校验 → MERGED 才继续清理
