@@ -40,7 +40,7 @@ argument-hint: <问题或优化诉求描述>
 
 ### 步骤 1：读取配置 + 定位关联资产
 
-`cat .bb-spec.yaml 2>/dev/null` 取 `docs_dir`（缺省 `.bb-spec/docs`），记作 `${DOCS_DIR}`，后续所有路径基于此值。读 `${DOCS_DIR}/spec/INDEX.md` 与 `${DOCS_DIR}/plan/INDEX.md`，据问题描述定位四层资产并全部读取：
+`cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`，后续所有路径基于此值。读 `${DOCS_DIR}/spec/INDEX.md` 与 `${DOCS_DIR}/plan/INDEX.md`，据问题描述定位四层资产并全部读取：
 
 | 资产 | 定位方式 | 目的 |
 |---|---|---|

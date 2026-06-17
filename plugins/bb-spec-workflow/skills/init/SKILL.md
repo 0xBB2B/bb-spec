@@ -24,7 +24,7 @@ description: Reverse-spec-ification for onboarding. When the target project has 
 
 ### 步骤 0：读取配置 + 检测 spec 现状
 
-`cat .bb-spec.yaml 2>/dev/null` 取 `docs_dir`（缺省 `.bb-spec/docs`），后续记作 `${DOCS_DIR}`，spec 目录即 `${DOCS_DIR}/spec/`。
+`cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`，spec 目录即 `${DOCS_DIR}/spec/`。
 
 `ls ${DOCS_DIR}/spec/INDEX.md 2>/dev/null`：
 

@@ -32,7 +32,9 @@ disable-model-invocation: true
 
 ### 步骤 0：读取配置
 
-`cat .bb-spec.yaml 2>/dev/null` 取 `docs_dir`（缺省 `.bb-spec/docs`），记作 `${DOCS_DIR}`。`$ARGUMENTS` 非空 → 仅跑该 category，否则全量。
+`cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`、`${CACHE_DIR}` = `<base_dir>/.cache`。`$ARGUMENTS` 非空 → 仅跑该 category，否则全量。
+
+**缓存约定**：本 skill 的临时产物（截图）统一落 `${CACHE_DIR}/`（截图落 `${CACHE_DIR}/webview-shots/`），与交付物目录 `${DOCS_DIR}/` 平级、不混入。**首次写入前**确保 `${CACHE_DIR}/.gitignore` 存在——不存在则连目录一并创建、内容写单行 `*`（把整个 `.cache` 含其自身排除出 git，无需改动任何上层 `.gitignore`）。
 
 ### 步骤 1：前置检查（任一不过即中止并给指引）
 
@@ -75,6 +77,7 @@ UI 验证用例的生成与覆盖完整性都由本 skill 独占负责。
 - `base_url`：该用例 `target` 前端对应的 `${BASE_URL}`（`target` 即用例所在顶层目录段）
 - `mcp_family`：`${MCP_FAMILY}`（playwright | chrome-devtools）
 - `project_context`：技术栈一句话（供选择器 / 等待策略参考）
+- `screenshots_dir`：`${CACHE_DIR}/webview-shots/`（相对项目根，截图统一落此；派发首个用例前已按步骤 0 缓存约定确保该目录与 `.cache/.gitignore` 就位）
 
 subagent 返回结构化 verdict：`{ caseId, category, status: pass|fail|error, failedStep, evidence, screenshots[] }`（`skipped` 由主 agent 在依赖闸门处赋予，不派发）。主 agent 只把 verdict 摘要记入内存，**不回读** MCP 交互细节。
 

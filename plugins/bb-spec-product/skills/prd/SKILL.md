@@ -28,7 +28,7 @@ description: Brainstorm requirements with the user (PM / requester) — challeng
 cat .bb-spec.yaml 2>/dev/null
 ```
 
-有 `docs_dir` → 用其值作为基础路径；文件不存在或无该字段 → 默认 `.bb-spec/docs`。
+有 `base_dir` → 用其值作为 bb-spec 根目录；文件不存在或无该字段 → 缺省 `.bb-spec`。`${DOCS_DIR}` = `<base_dir>/docs`（spec / plan / prd / test 等交付物均在其下）。
 
 ```bash
 ls ${DOCS_DIR}/prd/ 2>/dev/null

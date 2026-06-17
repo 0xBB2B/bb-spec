@@ -28,7 +28,7 @@ description: Refine the user's requirement through dialogue, break a large requi
 cat .bb-spec.yaml 2>/dev/null
 ```
 
-有 `docs_dir` → 用其值作为基础路径（如 `docs_dir: my/docs` → spec 目录为 `my/docs/spec/`）；文件不存在或无该字段 → 默认 `.bb-spec/docs`。后续所有路径基于此值。
+有 `base_dir` → 用其值作为 bb-spec 根目录（如 `base_dir: my/bb` → spec 目录为 `my/bb/docs/spec/`）；文件不存在或无该字段 → 缺省 `.bb-spec`。`${DOCS_DIR}` = `<base_dir>/docs`，后续所有路径基于此值。
 
 **盘点待消费 PRD**（PRD 由 `/prd` 头脑风暴产出，是本次需求的上游输入）：
 

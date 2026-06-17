@@ -49,7 +49,7 @@ argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 
 ### 步骤 0：读取配置 + 解析参数定位目标
 
-`cat .bb-spec.yaml 2>/dev/null` 取 `docs_dir`（缺省 `.bb-spec/docs`），记作 `${DOCS_DIR}`。读 `${DOCS_DIR}/plan/INDEX.md`，按参数形式决定行为：
+`cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`。读 `${DOCS_DIR}/plan/INDEX.md`，按参数形式决定行为：
 
 | 调用方式 | 行为 |
 |---|---|

@@ -194,10 +194,10 @@ The repo-root [`CLAUDE.template.md`](./CLAUDE.template.md) is a companion "iron-
 
 ### .bb-spec.yaml project config
 
-`/prd`, `/spec` and `/plan` output to `.bb-spec/docs/prd/`, `.bb-spec/docs/spec/` and `.bb-spec/docs/plan/` by default. Create a `.bb-spec.yaml` in the project root to override the base path:
+`/prd`, `/spec` and `/plan` output under `.bb-spec/docs/` by default (`.bb-spec/docs/prd/`, `…/spec/`, `…/plan/`); runtime transient artifacts (e.g. webview screenshots) go to the sibling `.bb-spec/.cache/` (auto-gitignored). Create a `.bb-spec.yaml` in the project root to override the bb-spec root directory:
 
 ```yaml
-docs_dir: my/custom/docs  # → my/custom/docs/prd/, my/custom/docs/spec/, my/custom/docs/plan/
+base_dir: my/bb  # → my/bb/docs/{prd,spec,plan,test}/ and my/bb/.cache/ ; use ./ to place them at the project root
 ```
 
 Reference template: [`.bb-spec.template.yaml`](./.bb-spec.template.yaml).

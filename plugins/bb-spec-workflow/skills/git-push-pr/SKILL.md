@@ -42,7 +42,7 @@ description: Use when the user wants to push local code to a remote via the PR f
 
 两级查找 spec：
 
-1. **仓库根**：读取仓库根 `.bb-spec.yaml` 的 `docs_dir`（默认 `.bb-spec/docs`），检查 `{docs_dir}/spec/INDEX.md`
+1. **仓库根**：读取仓库根 `.bb-spec.yaml` 的 `base_dir`（默认 `.bb-spec`），检查 `{base_dir}/docs/spec/INDEX.md`
 2. **项目根（CWD）**：若仓库根未找到，再检查调用目录（即 CWD，多仓库场景下通常是外层项目根）的 `.bb-spec/docs/spec/INDEX.md`
 
 任一位置命中 → 以该路径作为 spec 来源进入自查；两处都不存在 → 跳过整个 4.5。

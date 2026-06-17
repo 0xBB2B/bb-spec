@@ -9,6 +9,7 @@ inputs:
   - base_url              # 已按用例 target 前端解析好的基址，相对路径据此拼接
   - mcp_family            # playwright | chrome-devtools，决定调哪族 MCP 工具
   - project_context       # 技术栈一句话，供选择器 / 等待策略参考
+  - screenshots_dir       # 截图落盘目录（相对项目根，已由派发方建好并 gitignore）
 ---
 
 # Webview Test Runner Agent
@@ -33,14 +34,19 @@ inputs:
 
 {project_context}
 
+### 截图落盘目录
+
+{screenshots_dir}
+
 ## 指令
 
 1. **加载工具**：经 ToolSearch 加载 `{mcp_family}` 工具族（playwright → `mcp__playwright__browser_*`；chrome-devtools → `mcp__chrome-devtools__*`）。
 2. **顺序执行 steps**：依次把每个 step 的抽象 `action` 映射到对应 MCP 工具调用；先 `setup`，再 `steps`，最后无论成败执行 `teardown`。相对 `target` 用 `{base_url}` 拼接绝对 URL。
 3. **断言即判定**：`assert*` 类 step 不通过 → **立即停止**后续 step，记录失败步骤序号 + action + 期望 vs 实际。
 4. **失败取证**：任一步骤失败或报错 → 截图 + 抓取 console 错误（`assertConsoleNoError` 也据此判定），作为 evidence。
-5. **稳态等待**：交互后用 `waitFor`（元素 / 文本 / 网络空闲）替代固定 sleep，避免假阴性。
-6. **不越界**：只跑本用例步骤，不探索其他页面、不改代码、不操作 git。
+5. **截图落盘**：所有截图（`screenshot` action 与失败取证）一律存入 `{screenshots_dir}`——playwright 传 `filename`、chrome-devtools 传 `filePath`，均为相对项目根的路径（如 `{screenshots_dir}<name>.png`）；文件名 `screenshot` action 取 step 的 `name`、失败取证取 `fail-step<K>`。
+6. **稳态等待**：交互后用 `waitFor`（元素 / 文本 / 网络空闲）替代固定 sleep，避免假阴性。
+7. **不越界**：只跑本用例步骤，不探索其他页面、不改代码、不操作 git。
 
 ### 抽象 action → MCP 映射
 
