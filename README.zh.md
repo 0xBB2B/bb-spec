@@ -193,10 +193,10 @@ CI 在 PR 和 push 到 main 时自动运行（`.github/workflows/ci.yml`）。
 
 ### .bb-spec.yaml 项目配置
 
-`/prd`、`/spec` 和 `/plan` 默认输出至 `.bb-spec/docs/prd/`、`.bb-spec/docs/spec/`、`.bb-spec/docs/plan/`。在项目根目录创建 `.bb-spec.yaml` 可覆盖基础路径：
+`/prd`、`/spec` 和 `/plan` 默认输出至 `.bb-spec/docs/` 下（`.bb-spec/docs/prd/`、`…/spec/`、`…/plan/`）；运行时瞬态产物（如 webview 截图）落在与之平级的 `.bb-spec/.cache/`（自动 gitignore）。在项目根创建 `.bb-spec.yaml` 可覆盖 bb-spec 根目录：
 
 ```yaml
-docs_dir: my/custom/docs  # → my/custom/docs/prd/、my/custom/docs/spec/、my/custom/docs/plan/
+base_dir: my/bb  # → my/bb/docs/{prd,spec,plan,test}/ 与 my/bb/.cache/；填 ./ 则直接落项目根
 ```
 
 参考模板：[`.bb-spec.template.yaml`](./.bb-spec.template.yaml)。

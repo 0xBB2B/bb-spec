@@ -44,7 +44,7 @@ description: Read the specs under .bb-spec/docs/spec/, combine them with the pro
 
 ### 步骤 0b：读取配置 + 识别 spec 变更
 
-`cat .bb-spec.yaml 2>/dev/null` 取 `docs_dir`（缺省 `.bb-spec/docs`），记 `${DOCS_DIR}`。运行 `git diff main...HEAD --name-status -- '${DOCS_DIR}/spec/'`：
+`cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`。运行 `git diff main...HEAD --name-status -- '${DOCS_DIR}/spec/'`：
 
 - **非 git / 无 main / spec 目录不存在**：告知"建议先运行 `/spec`"，`ExitPlanMode` 终止
 - **diff 空 + 无 ROADMAP**：告知"无 spec 变更，无需 plan"，`ExitPlanMode` 终止

@@ -3,7 +3,9 @@
 # 复制到项目根目录并重命名为 .bb-spec.yaml，按需修改。
 # 影响 /spec、/plan、/git-push-pr 等 skill 的文档读写路径。
 
-# spec 和 plan 文档的基础目录
-# /spec 输出至 {docs_dir}/spec/，/plan 输出至 {docs_dir}/plan/
-# 默认值：.bb-spec/docs
-docs_dir: .bb-spec/docs
+# bb-spec 工作根目录，其下分两个平级子树：
+#   {base_dir}/docs/   —— 交付物（spec / plan / prd / test，随仓库提交）
+#     /spec 输出至 {base_dir}/docs/spec/，/plan 输出至 {base_dir}/docs/plan/
+#   {base_dir}/.cache/ —— 运行时瞬态产物（截图等，自带 .gitignore 排除出 git）
+# 默认值：.bb-spec
+base_dir: .bb-spec
