@@ -43,6 +43,23 @@ git status --short               # 工作区是否有未提交改动
 
   - **例外**：若本次就是要**延续当前分支的同一任务**（不是开新活儿）→ 直接在当前分支继续，不新建 worktree。无法判断是延续还是新任务时，用 AskUserQuestion 让用户选：「延续当前分支」（同一任务接着干）/「从 main 新建 worktree」（开新活儿、隔离并行）。
 
+### 多 repo 工作区（go.work / pnpm-workspace / Cargo / Gradle composite 等）
+
+当项目由**多个 repo 组成、且构建靠相对路径跨 repo 引用**（如 `go.work` 的 `./service-a`、`pnpm-workspace.yaml`、Cargo workspace 的 `path = "../lib"`、Gradle composite build）时：
+
+- **禁止只对单个成员 repo 拉 worktree**——会打散工作区的相对布局，`./service-b` 这类引用指空，整个 workspace 解析失败。
+- **禁止用整目录复制替代 worktree**——放弃隔离与一键清理、磁盘翻倍、副本易 drift。
+- 正确做法：**建一个统一父目录（普通目录、非 repo），对每个参与 workspace 的成员 repo 各拉一棵 worktree 到该父目录下，复原原有相对布局**。每个 repo 仍是真 worktree（改动可追踪、可独立 commit/push、与主仓库共享对象、`git worktree remove` 一键清理）。
+
+  ```bash
+  mkdir -p ~/.worktree/<project>-<branch>
+  git -C <repo-root>/service-a worktree add ~/.worktree/<project>-<branch>/service-a -b <branch> main
+  git -C <repo-root>/service-b worktree add ~/.worktree/<project>-<branch>/service-b -b <branch> main
+  ```
+
+- **工作区根文件**（`go.work` / `pnpm-workspace.yaml` 等）位于非 repo 的容器层、不被任何 git 跟踪，拉 worktree 时不会自动带过来——**需手动放一份到统一父目录**（相对路径原样可用，无需改）。
+- 清理对称：各成员 repo 各自 `git worktree remove`，统一父目录手动删。
+
 ---
 
 ## 2. 阶段性本地 commit
