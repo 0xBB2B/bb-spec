@@ -41,7 +41,7 @@ git status --short               # 工作区是否有未提交改动
   git worktree add ~/.worktree/<repo>-<branch> -b <branch> main
   ```
 
-  - **例外**：若本次就是要**延续当前分支的同一任务**（不是开新活儿）→ 直接在当前分支继续，不新建 worktree。无法判断是延续还是新任务时，问用户。
+  - **例外**：若本次就是要**延续当前分支的同一任务**（不是开新活儿）→ 直接在当前分支继续，不新建 worktree。无法判断是延续还是新任务时，用 AskUserQuestion 让用户选：「延续当前分支」（同一任务接着干）/「从 main 新建 worktree」（开新活儿、隔离并行）。
 
 ---
 
