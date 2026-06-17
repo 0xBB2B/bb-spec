@@ -1,12 +1,25 @@
 ---
 name: git-workflow
-description: Git workflow discipline — branch decisions before a task, an incremental local-commit rhythm (no immediate push), the six-section PR description, on-demand issue creation, and post-merge cleanup (local branch + remote ref + remote branch). Enforces no direct commits to main, and for every new task asks the user (via AskUserQuestion, default worktree) whether to spin up an isolated git worktree off main (kept outside the repo, centralized under ~/.bb-spec/worktrees/) or just branch directly off a clean main, pushing only after the whole feature is locally verified. TRIGGER when the user starts any non-main branch task (build a feature / fix a bug / open a branch), prepares to commit/push/open a PR, or cleans up after a merge. ｜ Git 开发流程纪律——覆盖"开始任务前的分支决策"、"阶段性本地 commit 节奏（不立即 push）"、"PR 描述六段式规范"、"按需建 issue 策略"、"合并后清理（本地分支 + 远程引用 + 远程分支）"。强制要求：禁止 main 直接提交、每个新任务都用 AskUserQuestion 询问用户开分支方式（默认 worktree：从 main 新建隔离 worktree 统一置于 ~/.bb-spec/worktrees/ 下；或直接从干净的 main 切分支）、整个功能本地验证后才推送。TRIGGER when：用户开始任何非 main 分支开发任务（"做个新功能"/"改 bug"/"开个分支"），或准备 commit/push/开 PR，或 PR 合并完成需要清理时。
+description: Git workflow discipline — branch decisions before a task, an incremental local-commit rhythm (no immediate push), the six-section PR description, on-demand issue creation, and post-merge cleanup (local branch + remote ref + remote branch). Enforces no direct commits to main, and for every new task asks the user (via AskUserQuestion, default worktree) whether to spin up an isolated git worktree off main (kept outside the repo, centralized under ~/.bb-spec/worktrees/) or just branch directly off a clean main, pushing only after the whole feature is locally verified. When the project is a multi-repo workspace (go.work / pnpm-workspace / Cargo workspace / Gradle composite build), follow the §1 multi-repo workspace rule instead of single-repo worktree (unified parent dir + per-member worktrees + manually copy workspace root files). TRIGGER when the user starts any non-main branch task (build a feature / fix a bug / open a branch), prepares to commit/push/open a PR, or cleans up after a merge. ｜ Git 开发流程纪律——覆盖"开始任务前的分支决策"、"阶段性本地 commit 节奏（不立即 push）"、"PR 描述六段式规范"、"按需建 issue 策略"、"合并后清理（本地分支 + 远程引用 + 远程分支）"。强制要求：禁止 main 直接提交、每个新任务都用 AskUserQuestion 询问用户开分支方式（默认 worktree：从 main 新建隔离 worktree 统一置于 ~/.bb-spec/worktrees/ 下；或直接从干净的 main 切分支）、整个功能本地验证后才推送。项目使用 go.work / pnpm-workspace / Cargo workspace / Gradle composite 时按 §1 多 repo 工作区章节执行（统一父目录 + 各 repo worktree + 根文件手拷），禁止仅对单成员 repo 拉 worktree。TRIGGER when：用户开始任何非 main 分支开发任务（"做个新功能"/"改 bug"/"开个分支"），或准备 commit/push/开 PR，或 PR 合并完成需要清理时。
 user-invocable: false
 ---
 
 # Git 工作流纪律
 
 适用于：所有会改动代码的开发任务的完整生命周期。
+
+## 路径选择（进文档第一步必看）
+
+开任务前先扫一眼**工作区根目录**，按下表分流，不要凭"看着像普通仓库"就默认单仓路径：
+
+| 检测信号（根目录存在以下任一） | 走哪条 |
+|---|---|
+| `go.work` / `pnpm-workspace.yaml`（或 `package.json` 含 `workspaces` 字段）/ `Cargo.toml` 含 `[workspace]` / `settings.gradle(.kts)` 含 `includeBuild` | → **§1「多 repo 工作区」**：统一父目录 + 各成员 repo 各拉 worktree + 根文件手拷，**禁止只对单个成员 repo 拉 worktree** |
+| 其他（普通单仓） | → **§1「开新任务一律询问开分支方式」**：单仓 worktree 或直接切分支，按 AskUserQuestion 走 |
+
+> 判断时机：在执行"开始任务前必查"那两条 `git` 命令**之前**就先扫一眼根目录信号，分流错了后面整个 §1 都会跑偏。
+
+---
 
 ## 0. 触发与跳过
 
@@ -61,6 +74,7 @@ git status --short               # 工作区是否有未提交改动
 
 - **工作区根文件**（`go.work` / `pnpm-workspace.yaml` 等）位于非 repo 的容器层、不被任何 git 跟踪，拉 worktree 时不会自动带过来——**需手动放一份到统一父目录**（相对路径原样可用，无需改）。
 - 清理对称：各成员 repo 各自 `git worktree remove`，统一父目录手动删。
+- **依然要 AskUserQuestion**：多 repo 场景的询问点不是"worktree vs 直接切分支"（工作区根本身不是 repo、无法直接切），而是 **① 本次任务涉及哪些成员 repo**（避免给无关 repo 拉空分支）**② 分支名**。问完再按确认范围执行上面的 `worktree add`。
 
 ---
 
