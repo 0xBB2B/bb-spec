@@ -1,6 +1,6 @@
 ---
 name: spec
-description: Refine the user's requirement through dialogue, break a large requirement into many small rules, and produce concise specs (one rule per document, ≤100 lines, one thing + one example each) under .bb-spec/docs/spec/; every doc carries name + description frontmatter and is indexed by a lightweight INDEX.md readers scan first, then load specific files on demand. TRIGGER — /spec / help me organize requirements / write this feature as a spec / do requirement breakdown. ｜ 通过对话细化用户需求，将庞大需求拆解为多个"小规则"，并在当前目录 `.bb-spec/docs/spec/` 下产出一规则一文档的简洁规格说明（每文档 ≤ 100 行，只说一件事 + 一个例子）；所有文档头部带 `name + description` frontmatter，由 `.bb-spec/docs/spec/INDEX.md` 汇成轻量索引，读者先扫索引再按需加载具体文件。常见触发：用户输入 `/spec`、"帮我整理需求"、"把这个功能写成 spec"、"做需求拆解"。
+description: Refine the user's requirement through dialogue, break a large requirement into many small rules, and produce concise specs (one rule per document, ≤100 lines, one thing + one example each) under .bb-spec/docs/spec/; every doc carries name + description frontmatter and is indexed by a lightweight INDEX.md readers scan first, then load specific files on demand. Auto-enters Claude Code plan mode on invocation to clarify and align the decomposition read-only before writing files. TRIGGER — /spec / help me organize requirements / write this feature as a spec / do requirement breakdown. ｜ 通过对话细化用户需求，将庞大需求拆解为多个"小规则"，并在当前目录 `.bb-spec/docs/spec/` 下产出一规则一文档的简洁规格说明（每文档 ≤ 100 行，只说一件事 + 一个例子）；所有文档头部带 `name + description` frontmatter，由 `.bb-spec/docs/spec/INDEX.md` 汇成轻量索引，读者先扫索引再按需加载具体文件。调用时自动进入 Claude Code 的 plan 模式，先在只读态澄清并对齐拆解方案，批准后才落盘。常见触发：用户输入 `/spec`、"帮我整理需求"、"把这个功能写成 spec"、"做需求拆解"。
 ---
 
 # Spec 需求拆解与文档化
@@ -9,20 +9,27 @@ description: Refine the user's requirement through dialogue, break a large requi
 
 ## 核心原则
 
-1. **一文一规则**：每文档 ≤ 100 行，只描述一条独立逻辑/约束
-2. **先澄清再写**：禁止脑补，对话把假设和边界讲清楚
-3. **必须举例**：每文档结尾一个具体、可被测试的例子
-4. **强制拆解**：发现多个关注点时拆为多份文档
-5. **按需加载结构**：frontmatter `name + description` → `INDEX.md` 索引
-6. **自主独立**：每份自包含，**禁止跨文档引用**（无"详见/参见/复用 xxx.md"）
-7. **语言跟随用户**：正文用用户的工作语言（默认随对话语言），标识符/API 名/错误码保持英文
-8. **纯净现态**：spec 只描述当前系统行为，不携带变更历史或过渡标记；废弃规则直接删文件，git 是变更追溯的唯一来源
+1. **方案先对齐再落盘**：启动即 `EnterPlanMode`，澄清与拆解全程只读对齐，`ExitPlanMode` 批准后才写文档（❌ 澄清没结束就先建 spec 文件）
+2. **一文一规则**：每文档 ≤ 100 行，只描述一条独立逻辑/约束
+3. **先澄清再写**：禁止脑补，对话把假设和边界讲清楚
+4. **必须举例**：每文档结尾一个具体、可被测试的例子
+5. **强制拆解**：发现多个关注点时拆为多份文档
+6. **按需加载结构**：frontmatter `name + description` → `INDEX.md` 索引
+7. **自主独立**：每份自包含，**禁止跨文档引用**（无"详见/参见/复用 xxx.md"）
+8. **语言跟随用户**：正文用用户的工作语言（默认随对话语言），标识符/API 名/错误码保持英文
+9. **纯净现态**：spec 只描述当前系统行为，不携带变更历史或过渡标记；废弃规则直接删文件，git 是变更追溯的唯一来源
 
 ---
 
 ## 工作流
 
-### 步骤 0：读取项目配置 + 盘点 PRD 与已有 spec
+> 步骤 0~3 在 plan 模式内（只读澄清对齐），步骤 4~9 在 plan 模式外（落盘 + commit）。
+
+### 步骤 0a：进入 plan 模式
+
+**立即调用 `EnterPlanMode`**。后续 0~3 步全在只读态完成——读配置、盘点 PRD、递进澄清、冲突检测、拆解质检与方案展示，均不写盘。
+
+### 步骤 0b：读取项目配置 + 盘点 PRD 与已有 spec
 
 ```bash
 cat .bb-spec.yaml 2>/dev/null
@@ -102,7 +109,7 @@ cat ${DOCS_DIR}/spec/INDEX.md 2>/dev/null || ls ${DOCS_DIR}/spec/ 2>/dev/null
 3. **是否值得定义**：该规则是否已被语言/框架/工具天然保证？已保证的不写 spec
 4. **是否可证伪**：每条约束能写出"什么输入 → 什么结果"吗？写不出的（如"要健壮/高性能/友好"）就是空泛，重新定义或删除
 
-质检通过后，展示拆解方案（文件名 + 一句话描述）给用户确认。
+质检通过后，展示拆解方案（文件名 + 一句话描述），调用 `ExitPlanMode` 请用户批准。批准后进入步骤 4 落盘；驳回则在 plan 模式内调整后重新呈现。
 
 ### 步骤 4：产出文档
 
@@ -130,7 +137,8 @@ cat ${DOCS_DIR}/spec/INDEX.md 2>/dev/null || ls ${DOCS_DIR}/spec/ 2>/dev/null
 - [ ] 每条约束都可测（输入→预期），无"健壮/友好/高性能"类空泛词？约束与验收一一对应？
 
 **格式自检**：
-- [ ] 步骤 0 三类判定已完成并确认？
+- [ ] 步骤 0a~3 全程在 plan 模式内，`ExitPlanMode` 批准后才落盘，未提前写文件？
+- [ ] 步骤 0b 三类判定已完成并确认？
 - [ ] 步骤 6 跨文档 review 已完成？
 - [ ] frontmatter 含 name + description（≤ 80 字）？
 - [ ] 正文 ≤ 100 行？只讲一件事？
