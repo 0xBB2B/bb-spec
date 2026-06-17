@@ -1,5 +1,12 @@
 # Changelog
 
+## [7.6.0](https://github.com/0xBB2B/bb-spec/compare/v7.5.0...v7.6.0) (2026-06-17)
+
+
+### Features
+
+* **git-workflow:** 顶部新增"路径选择决策表"分流多 repo workspace，description 追加触发词 ([#129](https://github.com/0xBB2B/bb-spec/issues/129)) ([7c0ea45](https://github.com/0xBB2B/bb-spec/commit/7c0ea452e9a1bd51a1d9ab4b68ac5c0793b19d8b))
+
 ## [7.5.0](https://github.com/0xBB2B/bb-spec/compare/v7.4.0...v7.5.0) (2026-06-17)
 
 
