@@ -1,5 +1,12 @@
 # Changelog
 
+## [7.2.0](https://github.com/0xBB2B/bb-spec/compare/v7.1.0...v7.2.0) (2026-06-17)
+
+
+### Features
+
+* **spec:** 启动即进入 plan 模式，方案确认后再落盘 ([#121](https://github.com/0xBB2B/bb-spec/issues/121)) ([cf5b277](https://github.com/0xBB2B/bb-spec/commit/cf5b277a6ae11bca9450ef36920daf820cb4f29a))
+
 ## [7.1.0](https://github.com/0xBB2B/bb-spec/compare/v7.0.0...v7.1.0) (2026-06-17)
 
 

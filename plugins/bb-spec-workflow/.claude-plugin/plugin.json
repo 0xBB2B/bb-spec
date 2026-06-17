@@ -1,6 +1,6 @@
 {
   "name": "bb-spec-workflow",
-  "version": "7.1.0",
+  "version": "7.2.0",
   "description": "BB-Spec 工作流：spec 需求拆解 → plan 实施计划 → exec 三 Agent 隔离执行 → test-webview 网页交互验证 → review 多代理对抗 review → revise 修订 → git-push-pr，含 init 反向 spec 化与 11 个编排 subagent。| BB-Spec workflow: spec → plan → exec (three-agent) → test-webview → review (multi-agent adversarial) → revise → git-push-pr, plus init reverse-spec and 11 orchestration subagents.",
   "author": {
     "name": "0xBB2B",
