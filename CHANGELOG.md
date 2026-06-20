@@ -1,5 +1,12 @@
 # Changelog
 
+## [7.7.0](https://github.com/0xBB2B/bb-spec/compare/v7.6.0...v7.7.0) (2026-06-20)
+
+
+### Features
+
+* **spec:** description 全面中文化并改造为「定位+机制+触发+跳过」模板 ([#131](https://github.com/0xBB2B/bb-spec/issues/131)) ([a54556f](https://github.com/0xBB2B/bb-spec/commit/a54556fcf68dbb19dc311ebb3e3256af07cb6da6))
+
 ## [7.6.0](https://github.com/0xBB2B/bb-spec/compare/v7.5.0...v7.6.0) (2026-06-17)
 
 
