@@ -1,6 +1,6 @@
 ---
 name: exec
-description: Three-agent isolated execution of a plan (Test→Impl→Review), persisting progress to PROGRESS.md after every step, with lossless resume across sessions or after /clear. TRIGGER — /exec / start implementing / continue executing the plan / resume from the last checkpoint. ｜ 三 Agent 隔离执行 plan 实施计划（Test→Impl→Review），每完成一步立即持久化进度到 PROGRESS.md，支持跨会话 / `/clear` 后无损续接。常见触发：用户输入 `/exec`、"开始实施"、"继续执行 plan"、"从上次断点继续"。
+description: 三 Agent 隔离执行 plan——Test→Impl→Review 串行，三方各只看各的输入互不可见；每步立即持久化 PROGRESS.md，跨会话/`/clear` 后从断点续接；commit 不自动 push、main 分支禁自动 commit。触发：/exec、开始实施 plan、继续执行 plan、从断点继续、按 plan 把代码做出来。跳过：还没 /plan 产出实施计划、纯调研/方案讨论、要改 spec 或 plan 本身（→/revise）。
 argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 ---
 

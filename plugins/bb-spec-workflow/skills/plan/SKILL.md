@@ -1,6 +1,6 @@
 ---
 name: plan
-description: Read the specs under .bb-spec/docs/spec/, combine them with the project's existing code structure, and produce a self-contained step-by-step implementation plan under .bb-spec/docs/plan/<YYYY-MM-DD>.<topic>/. Auto-enters Claude Code plan mode on invocation to align the split/roadmap read-only before writing files. Auto-detects requirement scale and switches into batched-roadmap mode (a multi-batch ROADMAP with dependency arrows and verification gates, lazily expanding one batch at a time) for project bootstrap or other large-scale spec drops. TRIGGER — /plan / generate an implementation plan / how to land these specs / 分批实施 / 路线图. ｜ 读取 `.bb-spec/docs/spec/` 中的规格说明，结合项目现有代码结构，在 `.bb-spec/docs/plan/<YYYY-MM-DD>.<主题>/` 下产出自包含的分步实施计划；调用时自动进入 Claude Code 的 plan 模式，先在只读态对齐拆分/分批方案，批准后才落盘。自动识别需求规模：冷启动 / 多领域 / 大批 spec 涌入时切到「分批路线图」模式，产出含依赖链和验证门的 ROADMAP，懒生成（一次只展开一批 topic），该批 exec 验证门通过后再下一批。常见触发：用户输入 `/plan`、"生成实施计划"、"怎么落地这些 spec"、"分批实施"、"路线图"。
+description: 读 spec + 项目代码结构产出函数级实施计划——启动即 EnterPlanMode 只读对齐、批准后才落盘到 .bb-spec/docs/plan/<日期>.<主题>/；规模分流：单 topic 或分批 ROADMAP（含依赖+验证门+懒生成）；过程式只到函数级，声明式产物（DDL/API 契约/配置）必须内联完整成品。触发：/plan、生成实施计划、怎么落地这些 spec、分批实施、要路线图。跳过：还没 spec（→/spec）、spec 无变更且无未完成批次。
 ---
 
 # Plan 实施计划生成

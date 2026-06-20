@@ -1,6 +1,6 @@
 ---
 name: review
-description: Workflow-orchestrated adversarially-verified local review of the current branch vs a base branch (requires Claude Code >= 2.1.154 for the Workflow tool). Base defaults to main; override with /review <base-branch>. Phase 1 spawns 5 finders in parallel (code quality, security, simplicity, doc sync, Codex cross-model independent review) with schema-enforced structured findings; findings are deduped in plain code, then every BLOCKER/IMPORTANT finding is adversarially verified by 3 independent skeptic lenses (importance / root-cause / risk-if-unfixed) with majority vote deciding keep-or-drop. Read-only — never auto-edits code. ｜ 用 Workflow 工具编排的"多代理 + 对抗验证"本地 review（依赖 Workflow 工具，要求 Claude Code ≥ 2.1.154）。默认 base = main，可用 /review <base-branch> 指定。Phase 1 并发 5 个 finder（代码质量、安全视角、代码简洁性、文档同步、Codex 跨模型独立 review），schema 强制结构化发现；纯代码去重后，每条 🔴/🟡 发现交由 3 个独立怀疑视角（重要性 / 根源性 / 不修风险）对抗验证，多数决定去留。只读审视，不自动修改代码。
+description: 本地 ultrareview——跨模型、多代理、对抗验证、只读的 PR 级 review（依赖 Workflow 工具，Claude Code ≥2.1.154）；默认 base=main；并发 5 个 finder（质量/安全/简洁/文档同步/Codex 跨模型），每条 🔴/🟡 发现交 3 个独立怀疑视角对抗验证、多数决去留。触发：/review、给当前分支做深度审查、PR 前 ultrareview。跳过：无 Workflow 工具、不在 git 仓库、当前分支=base。
 argument-hint: <base-branch>
 disable-model-invocation: true
 ---

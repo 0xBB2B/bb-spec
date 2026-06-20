@@ -1,6 +1,6 @@
 ---
 name: webview-test-runner
-description: 执行单个网页交互测试用例：解析用例 JSON 的步骤序列，映射到浏览器 MCP 工具逐步驱动真实浏览器，返回结构化 verdict。只读验证、不改业务代码。
+description: 网页交互用例执行者——按 test_case_json 的 setup/steps/teardown 驱动真实浏览器，把抽象 action（navigate/click/fill/hover/press 等）映射到对应浏览器 MCP 工具执行；assert* 不通过立即停、截图+console 取证；交互后用 waitFor 替代固定 sleep。派工：被 /test-webview 对每个用例串行调用一次。禁止：探索其他页面、改代码、操作 git、并发跑多用例。
 role: 网页交互用例执行者
 agent-type: general-purpose
 model: opus

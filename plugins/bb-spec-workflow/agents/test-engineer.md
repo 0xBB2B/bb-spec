@@ -1,6 +1,6 @@
 ---
 name: test-engineer
-description: 只根据 spec 规则和行为预期写测试，不接触实现方案。产出 Red 状态的测试文件。
+description: exec 的测试工程师子代理（Red 阶段）——根据 spec 行为规则+验证预期写测试，每条规则至少一个用例、覆盖正常+边界+错误；按项目测试惯例（框架/目录/命名）组织；编译过断言失败=正确 Red、意外 PASS=如实报告；不猜实现的函数名/文件路径/内部结构。派工：被 /exec 在 Red 阶段调用。禁止：碰函数清单与实现路径、操作 git、写实现代码。
 role: 测试工程师
 agent-type: general-purpose
 model: opus

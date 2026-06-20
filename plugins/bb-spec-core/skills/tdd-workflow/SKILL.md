@@ -1,6 +1,6 @@
 ---
 name: tdd-workflow
-description: Test-Driven Development (TDD) discipline — language- and scenario-agnostic. Covers Red-Green-Refactor, the add/modify/delete change scenarios, coverage expectations, and test-before-implementation ordering. TRIGGER when adding/modifying/deleting any business-logic source file (.go/.py/.ts/.tsx/.vue/.js/.rs/.java/.kt), or the user mentions TDD / test-first / writing tests. SKIP pure struct/interface/const/var files, docs, config, generated code. Complements language-specific testing skills (e.g. golang-testing). ｜ 测试驱动开发（TDD）通用纪律——跨语言、跨场景适用。覆盖 Red-Green-Refactor 循环、"新增 / 修改 / 删除"三种代码变更场景的标准流程、测试覆盖率期望、测试与实现的先后关系。TRIGGER when：新增、修改、删除任何业务逻辑代码（`.go` / `.py` / `.ts` / `.tsx` / `.vue` / `.js` / `.rs` / `.java` / `.kt` 等源文件）；或用户提到 "TDD" / "写测试" / "测试驱动" / "test-first"。SKIP when：纯结构体 / interface / 常量 / 变量定义文件、纯文档、纯配置、生成代码（`*_gen.go`、protobuf 产物等）。与各语言特化的 testing skill（如 `golang-testing`）互补：本 skill 是"通用纪律"，特化 skill 是"语言惯用法与测试组织"。
+description: TDD 跨语言通用纪律——强制 Red-Green-Refactor：写失败测试→最小实现通过→测试保护下重构；新增/修改/删除三类变更均先动测试再动实现。触发：新增/修改/删除业务逻辑源文件（.go/.py/.ts/.tsx/.vue/.js/.rs/.java/.kt）、用户提到 TDD/写测试。跳过：纯 struct/interface/常量定义、生成代码、纯文档、纯配置、vendor/node_modules。
 user-invocable: false
 ---
 

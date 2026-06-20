@@ -1,6 +1,6 @@
 ---
 name: test-webview
-description: Full-suite web-interaction validation for web projects — bring the app up via the project's own Docker stack (confirmed once, then remembered), then drive a real browser through every test case in .bb-spec/docs/test/webview/ via the browser MCP (playwright / chrome-devtools). Each case runs in an isolated serial subagent so hundreds of cases never blow the main context; failures route to /revise. Requires a browser MCP — prompts to install if absent. TRIGGER — /test-webview / 跑一遍网页交互测试 / 端到端验证前端 / webview 验收. ｜ 针对网页项目的全量网页交互验证——用项目自带的 Docker 整栈拉起应用（首次确认、之后记住），再经浏览器 MCP（playwright / chrome-devtools）驱动真实浏览器逐个跑完 `.bb-spec/docs/test/webview/` 下所有测试用例。每个用例派一个隔离的串行 subagent 执行，几百上千用例也不撑爆主上下文；失败用例转 /revise 修复。依赖浏览器 MCP，未安装则提示安装。常见触发：`/test-webview`、"跑一遍网页交互测试"、"端到端验证前端"、"webview 验收"。
+description: 网页项目全量交互验证——Docker 整栈拉起→经浏览器 MCP（playwright/chrome-devtools）逐个跑完 webview 测试用例；每用例派隔离串行 subagent，主上下文只留 verdict 摘要；全程零并发；跑完无条件 docker compose down -v；失败转 /revise。触发：/test-webview、跑网页交互测试、端到端验证前端、webview 验收。跳过：非 web 项目、无浏览器 MCP、Docker 不可用。
 argument-hint: [category]
 disable-model-invocation: true
 ---

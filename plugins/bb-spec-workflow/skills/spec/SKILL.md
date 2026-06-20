@@ -1,6 +1,6 @@
 ---
 name: spec
-description: Refine the user's requirement through dialogue, break a large requirement into many small rules, and produce concise specs (one rule per document, ≤100 lines, one thing + one example each) under .bb-spec/docs/spec/; every doc carries name + description frontmatter and is indexed by a lightweight INDEX.md readers scan first, then load specific files on demand. Auto-enters Claude Code plan mode on invocation to clarify and align the decomposition read-only before writing files. TRIGGER — /spec / help me organize requirements / write this feature as a spec / do requirement breakdown. ｜ 通过对话细化用户需求，将庞大需求拆解为多个"小规则"，并在当前目录 `.bb-spec/docs/spec/` 下产出一规则一文档的简洁规格说明（每文档 ≤ 100 行，只说一件事 + 一个例子）；所有文档头部带 `name + description` frontmatter，由 `.bb-spec/docs/spec/INDEX.md` 汇成轻量索引，读者先扫索引再按需加载具体文件。调用时自动进入 Claude Code 的 plan 模式，先在只读态澄清并对齐拆解方案，批准后才落盘。常见触发：用户输入 `/spec`、"帮我整理需求"、"把这个功能写成 spec"、"做需求拆解"。
+description: 需求拆解与文档化——通过对话「澄清→拆解→文档化」把模糊需求拆为一文一规则、≤100 行/份、互不重叠的小规则 spec，落盘 .bb-spec/docs/spec/；启动即 EnterPlanMode 只读对齐、批准后才写；INDEX.md 汇总索引、禁跨文档引用、每文档结尾必有可测试的具体例子。触发：/spec、整理需求、把功能写成 spec、需求拆解、PRD 出来后要拆规则。跳过：还没想清楚要解决什么问题（→/prd）、已有 spec 想改细节（→/revise）。
 ---
 
 # Spec 需求拆解与文档化
