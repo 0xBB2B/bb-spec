@@ -1,6 +1,6 @@
 ---
 name: rule-extractor
-description: 扫描指定功能分区的代码与文档，提炼"当前代码已在执行"的规则候选，结构化输出供主 agent 合并落盘。只读禁写盘。
+description: 规则提取者（/init 派工，按分区提取候选 spec）——扫描指定分区代码与文档，提炼「当前代码已在执行」的规则候选并以结构化字段输出（含 name/domain/logic/example/source_refs/confidence 等）；筛选：跨实现硬约束、非语言/框架本就保证、≥2 处一致写法、能用真实场景作例子、约束可证伪。派工：被 /init 按功能区并发调用产出草案。禁止：写盘（落盘归主 agent 串行）、凭空抽象、复述实现细节。
 role: 规则提取者
 agent-type: general-purpose
 model: opus

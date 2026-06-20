@@ -1,6 +1,6 @@
 ---
 name: prd
-description: Brainstorm requirements with the user (PM / requester) — challenge first, diverge, then converge — and produce a self-contained PRD Markdown under .bb-spec/docs/prd/ with goals, non-goals, prioritized user stories each carrying concrete use cases and acceptance criteria, plus open questions for engineers; the PRD is consumed downstream by /spec. Needs no git repo or code context. TRIGGER — /prd / brainstorm a requirement / organize this idea into a requirement doc / write a PRD. ｜ 与用户（产品经理 / 需求方）头脑风暴需求——先质疑、再发散、后收敛，在 .bb-spec/docs/prd/ 下产出自包含的 PRD Markdown：背景与问题、目标 / 非目标、带优先级的用户故事（每条挂具体用例与验收标准）、留给工程师的开放问题；PRD 由下游 /spec 直接消费。不依赖 git 仓库与代码上下文。常见触发：用户输入 `/prd`、"头脑风暴一个需求"、"把这个想法整理成需求文档"、"写个 PRD"。
+description: PRD 头脑风暴与文档化——质疑→发散→收敛→产出含背景/目标/带优先级用户故事（挂用例与验收）/开放问题的自包含 PRD，写入 .bb-spec/docs/prd/ 供 /spec 直接消费；禁写技术方案。触发：/prd、头脑风暴需求、把想法整理成需求文档、写个 PRD。跳过：已有 spec 想改细节（→/revise）、纯技术方案讨论、要写实施计划（→/plan）。
 ---
 
 # PRD 需求头脑风暴与文档化

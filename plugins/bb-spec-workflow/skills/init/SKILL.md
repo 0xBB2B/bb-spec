@@ -1,6 +1,6 @@
 ---
 name: init
-description: Reverse-spec-ification for onboarding. When the target project has no .bb-spec/docs/spec/INDEX.md, read existing code and docs and distill the already-enforced implicit conventions into a set of ≤100-line spec documents, in the exact directory and index structure /spec uses. Split large projects into parallel subagents by functional area. TRIGGER — /init / reverse-generate specs for an existing project / document existing conventions / onboard a project to the bb-spec workflow. ｜ 项目初始化反向 spec 化。当目标项目还没有 `.bb-spec/docs/spec/INDEX.md` 时，阅读现存代码与文档，把"已经在执行的隐式规范"沉淀为一组 ≤ 100 行的 spec 文档，纳入与 `/spec` 完全一致的目录与索引结构。庞大项目按独立功能区拆 subagent 并发提取。常见触发：用户输入 `/init`、"给现有项目反向生成 spec"、"把现有规范文档化"、"项目要接入 bb-spec 工作流"。
+description: 项目初始化反向 spec 化（与 /spec 正向对称）——读既有代码与文档，把已在执行的隐式规范沉淀为 ≤100 行/份的 spec，落点对齐 /spec；大项目按功能区拆 subagent 并发提取、主 agent 串行落盘；每条规则必举例且标注 source_refs。触发：/init、给现有项目反向生成 spec、把现有规范文档化、项目接入 bb-spec 工作流。跳过：已有完整 spec 且无需补全、新项目无现存代码可提炼（应走 /prd→/spec）。
 ---
 
 # Init 反向 Spec 化

@@ -1,6 +1,6 @@
 ---
 name: golang-constraints
-description: Whole-lifecycle constraints for Go backend projects — spanning coding, docs, PRD, planning, design, and review; a unified three-layer architecture, no over-abstraction, no transitional schemes, tests subordinate to production design (no wrapping production vars or adding interfaces just for tests — when a mock is needed, prefer an existing low-level injection point). ｜ Go 后端项目全生命周期规范约束：贯穿编码、文档、PRD、规划、设计、review；统一三层架构、禁过度抽象、禁过渡方案、测试服从生产设计（禁为测试包装 var 或新增 interface，需要 mock 时优先用已有低层注入点）。
+description: Go 后端全生命周期规范——统一三层 handler→service→repository（禁 manager/facade/usecase）；事务只在 service；禁过度抽象、禁单实现 interface、禁过渡方案。触发：编辑 .go/go.mod/go.sum；写 Go 项目的文档/PRD/规划/设计/review。跳过：vendor、代码生成物（*_gen.go/protobuf）、非 Go 项目。
 user-invocable: false
 ---
 

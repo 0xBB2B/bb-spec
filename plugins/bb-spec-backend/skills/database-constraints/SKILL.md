@@ -1,6 +1,6 @@
 ---
 name: database-constraints
-description: Relational database schema and access conventions — UUIDv7 primary keys generated at the application layer, soft delete via a `deleted` microsecond-timestamp column with composite UNIQUE keys, DB-managed created_at/updated_at, UTC across the whole chain, explicit charset; dialect-agnostic principles plus MySQL / PostgreSQL implementation tables. ｜ 关系型数据库 schema 与访问约定：应用层生成 UUIDv7 主键、`deleted` 微秒时间戳软删除 + 联合 UNIQUE、DB 自动管理 created_at/updated_at、全链路 UTC、显式字符集；方言无关通用原则 + MySQL / PostgreSQL 落地对照表。
+description: 关系型数据库 schema 与访问约定——UUIDv7 应用层主键；`deleted` 微秒时间戳软删 + UNIQUE 联合；created_at/updated_at 由 DB 管理；全链路 UTC。触发：编写/修改 .sql、migration、DDL；设计表结构或数据模型。跳过：非关系型存储（Redis/MongoDB/ES）、不动 schema 的查询调优、代码生成物。
 user-invocable: false
 ---
 

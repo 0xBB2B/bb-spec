@@ -1,6 +1,6 @@
 ---
 name: golang-testing
-description: Go testing patterns including table-driven tests, subtests, benchmarks, fuzzing, and test coverage. Follows TDD methodology with idiomatic Go practices.
+description: Go 测试惯用法（配合 tdd-workflow）——默认 table-driven + t.Run 子测试；独立测试 t.Parallel；benchmark/fuzz 用 testing 内置工具。触发：编写/审查 Go 函数或方法、补充测试覆盖、创建 benchmark/fuzz test。跳过：生成代码、vendor、纯配置、非 Go 项目。
 user-invocable: false
 ---
 

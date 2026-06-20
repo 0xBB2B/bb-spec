@@ -1,6 +1,6 @@
 ---
 name: git-push-pr
-description: Use when the user wants to push local code to a remote via the PR flow. Auto-detects single / multiple repos; supports batch or selective handling; a repo dir can be passed as an argument. Before pushing, if .bb-spec/docs/spec/INDEX.md exists at the repo or project root, runs a branch-spec self-check (pre-review) — a subagent diffs the current branch vs main against the spec, violations are fixed via /revise and re-reviewed in a loop, then drafts a concise 6-section PR description (background / requirement / approach / result / tests / spec, under 50 lines) used directly as the PR body. TRIGGER — push it / open a PR / ship the code / self-check before a PR / review this branch against the spec. ｜ 用户想把本地代码通过 PR 流程推送到远程仓库。自动检测单 / 多仓库，支持批量或选择性处理；用户也可通过参数指定单个仓库目录。推送前若仓库根或项目根（CWD）存在 `.bb-spec/docs/spec/INDEX.md`，会自动跑一次**分支规范自查（pre-review）**——派 subagent 拿 spec 比对当前分支 vs main 的 diff，违规经 /revise 修复并循环复审，通过后生成一份**简洁的 6 段 PR 描述草稿**（背景 / 需求 / 方案 / 结果 / 测试 / 规范，整体不超过 50 行），直接用作创建 PR 的 body。常见触发："push 一下"、"提个 PR"、"代码推上去"、"准备发 PR"、"开 PR 之前帮我自查一下"、"对照规范看下这个分支"。
+description: 推送本地代码到远程并开 PR 全流程——识别仓库→确认分支→跑全量测试→提交未暂存改动（禁 git add .）→若存在 spec INDEX.md 则 subagent 比对 spec 跑分支规范自查（违规走 /revise 循环复审）+起草 6 段 PR 描述→推送→创建 PR→清理本地与远程。触发：push 一下、提个 PR、代码推上去、准备发 PR、开 PR 前自查、对照规范看分支。跳过：未本地验证完成的功能、main/master 上无新提交。
 ---
 
 # 仓库提交与 PR 流程

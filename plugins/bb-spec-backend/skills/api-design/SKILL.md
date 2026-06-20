@@ -1,6 +1,6 @@
 ---
 name: api-design
-description: REST API design patterns including resource naming, status codes, pagination, filtering, error responses with structured A-BBB-CCCC error codes, versioning, and rate limiting for production APIs.
+description: REST API 设计规范——URL 用复数+kebab、HTTP 方法/状态码语义化、单资源直返不包 data、集合带 items/meta/links 分页、错误码 A-BBB-CCCC 结构化、版本管理与限流。触发：设计/审查 API 端点与契约、实现分页/过滤/排序、设计错误响应、规划 API 版本。跳过：GraphQL/gRPC/事件流（非 REST）、内部 RPC 协议、纯前端路由。
 user-invocable: false
 ---
 

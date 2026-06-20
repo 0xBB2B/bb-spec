@@ -1,6 +1,6 @@
 ---
 name: vue-constraints
-description: Hard stack and toolchain constraints for frontend projects — the default stack is unified as Vue 3 + TypeScript + Vite + Tailwind CSS; bun is the default package manager (mandatory for new projects), while existing projects with another lockfile (e.g. package-lock.json) keep their current manager without forced migration. TRIGGER when creating a frontend project, editing package.json / vite.config.* / tailwind.config.* / tsconfig.json / .vue / .ts / .tsx, running a frontend build or install command, or the user mentions frontend / vue / vite / tailwind / npm install / yarn add / pnpm. ｜ 前端项目技术栈与工具链强制约束——默认技术栈统一为 Vue 3 + TypeScript + Vite + Tailwind CSS；包管理器默认 bun（新项目强制），既有项目若已存在其它 lockfile（如 package-lock.json）则跟随现有工具，不强制迁移。TRIGGER when：新建前端项目、编辑 package.json / vite.config.* / tailwind.config.* / tsconfig.json / .vue / .ts / .tsx 文件、运行前端构建或安装命令、用户提到"前端"/"vue"/"vite"/"tailwind"/"npm install"/"yarn add"/"pnpm" 等场景。
+description: 前端技术栈强制约束——默认 Vue 3 + TS + Vite + Tailwind；bun 是默认包管理器（新项目强制），既有项目跟随 lockfile 不迁移。触发：新建前端项目；编辑 package.json/vite.config/tailwind.config/.vue/.ts/.tsx；用户提到前端/vue/vite/tailwind。跳过：纯后端/CLI/工具项目；用户明确说用 React/Nuxt/Svelte 等。
 user-invocable: false
 ---
 
