@@ -1,5 +1,16 @@
 # Changelog
 
+## [8.0.0](https://github.com/0xBB2B/bb-spec/compare/v7.7.0...v8.0.0) (2026-06-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* **init-spec:** skill 名 init 改为 init-spec。原 /init 入口失效，请改用 /init-spec（或全名 /bb-spec-workflow:init-spec）。引用 init skill 的外部脚本 / 文档 / 依赖该 skill name 的配置都需同步替换。
+
+### Features
+
+* **init-spec:** 重命名 init skill 为 init-spec 以避开 Claude Code 内置 /init 冲突 ([#133](https://github.com/0xBB2B/bb-spec/issues/133)) ([1e84e55](https://github.com/0xBB2B/bb-spec/commit/1e84e55a5a72b63e3ad47ecce4aa1a47beacc800))
+
 ## [7.7.0](https://github.com/0xBB2B/bb-spec/compare/v7.6.0...v7.7.0) (2026-06-20)
 
 
