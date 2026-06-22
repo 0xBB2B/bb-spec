@@ -1,6 +1,6 @@
 ---
 name: git-workflow
-description: Git 开发流程纪律——禁 main 直接提交；新任务前扫工作区根，有 workspace 标记走多 repo 工作区，否则 AskUserQuestion 询问 worktree（默认）或切分支；本地 commit 不立即 push、整功能验证完才推；合并后清理本地+远程。触发：开始改代码、提到开分支、要求 commit/push/开 PR、PR 合并后清理。跳过：纯咨询/阅读、极小打字纠错。
+description: Git 开发流程纪律——禁 main 直接提交；新任务前扫工作区根，有 workspace 标记走多 repo 工作区，否则 AskUserQuestion 询问 worktree（默认）或切分支；worktree 一律落 `~/.bb-spec/worktrees/` 下、禁嵌套当前 repo / 禁放 sibling 目录；本地 commit 不立即 push、整功能验证完才推；合并后清理本地+远程。触发：开始改代码、提到开分支、要求 commit/push/开 PR、PR 合并后清理。跳过：纯咨询/阅读、极小打字纠错。
 user-invocable: false
 ---
 
