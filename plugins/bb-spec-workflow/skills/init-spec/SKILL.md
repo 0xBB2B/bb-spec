@@ -1,11 +1,11 @@
 ---
-name: init
-description: 项目初始化反向 spec 化（与 /spec 正向对称）——读既有代码与文档，把已在执行的隐式规范沉淀为 ≤100 行/份的 spec，落点对齐 /spec；大项目按功能区拆 subagent 并发提取、主 agent 串行落盘；每条规则必举例且标注 source_refs。触发：/init、给现有项目反向生成 spec、把现有规范文档化、项目接入 bb-spec 工作流。跳过：已有完整 spec 且无需补全、新项目无现存代码可提炼（应走 /prd→/spec）。
+name: init-spec
+description: 项目初始化反向 spec 化（与 /spec 正向对称）——读既有代码与文档，把已在执行的隐式规范沉淀为 ≤100 行/份的 spec，落点对齐 /spec；大项目按功能区拆 subagent 并发提取、主 agent 串行落盘；每条规则必举例且标注 source_refs。触发：/init-spec、给现有项目反向生成 spec、把现有规范文档化、项目接入 bb-spec 工作流。跳过：已有完整 spec 且无需补全、新项目无现存代码可提炼（应走 /prd→/spec）。
 ---
 
-# Init 反向 Spec 化
+# Init-Spec 反向 Spec 化
 
-`/spec` 从对话正向产出规则；`/init` **从已有代码与文档反向提炼规则**。落点完全对齐 `/spec`：同一份 `INDEX.md`、同一套 frontmatter、同一份 ≤ 100 行的"一文一规则"格式，使 `/plan`、`/exec`、`/revise` 可直接接力。
+`/spec` 从对话正向产出规则；`/init-spec` **从已有代码与文档反向提炼规则**。落点完全对齐 `/spec`：同一份 `INDEX.md`、同一套 frontmatter、同一份 ≤ 100 行的"一文一规则"格式，使 `/plan`、`/exec`、`/revise` 可直接接力。
 
 ## 核心原则（兼硬约束）
 
@@ -143,7 +143,7 @@ description: <≤ 80 字>
 ### 步骤 8：完成简报
 
 ```
-## /init 完成简报
+## /init-spec 完成简报
 
 - 模式：全新生成 / 增量补全 / 全量重做（已备份至 <bak 路径>）
 - 分区：N 个（<逐项列出>）
@@ -158,4 +158,4 @@ description: <≤ 80 字>
 
 ## 与 /spec 的边界
 
-`/init` 仅在"项目首次接入 bb-spec 工作流"或"用户主动要求批量反向梳理"时使用，不要当日常工具。单条新增 / 修订规则走 `/spec`。`/init` 跑完后，后续维护一律走 `/spec`（编辑既有文件 + 跨文档 review）。
+`/init-spec` 仅在"项目首次接入 bb-spec 工作流"或"用户主动要求批量反向梳理"时使用，不要当日常工具。单条新增 / 修订规则走 `/spec`。`/init-spec` 跑完后，后续维护一律走 `/spec`（编辑既有文件 + 跨文档 review）。
