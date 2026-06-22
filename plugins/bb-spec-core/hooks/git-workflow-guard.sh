@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # git-workflow 流程纪律守卫（PreToolUse / Bash）。
 # 一份命令解析逻辑，承担两种职责：
-#   1) main / master 分支上的 git commit         → deny（禁止直接污染主干）
+#   1) 硬约束拦截 → deny
+#      - main / master 分支上的 git commit（禁止直接污染主干）
+#      - git worktree add 目标路径不在 ~/.bb-spec/worktrees/ 下（禁嵌套当前 repo / 禁 sibling 目录）
 #   2) 其余 git / gh pr 流程动作（开分支 / commit / push / worktree / merge / PR …）
 #                                                 → allow + 注入 git-workflow 约束与实时 git 状态
 #   3) 其它命令                                   → 静默放行（exit 0）
@@ -28,6 +30,8 @@ SEGMENTS=$(printf '%s\n' "$CMD" | sed 's/ *&& */\n/g; s/ *|| */\n/g; s/ *; */\n/
 FLOW=0            # 命中任一 git / gh pr 流程动作 → 需注入
 DENY=0            # 命中 main / master 上的 commit → 需拦截
 DENY_BRANCH=""    # 触发 deny 时的分支名（用于提示文案）
+DENY_WT_PATH=""   # 触发 deny 时的 worktree 目标路径（用于提示文案）
+DENY_KIND=""      # branch | worktree-path
 GIT_C_PATH=""     # 最近一个流程段的 `git -C <path>` 工作目录覆盖
 
 while IFS= read -r SEG; do
@@ -61,8 +65,42 @@ while IFS= read -r SEG; do
               BR=$(git branch --show-current 2>/dev/null || true)
             fi
             case "$BR" in
-              main|master) DENY=1; DENY_BRANCH="$BR" ;;
+              main|master) DENY=1; DENY_KIND="branch"; DENY_BRANCH="$BR" ;;
             esac
+          fi
+          if [ "$SECOND" = "worktree" ]; then
+            # 仅 `worktree add` 需要校验路径；list/remove/prune/lock 等放行
+            read -r THIRD WT_REST <<<"$REST2" || true
+            if [ "$THIRD" = "add" ]; then
+              # 从 add 后的 token 流里找到第一个「非 flag 且非 flag 取值」的 token = 目标路径
+              # 取值型 flag：-b / -B / --reason / --track-from（保守覆盖常见的）
+              WT_PATH=""
+              # shellcheck disable=SC2086
+              set -- $WT_REST
+              while [ $# -gt 0 ]; do
+                case "$1" in
+                  -b|-B|--reason)
+                    shift; shift || true ;;
+                  --*=*|-*)
+                    shift ;;
+                  *)
+                    WT_PATH="$1"; break ;;
+                esac
+              done
+              if [ -n "$WT_PATH" ]; then
+                # 展开 ~ / $HOME（${var#~} 里的 ~ 会被 bash 当 tilde expansion 解析，故用 substring）
+                case "$WT_PATH" in
+                  "~") WT_PATH="$HOME" ;;
+                  "~/"*) WT_PATH="${HOME}/${WT_PATH:2}" ;;
+                esac
+                WT_PATH="${WT_PATH//\$HOME/$HOME}"
+                # 必须落在 ~/.bb-spec/worktrees/ 下（单 repo / 多 repo 工作区共用此前缀）
+                case "$WT_PATH" in
+                  "$HOME/.bb-spec/worktrees/"*) : ;;
+                  *) DENY=1; DENY_KIND="worktree-path"; DENY_WT_PATH="$WT_PATH" ;;
+                esac
+              fi
+            fi
           fi
           ;;
       esac
@@ -75,9 +113,16 @@ while IFS= read -r SEG; do
   esac
 done <<<"$SEGMENTS"
 
-# 职责一：主干 commit 直接拦截（deny 优先于注入）
+# 职责一：硬约束拦截（deny 优先于注入）
 if [ "$DENY" = "1" ]; then
-  REASON=$(printf 'Git 工作流纪律：当前分支为 %s，禁止直接 commit 到主干。请先 `git switch -c <feature-branch>` 切到新分支再提交。' "$DENY_BRANCH")
+  case "$DENY_KIND" in
+    branch)
+      REASON=$(printf 'Git 工作流纪律：当前分支为 %s，禁止直接 commit 到主干。请先 `git switch -c <feature-branch>` 切到新分支再提交。' "$DENY_BRANCH") ;;
+    worktree-path)
+      REASON=$(printf 'Git 工作流纪律：worktree 必须落在 ~/.bb-spec/worktrees/ 下（单 repo: <repo>-<branch>；多 repo 工作区: <project>-<branch>/<repo>），禁止嵌套当前 repo 或放 sibling 目录。本次目标路径：%s' "$DENY_WT_PATH") ;;
+    *)
+      REASON="Git 工作流纪律：命中硬约束。" ;;
+  esac
   jq -nc --arg reason "$REASON" '{
     "hookSpecificOutput": {
       "hookEventName": "PreToolUse",
