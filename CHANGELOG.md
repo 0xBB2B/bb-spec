@@ -1,5 +1,12 @@
 # Changelog
 
+## [8.1.0](https://github.com/0xBB2B/bb-spec/compare/v8.0.0...v8.1.0) (2026-06-22)
+
+
+### Features
+
+* **git-workflow:** worktree 路径强约束——description 前置 + hook 拦截非 ~/.bb-spec/worktrees/ 落点 ([#135](https://github.com/0xBB2B/bb-spec/issues/135)) ([37597c3](https://github.com/0xBB2B/bb-spec/commit/37597c358e9afc89090cf7088bbba1e32962c74f))
+
 ## [8.0.0](https://github.com/0xBB2B/bb-spec/compare/v7.7.0...v8.0.0) (2026-06-22)
 
 
