@@ -1,5 +1,12 @@
 # Changelog
 
+## [8.2.0](https://github.com/0xBB2B/bb-spec/compare/v8.1.0...v8.2.0) (2026-06-24)
+
+
+### Features
+
+* **doc-update:** 新增 /doc-update 全仓 spec/文档/代码一致性维护 skill ([#137](https://github.com/0xBB2B/bb-spec/issues/137)) ([cc6ccad](https://github.com/0xBB2B/bb-spec/commit/cc6ccad68a5a50717ad77cb0890aa62107ad4ee7))
+
 ## [8.1.0](https://github.com/0xBB2B/bb-spec/compare/v8.0.0...v8.1.0) (2026-06-22)
 
 
