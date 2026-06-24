@@ -1,5 +1,12 @@
 # Changelog
 
+## [8.3.1](https://github.com/0xBB2B/bb-spec/compare/v8.3.0...v8.3.1) (2026-06-24)
+
+
+### Bug Fixes
+
+* **test-webview,test-api:** references 统一落到各 skill 子目录修复 Claude Code 加载 ([#141](https://github.com/0xBB2B/bb-spec/issues/141)) ([0889ada](https://github.com/0xBB2B/bb-spec/commit/0889adac59dc6282835df35efb4533092868e279))
+
 ## [8.3.0](https://github.com/0xBB2B/bb-spec/compare/v8.2.0...v8.3.0) (2026-06-24)
 
 
