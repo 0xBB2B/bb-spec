@@ -9,7 +9,7 @@
 | 时间获取 | 全应用走 `Clock` 接口，禁直接 `time.Now()`；prod 用 `RealClock`、e2e 用 `FakeClock` |
 | 测试接口隔离 | `//go:build testapi` build tag，**生产构建编译期不存在** `/test/*` 路由 |
 | 生产防误启 | 带 `testapi` tag 的二进制若检测到 `APP_ENV=production` → panic 退出 |
-| Docker 编排 | `docker-compose.e2e.yaml` 通过 build args 注入 `BUILD_TAGS=testapi` |
+| Docker 编排 | `compose.e2e.yaml` 通过 build args 注入 `BUILD_TAGS=testapi` |
 
 ## 1. 时钟注入
 
@@ -158,7 +158,7 @@ func registerTestRoutesIfAny(mux *http.ServeMux) {
 ```
 按 filter 删除指定 entity 的记录。慎用 `filter: {}` 全删——应用层对每个 entity 设白名单字段。
 
-## 4. docker-compose.e2e.yaml 模板
+## 4. compose.e2e.yaml 模板
 
 ```yaml
 services:
@@ -217,6 +217,6 @@ fi
 - [ ] `internal/platform/clock` 包就位，`Clock` 依赖注入到所有服务层
 - [ ] `testapi` build tag 源文件就位，`registerTestRoutesIfAny` 双实现
 - [ ] `APP_ENV=production` 检测 + panic
-- [ ] `docker-compose.e2e.yaml` 通过 `BUILD_TAGS=testapi` 构建后端镜像
+- [ ] `compose.e2e.yaml` 通过 `BUILD_TAGS=testapi` 构建后端镜像
 - [ ] CI 有"prod 配置禁带 testapi tag"闸门
 - [ ] `/test/healthz` 返回包含 `build_tags: testapi`

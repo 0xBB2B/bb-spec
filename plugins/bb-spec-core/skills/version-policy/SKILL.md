@@ -18,7 +18,7 @@ user-invocable: false
   - **语言包**：`package.json`、`bun.lockb`、`go.mod`、`go.sum`、`requirements.txt`、`pyproject.toml`、`Cargo.toml`、`pom.xml`、`build.gradle(.kts)`
   - **运行时与工具链**：`.nvmrc`、`.tool-versions`、`.python-version`、`Dockerfile` 中的 `FROM` 行、`go.mod` 中的 `toolchain` 指令
   - **CI 配置**：`.github/workflows/*.yaml`（`uses: actions/*@vX`）、`.gitlab-ci.yaml`（`include` 与 components）
-  - **容器**：`Dockerfile` 的 `FROM`、`docker-compose.yaml` / Helm chart / K8s manifest 中的 `image:` tag
+  - **容器**：`Dockerfile` 的 `FROM`、`compose.yaml` / Helm chart / K8s manifest 中的 `image:` tag
   - **IaC**：Terraform / OpenTofu `required_providers`、Pulumi 包、Helm chart `version`
   - **CLI 工具锁定**：`brew install <pkg>@<version>` / `apt install <pkg>=<version>` / `curl ... | sh` 等
 - 用户明确要求：
@@ -48,7 +48,7 @@ user-invocable: false
 | Java | `pom.xml`、`build.gradle` | Maven Central 搜索 |
 | 运行时 | `.nvmrc`、`.tool-versions` | 官方发布渠道 |
 | GitHub Actions | `.github/workflows/*.yaml` | `gh api /repos/<owner>/<repo>/releases/latest --jq .tag_name` |
-| 容器镜像 | `Dockerfile`、`docker-compose.yaml` | Docker Hub / GHCR tags 页 / `crane ls <image>` |
+| 容器镜像 | `Dockerfile`、`compose.yaml` | Docker Hub / GHCR tags 页 / `crane ls <image>` |
 | Helm chart | `Chart.yaml` | `helm search repo <chart> --versions` |
 | Terraform provider | `*.tf` | `https://registry.terraform.io/providers/<ns>/<name>` |
 

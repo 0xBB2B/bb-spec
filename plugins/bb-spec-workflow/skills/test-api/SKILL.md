@@ -14,7 +14,7 @@ disable-model-invocation: true
 1. **零 subagent**：API 调用是确定性 HTTP，无 DOM 漂、无视觉判断，不需要 LLM 逐步介入。主 agent 一次生成全部 Go test 代码 → 一条命令跑完 → 解析 JSON 报告。**禁用 Workflow 工具**。
 2. **md 是 source of truth**：用例文档 md 是产物与评审基线；Go test 文件是每次执行前按 md 重新渲染的**机械派生物**，落 `${CACHE_DIR}/test-api-gen/`，禁手改、禁纳入版本控制。
 3. **时钟串行**：时间敏感测试通过 `/test/advance-time` 等接口共享应用时钟，**禁并发**——生成的 Go test 不调 `t.Parallel()`、不传 `-parallel` flag。
-4. **环境只用项目自己的、不生成**：检测项目是否提供 `docker-compose.e2e.yaml`（**带 `testapi` build tag 构建后端镜像**）；**首次**确认配置后**持久化、下次不再问**。
+4. **环境只用项目自己的、不生成**：检测项目是否提供 `compose.e2e.yaml`（**带 `testapi` build tag 构建后端镜像**）；**首次**确认配置后**持久化、下次不再问**。
 5. **应用侧改造前置**：要求应用按 `references/test-only-endpoints.md` 完成时钟注入 + build tag 隔离的 `/test/*` 接口。skill 启动时探测 `/test/healthz`，不可用则中止、不降级为缩短 TTL 兜底。
 6. **跑完无条件清理**：含失败 / 中断路径都执行 `docker compose down -v`。
 7. **默认全量**：每次跑全部用例；`/test-api <scope>` 仅跑某个后端 scope。
@@ -45,7 +45,7 @@ disable-model-invocation: true
 
 - **已有配置** → 直接用，**不再询问**。
 - **首次（无配置）**：用 `AskUserQuestion` 顺序确认：
-  1. `docker-compose.e2e.yaml` **落点**（推荐顺序作 default：① 后端单服务 → `backend/docker-compose.e2e.yaml`；② 后端多服务 / 跨 frontend → `<root>/docker-compose.e2e.yaml`；③ 已有 deploy 约定 → `deploy/e2e/docker-compose.e2e.yaml`；多 repo + 跨 repo 整栈 → 强制落工作区根）。文件不存在 → 引导用户按 `references/test-only-endpoints.md` 创建后再继续，**不自动生成**。
+  1. `compose.e2e.yaml` **落点**（推荐顺序作 default：① 后端单服务 → `backend/compose.e2e.yaml`；② 后端多服务 / 跨 frontend → `<root>/compose.e2e.yaml`；③ 已有 deploy 约定 → `deploy/e2e/compose.e2e.yaml`；多 repo + 跨 repo 整栈 → 强制落工作区根）。文件不存在 → 引导用户按 `references/test-only-endpoints.md` 创建后再继续，**不自动生成**。
   2. **后端 service 名 + 端口**：从 compose 文件解析候选，让用户确认要测的 API service 与 published port。
   3. **健康检查 URL**：缺省 `<base_url>/test/healthz`（与 `references/test-only-endpoints.md` 约定一致）。
   4. 确认后**持久化到 INDEX.md frontmatter**（首次跑时一并落 INDEX）。
@@ -136,7 +136,7 @@ ${DOCS_DIR}/test/api/
 ```yaml
 ---
 env:
-  compose_file: backend/docker-compose.e2e.yaml   # 相对 root
+  compose_file: backend/compose.e2e.yaml   # 相对 root
   backends:                                        # 服务名 → base_url
     api: http://localhost:8080
   health_path: /test/healthz                       # 健康检查路径（拼到各 base_url）
@@ -154,7 +154,7 @@ env:
 
 - **零 subagent、零并发**：编排不派 Agent，go test 不调 `t.Parallel()`；**禁用 Workflow 工具**
 - 全量模式跑前**必做覆盖对齐**；缺口要么补全要么显式记入报告，**禁静默漏测**
-- 环境只复用项目自带 `docker-compose.e2e.yaml`、**不自动生成**；首次确认后持久化、之后不再问
+- 环境只复用项目自带 `compose.e2e.yaml`、**不自动生成**；首次确认后持久化、之后不再问
 - 应用必须按 `references/test-only-endpoints.md` 接入 `testapi` build tag 与 `/test/*` 路由；探测 `/test/healthz` 失败即中止，**禁降级为缩短 TTL 兜底**
 - 每次跑完**无条件清理**（含失败 / 中断路径），删容器 + 数据卷
 - 生成的 Go test 文件落 `${CACHE_DIR}/`、禁纳入版本控制；md 用例是唯一 source of truth
