@@ -1,5 +1,12 @@
 # Changelog
 
+## [8.3.2](https://github.com/0xBB2B/bb-spec/compare/v8.3.1...v8.3.2) (2026-06-24)
+
+
+### Bug Fixes
+
+* **test-api,version-policy:** docker-compose.* 文件名统一为 compose.* ([#143](https://github.com/0xBB2B/bb-spec/issues/143)) ([d3387ee](https://github.com/0xBB2B/bb-spec/commit/d3387ee9c40b65708b368c99e127ffdabebb5202))
+
 ## [8.3.1](https://github.com/0xBB2B/bb-spec/compare/v8.3.0...v8.3.1) (2026-06-24)
 
 
