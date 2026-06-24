@@ -68,10 +68,14 @@ API e2e 用例的生成与覆盖完整性都由本 skill 独占负责。
 
 ### 步骤 4：编译为 Go test → 一次性执行
 
-**编译**（主 agent 一次完成，不派 subagent）：按 `references/go-codegen-template.md` 把每个 md 用例渲染成对应的 Go test 函数，落盘 `${CACHE_DIR}/test-api-gen/`：
+**编译**（主 agent 一次完成，不派 subagent）：
+
+1. **指纹命中复用**：对入选用例的所有 md 文件按路径排序、内容拼接，与 `references/go-codegen-template.md` 内容一并求 SHA-256 得 `current_fingerprint`。读 `${CACHE_DIR}/test-api-gen/.fingerprint`——等于 `current_fingerprint` 且目录下 `_test.go` 齐全 → **跳过渲染**直接进入执行；否则清空 `${CACHE_DIR}/test-api-gen/`、按下一步重新渲染，渲染完把 `current_fingerprint` 写入 `.fingerprint`。
+2. 按 `references/go-codegen-template.md` 把每个 md 用例渲染成对应的 Go test 函数，落盘：
 
 ```
 ${CACHE_DIR}/test-api-gen/
+  .fingerprint                 # 命中复用指纹：入选 md + go-codegen-template.md 的 SHA-256
   go.mod                       # 独立 module，便于 go test 独立运行
   go.sum
   helpers/
