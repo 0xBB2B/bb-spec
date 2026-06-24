@@ -1,5 +1,12 @@
 # Changelog
 
+## [8.3.0](https://github.com/0xBB2B/bb-spec/compare/v8.2.0...v8.3.0) (2026-06-24)
+
+
+### Features
+
+* 新增 /test-api 后端 API e2e 验证 skill ([#139](https://github.com/0xBB2B/bb-spec/issues/139)) ([ad3244f](https://github.com/0xBB2B/bb-spec/commit/ad3244f60fb2303646fed9add7d07bdae2727a48))
+
 ## [8.2.0](https://github.com/0xBB2B/bb-spec/compare/v8.1.0...v8.2.0) (2026-06-24)
 
 
