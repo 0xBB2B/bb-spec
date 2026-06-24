@@ -1,5 +1,12 @@
 # Changelog
 
+## [8.4.0](https://github.com/0xBB2B/bb-spec/compare/v8.3.2...v8.4.0) (2026-06-24)
+
+
+### Features
+
+* **test-api:** 步骤 4 编译加指纹命中复用——md+模板未变跳过重渲染 ([#145](https://github.com/0xBB2B/bb-spec/issues/145)) ([2e92f39](https://github.com/0xBB2B/bb-spec/commit/2e92f39afc6f0acbd9f783929137a055c9d85a53))
+
 ## [8.3.2](https://github.com/0xBB2B/bb-spec/compare/v8.3.1...v8.3.2) (2026-06-24)
 
 
