@@ -50,7 +50,7 @@ inputs:
 
 ### 抽象 action → MCP 映射
 
-> action 语义以规范 `references/webview-testcase-format.md`（插件根目录）为准；本表只负责把每个 action 绑定到 `{mcp_family}` 的具体工具。
+> action 语义以规范 `references/webview-testcase-format.md` 为准；本表只负责把每个 action 绑定到 `{mcp_family}` 的具体工具。
 
 | action | 语义 | playwright | chrome-devtools |
 |---|---|---|---|

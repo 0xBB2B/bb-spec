@@ -138,7 +138,7 @@ env:
 ---
 ```
 
-**每个用例 md 的骨架、JSON 流字段约定、抽象 action 词表**：见规范 `references/webview-testcase-format.md`（插件根目录），与 `webview-test-runner` 执行共用同一事实源；生成用例时按该规范产出。INDEX `env.frontends` 的服务名同时是用例 `target` 取值与落盘路径的 `<frontend>` 顶层目录段（二者必须一致）。
+**每个用例 md 的骨架、JSON 流字段约定、抽象 action 词表**：见 `references/webview-testcase-format.md`，与 `webview-test-runner` 执行共用同一事实源；生成用例时按该规范产出。INDEX `env.frontends` 的服务名同时是用例 `target` 取值与落盘路径的 `<frontend>` 顶层目录段（二者必须一致）。
 
 ## 硬约束
 
