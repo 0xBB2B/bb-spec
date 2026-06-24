@@ -52,11 +52,17 @@
      ↓              ↓              ↓
    /spec          /exec          /review
   (spec-defect → spec, impl-defect → exec, review findings → fix)
+
+  ┌─────────────────────────────────────────────┐
+  │  /doc-update  consistency sweep (periodic)  │
+  │  scan whole repo → default: update spec/doc │
+  │  obvious code smell → ask user → /revise    │
+  └─────────────────────────────────────────────┘
 ```
 
 **How the stages connect.** The pipeline is a relay, and every handoff is a *file on disk* — not a memory in the chat — which is exactly what makes it resumable, AI-swappable, and auditable end to end: (optionally) `/prd` lets a PM / requester brainstorm a fuzzy idea into a PRD doc under `.bb-spec/docs/prd/` (**why build it, and to what extent** — with concrete use cases and acceptance criteria, so `/spec` only asks about what the PRD left uncovered) → `/spec` turns a fuzzy ask into spec docs under `.bb-spec/docs/spec/` (**what to build**) → `/plan` reads those and emits a function-level plan under `.bb-spec/docs/plan/` (**how to build it**; large scopes auto-split into a batched ROADMAP that expands one batch at a time, with the next batch generated only after the current one clears its verification gate) → `/exec` drives the plan through Test→Impl→Review into tests + code, checkpointing to `PROGRESS.md` → (frontend projects) `/test-webview` brings the app up via its Docker stack and drives a real browser through each case for web-interaction acceptance → `/review` judges the resulting diff → `/git-push-pr` self-checks against the spec and opens the PR.
 
-Two branches close the loop: **`/init-spec`** is the *on-ramp* for existing projects — it reverse-derives the spec first, then merges into the mainline; **`/revise`** is the *return path* — on any deviation it routes you back to the **right** stage by root cause (spec-defect → `/spec`, impl-drift → `/exec`), not a blind redo.
+Three branches close the loop: **`/init-spec`** is the *on-ramp* for existing projects — it reverse-derives the spec first, then merges into the mainline; **`/revise`** is the *return path* — on any deviation it routes you back to the **right** stage by root cause (spec-defect → `/spec`, impl-drift → `/exec`), not a blind redo; **`/doc-update`** is the *health-check lane* — after long evolution it sweeps the whole repo for spec / doc / code drift, defaults to updating spec / docs to match the code as-is, and only stops to ask via `AskUserQuestion` when the code clearly violates a hard constraint or carries an unreasonable design (confirmed code changes are routed to `/revise`).
 
 Each stage, and what sets it apart:
 
@@ -68,6 +74,7 @@ Each stage, and what sets it apart:
 - **`/review`** — **Workflow-orchestrated, adversarially-verified** local PR review (current branch vs base). Phase 1 fans out **5 finders in parallel** — code quality, security, simplicity / anti-cruft, doc sync, and a **Codex cross-model independent** pass — with schema-enforced structured findings; after plain-code dedup, **every BLOCKER / IMPORTANT finding is re-judged by 3 independent skeptic lenses** (importance / root-cause / risk-if-unfixed) and kept or dropped by majority vote. Read-only — never auto-edits. Requires Claude Code ≥ 2.1.154 (Workflow tool).
 - **`/revise`** — The exception handler, callable anytime: diagnose a deviation's **root cause** into one of three classes — *spec-defect* (→ back to `/spec`), *impl-drift* (→ back to `/exec`), or *requirement-change* — then apply a targeted fix + regression check. Every review finding that needs fixing funnels through here.
 - **`/git-push-pr`** — User-triggered push-and-PR flow (single or multi-repo, batch or selective). When a spec `INDEX.md` exists it first runs a **branch-spec self-check (pre-review)**: a subagent diffs the branch vs main against the spec, violations are fixed and re-reviewed in a loop, then a concise **6-section PR description** is drafted (background / requirement / approach / result / tests / spec, < 50 lines) and used directly as the PR body.
+- **`/doc-update`** — **Whole-repo spec / doc / code consistency sweep.** Scans spec, README, CLAUDE.md, plan and the codebase and bins findings into six drift classes — spec-stale / doc-stale / code-violation / spec-conflict / orphan-index / uncovered-rule. Default direction is **code is the truth and spec / docs are mirrored to it**; only when the code clearly violates a hard constraint or carries an unreasonable design does it stop and ask via `AskUserQuestion`, and any confirmed code change is routed back to `/revise` for TDD — this skill never edits implementation directly. Pending decisions plus default actions are surfaced once before any write; the INDEX is kept in sync throughout. Clearly demarcates from `/init-spec` (zero → existence), `/revise` (single-point targeted fix), and the `/review` `review-doc-sync` finder (PR-diff scope, read-only).
 
 Ships **11 orchestration subagents** the stages above drive: `test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-code-quality` / `review-security` / `review-simplicity` / `review-doc-sync` / `review-codex` / `pre-reviewer` / `rule-extractor`.
 
@@ -124,7 +131,7 @@ Then install whichever layers you want:
 | Sub-plugin | What it gives you | Command |
 |---|---|---|
 | **bb-spec-core** _(recommended base)_ | TDD / version-policy / git-workflow discipline + 3 passive hooks | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(core)_ | spec → plan → exec → review → revise → git-push-pr, init reverse-spec + 10 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(core)_ | spec → plan → exec → review → revise → git-push-pr, init reverse-spec, doc-update whole-repo consistency sweep + 11 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-product** | /prd requirement brainstorm → PRD doc with concrete use cases (for PMs / requesters) | `/plugin install bb-spec-product@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / authN / authZ / observability / service constraints | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun stack & engineering conventions (+ bun hook) | `/plugin install bb-spec-frontend@0xbb2b` |
