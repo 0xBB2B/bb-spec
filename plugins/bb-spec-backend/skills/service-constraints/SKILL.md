@@ -1,31 +1,27 @@
 ---
 name: service-constraints
-description: 后端服务运行时治理——env 注入禁硬编码、启动 fail-fast；优雅生命周期（SIGTERM→排空→超时强退→LIFO 释放）；非幂等写经幂等键；跨进程必设超时、重试仅幂等且退避。触发：配置/密钥、启动/关闭、健康检查、写幂等、下游超时/重试、错误传播。跳过：代码风格（→golang-constraints）、API 契约（→api-design）、可观测性（→observability）。
+description: 后端服务运行时治理——启动 fail-fast；优雅生命周期（SIGTERM→排空→超时强退→LIFO 释放）；非幂等写经幂等键；跨进程必设超时、重试仅幂等且退避。触发：启动/关闭、健康检查、写幂等、下游超时/重试、错误传播。跳过：配置载体与密钥分层（→config-constraints）、代码风格（→golang-constraints）、API 契约（→api-design）、可观测性（→observability）。
 user-invocable: false
 ---
 
 # 后端服务工程约束
 
-适用于：后端服务的配置与密钥、启动/关闭生命周期、写操作幂等、超时重试、错误传播等**运行时治理**的设计、实现、文档与 review。**原则技术栈无关**，示例用 Go。
+适用于：后端服务的启动/关闭生命周期、写操作幂等、超时重试、错误传播等**运行时治理**的设计、实现、文档与 review。**原则技术栈无关**，示例用 Go。
 
-> 边界（去耦合，避免重复）：代码风格 / 三层架构 → `golang-constraints`；对外错误响应格式与 `A-BBB-CCCC` 错误码体系 → `api-design`；日志 / 链路 / 指标 → `observability-constraints`；认证 / 授权 → `auth-constraints` / `authz-constraints`。本 skill 只管它们未覆盖的「服务运行时骨架」。
+> 边界（去耦合，避免重复）：配置载体选择 / 密钥分层 / 热更 fail-safe → `config-constraints`；代码风格 / 三层架构 → `golang-constraints`；对外错误响应格式与 `A-BBB-CCCC` 错误码体系 → `api-design`；日志 / 链路 / 指标 → `observability-constraints`；认证 / 授权 → `auth-constraints` / `authz-constraints`。本 skill 只管它们未覆盖的「服务运行时骨架」。
 
 > 定位：**技术框架定型，钉死「机制骨架」（【硬】必守），不绑「业务策略」（【软】给能力、由项目按业务选）。**
 
 ## 0. 触发与跳过
 
-**TRIGGER**：搭建配置/密钥加载、启动/关闭流程、健康检查；实现写操作幂等、下游调用超时/重试；设计 error 传播与边界转码；文档 / PRD / 设计 / review 涉及上述。
-**SKIP**：纯代码风格/架构（→ golang-constraints）、对外 API 契约（→ api-design）、可观测性信号装配（→ observability）。
+**TRIGGER**：搭建启动/关闭流程、健康检查；实现写操作幂等、下游调用超时/重试；设计 error 传播与边界转码；文档 / PRD / 设计 / review 涉及上述。
+**SKIP**：配置载体与密钥分层（→ config-constraints）、纯代码风格/架构（→ golang-constraints）、对外 API 契约（→ api-design）、可观测性信号装配（→ observability）。
 
 ---
 
-## 1. 配置与密钥【硬】
+## 1. 启动校验 fail-fast【硬】
 
-- **全部经 env / 配置中心注入**，禁硬编码——**尤其 secret**（密钥、token、连接串口令）禁进源码与版本库。
 - **单点加载 + 启动校验 fail-fast**：配置在进程启动时一次性加载并校验，缺失/非法即**启动失败**，禁带病运行到首次使用才报错。
-- **密钥禁落日志**（呼应 `observability` 凭证脱敏）、禁进 git。
-- **配置启动后定型**：关键配置进程启动后不可变；确需热更走**显式**机制（如配置中心 watch + 校验），禁运行期随意改。
-- 环境差异用 profile（dev/test/sand/prod）表达，**代码只有一份**。
 
 ---
 
@@ -74,17 +70,17 @@ if rec, ok := idem.Lookup(ctx, key); ok {
 
 ## 6. 留给项目的【软】
 
-框架不钉死，由各项目按业务/规模定：具体超时时长与重试次数/退避参数、健康检查端点路径与就绪判定项、配置中心选型（env / Consul / Nacos / Apollo）、幂等键存储介质（Redis / DB）与 TTL、熔断阈值与策略。
+框架不钉死，由各项目按业务/规模定：具体超时时长与重试次数/退避参数、健康检查端点路径与就绪判定项、幂等键存储介质（Redis / DB）与 TTL、熔断阈值与策略。
 
 ---
 
 ## 7. 自检清单
 
-- [ ] 无硬编码 secret；配置启动时单点加载 + 校验 fail-fast；密钥未落日志/未进 git
+- [ ] 配置启动时单点加载 + 校验 fail-fast
 - [ ] liveness 与 readiness 语义分离；未就绪不接流量
 - [ ] SIGTERM 优雅关闭：停接收 → 排空在途 → 超时强退 → LIFO 释放，且有超时兜底
 - [ ] 非幂等写有幂等键 + 首次结果重放；至少一次投递场景已去重
 - [ ] 每个跨进程调用设了超时；context deadline/cancel 向下游传播
 - [ ] 重试满足"退避+抖动+上限+仅幂等+仅可重试错误"，无重试风暴
 - [ ] error 用 `%w` 保留链、未吞错误；错误码只在边界层转、走 `api-design` 的 `A-BBB-CCCC`
-- [ ] 具体超时/重试/健康检查/配置中心/幂等存储选型已按项目定（框架不替你选）
+- [ ] 具体超时/重试/健康检查/幂等存储选型已按项目定（框架不替你选）
