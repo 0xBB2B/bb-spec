@@ -2,93 +2,117 @@
 
 **English** | [中文](./README.zh.md)
 
-> A language-agnostic, **spec-driven Claude Code workflow** — `spec → plan → exec → review → revise → git-push-pr` is the core pipeline — backed by **companion stack-constraint suites** (Go / Vue + bun / TDD / git discipline) and a **multi-agent adversarial review kit**.
+> **A spec-driven Claude Code pipeline** that carries a fuzzy requirement all the way to reviewed, shipped code — every stage traceable, resumable, and adversarially verified. Language-agnostic, with companion stack-constraint suites (Go / Vue + bun / TDD / git discipline).
 
-> Output follows your working language. The skills do **not** hardcode an output language — docs, comments, and commit messages come out in whatever language you work in (identifiers, API names, and error codes stay English). Every skill triggers on both English and Chinese phrases.
+> Output **follows your working language** — docs, comments, and commit messages come out in whatever language you work in (identifiers, API names, and error codes stay English). Every skill triggers on both English and Chinese phrases.
 
 ---
 
-## Core — the Workflow pipeline (`spec → ship`)
+## 30-second start
 
-> **This is the heart of BB-Spec.** A closed-loop, spec-driven pipeline that carries a fuzzy requirement all the way to reviewed, shipped code — every stage traceable, resumable, and adversarially verified. The three constraint suites further down (core / backend / frontend) are **companions** that feed rules into this loop; the loop is the product.
-
-```
-/prd   Requirement brainstorm → PRD doc (optional upstream; for PMs / requesters, shipped separately as bb-spec-product)
-  ┊
-/init-spec  Reverse-spec an existing project (run once on first adoption; parallel partitioned extraction)
-  │
-  ▼
-/spec  Requirement breakdown → one rule per document (consumes a PRD directly when present, no re-clarification)
-  │
-  ▼
-/plan  spec → function-level implementation plan (auto-batched ROADMAP, lazy expansion for large scopes)
-  │
-  ▼
-/exec  Three-agent isolated execution
-  │  Test Agent (Red)   — reads spec rules only → writes tests
-  │  Impl Agent (Green) — sees tests + function list only → writes implementation
-  │  Review Agent       — checks against spec → read-only
-  │  PROGRESS.md persistence (resume from checkpoint)
-  │
-  ▼
-/test-webview  web-interaction validation (frontend; optional)   /test-api  backend API e2e (any backend; optional)
-  │  brings the app up via the project's Docker stack              │  brings the stack up via compose.e2e.yaml
-  │  (confirmed once, remembered) → cleans up after                │  (/test/* protocol contract) → cleans up after
-  │  each case runs in an isolated serial subagent over            │  md cases render to single-file Bun TS runner → one bun run finishes all
-  │  the browser MCP (no context blow-up)                          │  time-travel tests for token / order / points expiry via /test/*
-  │  failures route to /revise                                     │  failures route to /revise
-  │                                                                │
-  └─────────────────────────────────┬──────────────────────────────┘
-                                    ▼
-/review  Workflow-orchestrated: parallel finders + adversarial verify
-  │  quality / security / anti-cruft / over-engineering / Codex
-  │  every 🔴/🟡 majority-voted by 3 independent skeptic lenses
-  │
-  ▼
-/git-push-pr  pre-review → push → open PR
-
-  ┌────────────────────────────────────────┐
-  │  /revise  exception handling (anytime) │
-  │  diagnose root cause → targeted fix →  │
-  │  regression                            │
-  └──┬──────────────┬──────────────┬───────┘
-     ↓              ↓              ↓
-   /spec          /exec          /review
-  (spec-defect → spec, impl-defect → exec, review findings → fix)
-
-  ┌─────────────────────────────────────────────┐
-  │  /doc-update  consistency sweep (periodic)  │
-  │  scan whole repo → default: update spec/doc │
-  │  obvious code smell → ask user → /revise    │
-  └─────────────────────────────────────────────┘
+```bash
+/plugin marketplace add 0xBB2B/bb-spec
+/plugin install bb-spec-core@0xbb2b
+/plugin install bb-spec-workflow@0xbb2b
 ```
 
-**How the stages connect.** The pipeline is a relay, and every handoff is a *file on disk* — not a memory in the chat — which is exactly what makes it resumable, AI-swappable, and auditable end to end: (optionally) `/prd` lets a PM / requester brainstorm a fuzzy idea into a PRD doc under `.bb-spec/docs/prd/` (**why build it, and to what extent** — with concrete use cases and acceptance criteria, so `/spec` only asks about what the PRD left uncovered) → `/spec` turns a fuzzy ask into spec docs under `.bb-spec/docs/spec/` (**what to build**) → `/plan` reads those and emits a function-level plan under `.bb-spec/docs/plan/` (**how to build it**; large scopes auto-split into a batched ROADMAP that expands one batch at a time, with the next batch generated only after the current one clears its verification gate) → `/exec` drives the plan through Test→Impl→Review into tests + code, checkpointing to `PROGRESS.md` → (web projects) `/test-webview` brings the app up via its Docker stack and drives a real browser through each case for web-interaction acceptance / (any backend) `/test-api` brings the backend up via its Docker stack and renders md cases into a single-file Bun TS runner that runs in one shot for API e2e acceptance (time-sensitive rules tested through the `/test/*` HTTP protocol contract — application language and isolation mechanism chosen freely) → `/review` judges the resulting diff → `/git-push-pr` self-checks against the spec and opens the PR.
+The 6 mainline commands:
 
-Three branches close the loop: **`/init-spec`** is the *on-ramp* for existing projects — it reverse-derives the spec first, then merges into the mainline; **`/revise`** is the *return path* — on any deviation it routes you back to the **right** stage by root cause (spec-defect → `/spec`, impl-drift → `/exec`), not a blind redo; **`/doc-update`** is the *health-check lane* — after long evolution it sweeps the whole repo for spec / doc / code drift, defaults to updating spec / docs to match the code as-is, and only stops to ask via `AskUserQuestion` when the code clearly violates a hard constraint or carries an unreasonable design (confirmed code changes are routed to `/revise`).
+| Command | What it does | When |
+|---|---|---|
+| `/spec` | Break a requirement into one-rule-per-file specs | New requirement |
+| `/plan` | spec → function-level implementation plan | Spec is ready |
+| `/exec` | Three-agent isolated Test→Impl→Review | Plan is ready |
+| `/test-webview` / `/test-api` | Docker stack + acceptance (optional) | Frontend / backend e2e |
+| `/review` | Parallel finders + adversarial verify | Before opening PR |
+| `/git-push-pr` | pre-review self-check + push + open PR | Ready to ship |
 
-Each stage, and what sets it apart:
+Three branches, callable anytime: `/init-spec` (reverse-spec an existing project), `/revise` (route any deviation back to the right stage by root cause), `/doc-update` (whole-repo spec / doc / code consistency sweep).
 
-- **`/init-spec`** — *Reverse*-spec an existing project: read the current code + docs and distill the **already-enforced implicit conventions** into ≤100-line, one-rule-per-file specs, landing in the exact structure `/spec` uses so the rest of the pipeline can pick up. Large projects are partitioned across parallel subagents. Run once, on first adoption.
-- **`/spec`** — Requirement breakdown through dialogue: clarify a fuzzy ask, then split it into many small, non-overlapping rules — one rule per file, ≤100 lines, *one thing + one example* each — fronted by a lightweight `INDEX.md` readers scan before loading specifics. Answers **"what to build."**
-- **`/plan`** — spec → a self-contained, **function-level** implementation plan: each file solves one independent problem, detailed down to function names and responsibilities (logic stays implementation-free, while declarative artifacts — SQL DDL / API contracts / config — are **inlined in final form** for exec to write to disk verbatim), so any AI can implement it from that file alone after a context reset. Answers **"how to build it."** Invocation enters **plan mode for read-only alignment** (scale triage / split / roadmap all stay in plan mode until you approve, then files are written; the proposal lists **new third-party dependencies as a dedicated section** — name + purpose + version strategy, or "none" — and **approval counts as the explicit user consent version-policy requires**); scale is auto-detected — single-domain small scopes go single-topic, while multi-domain / bootstrap / large spec drops switch to a **batched roadmap**: a `ROADMAP.md` with dependency arrows and **verification gates** (observable end-to-end capabilities) is emitted, only the current batch is expanded, and re-running `/plan` after the batch clears its gate auto-locates and expands the next.
-- **`/exec`** — **Three-agent isolated execution.** A *Test* agent reads only the spec rules and writes failing tests (Red); an *Impl* agent sees only those tests + the function list and writes code (Green) — it never sees the spec, so it can't quietly "teach to intent", and new third-party libraries are capped by the plan's approved dependency list (anything beyond it stops to ask); a *Review* agent checks the result against the spec, read-only. Progress is written to `PROGRESS.md` after every step, so a token-exhausted run **resumes losslessly** from the last checkpoint.
-- **`/test-webview`** — **web-interaction validation** (frontend / web projects). Brings the app up via the project's own **Docker stack** (frontend + backend + DB; the bring-up command is confirmed once then remembered, and `down -v` cleans up afterward), then drives a real browser via the browser MCP (playwright / chrome-devtools) through every case under `.bb-spec/docs/test/webview/`. **Each case runs in an isolated serial subagent** — hundreds of cases never blow the main context; fully serial, zero concurrency (single shared browser). Cases are generated by `/test-webview` itself — distilled from spec / plan / PRD into declarative JSON flows (confirmed, then written to disk). Before a full run it first **aligns coverage** against spec / plan / PRD, listing any uncovered UI scenarios to fill (gaps are never silently dropped). Failing cases route to `/revise`. Requires a browser MCP — prompts to install if absent.
-- **`/test-api`** — **backend API e2e** (any backend project — language-agnostic). Brings the stack up via the project-owned `compose.e2e.yaml`, then **mechanically renders md cases under `.bb-spec/docs/test/api/` into a single-file Bun TS runner** and runs it in one shot via `bun run runner.ts` — **zero subagents, zero concurrency** (HTTP is a deterministic script, no need for an LLM to step through; clock state is shared, so concurrency is banned). **Time-sensitive rules** (token expiry, order timeout, points expiry) are tested through the `/test/advance-time`, `/test/backdate`, `/test/trigger-job` HTTP endpoints defined in the `/test/*` protocol contract — the application side exposes them by its own conventions (Go build tag / Rust feature / Python multi-stage Dockerfile / Node `TESTAPI=1` gate / ...) and ships **two images**: a test image carrying `/test/*` routes with `ENV TESTAPI=1` baked in, and a production image whose `/test/*` source is **physically excluded** at build time; a `/test/healthz` probe (status 200 + `mode === "testapi"`) gates the run, no fallback. Cases are generated by `/test-api` itself from spec / plan / PRD; a full run first **aligns coverage** and lists uncovered API scenarios (gaps are never silently dropped); failures route to `/revise`. Generated `runner.ts` / `cases.json` / `result.json` land in `.bb-spec/.cache/test-api-gen/` — the md docs are the single source of truth.
-- **`/review`** — **Workflow-orchestrated, adversarially-verified** local PR review (current branch vs base). Phase 1 fans out **5 finders in parallel** — code quality, security, simplicity / anti-cruft, doc sync, and a **Codex cross-model independent** pass — with schema-enforced structured findings; after plain-code dedup, **every BLOCKER / IMPORTANT finding is re-judged by 3 independent skeptic lenses** (importance / root-cause / risk-if-unfixed) and kept or dropped by majority vote. Read-only — never auto-edits. Requires Claude Code ≥ 2.1.154 (Workflow tool).
-- **`/revise`** — The exception handler, callable anytime: diagnose a deviation's **root cause** into one of three classes — *spec-defect* (→ back to `/spec`), *impl-drift* (→ back to `/exec`), or *requirement-change* — then apply a targeted fix + regression check. Every review finding that needs fixing funnels through here.
-- **`/git-push-pr`** — User-triggered push-and-PR flow (single or multi-repo, batch or selective). When a spec `INDEX.md` exists it first runs a **branch-spec self-check (pre-review)**: a subagent diffs the branch vs main against the spec, violations are fixed and re-reviewed in a loop, then a concise **6-section PR description** is drafted (background / requirement / approach / result / tests / spec, < 50 lines) and used directly as the PR body.
-- **`/doc-update`** — **Whole-repo spec / doc / code consistency sweep.** Scans spec, README, CLAUDE.md, plan and the codebase and bins findings into six drift classes — spec-stale / doc-stale / code-violation / spec-conflict / orphan-index / uncovered-rule. Default direction is **code is the truth and spec / docs are mirrored to it**; only when the code clearly violates a hard constraint or carries an unreasonable design does it stop and ask via `AskUserQuestion`, and any confirmed code change is routed back to `/revise` for TDD — this skill never edits implementation directly. Pending decisions plus default actions are surfaced once before any write; the INDEX is kept in sync throughout. Clearly demarcates from `/init-spec` (zero → existence), `/revise` (single-point targeted fix), and the `/review` `review-doc-sync` finder (PR-diff scope, read-only).
+Optional upstream: `/prd` (PM / requester brainstorms a PRD; shipped separately as bb-spec-product).
 
-Ships **11 orchestration subagents** the stages above drive: `test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-code-quality` / `review-security` / `review-simplicity` / `review-doc-sync` / `review-codex` / `pre-reviewer` / `rule-extractor`.
+---
 
-Passive constraints (hooks, automatic): block npm/yarn, block main commit, dependency version self-check, Stop four-point self-check.
+## The `spec → ship` pipeline
+
+```
+ (opt) /prd ──► PRD doc
+                  │
+ /init-spec ──►  /spec ──► /plan ──► /exec ──► /test-* ──► /review ──► /git-push-pr
+ (existing repo)  what       how      Red→Green→Review   e2e        finders+adv   pre-review+open PR
+                                                                                       │
+        ┌──────────────────────────────────────────────────────────────────────────────┘
+        │
+        ▼ /revise (anytime, routed by root cause)
+          spec-defect → /spec   ·   impl-drift → /exec   ·   review finding → targeted fix
+
+ /doc-update (periodic / on-demand) — sweep whole repo → default updates spec/doc;
+                                        obviously bad code stops to ask → routes to /revise
+```
+
+**Why this pipeline is reliable** — every handoff is a *file on disk*, not a memory in the chat. That's what makes it resumable, AI-swappable, and auditable end to end.
+
+### Stages at a glance (one-line role + key differentiators)
+
+- **`/init-spec`** — *Reverse*-spec an existing project.
+  - Reads code + docs and distills **already-enforced implicit conventions** into ≤100-line, one-rule-per-file specs, landing in the same structure `/spec` uses
+  - Large projects fan out across partitioned subagents; runs once on first adoption
+
+- **`/spec`** — Requirement breakdown through dialogue. Answers **"what to build."**
+  - One rule per file, ≤100 lines, one thing + one example, non-overlapping
+  - Lightweight `INDEX.md` up front — readers scan the index before loading specifics
+
+- **`/plan`** — spec → self-contained, **function-level** plan. Answers **"how to build it."**
+  - One independent problem per file, down to function names and responsibilities; declarative artifacts (DDL / API contracts / config) are **inlined in final form** for exec to write verbatim
+  - Invocation enters **plan mode for read-only alignment** — nothing lands until you approve; **new third-party dependencies are listed as a dedicated section**, and approval counts as the explicit user consent version-policy requires
+  - Auto-scales: single-domain small scopes go single-topic; multi-domain / bootstrap / large spec drops switch to a **batched ROADMAP** with dependency arrows + verification gates, expanding only the current batch
+
+- **`/exec`** — **Three-agent isolated execution**, the core anti-cheat design.
+  - *Test* agent reads spec rules only, writes failing tests (Red)
+  - *Impl* agent **never sees the spec**, only the tests + function list, so it can't quietly "teach to intent"; new third-party libs capped by the plan's approved list
+  - *Review* agent checks against the spec, read-only
+  - Progress written to `PROGRESS.md` after every step — **token-exhausted runs resume losslessly**
+
+- **`/test-webview`** — **Web-interaction acceptance** for frontend / web projects.
+  - Brings the app up via the project's Docker stack (confirmed once, then remembered; `down -v` cleans up afterward), drives a real browser via the browser MCP
+  - **Each case runs in an isolated serial subagent** — hundreds of cases never blow the main context; fully serial (shared single browser)
+  - Cases auto-generated from spec / plan / PRD; **coverage alignment** before a full run, gaps never silently dropped; failures route to `/revise`
+  - Requires a browser MCP (playwright / chrome-devtools)
+
+- **`/test-api`** — **API e2e** for any backend, language-agnostic.
+  - `compose.e2e.yaml` brings the stack up; md cases **mechanically render to a single-file Bun TS runner** that runs in one shot via `bun run`
+  - **Zero subagents, zero concurrency** — HTTP is deterministic, clock state is shared
+  - **Time-sensitive rules** (token expiry, order timeout, points expiry) tested through `/test/advance-time`, `/test/backdate`, `/test/trigger-job`
+  - App side ships **two images**: test image carries `/test/*` routes + `ENV TESTAPI=1`; production image **physically excludes** `/test/*` source; `/test/healthz` probe gates the run, no fallback
+
+- **`/review`** — Workflow-orchestrated, **adversarially verified** local PR review.
+  - Phase 1 fans out **5 finders in parallel**: code quality / security / simplicity / doc-sync / **Codex cross-model independent** review, schema-enforced
+  - Phase 2 every 🔴/🟡 re-judged by **3 independent skeptic lenses** (importance / root-cause / risk-if-unfixed), majority vote
+  - Read-only — never auto-edits; requires Claude Code ≥ 2.1.154
+
+- **`/revise`** — The exception handler, callable anytime.
+  - Classifies a deviation's **root cause** into one of three: *spec-defect* (→ `/spec`), *impl-drift* (→ `/exec`), *requirement-change*
+  - Every review finding that needs fixing funnels through here
+
+- **`/git-push-pr`** — User-triggered push + PR flow (single or multi-repo).
+  - When a spec `INDEX.md` exists, first runs a **branch-spec self-check (pre-review)**: a subagent diffs the branch vs main against the spec, fixes violations in a loop
+  - Drafts a **6-section PR description** (background / requirement / approach / result / tests / spec, < 50 lines) used directly as the PR body
+
+- **`/doc-update`** — Whole-repo spec / doc / code **consistency sweep**.
+  - Six drift classes: spec-stale / doc-stale / code-violation / spec-conflict / orphan-index / uncovered-rule
+  - **Code is the truth; spec / docs are mirrored to it**; only obvious hard-constraint violations stop and ask, then route to `/revise` for TDD
+  - Clear boundaries against `/init-spec` (zero → existence), `/revise` (single point), and the `/review` `review-doc-sync` finder (PR-diff scope)
+
+**Ships with**
+
+- **11 orchestration subagents** driven by the stages above: `test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-code-quality` / `review-security` / `review-simplicity` / `review-doc-sync` / `review-codex` / `pre-reviewer` / `rule-extractor`
+- **4 passive hooks** (automatic): block npm/yarn, block main commit, dependency version self-check, Stop four-point self-check
 
 ---
 
 ## Companion constraint skills
 
-These feed rules into the pipeline above — install only the layers you need; each skill in one line.
+These feed rules into the pipeline above — install only the layers you need.
 
 ### bb-spec-product — product requirements (pipeline upstream)
 
