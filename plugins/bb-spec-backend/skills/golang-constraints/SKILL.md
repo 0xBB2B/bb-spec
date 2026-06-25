@@ -65,7 +65,17 @@ user-invocable: false
 
 ### 2.4 目录结构与命名
 
-优先遵守现有结构；若无则用**扁平分层包**：`/internal/{handler,service,repository,config,dto,model,pkg}`，同包按领域拆文件（`user.go` / `order.go`）。不强制拆子包。
+优先遵守现有结构；若无则用**扁平分层包**，业务分层落 `internal/`、支撑包提到仓库根与 `internal` 平级：
+
+```
+/config            # 配置加载与默认值（仓库内唯一来源）
+/pkg               # 跨项目可复用的支撑代码（无业务语义）
+/internal/{handler,service,repository,dto,model}
+```
+
+同包按领域拆文件（`user.go` / `order.go`），不强制拆子包。
+
+**为什么 config/pkg 提到根**：两者均不参与 handler→service→repository 调用链，且语义上是「跨业务的支撑」而非「业务实现」——放进 `internal/` 会让人误以为是某一层的下属包；提到根反而准确表达「任何层可用、不属于任何层」。
 
 **命名贯彻 avoid stuttering——包名已表达的语义不在标识符里重复**：
 
@@ -118,6 +128,7 @@ user-invocable: false
 ### 3.9 测试
 
 - 命名：`TestUser_CreateUser`
+- **测试文件 1:1 对应实现文件**：`foo_test.go` 必须存在同目录同 basename 的 `foo.go`；禁止 `helpers_test.go` / `extra_test.go` / `integration_test.go` 等游离测试文件。完整规则与例外见 `golang-testing` §0
 - **测试服从生产设计，不得反向破坏生产**。需要 mock 时按优先级：
   1. 利用已有低层接口注入点（repository 接口、`http.Client`、外部 SDK 接口）
   2. 重构生产代码补依赖注入
