@@ -1,5 +1,12 @@
 # Changelog
 
+## [8.7.0](https://github.com/0xBB2B/bb-spec/compare/v8.6.0...v8.7.0) (2026-06-25)
+
+
+### Features
+
+* **spec-backend:** 强制 golangci-lint 作为唯一 lint 工具并串入 test 入口 ([#151](https://github.com/0xBB2B/bb-spec/issues/151)) ([6229424](https://github.com/0xBB2B/bb-spec/commit/622942449f4c1e2559f02bc3c24024e95cde4c95))
+
 ## [8.6.0](https://github.com/0xBB2B/bb-spec/compare/v8.5.0...v8.6.0) (2026-06-25)
 
 
