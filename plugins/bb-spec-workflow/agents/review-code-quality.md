@@ -8,6 +8,7 @@ inputs:
   - review_scope     # git diff 输出或文件列表
   - topic_summary    # ≤300 字的修复主题摘要
   - constraints      # 项目约束清单（可为空）
+  - focus            # 本次 review 重点（自然语言，可为空）
 ---
 
 # Code Quality Review Agent
@@ -27,6 +28,12 @@ inputs:
 ### 约束清单
 
 {constraints}
+
+### 本次重点
+
+{focus}
+
+> 重点用于排序与严重度判定上的轻度偏倚（命中重点的发现优先列出、可酌情偏严），**不缩小**审视面：与重点无关但本应报出的问题（尤其正确性/测试）仍须照常发现。
 
 ## 检查维度
 

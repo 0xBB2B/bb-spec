@@ -1,7 +1,7 @@
 ---
 name: review
-description: 本地 ultrareview——跨模型、多代理、对抗验证、只读的 PR 级 review（依赖 Workflow 工具，Claude Code ≥2.1.154）；默认 base=main；并发 5 个 finder（质量/安全/简洁/文档同步/Codex 跨模型），每条 🔴/🟡 发现交 3 个独立怀疑视角对抗验证、多数决去留。触发：/review、给当前分支做深度审查、PR 前 ultrareview。跳过：无 Workflow 工具、不在 git 仓库、当前分支=base。
-argument-hint: <base-branch>
+description: 本地 ultrareview——跨模型、多代理、对抗验证、只读的 PR 级 review（依赖 Workflow 工具，Claude Code ≥2.1.154）；默认 base=main；并发 5 个 finder（质量/安全/简洁/文档同步/Codex 跨模型），每条 🔴/🟡 发现交 3 个独立怀疑视角对抗验证、多数决去留；可选追加本次 review 重点，注入每个 finder 优先关注（不替代其他维度）。触发：/review、给当前分支做深度审查、PR 前 ultrareview。跳过：无 Workflow 工具、不在 git 仓库、当前分支=base。
+argument-hint: [base-branch] [本次 review 重点...]
 disable-model-invocation: true
 ---
 
@@ -15,25 +15,37 @@ disable-model-invocation: true
 
 ## 1. 输入与前置检查
 
-`$ARGUMENTS` = base 分支名（默认 `main`，不存在则 `master`，再不存在则提示用户）。
+`$ARGUMENTS` 形如 `[base] [本次 review 重点...]`，两段都可选：
+
+- 拿到 `$ARGUMENTS` 后按空白切成 tokens；为空则 base 走默认、focus 为空
+- 第一个 token 用 `git rev-parse --verify --quiet <token>` 探测：
+  - 成功 → 该 token 当 base，剩余 tokens 用空格拼回当 focus（**本次 review 重点**，自然语言）
+  - 失败 → base 走默认，**全部** tokens 拼回当 focus
+- base 默认：`main`，不存在则 `master`，再不存在则提示用户
+
+> 例：`/review 关注鉴权和密钥落盘` → base=main，focus=`关注鉴权和密钥落盘`；`/review develop 性能` → base=develop，focus=`性能`；`/review` → base=main，focus 空。
 
 前置检查：
 
 - 确认 git 仓库 / 当前分支 ≠ base / base 存在 / 未提交改动仅警告不中止
-- **Workflow 工具**：本 skill 依赖 Workflow 工具（Claude Code ≥ 2.1.154）。当前环境工具列表中没有 Workflow → **中止**，提示用户升级 Claude Code，不降级执行
+- **Workflow 工具**：本 skill 依赖 Workflow 工具（Claude Code ≥ 2.1.154）。当前环境工具列表中没有 Workflow → **中止**，提示用户升级 Claude Code,不降级执行
 - **Codex 探测**：`which codex` 失败 → finder 缩为 4 个（去掉 Codex），报告中说明
 
-回显：`review 范围：<base> .. HEAD | 分支：<name> | commits：N | diff：M 文件 +L1/-L2`
+回显：`review 范围：<base> .. HEAD | 分支：<name> | commits：N | diff：M 文件 +L1/-L2 | 重点：<focus 或「未指定」>`
 
 ### 修复主题摘要（≤ 300 字）
 
 从 commit messages + CLAUDE.md 提取"想解决什么 / 修复策略 / 关键约束"，注入每个 finder prompt。
 
+### 本次 review 重点（focus）
+
+focus 是**用户希望优先关注的方向**（如"鉴权链路"/"新加的限流"/"重构后的事务边界"），不是"只看这块"——其他维度发现仍应照常报出，但凡命中 focus 的发现在 finder 内部应优先排序、严重度判定可酌情偏严。focus 为空时显式写「本次未指定，按各 finder 默认维度全面审视」。
+
 ---
 
 ## 2. 组装 finder
 
-每个 finder prompt 由对应定义文件（插件根目录 `agents/`）+ 本次 review 上下文（范围、主题摘要、约束清单）组合而成。派工前用 Read 读取 agent 定义，填充 `{review_scope}` / `{topic_summary}` / `{constraints}` 模板变量。
+每个 finder prompt 由对应定义文件（插件根目录 `agents/`）+ 本次 review 上下文（范围、主题摘要、约束清单、本次重点）组合而成。派工前用 Read 读取 agent 定义，填充 `{review_scope}` / `{topic_summary}` / `{constraints}` / `{focus}` 模板变量；`{focus}` 为空时填入「本次未指定，按默认维度全面审视」。
 
 | key | 图标 | 定义文件 | agentType |
 |---|---|---|---|
@@ -51,7 +63,7 @@ disable-model-invocation: true
 
 ## 3. Workflow 编排
 
-调用 Workflow 工具，**不使用 `args` 传参**（大对象经 args 易被序列化成字符串导致脚本取不到字段），把数据直接内嵌进脚本：将模板顶部的 `FINDERS` 替换为组装好的 finders 数组、`CONTEXT` 替换为一段自包含的 review 上下文文本（范围 `<base>..HEAD`、主题摘要、约束清单）。内嵌长文本用模板字符串时注意转义内容中的 `` ` `` 与 `${`。`script` 用下面模板：
+调用 Workflow 工具，**不使用 `args` 传参**（大对象经 args 易被序列化成字符串导致脚本取不到字段），把数据直接内嵌进脚本：将模板顶部的 `FINDERS` 替换为组装好的 finders 数组、`CONTEXT` 替换为一段自包含的 review 上下文文本（范围 `<base>..HEAD`、主题摘要、约束清单、**本次重点 focus**——为空时写「本次未指定」）。内嵌长文本用模板字符串时注意转义内容中的 `` ` `` 与 `${`。`script` 用下面模板：
 
 ```js
 export const meta = {
@@ -192,6 +204,7 @@ return {
 
 ```
 本地 ultrareview 完成 · <base>..HEAD（N commits / M 文件 / +L1 -L2）
+重点：<focus 一句话；未指定时写「未指定，全面审视」>
 finder：📐质量 🛡️安全 🧹简洁 📄文档 🤖Codex（5/5 就绪）
 去重 N 条 → ✅ A 确认 / ❌ B 否决 / 🟢 C 未验证 ｜ 🔴 a（⭐a'）· 🟡 b（⭐b'）
 消耗：X agents · ~Y tokens · Z 分钟
@@ -292,6 +305,7 @@ finder 行必须完整列出（Codex 不可用时该行写 `（4/5 就绪，🤖
 ## 5. 硬约束
 
 - review 过程不修代码、不操作 git、不扩大范围（只看 base..HEAD）；唯一例外是逐个解决模式中的修复——普通问题经用户逐条确认后走 /revise，文档同步类按例外规则自动修复
+- focus 仅影响**关注优先级与排序**，不缩小审视面：finder 不得因「不在 focus 内」而丢弃本应报出的发现，尤其安全/正确性维度
 - 逐个解决模式的修复必须经 /revise 执行（文档同步类例外），禁止在对话里直接改代码
 - 详细分析与修复方案只在逐个解决模式中一次一条给出，禁止开局全量平铺
 - finder / 验证者 prompt 自包含（agent 看不到本对话）
