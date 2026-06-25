@@ -118,6 +118,15 @@ interface CaseResult {
 }
 
 const plan: Plan = await Bun.file("./cases.json").json()
+
+// 兜底校验：dangling dependsOn（渲染期已校验，这里防御渲染逻辑被改坏）
+const caseIds = new Set(plan.cases.map(c => c.id))
+const dangling = plan.cases.flatMap(c => c.dependsOn.filter(d => !caseIds.has(d)).map(d => ({ case: c.id, missing: d })))
+if (dangling.length) {
+  console.error("FATAL: dangling dependsOn references:", JSON.stringify(dangling, null, 2))
+  process.exit(2)
+}
+
 const status = new Map<string, CaseResult["status"]>()
 const results: CaseResult[] = []
 const startedAt = new Date().toISOString()
@@ -221,6 +230,7 @@ POST 到 `ctx.baseUrl + plan.testEndpointsPrefix + "/<endpoint>"`，body 为该 
 2. **scope 注入**：每个 case 的 `scope` 必须在 `plan.backends` 里找得到 base_url；找不到 → 渲染失败
 3. **action 白名单**：每个 step 的 `action` 必须在词表内；未知 action → 渲染失败（早于 runner 跑）
 4. **sleep 上限**：渲染期就拒绝 `sleep.duration > 5s`，不延后到 runner
+5. **`dependsOn` 引用完整性**：每个 case 的 `dependsOn` 中每个 caseId 必须在 plan.cases 的 `id` 集合内；缺失 → 渲染失败、报错点名（输出 `case <id> 依赖的 caseId <missing> 不存在——typo 还是漏写？`）、不写盘。**禁静默吞掉**——若放过到 runner，dangling 引用会被依赖闸门当作"上游失败"标 skipped，退出码仍为 0，与 SKILL 顶层"禁静默漏测"原则冲突
 
 渲染失败属编写错误，按 `references/api-testcase-format.md` 规范修 md 用例后重跑。
 
