@@ -1,6 +1,6 @@
 {
   "name": "bb-spec-workflow",
-  "version": "8.4.0",
+  "version": "8.5.0",
   "description": "BB-Spec 工作流：spec 需求拆解 → plan 实施计划 → exec 三 Agent 隔离执行 → test-webview 网页交互验证 / test-api 后端 API e2e（md 用例编译 Go test，build-tag 隔离测时间穿越） → review 多代理对抗 review → revise 修订 → git-push-pr，含 init-spec 反向 spec 化、doc-update 全仓一致性维护与 11 个编排 subagent。",
   "author": {
     "name": "0xBB2B",
