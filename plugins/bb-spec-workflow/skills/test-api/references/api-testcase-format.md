@@ -85,7 +85,7 @@ category: <category>
 
 | action | 语义 |
 |---|---|
-| `advanceTime` | 推进应用时钟。字段：`duration`（如 `30m`、`365d`、`5m1s`）。调用 `POST /test/advance-time?d=<duration>` |
+| `advanceTime` | 推进应用时钟。字段：`duration`（如 `30m`、`365d`、`5m1s`）。调用 `POST /test/advance-time` |
 | `resetTime` | 重置应用时钟到 wall-clock now。`teardown` 必带 |
 | `expireEntity` | 把某实体的某时间字段回填，模拟"已过期"。字段：`entity`（如 `order`）、`id`（支持 `{{var}}`）、`field`（如 `created_at`）、`by`（负向偏移，如 `31m`）。调用 `POST /test/backdate` |
 | `triggerJob` | 同步触发某后台 job 立即执行一次。字段：`job`（如 `close-stale-orders`）、`args`（可选）。调用 `POST /test/trigger-job` |
