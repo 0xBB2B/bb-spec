@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./assets/banner.jpg" alt="bb-spec — A light-weight protocol for building trust" width="100%" />
+</p>
+
 # BB-Spec
 
 **English** | [中文](./README.zh.md)
