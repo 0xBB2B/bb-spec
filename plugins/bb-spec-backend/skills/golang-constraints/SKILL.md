@@ -132,6 +132,15 @@ user-invocable: false
 
 每次改 `import` 后**立即**运行 `go mod tidy`。禁止手动编辑 `go.mod` 的 `require` 块。
 
+### 3.12 Lint 工具
+
+**唯一指定 lint 工具：`golangci-lint`**。配置落在仓库根 `.golangci.yml`（或 `.golangci.yaml`），版本通过 CI 钉死。
+
+- 禁止并存第二套 lint 入口（`go vet` 单跑、`staticcheck` 独立、`revive` 独立等）——这些 linter 收归 `.golangci.yml` 的 `linters` 段统一开关
+- 禁止用注释批量豁免（`//nolint` 无说明）；必要豁免须写明原因：`//nolint:gosec // 业务侧 X 场景已校验`
+- 本地与 CI 必须用同一份 `.golangci.yml`；本地直跑 `golangci-lint run ./...`
+- **lint 必须与单元测试串在同一个 `test` 入口下**（详见 `golang-testing` §9），不允许 lint 在测试通道之外的独立 job 里跑——CI 漏跑 lint 等同于零成本破窗
+
 ---
 
 ## 四、数据库访问（Go 侧绑定）
