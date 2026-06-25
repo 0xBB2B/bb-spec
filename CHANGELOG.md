@@ -1,5 +1,12 @@
 # Changelog
 
+## [8.6.0](https://github.com/0xBB2B/bb-spec/compare/v8.5.0...v8.6.0) (2026-06-25)
+
+
+### Features
+
+* **test-api,test-webview:** 与被测项目语言解耦 ([#149](https://github.com/0xBB2B/bb-spec/issues/149)) ([f1382fd](https://github.com/0xBB2B/bb-spec/commit/f1382fd2afb56d85d2792193ef44c5f8dfce66f7))
+
 ## [8.5.0](https://github.com/0xBB2B/bb-spec/compare/v8.4.0...v8.5.0) (2026-06-25)
 
 
