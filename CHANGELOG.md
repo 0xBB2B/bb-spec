@@ -1,5 +1,12 @@
 # Changelog
 
+## [8.5.0](https://github.com/0xBB2B/bb-spec/compare/v8.4.0...v8.5.0) (2026-06-25)
+
+
+### Features
+
+* **spec-backend:** 拆出 config-constraints 收口配置载体三分与密钥分层 ([#147](https://github.com/0xBB2B/bb-spec/issues/147)) ([f0d352c](https://github.com/0xBB2B/bb-spec/commit/f0d352c70ba33b8dab8ba84ae3f16f19036c5315))
+
 ## [8.4.0](https://github.com/0xBB2B/bb-spec/compare/v8.3.2...v8.4.0) (2026-06-24)
 
 
