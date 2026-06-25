@@ -139,7 +139,19 @@ go test -run "TestUser/Create"   # 子测试
 go test -race ./...              # 竞态检测
 go test -short ./...             # 跳过慢测试
 go test -count=10 ./...          # 重复运行（检测 flaky）
+golangci-lint run ./...          # lint（详见 golang-constraints §3.12）
 ```
+
+**`test` 入口必须串联 lint**：项目级"跑测试"的统一入口（`Makefile` 的 `test` target / `package.json` 的 `test` script / CI 的 `test` job）必须把 `golangci-lint run` 和 `go test` 一起跑，任一失败即整体失败。示例 Makefile：
+
+```makefile
+.PHONY: test
+test:
+	golangci-lint run ./...
+	go test -race ./...
+```
+
+理由：lint 单开 job 容易在赶进度时被关掉或被忽视，串进 `test` 才能保证"本地一条命令、CI 一个门"都跑得到。
 
 ---
 
