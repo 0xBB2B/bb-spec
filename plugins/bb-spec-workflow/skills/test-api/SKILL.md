@@ -39,7 +39,7 @@ disable-model-invocation: true
 - **Docker 可用**：`docker info` 探测；不可用 → 报错中止（提示安装 / 启动 Docker）。
 - **Bun 可用**：`bun --version` 探测；不可用 → 报错中止并给一行安装指引（macOS / Linux：`curl -fsSL https://bun.sh/install | bash`；Windows：`powershell -c "irm bun.sh/install.ps1 | iex"`）。
 
-> 不再检查被测应用的语言——是否能跑测试由「步骤 2 拉起后 `/test/healthz` 是否 200」单一信号决定。应用是 Go / Python / Node / Java / Rust 任意一种都行，只要按 `references/test-only-endpoints.md` 协议暴露 `/test/*` 接口。
+> 不再检查被测应用的语言——是否能跑测试由「步骤 2 拉起后 `/test/healthz` 是否返回 200 且 `mode === "testapi"`」单一信号决定。应用是 Go / Python / Node / Java / Rust 任意一种都行，只要按 `references/test-only-endpoints.md` 协议暴露 `/test/*` 接口。
 
 ### 步骤 2：拉起测试环境（Docker，确认一次后记住）
 
@@ -52,7 +52,7 @@ disable-model-invocation: true
   3. **健康检查 URL**：缺省 `<base_url>/test/healthz`（与 `references/test-only-endpoints.md` 约定一致）。
   4. 确认后**持久化到 INDEX.md frontmatter**（首次跑时一并落 INDEX）。
 
-用确认的命令整栈 `up`（`docker compose -f <compose_file> up -d --build`）→ 轮询 `/test/healthz` 至 200（默认超时 60s）→ 探测失败 → 收集 `docker compose logs` 落 `${CACHE_DIR}/test-api-logs/` 后中止。
+用确认的命令整栈 `up`（`docker compose -f <compose_file> up -d --build`）→ 轮询 `/test/healthz`：**响应 200 且 body `mode === "testapi"`** 才算就绪（默认超时 60s）→ 探测失败 → 收集 `docker compose logs` 落 `${CACHE_DIR}/test-api-logs/` 后中止；缺 `mode` 字段或值不为 `"testapi"` 视为「应用未按协议接入 testapi 模式」，提示用户按 `references/test-only-endpoints.md` 接入后重试。
 
 ### 步骤 3：覆盖对齐 + 收集用例
 
@@ -158,8 +158,8 @@ env:
 - **零 subagent、零并发**：编排不派 Agent，runner 内 `await` 顺序执行用例、**禁 `Promise.all` 等并发**；**禁用 Workflow 工具**
 - 全量模式跑前**必做覆盖对齐**；缺口要么补全要么显式记入报告，**禁静默漏测**
 - 环境只复用项目自带 `compose.e2e.yaml`、**不自动生成**；首次确认后持久化、之后不再问
-- 应用必须按 `references/test-only-endpoints.md` 协议契约暴露 `/test/*` 接口（实现语言与隔离机制自选）；探测 `/test/healthz` 失败即中止，**禁降级为缩短 TTL 兜底**
+- 应用必须按 `references/test-only-endpoints.md` 协议契约暴露 `/test/*` 接口（实现语言与隔离机制自选）；探测 `/test/healthz` 必须返回 200 **且 body `mode === "testapi"`**，否则即视为失败、立刻中止，**禁降级为缩短 TTL 兜底**
 - 每次跑完**无条件清理**（含失败 / 中断路径），删容器 + 数据卷
 - 生成的 `runner.ts` / `cases.json` / `result.json` 落 `${CACHE_DIR}/`、禁纳入版本控制；md 用例是唯一 source of truth
 - 只验证不改业务代码；失败修复一律走 `/revise`
-- Docker / Bun / `/test/healthz` 任一不可用即中止并给指引，**禁降级**为无环境跑
+- Docker / Bun / `/test/healthz`（含 `mode: "testapi"` 校验）任一不可用即中止并给指引，**禁降级**为无环境跑
