@@ -4,19 +4,37 @@
 
 ## 1. 隔离契约（硬约束，无协商空间）
 
-测试接口在**生产环境必须不可达**。具体机制由应用按所选语言生态自选——以下都满足约束：
+测试接口在**生产环境必须不可达**。本契约采用「打包闸门 + 运行时门控 + CI 闸门」三件套，**全部强制、缺一不可**。
 
-- 编译期排除（Go build tag / Rust cargo feature / C# `#if` / Kotlin Gradle source set 等）
-- 启动期开关（环境变量门控、Spring Profile、NestJS module condition 等）
-- 部署期隔离（专用 e2e 镜像、独立 deployment、生产 ingress 不暴露 `/test/*` 前缀）
+### 1.1 打包闸门（唯一主防线）
 
-**约束底线**：
+生产镜像里**物理上不含** `/test/*` 路由代码——image 里没有这段源码，运行时怎么配也触发不了。
 
-- **默认禁用**：未显式开启时，`/test/healthz` 返回 404 / 不存在，**不是返回 503**——404 才能让 skill 在生产探测时立刻判定"未启用 testapi 协议"。
-- **生产防误启**：测试模式开启的进程检测到 `APP_ENV=production`（或等价信号）必须直接 panic / exit，绝不允许带测试接口跑生产流量。
-- **CI 闸门**：生产部署配置（k8s / helm / terraform / dockerfile 默认 stage）禁止出现"开启测试模式"的标志位。
+典型部署模型是 build 阶段产出**两个 image**：
 
-> 之所以坚持"默认禁用"而非"运行时开关默认关"，是因为运行时开关一旦配错就是漏洞；**编译期 / 部署期隔离比运行时 flag 更安全**——能选编译期就别选运行时。
+| Image | 用途 | `/test/*` 代码 | `TESTAPI` env |
+|---|---|---|---|
+| **A（test 镜像）** | 部署到 test 环境跑 `/test-api` | ✅ 含 | Dockerfile `ENV TESTAPI=1` 写死 |
+| **B（生产镜像，sand + prod 共用）** | 部署到 sand / staging / prod | ❌ 物理不含 | 不写 |
+
+具体「如何让 Image B 不含 `/test/*` 代码」按所选语言生态自选（见 §3 样板表）：编译期排除（Go build tag / Rust feature）、多 stage Dockerfile 生产 stage 不 COPY testapi 源码、build 时 `rm -rf` 兜底等。
+
+> 即使 sand / prod 运维误注入 `TESTAPI=1`，Image B 里无路由代码可挂载，`/test/healthz` 直接 404——fail-close 默认。
+
+### 1.2 运行时门控（强制）
+
+应用启动时**仅当**环境变量 `TESTAPI=1` 时挂载 `/test/*` 路由；否则 `/test/healthz` 返回 404 / 不存在（**不是返回 503**——404 才能让 skill 在探测时立刻判定"未启用 testapi 协议"）。
+
+**不查任何生产 env 名**（`APP_ENV` / `NODE_ENV` / `RAILS_ENV` / `SPRING_PROFILES_ACTIVE` / `DEPLOY_ENV` / ...）——生产 env 命名因栈/团队习惯而异，穷举不完；image 物理排除已经是主防线，运行时再加 env 黑/白名单徒增跨栈耦合且无新增防御。
+
+### 1.3 CI 闸门（强制）
+
+生产部署配置（Helm values / k8s manifest / Terraform / 生产 Dockerfile 默认 stage）禁止出现：
+
+- 环境变量 `TESTAPI=1`
+- testapi build flag / feature / sourceSet 启用标志（按所选语言机制）
+
+并对生产 image 做**物理验证**：构建完成后 grep 镜像内无 testapi 路由源码目录。具体 grep / find 样板见 §5。
 
 ## 2. 接口契约
 
@@ -108,21 +126,22 @@ skill 启动时探测此接口确认应用已启用 testapi 协议。
 
 下表给出主流语言的**参考实现路径**，不强制——只要满足 §1 隔离契约 + §2 接口契约即可。
 
-| 语言 / 框架 | 隔离机制 | 时钟抽象 |
-|---|---|---|
-| Go | `//go:build testapi` build tag（生产 `go build ./...` 不带 tag）+ `APP_ENV=production` panic | `github.com/jonboulle/clockwork` / `github.com/benbjohnson/clock` |
-| Python (FastAPI / Flask) | 模块条件 `if os.getenv("TESTAPI") == "1"` mount router；生产镜像不设该 env | `freezegun` 库 或 自家 `Clock` Protocol 注入 |
-| Node / TS (Express / Fastify / NestJS) | env 条件 `if (process.env.TESTAPI === "1") app.register(testRouter)`；生产 image 不设 | `@sinonjs/fake-timers` 或 自家 `Clock` interface 注入 |
-| Java (Spring Boot) | `@Profile("testapi")` + `application-testapi.yaml`；生产 profile 不含此名 | `java.time.Clock` bean 注入，`Clock.fixed` / 自家 `MutableClock` |
-| Kotlin (Ktor) | Gradle source set `testapiMain`；生产 jar 不含此 sourceset | 同 Java |
-| Rust (Actix / Axum) | cargo feature `testapi`，生产 `cargo build --release` 不带 feature | `mock_instant` crate 或自家 `Clock` trait |
-| C# (.NET) | `#if TESTAPI` 预处理 + `csproj` Configuration | `ITimeProvider`（.NET 8+ 内置）或自家接口 |
+| 语言 / 框架 | 打包期排除（产 Image B 时让 `/test/*` 源码不进 image） | 运行时门控（Image A 内，检测 `TESTAPI=1` 才挂载路由） | 时钟抽象 |
+|---|---|---|---|
+| Go | `//go:build testapi` build tag；生产 `go build ./...` 不带 tag | `os.Getenv("TESTAPI") == "1"` 才注册 testapi router | `github.com/jonboulle/clockwork` / `github.com/benbjohnson/clock` |
+| Python (FastAPI / Flask) | 多 stage Dockerfile，生产 stage 不 `COPY app/test_endpoints/`；或 `.dockerignore` 排除该目录 | `if os.getenv("TESTAPI") == "1": app.include_router(test_router)` | `freezegun` 库 或 自家 `Clock` Protocol 注入 |
+| Node / TS (Express / Fastify / NestJS) | 多 stage Dockerfile，生产 stage 不 `COPY src/test-endpoints/`；或 build 时 `rm -rf` 兜底 | `if (process.env.TESTAPI === "1") app.register(testRouter)` | `@sinonjs/fake-timers` 或 自家 `Clock` interface 注入 |
+| Java (Spring Boot) | Gradle 拆 source set `testapiMain`，生产 jar 不含该 sourceSet | `@ConditionalOnProperty("TESTAPI=1")` 自动装配 testapi `@Configuration` | `java.time.Clock` bean 注入，`Clock.fixed` / 自家 `MutableClock` |
+| Kotlin (Ktor) | 同 Java（Gradle source set） | `if (System.getenv("TESTAPI") == "1") routing { testRoutes() }` | 同 Java |
+| Rust (Actix / Axum) | cargo feature `testapi`，生产 `cargo build --release` 不带 feature | `if std::env::var("TESTAPI").as_deref() == Ok("1") { ... }` | `mock_instant` crate 或自家 `Clock` trait |
+| C# (.NET) | `#if TESTAPI` 预处理 + `csproj` 双 Configuration（生产 Configuration 无 `TESTAPI` 常量） | `Environment.GetEnvironmentVariable("TESTAPI") == "1"` 才 `app.MapTestEndpoints()` | `ITimeProvider`（.NET 8+ 内置）或自家接口 |
+| Ruby / PHP（无编译期机制） | 多 stage Dockerfile，生产 stage 不 `COPY` testapi 目录；或 build 时 `rm -rf` 兜底 | `ENV['TESTAPI'] == '1'` 才挂载 testapi 路由 | 自家 `Clock` 接口注入 |
 
 **通用约束（不论语言）**：
 
 - 业务代码**禁止**直接调标准库的 `now()`（`time.Now()` / `Date.now()` / `Instant.now()` / `System.currentTimeMillis()` / `DateTime.Now` / `Date()`）——一律走应用自家 Clock 抽象。建议 CI 加 lint / grep 闸门。
 - `/test/*` 接口必须与业务路由**同进程**（共享内存中的 Clock 实例），不能拆成独立进程。
-- 测试镜像应通过 docker build args / `--target testapi` / 独立 `compose.e2e.yaml` 等机制启用，生产镜像保持原样。
+- **Image A 推荐在 Dockerfile 里 `ENV TESTAPI=1` 写死**——image 自带、部署不需手动注入、出错面最小。
 
 ## 4. compose.e2e.yaml 模板（语言无关骨架）
 
@@ -136,7 +155,7 @@ services:
       # - 通用: target: testapi 多 stage Dockerfile
       # - 通用: environment 注入 TESTAPI=1（要求应用启动期门控）
     environment:
-      APP_ENV: e2e                                # 须不等于 production
+      APP_ENV: e2e                                # 仅作环境标识，不参与隔离判断（§1.2 不检测任何生产 env 名）
       DATABASE_URL: postgres://e2e:e2e@db:5432/e2e
     ports:
       - "8080:8080"
@@ -161,21 +180,39 @@ services:
 
 ## 5. CI 防泄漏闸门
 
-生产部署配置中**禁止出现**测试模式启用标志。在 CI 加一道 grep 闸门（具体关键字按所选机制调整）：
+按 §1.3 约束，生产部署配置**禁止出现**测试模式启用标志，且生产 image 必须**物理不含** testapi 源码。在 CI 加三道闸门：
 
 ```bash
-# 例 1：Go build tag 不得出现在 deploy 配置
-if grep -rE "BUILD_TAGS.*testapi" deploy/ k8s/ helm/ 2>/dev/null; then
-  echo "FATAL: testapi build tag leaked into production deploy config" >&2
-  exit 1
-fi
-
-# 例 2：env 门控方案下，生产配置不得设 TESTAPI=1
-if grep -rE "TESTAPI[: =]+['\"]?1['\"]?" deploy/prod/ 2>/dev/null; then
+# 闸门 1：生产部署配置（helm / k8s / terraform / 生产 Dockerfile 默认 stage）禁含 TESTAPI=1
+if grep -rE "TESTAPI[: =]+['\"]?1['\"]?" deploy/prod/ helm/prod/ k8s/prod/ 2>/dev/null; then
   echo "FATAL: TESTAPI=1 leaked into production deploy config" >&2
   exit 1
 fi
+
+# 闸门 2：生产 build 命令禁带 testapi 启用标志（按所选语言机制调整关键字）
+# - Go:    禁 `-tags testapi`
+# - Rust:  禁 `--features testapi`
+# - Docker multi-stage: 禁 `--target testapi-*`
+# - Gradle: 禁 `-PtestapiEnabled=true` / 含 testapiMain sourceSet 的 build 命令
+if grep -rE "(-tags[[:space:]]+testapi|--features[[:space:]]+testapi|--target[[:space:]]+testapi)" deploy/prod/ Dockerfile 2>/dev/null; then
+  echo "FATAL: testapi build flag leaked into production build" >&2
+  exit 1
+fi
+
+# 闸门 3：生产 image 物理验证（最强一道——直接看镜像 layer 无 testapi 源码）
+# 在生产 image 构建后跑（路径名按本项目实际命名调整）：
+LEAKS=$(docker run --rm prod-image:latest sh -c '
+  find / -path /proc -prune -o -path /sys -prune -o \
+    \( -type d \( -name "test_endpoints" -o -name "testapi" -o -name "test-endpoints" \) -print \)
+')
+if [ -n "$LEAKS" ]; then
+  echo "FATAL: testapi source dir found in prod image:" >&2
+  echo "$LEAKS" >&2
+  exit 1
+fi
 ```
+
+闸门 1、2 防配置层泄漏，闸门 3 是**事实层兜底**——配置可能漏改、build 命令可能本地误改，但镜像内容是不可抵赖的事实，任一闸门未过即生产部署阻断。
 
 ## 6. 改造检查清单
 
@@ -183,8 +220,9 @@ fi
 
 - [ ] 业务代码**零** `now()` 直接调用（lint / grep 通过）
 - [ ] 自家 Clock 抽象就位、注入到所有用时间的服务层
-- [ ] 隔离机制就位（编译期 / 启动期 / 部署期任选其一），生产镜像构建/部署默认不启用
-- [ ] `APP_ENV=production` 防误启检测 + panic
+- [ ] **双 image 产出**：test image 含 `/test/*` 路由代码 + Dockerfile `ENV TESTAPI=1` 写死；生产 image（sand + prod 共用）物理不含 `/test/*` 源码
+- [ ] **运行时门控**：应用启动时仅当 `TESTAPI=1` 时挂载 `/test/*` 路由；其他情况 `/test/healthz` 返回 404
+- [ ] **生产 image 物理验证**：`find` / `grep` 生产 image 内**无** testapi 路由源码目录（§5 闸门 3）
 - [ ] 七个接口（§2 列举）全部就位且返回结构符合约定
-- [ ] `compose.e2e.yaml` 拉起后 `GET /test/healthz` 返回 `{ ok: true, mode: "testapi" }`
-- [ ] CI 闸门：生产部署配置不含测试模式启用标志
+- [ ] test image 拉起后 `GET /test/healthz` 返回 `{ ok: true, mode: "testapi" }`
+- [ ] CI 闸门：生产部署配置不含 `TESTAPI=1` 或 testapi build flag（§5 三道闸门全部就位）
