@@ -1,5 +1,12 @@
 # Changelog
 
+## [8.9.0](https://github.com/0xBB2B/bb-spec/compare/v8.8.0...v8.9.0) (2026-06-25)
+
+
+### Features
+
+* **spec-backend:** golang 目录结构 config/pkg 提到根，并强制测试文件 1:1 对应实现 ([#156](https://github.com/0xBB2B/bb-spec/issues/156)) ([9c6a81c](https://github.com/0xBB2B/bb-spec/commit/9c6a81c38e5726a87a9da59f97eabbddbf5d468a))
+
 ## [8.8.0](https://github.com/0xBB2B/bb-spec/compare/v8.7.0...v8.8.0) (2026-06-25)
 
 
