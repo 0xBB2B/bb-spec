@@ -61,7 +61,7 @@ category: <category>
 
 ## 执行顺序与依赖
 
-- **用例内（强顺序）**：`setup → steps → teardown` 严格按序、断言失败即停、不跳步。**紧耦合多请求流（如"注册→登录→建单"）应写成同一用例里的有序 steps**——同一 Go test 函数、变量天然在作用域内连续可用。
+- **用例内（强顺序）**：`setup → steps → teardown` 严格按序、断言失败即停、不跳步。**紧耦合多请求流（如"注册→登录→建单"）应写成同一用例里的有序 steps**——同一用例上下文内，`extract` 出的变量在后续 step 中天然可用。
 - **用例间（依赖 + 跳过）**：默认用例自包含、互相独立，各自 `setup` 建立前置；执行按依赖拓扑序串行。失败策略：
   - **有依赖**：上游 `fail` / `error` / 被跳过 → 下游不运行、标 `skipped`，并**级联**到其传递依赖者。
   - **无依赖**：某用例失败不影响其它独立用例，继续跑完全部。
@@ -71,7 +71,7 @@ category: <category>
 
 ## 抽象 action 词表
 
-按语义分四组，与具体 HTTP 客户端 / 时钟实现无关；执行映射见 `references/go-codegen-template.md`。
+按语义分四组，与具体 HTTP 客户端 / 时钟实现无关；执行映射见 `references/runner-ts-template.md`。
 
 ### HTTP 调用 + 断言
 
@@ -85,7 +85,7 @@ category: <category>
 
 | action | 语义 |
 |---|---|
-| `advanceTime` | 推进应用时钟。字段：`duration`（如 `30m`、`365d`、`5m1s`）。调用 `POST /test/advance-time?d=<duration>` |
+| `advanceTime` | 推进应用时钟。字段：`duration`（如 `30m`、`365d`、`5m1s`）。调用 `POST /test/advance-time` |
 | `resetTime` | 重置应用时钟到 wall-clock now。`teardown` 必带 |
 | `expireEntity` | 把某实体的某时间字段回填，模拟"已过期"。字段：`entity`（如 `order`）、`id`（支持 `{{var}}`）、`field`（如 `created_at`）、`by`（负向偏移，如 `31m`）。调用 `POST /test/backdate` |
 | `triggerJob` | 同步触发某后台 job 立即执行一次。字段：`job`（如 `close-stale-orders`）、`args`（可选）。调用 `POST /test/trigger-job` |
