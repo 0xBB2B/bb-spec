@@ -1,6 +1,6 @@
 ---
 name: test-webview
-description: 网页项目全量交互验证——Docker 整栈拉起→经浏览器 MCP（playwright/chrome-devtools）逐个跑完 webview 测试用例；每用例派隔离串行 subagent，主上下文只留 verdict 摘要；全程零并发；跑完无条件 docker compose down -v；失败转 /revise。触发：/test-webview、跑网页交互测试、端到端验证前端、webview 验收。跳过：非 web 项目、无浏览器 MCP、Docker 不可用。
+description: 网页项目全量交互验证——Docker 整栈拉起→经浏览器 MCP（playwright/chrome-devtools）逐个跑完 webview 测试用例；每用例派隔离串行 subagent，主上下文只留 verdict 摘要；全程零并发；跑完无条件 docker compose down -v；失败转 /revise。触发：/test-webview、跑网页交互测试、端到端验证网页、webview 验收。跳过：无可用 HTTP 网页服务、无浏览器 MCP、Docker 不可用。
 argument-hint: [category]
 disable-model-invocation: true
 ---
@@ -38,18 +38,19 @@ disable-model-invocation: true
 
 ### 步骤 1：前置检查（任一不过即中止并给指引）
 
-- **是 web 项目**：`package.json` 含前端依赖（vue / react / vite / svelte 等）或存在 `index.html` + 前端 `src/`。非 web → 告知"本命令仅适用于网页项目"，中止。
 - **浏览器 MCP**：当前工具列表含 `mcp__playwright__*` 或 `mcp__chrome-devtools__*` 任一 → 选定（**优先 playwright**），记为 `${MCP_FAMILY}`。都没有 → **提示安装**（`claude mcp add playwright -- npx @playwright/mcp@latest`，或安装 chrome-devtools MCP），中止。
 - **Docker 可用**：`docker info` 探测；不可用 → **报错终止**（提示安装 / 启动 Docker）。
+
+「项目是否对外提供 HTML 网页」交由步骤 2 兜底——用户在那里显式声明面向浏览器的服务及其端口，无需在此做语言/栈探测。
 
 ### 步骤 2：拉起测试环境（Docker，确认一次后记住）
 
 读 `${DOCS_DIR}/test/webview/INDEX.md` frontmatter 的**已确认环境配置**（`up` / `down` 命令 + 前端服务→端口映射）：
 
 - **已有配置** → 直接用，**不再询问**。
-- **首次（无配置）**：探测项目 docker 拉起方式（`compose*.y*ml` / `Makefile` 目标 / `Dockerfile`）+ 识别前端服务及其端口，把"拉起命令 + 各前端服务→端口"呈现给用户，用 `AskUserQuestion` 让其**确认是否正确**（可纠正命令 / 端口）；**不判断是否测试环境、不生成任何环境**。探测不出拉起方式 → 让用户直接给出拉起命令。确认后**持久化到 INDEX.md frontmatter**（INDEX 不存在则在步骤 3 生成时一并写入）。
+- **首次（无配置）**：探测项目 docker 拉起方式（`compose*.y*ml` / `Makefile` 目标 / `Dockerfile`）+ 识别**面向浏览器的 HTTP 服务**及其端口（不限技术栈：可以是 SPA dev server、静态文件容器、后端模板直出、反向代理等），把"拉起命令 + 各网页服务→端口"呈现给用户，用 `AskUserQuestion` 让其**确认是否正确**（可纠正命令 / 端口 / 增删服务）；**不判断是否测试环境、不生成任何环境**。探测不出拉起方式或网页服务 → 让用户直接给出。无任何对外网页服务 → 中止并告知本命令需至少一个 HTTP 网页服务。确认后**持久化到 INDEX.md frontmatter**（INDEX 不存在则在步骤 3 生成时一并写入）。
 
-用确认的命令整栈 `up`（如 `docker compose up -d`）→ 等各服务就绪（健康检查 / 端口探活）→ 每个前端服务的 published port 推出对应 `${BASE_URL}`，建立 `服务名 → BASE_URL` 映射。
+用确认的命令整栈 `up`（如 `docker compose up -d`）→ 等各服务就绪（健康检查 / 端口探活）→ 每个网页服务的 published port 推出对应 `${BASE_URL}`，建立 `服务名 → BASE_URL` 映射。
 
 ### 步骤 3：覆盖对齐 + 定位用例
 
@@ -114,6 +115,8 @@ subagent 返回结构化 verdict：`{ caseId, category, status: pass|fail|error,
 无论通过、失败还是中断，都执行环境清理：用记忆的 `down` 命令（缺省 `docker compose down -v`）拆容器 + 删数据卷，保证下次拉起干净。
 
 ## 测试产物目录与用例规格
+
+> 本节「前端」是逻辑名，泛指**任何面向浏览器的网页服务**（SPA dev server、静态站、后端模板直出、反向代理等都算），不绑定技术栈。
 
 在目标项目 `${DOCS_DIR}/test/` 下，**按前端建顶层文件夹、其下按类别分**、根 `INDEX.md` 索引：
 
