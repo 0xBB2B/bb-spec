@@ -1,5 +1,12 @@
 # Changelog
 
+## [8.8.0](https://github.com/0xBB2B/bb-spec/compare/v8.7.0...v8.8.0) (2026-06-25)
+
+
+### Features
+
+* **review:** /review 支持追加本次审查重点 ([#153](https://github.com/0xBB2B/bb-spec/issues/153)) ([fcab1bc](https://github.com/0xBB2B/bb-spec/commit/fcab1bcf0c01097dcac1c3c8fd27b460c44e8c82))
+
 ## [8.7.0](https://github.com/0xBB2B/bb-spec/compare/v8.6.0...v8.7.0) (2026-06-25)
 
 
