@@ -1,6 +1,6 @@
 {
   "name": "bb-spec-core",
-  "version": "8.11.0",
+  "version": "8.12.0",
   "description": "BB-Spec 核心纪律：TDD 红绿重构、依赖版本策略、Git 分支与提交纪律；含 git-workflow-guard / dep-version-check / stop-self-check 三个被动 hook，是其余子套件的推荐基座。",
   "author": {
     "name": "0xBB2B",

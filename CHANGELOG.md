@@ -1,5 +1,12 @@
 # Changelog
 
+## [8.12.0](https://github.com/0xBB2B/bb-spec/compare/v8.11.0...v8.12.0) (2026-06-26)
+
+
+### Features
+
+* **prd,spec:** 澄清提问强制给可横向对比的候选 + 推荐项 ([#163](https://github.com/0xBB2B/bb-spec/issues/163)) ([d1e32f1](https://github.com/0xBB2B/bb-spec/commit/d1e32f149f458d03f4d646a1b5bf7f973528f2d8))
+
 ## [8.11.0](https://github.com/0xBB2B/bb-spec/compare/v8.10.0...v8.11.0) (2026-06-26)
 
 
