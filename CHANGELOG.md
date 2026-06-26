@@ -1,5 +1,12 @@
 # Changelog
 
+## [8.10.0](https://github.com/0xBB2B/bb-spec/compare/v8.9.0...v8.10.0) (2026-06-26)
+
+
+### Features
+
+* **prd,spec:** PRD 产出改为目录结构（OVERVIEW + 子需求文档） ([#159](https://github.com/0xBB2B/bb-spec/issues/159)) ([1127bc3](https://github.com/0xBB2B/bb-spec/commit/1127bc3364c56d43263abf042a63eb8b1dd434c7))
+
 ## [8.9.0](https://github.com/0xBB2B/bb-spec/compare/v8.8.0...v8.9.0) (2026-06-25)
 
 
