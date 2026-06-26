@@ -1,5 +1,12 @@
 # Changelog
 
+## [8.11.0](https://github.com/0xBB2B/bb-spec/compare/v8.10.0...v8.11.0) (2026-06-26)
+
+
+### Features
+
+* **prd:** 步骤 0 增加 spec/PRD 冲突重叠扫描并强制呈现 ([#161](https://github.com/0xBB2B/bb-spec/issues/161)) ([900147d](https://github.com/0xBB2B/bb-spec/commit/900147d3014a624b44324236cd741409772633a6))
+
 ## [8.10.0](https://github.com/0xBB2B/bb-spec/compare/v8.9.0...v8.10.0) (2026-06-26)
 
 
