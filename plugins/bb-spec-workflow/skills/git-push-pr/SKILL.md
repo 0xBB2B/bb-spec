@@ -111,13 +111,15 @@ description: 推送本地代码到远程并开 PR 全流程——识别仓库→
 
 ## 7. 处理 PR
 
+**worktree 模式铁律**：步骤 2 标记为 worktree 模式时，本步所有 `gh pr merge` / `gh pr close` **一律去掉 `--delete-branch`**（GitLab：`--remove-source-branch`）。原因：gh 在合并/关闭成功后会立即试图删本地分支，但分支被 worktree 占用必失败（gh 报非零退出码——而服务端合并实际已完成）。本地与远程分支删除统一交给步骤 8 在 `worktree remove` 之后做。
+
 创建后用 AskUserQuestion 让用户选（除非已显式声明）：
 
-1. **自动合并**：`gh pr merge <n> --squash --auto --delete-branch`（GitLab 用 `--auto-merge --remove-source-branch`）
+1. **自动合并**：`gh pr merge <n> --squash --auto --delete-branch`（GitLab：`--auto-merge --remove-source-branch`；worktree 模式去掉删分支 flag）
 2. **已合并**：直接进入「合并结果核验」
-3. **关闭 PR**：`gh pr close --delete-branch` → 清理
+3. **关闭 PR**：`gh pr close --delete-branch` → 清理（worktree 模式同样去 `--delete-branch`）
 
-**`--auto` 被拒**（仓库未开启 auto-merge，报 `Auto merge is not allowed` / `enablePullRequestAutoMerge`）→ 降级为不带 `--auto` 的 `gh pr merge <n> --squash --delete-branch` 重试。
+**`--auto` 被拒**（仓库未开启 auto-merge，报 `Auto merge is not allowed` / `enablePullRequestAutoMerge`）→ 降级为不带 `--auto` 的 `gh pr merge <n> --squash --delete-branch` 重试（worktree 模式同样去 `--delete-branch`）。
 
 ### 合并结果核验（唯一完成判据，所有合并路径必经）
 
