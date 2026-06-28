@@ -253,6 +253,25 @@ Reference template: [`.bb-spec.template.yaml`](./.bb-spec.template.yaml).
 
 ---
 
+## Prior art & acknowledgements
+
+BB-Spec stands on three excellent projects. Each shaped a different part of its design — credited below, alongside what BB-Spec borrowed and how it pushed the idea further.
+
+| Project | What it does best | What BB-Spec borrowed & hardened |
+|---|---|---|
+| [**Superpowers**](https://github.com/obra/Superpowers) (obra) — a complete coding-agent methodology | End-to-end staged workflow, subagent-driven development with phased review, TDD Red-Green-Refactor, git-worktree isolation, Socratic brainstorming, a composable skill library | The whole `spec → ship` pipeline backbone, splitting work across role-specialized subagents, mandatory TDD, multi-stage / adversarial review, and dialogue-first requirement clarification |
+| [**ECC**](https://github.com/affaan-m/ECC) (affaan-m) — an agent-harness "operating system" | A large layered system of agents / skills / hooks / rules, passive hooks that auto-enforce, rules-as-infrastructure, memory persistence across sessions | The layered, independently-installable sub-plugin suite, passive hooks that enforce discipline, and distilling engineering conventions into loadable constraint skills |
+| [**skills**](https://github.com/mattpocock/skills) (mattpocock) — "Skills For Real Engineers" | Targets real failure modes (misalignment / verbosity / quality / architecture), deep questioning to align on intent, shared domain language, user- vs model-invoked skills, vertical slicing | Challenge-first dialogue to pin down requirements before any code, dual-trigger skills (slash command + model auto-trigger), and the one-rule-per-file minimalism |
+
+**Where BB-Spec goes its own way** — differentiators none of the three combine:
+
+- **Three-agent isolated execution** — the Impl agent *physically never sees the spec*, only the tests, so it cannot quietly "teach to intent"; tests, implementation, and review are written by mutually-blind agents.
+- **Disk documents as the only handoff** — every stage hands off a file, not chat memory, so a run resumes losslessly across sessions, `/clear`, or even a different model picking up the work.
+- **Bidirectional spec ⇄ code loop** — not just spec → code, but `/init-spec` to distill specs out of an existing codebase and `/doc-update` to keep them in sync as the code drifts.
+- **Bilingual-native, output follows your working language** — every skill triggers on English and Chinese; docs / comments / commits come out in your language while identifiers stay English.
+
+---
+
 ## License
 
 MIT

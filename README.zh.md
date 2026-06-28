@@ -252,6 +252,25 @@ base_dir: my/bb  # → my/bb/docs/{prd,spec,plan,test}/ 与 my/bb/.cache/;填 ./
 
 ---
 
+## 设计渊源:借鉴与对比
+
+BB-Spec 站在三个优秀项目的肩上。它们各自塑造了 BB-Spec 设计的不同部分——下表致谢其所长,并说明 BB-Spec 借鉴了什么、又把这个想法推进到了哪一步。
+
+| 项目 | 它最擅长 | BB-Spec 借鉴并强化的点 |
+|---|---|---|
+| [**Superpowers**](https://github.com/obra/Superpowers)(obra)—— 一套完整的编码代理方法论 | 端到端分阶段工作流、子代理驱动开发 + 分阶段审查、TDD 红-绿-重构、git worktree 隔离、苏格拉底式头脑风暴、可组合技能库 | 整条 `spec → ship` 流水线骨架、按角色拆分子 Agent 协作、强制 TDD、多阶段 / 对抗式审查、对话先行的需求澄清 |
+| [**ECC**](https://github.com/affaan-m/ECC)(affaan-m)—— 一个 agent harness「操作系统」 | agents / skills / hooks / rules 的大规模分层体系、被动 hook 自动强制、规则即基础设施、跨会话记忆持久化 | 分层、可独立安装的子插件套件、用被动 hook 强制纪律、把工程规范沉淀为可加载的约束 skill |
+| [**skills**](https://github.com/mattpocock/skills)(mattpocock)——「Skills For Real Engineers」 | 直击真实失败模式(需求不对齐 / 冗长 / 质量 / 架构)、深度提问对齐意图、共享域语言、用户调用 vs 模型调用双形态 skill、垂直切片 | 质疑前置、动手前先对话锁定需求、双触发 skill(slash 命令 + 模型自动触发)、一文一规则的极简组织 |
+
+**BB-Spec 自己的取舍**——三者都未同时具备的差异化:
+
+- **三 Agent 隔离执行**——Impl Agent *物理上看不到 spec*,只看测试,无法「照着意图蒙混」;测试、实现、审查由互相看不见的三方分别完成。
+- **磁盘文档作为唯一交接物**——每阶段交接的是文件而非会话记忆,因此跨会话、`/clear` 乃至换一个模型接手都能无损续接。
+- **spec ⇄ code 双向闭环**——不止 spec → code,还能用 `/init-spec` 从既有代码反向沉淀 spec、用 `/doc-update` 在代码漂移时持续追平。
+- **中英双语原生、产出跟随工作语言**——每个 skill 同时响应中英文触发;文档 / 注释 / commit 用你的工作语言,标识符保持英文。
+
+---
+
 ## License
 
 MIT
