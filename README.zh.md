@@ -6,9 +6,7 @@
 
 [English](./README.md) | **中文**
 
-> **一条 spec 驱动的 Claude Code 流水线**——把模糊需求一路带到经过 review、可交付的代码,每个阶段可追溯、可断点恢复、经对抗验证。语言无关,辅以技术栈约束套件（Go / Vue + bun / TDD / Git 纪律）。
-
-> 产出**跟随你的工作语言**:文档、注释、commit message 都用你的工作语言（标识符 / API 名 / 错误码保持英文）。
+> **一条 spec 驱动的 Claude Code 流水线**——把模糊需求一路带到经过 review、可交付的代码,每个阶段可追溯、可断点恢复、经对抗验证,辅以技术栈约束套件（Go / Vue + bun / TDD / Git 纪律）。
 
 ---
 
@@ -82,7 +80,7 @@
   - 用例自动从 spec / plan / PRD 归纳生成;跑前**覆盖对齐**,缺口不静默漏测;失败转 `/revise`
   - 需浏览器 MCP(playwright / chrome-devtools)
 
-- **`/test-api`** — 后端**接口 e2e**,语言无关。
+- **`/test-api`** — 后端**接口 e2e**。
   - `compose.e2e.yaml` 拉起整栈,md 用例**机械渲染为单文件 Bun TS runner**,`bun run` 一次跑完
   - **零 subagent、零并发**——HTTP 是确定性脚本,时钟共享禁并发
   - **时间敏感规则**(token 过期、订单超时、积分过期)经 `/test/advance-time`、`/test/backdate`、`/test/trigger-job` 协议测
@@ -268,7 +266,6 @@ BB-Spec 站在三个优秀项目的肩上。它们各自塑造了 BB-Spec 设计
 - **三 Agent 隔离执行**——Impl Agent *物理上看不到 spec*,只看测试,无法「照着意图蒙混」;测试、实现、审查由互相看不见的三方分别完成。
 - **磁盘文档作为唯一交接物**——每阶段交接的是文件而非会话记忆,因此跨会话、`/clear` 乃至换一个模型接手都能无损续接。
 - **spec ⇄ code 双向闭环**——不止 spec → code,还能用 `/init-spec` 从既有代码反向沉淀 spec、用 `/doc-update` 在代码漂移时持续追平。
-- **产出跟随工作语言**——文档 / 注释 / commit 用你的工作语言,标识符保持英文。
 
 ---
 
