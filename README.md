@@ -8,7 +8,7 @@
 
 > **A spec-driven Claude Code pipeline** that carries a fuzzy requirement all the way to reviewed, shipped code — every stage traceable, resumable, and adversarially verified. Language-agnostic, with companion stack-constraint suites (Go / Vue + bun / TDD / git discipline).
 
-> Output **follows your working language** — docs, comments, and commit messages come out in whatever language you work in (identifiers, API names, and error codes stay English). Every skill triggers on both English and Chinese phrases.
+> Output **follows your working language** — docs, comments, and commit messages come out in whatever language you work in (identifiers, API names, and error codes stay English).
 
 ---
 
@@ -269,7 +269,7 @@ BB-Spec stands on three excellent projects. Each shaped a different part of its 
 - **Three-agent isolated execution** — the Impl agent *physically never sees the spec*, only the tests, so it cannot quietly "teach to intent"; tests, implementation, and review are written by mutually-blind agents.
 - **Disk documents as the only handoff** — every stage hands off a file, not chat memory, so a run resumes losslessly across sessions, `/clear`, or even a different model picking up the work.
 - **Bidirectional spec ⇄ code loop** — not just spec → code, but `/init-spec` to distill specs out of an existing codebase and `/doc-update` to keep them in sync as the code drifts.
-- **Bilingual-native, output follows your working language** — every skill triggers on English and Chinese; docs / comments / commits come out in your language while identifiers stay English.
+- **Output follows your working language** — docs / comments / commits come out in your language while identifiers stay English.
 
 ---
 
