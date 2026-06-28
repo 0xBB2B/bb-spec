@@ -131,7 +131,15 @@ issue 正文包含背景、需求、方案。PR 关联 issue 时顶部写 `Close
 
 ---
 
-## 6. 合并后清理
+## 6. 合并后清理（按开分支方式分流）
+
+判定当前是否在 linked worktree：
+
+```bash
+[ "$(git rev-parse --git-dir)" != "$(git rev-parse --git-common-dir)" ] && echo "linked worktree"
+```
+
+### 直接切分支模式
 
 ```bash
 git checkout main && git pull origin main
@@ -140,4 +148,18 @@ git branch -D <branch>                    # squash merge 后 -d 会拒绝
 # 探测远程分支是否存在再删
 git ls-remote --exit-code --heads origin <branch> && git push origin --delete <branch>
 git fetch -p                              # 裁剪远程引用
+```
+
+### worktree 模式
+
+主仓库本就停在 main，**禁止在 worktree 内 `git checkout main`**（该分支被主仓库占用，会报错）。改为先回主仓库、移除 worktree、再删分支：
+
+```bash
+WT="$(git rev-parse --show-toplevel)"            # 当前 worktree 路径（移除前先取）
+cd "$(git rev-parse --git-common-dir)/.." && pwd # 回到主仓库根（已在 main）
+git pull origin main
+git worktree remove "$WT"                        # 有未提交改动会拒绝——此时应已 commit+push
+git branch -D <branch>                           # worktree 移除后才能删其分支
+git ls-remote --exit-code --heads origin <branch> && git push origin --delete <branch>
+git fetch -p && git worktree prune               # 裁剪远程引用 + worktree 元数据
 ```
