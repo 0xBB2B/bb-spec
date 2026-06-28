@@ -1,5 +1,12 @@
 # Changelog
 
+## [8.13.0](https://github.com/0xBB2B/bb-spec/compare/v8.12.0...v8.13.0) (2026-06-28)
+
+
+### Features
+
+* README 完善与冗余语言强调清理,stop 自检追加简报收尾 ([#165](https://github.com/0xBB2B/bb-spec/issues/165)) ([94394f5](https://github.com/0xBB2B/bb-spec/commit/94394f52529cd72850ec340a7422eb766bd93ba7))
+
 ## [8.12.0](https://github.com/0xBB2B/bb-spec/compare/v8.11.0...v8.12.0) (2026-06-26)
 
 
