@@ -1,13 +1,13 @@
 ---
 name: git-push-pr
-description: 推送本地代码到远程并开 PR 全流程——识别仓库→确认分支→跑全量测试→提交未暂存改动（禁 git add .）→若存在 spec INDEX.md 则 subagent 比对 spec 跑分支规范自查（违规走 /revise 循环复审）+起草 6 段 PR 描述→推送→创建 PR→清理本地与远程。触发：push 一下、提个 PR、代码推上去、准备发 PR、开 PR 前自查、对照规范看分支。跳过：未本地验证完成的功能、main/master 上无新提交。
+description: 推送本地代码到远程并开 PR 全流程——识别仓库→确认分支（worktree 模式自动定位目标分支）→跑全量测试→提交未暂存改动（禁 git add .）→若存在 spec INDEX.md 则 subagent 比对 spec 跑分支规范自查（违规走 /revise 循环复审）+起草 6 段 PR 描述→推送→创建 PR→清理本地与远程。触发：push 一下、提个 PR、代码推上去、准备发 PR、开 PR 前自查、对照规范看分支。跳过：未本地验证完成的功能、main/master 上无新提交。
 ---
 
 # 仓库提交与 PR 流程
 
 ## 概览
 
-创建分支 → 跑测试 → 提交 → **分支规范自查 + PR 草稿**（仅当仓库或项目根存在 `.bb-spec/docs/spec/INDEX.md`）→ 推送 → 创建 PR → 处理 PR → 清理分支。
+确认分支（worktree 模式自动定位目标）→ 跑测试 → 提交 → **分支规范自查 + PR 草稿**（仅当仓库或项目根存在 `.bb-spec/docs/spec/INDEX.md`）→ 推送 → 创建 PR → 处理 PR → 清理分支 / worktree。
 
 ## 参数
 
@@ -23,9 +23,26 @@ description: 推送本地代码到远程并开 PR 全流程——识别仓库→
 
 **Shell 变量名禁区**：禁止用 `status`、`path`、`PATH`、`SECONDS` 等保留名。
 
-## 2. 确认分支
+## 2. 确认分支（worktree 感知）
 
-`git branch --show-current`。在 main/master 上 → 必须先创建新分支。已在功能分支 → 继续。
+`git-workflow` 默认用 worktree 隔离开发，功能提交常落在 `~/.bb-spec/worktrees/` 下的某棵 worktree，而主仓库目录仍锁在 main。所以**先 `git worktree list` 看清上下文**，再按 `git branch --show-current` 分流：
+
+- **当前已在功能分支**（非 main/master）→ 就地处理本分支。
+- **当前在主仓库且 HEAD 为 main/master** → 不要急着新建分支，先查是否有 worktree 上的分支已领先 main：
+
+  ```bash
+  git worktree list --porcelain        # 列出所有 worktree 及其分支
+  git rev-list --count main..<branch>  # 对每棵非 main 的 worktree 分支：> 0 即有待推送提交
+  ```
+
+  - **存在 ≥1 棵就绪 worktree**（领先 main）→ 这才是要推送的目标。用 **AskUserQuestion** 列出让用户选推哪棵，然后把后续步骤 3-8 全部定位到该 worktree 目录执行（`cd` 进去，或全程 `git -C <worktree>`）。
+  - **无任何就绪 worktree** → 确是新任务还没开分支 → 必须先从 main 创建新分支再继续。
+
+**worktree 模式标志**：只要最终在 linked worktree 里执行（上面任一路径定位到 worktree），就记下此标志，步骤 8 按 worktree-aware 清理。判定：
+
+```bash
+[ "$(git rev-parse --git-dir)" != "$(git rev-parse --git-common-dir)" ] && echo "linked worktree"
+```
 
 ## 3. 跑全量测试
 
@@ -118,25 +135,37 @@ description: 推送本地代码到远程并开 PR 全流程——识别仓库→
 - **`mergeable == UNKNOWN`**（GitHub 仍在计算，常见于刚 push / rebase 后）→ 短暂轮询后重查，勿据此误判为冲突
 - **必需检查未过**：CI 进行中 → 告知用户挂起、跳过清理；**CI 失败** → 取消自动合并 → 拉失败日志 → 机械性失败（lint/format/lockfile）自行修复后重设；业务性失败停下报告
 
-## 8. 拉取最新 main
+## 8. 合并后清理（按步骤 2 的模式分流）
+
+### 普通模式（直接切分支）
 
 ```bash
 git checkout main && git pull origin main
+git rev-parse --abbrev-ref HEAD   # 确认在 main
+git branch -D <branch>            # 用 -D，squash 后 -d 会拒绝
+# 探测远程分支是否存在再删
+git ls-remote --exit-code --heads origin <branch> && git push origin --delete <branch>
+git fetch -p                      # 裁剪远程引用
 ```
 
-## 9. 删除功能分支（必须按顺序全部执行）
+### worktree 模式
+
+主仓库本就停在 main，**禁止在 worktree 内 `git checkout main`**（该分支被主仓库占用，会报错）。改为先回主仓库、移除 worktree、再删分支：
 
 ```bash
-git rev-parse --abbrev-ref HEAD  # 9.1 确认在 main
-git branch -D <branch>           # 9.2 删本地（用 -D，squash 后 -d 会拒绝）
-# 9.3 探测远程分支是否存在再删
+WT="$(git rev-parse --show-toplevel)"           # 当前 worktree 路径（移除前先取）
+cd "$(git rev-parse --git-common-dir)/.." && pwd # 回到主仓库根（已在 main）
+git pull origin main
+git worktree remove "$WT"                        # 有未提交改动会拒绝——此时应已 commit+push
+git branch -D <branch>                           # worktree 移除后才能删其分支
+# 探测远程分支是否存在再删
 git ls-remote --exit-code --heads origin <branch> && git push origin --delete <branch>
-git fetch -p                     # 9.4 裁剪远程引用
+git fetch -p && git worktree prune               # 裁剪远程引用 + worktree 元数据
 ```
 
 ## 多仓库处理
 
-每个仓库独立执行 2-9（含各自测试和 4.5 自查）。一个失败不影响其他。步骤 7 逐仓库分别询问。
+每个仓库独立执行 2-8（含各自测试和 4.5 自查）。一个失败不影响其他。步骤 7 逐仓库分别询问。
 
 ## 禁止操作
 
