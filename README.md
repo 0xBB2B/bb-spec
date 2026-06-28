@@ -6,9 +6,7 @@
 
 **English** | [中文](./README.zh.md)
 
-> **A spec-driven Claude Code pipeline** that carries a fuzzy requirement all the way to reviewed, shipped code — every stage traceable, resumable, and adversarially verified. Language-agnostic, with companion stack-constraint suites (Go / Vue + bun / TDD / git discipline).
-
-> Output **follows your working language** — docs, comments, and commit messages come out in whatever language you work in (identifiers, API names, and error codes stay English). Every skill triggers on both English and Chinese phrases.
+> **A spec-driven Claude Code pipeline** that carries a fuzzy requirement all the way to reviewed, shipped code — every stage traceable, resumable, and adversarially verified, with companion stack-constraint suites (Go / Vue + bun / TDD / git discipline).
 
 ---
 
@@ -83,7 +81,7 @@ Optional upstream: `/prd` (PM / requester brainstorms a PRD; shipped separately 
   - Cases auto-generated from spec / plan / PRD; **coverage alignment** before a full run, gaps never silently dropped; failures route to `/revise`
   - Requires a browser MCP (playwright / chrome-devtools)
 
-- **`/test-api`** — **API e2e** for any backend, language-agnostic.
+- **`/test-api`** — **API e2e** for any backend.
   - `compose.e2e.yaml` brings the stack up; md cases **mechanically render to a single-file Bun TS runner** that runs in one shot via `bun run`
   - **Zero subagents, zero concurrency** — HTTP is deterministic, clock state is shared
   - **Time-sensitive rules** (token expiry, order timeout, points expiry) tested through `/test/advance-time`, `/test/backdate`, `/test/trigger-job`
@@ -140,6 +138,7 @@ These feed rules into the pipeline above — install only the layers you need.
 - **`authz-constraints`** — Authorization (authZ): deny-by-default, centralized decision, two-tier role + resource-ownership checks to stop IDOR
 - **`observability-constraints`** — Logs / traces / metrics on OTel: one-time assembly, structured JSON with stable trace_id, bounded label cardinality
 - **`service-constraints`** — Runtime governance: env-injected secrets with fail-fast, graceful lifecycle, write idempotency, timeouts + safe retries
+- **`config-constraints`** — Config carrier tiers: env/secret for startup-critical non-hot-reload, yaml/configmap for hot-reloadable defaults, DB for dynamic business config; core credentials in secret/KMS only, envelope encryption when pushed down to DB
 
 ### bb-spec-frontend — frontend stack constraints
 
@@ -165,7 +164,7 @@ Then install whichever layers you want:
 | **bb-spec-core** _(recommended base)_ | TDD / version-policy / git-workflow discipline + 3 passive hooks | `/plugin install bb-spec-core@0xbb2b` |
 | **bb-spec-workflow** _(core)_ | spec → plan → exec → test-webview / test-api → review → revise → git-push-pr, init reverse-spec, doc-update whole-repo consistency sweep + 11 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-product** | /prd requirement brainstorm → PRD doc with concrete use cases (for PMs / requesters) | `/plugin install bb-spec-product@0xbb2b` |
-| **bb-spec-backend** | Go / REST API / DB / authN / authZ / observability / service constraints | `/plugin install bb-spec-backend@0xbb2b` |
+| **bb-spec-backend** | Go / REST API / DB / authN / authZ / observability / service / config constraints | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun stack & engineering conventions (+ bun hook) | `/plugin install bb-spec-frontend@0xbb2b` |
 
 Pick by need — e.g. just the disciplines and workflow without any stack opinions: install `bb-spec-core` + `bb-spec-workflow`. On a PM's / requester's machine: just `bb-spec-product`. Want everything: install all five.
@@ -250,6 +249,24 @@ Reference template: [`.bb-spec.template.yaml`](./.bb-spec.template.yaml).
 | Temporarily allow npm / yarn / pnpm | Disable `bb-spec-frontend` temporarily |
 | Temporarily allow main commit | Disable `bb-spec-core` temporarily |
 | Skip the Stop self-check | No switch — this is a core iron rule, skipping is discouraged |
+
+---
+
+## Prior art & acknowledgements
+
+BB-Spec stands on three excellent projects. Each shaped a different part of its design — credited below, alongside what BB-Spec borrowed and how it pushed the idea further.
+
+| Project | What it does best | What BB-Spec borrowed & hardened |
+|---|---|---|
+| [**Superpowers**](https://github.com/obra/Superpowers) (obra) — a complete coding-agent methodology | End-to-end staged workflow, subagent-driven development with phased review, TDD Red-Green-Refactor, git-worktree isolation, Socratic brainstorming, a composable skill library | The whole `spec → ship` pipeline backbone, splitting work across role-specialized subagents, mandatory TDD, multi-stage / adversarial review, and dialogue-first requirement clarification |
+| [**ECC**](https://github.com/affaan-m/ECC) (affaan-m) — an agent-harness "operating system" | A large layered system of agents / skills / hooks / rules, passive hooks that auto-enforce, rules-as-infrastructure, memory persistence across sessions | The layered, independently-installable sub-plugin suite, passive hooks that enforce discipline, and distilling engineering conventions into loadable constraint skills |
+| [**skills**](https://github.com/mattpocock/skills) (mattpocock) — "Skills For Real Engineers" | Targets real failure modes (misalignment / verbosity / quality / architecture), deep questioning to align on intent, shared domain language, user- vs model-invoked skills, vertical slicing | Challenge-first dialogue to pin down requirements before any code, dual-trigger skills (slash command + model auto-trigger), and the one-rule-per-file minimalism |
+
+**Where BB-Spec goes its own way** — differentiators none of the three combine:
+
+- **Three-agent isolated execution** — the Impl agent *physically never sees the spec*, only the tests, so it cannot quietly "teach to intent"; tests, implementation, and review are written by mutually-blind agents.
+- **Disk documents as the only handoff** — every stage hands off a file, not chat memory, so a run resumes losslessly across sessions, `/clear`, or even a different model picking up the work.
+- **Bidirectional spec ⇄ code loop** — not just spec → code, but `/init-spec` to distill specs out of an existing codebase and `/doc-update` to keep them in sync as the code drifts.
 
 ---
 

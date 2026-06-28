@@ -1,6 +1,6 @@
 ---
 name: test-api
-description: 后端 API e2e 验证（语言无关）——Docker 整栈拉起→md 用例渲染为单文件 TS runner→`bun run` 顺序跑完→报告与 /revise 闭环；时间敏感规则（token 过期 / 订单超时 / 积分过期）经协议契约 /test/advance-time、/test/backdate、/test/trigger-job 测，应用侧用什么语言/库实现自选；零 subagent、零并发；跑完无条件 docker compose down -v。触发：/test-api、跑后端接口测试、API e2e 验收、验证后端业务流。跳过：Docker 不可用、Bun 不可用、应用未暴露 /test/healthz 协议。
+description: 后端 API e2e 验证——Docker 整栈拉起→md 用例渲染为单文件 TS runner→`bun run` 顺序跑完→报告与 /revise 闭环；时间敏感规则（token 过期 / 订单超时 / 积分过期）经协议契约 /test/advance-time、/test/backdate、/test/trigger-job 测，应用侧用什么语言/库实现自选；零 subagent、零并发；跑完无条件 docker compose down -v。触发：/test-api、跑后端接口测试、API e2e 验收、验证后端业务流。跳过：Docker 不可用、Bun 不可用、应用未暴露 /test/healthz 协议。
 argument-hint: [scope]
 disable-model-invocation: true
 ---
