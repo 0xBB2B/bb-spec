@@ -1,5 +1,12 @@
 # Changelog
 
+## [8.15.0](https://github.com/0xBB2B/bb-spec/compare/v8.14.0...v8.15.0) (2026-06-28)
+
+
+### Features
+
+* **exec:** 默认全部执行,移除执行范围询问 ([#170](https://github.com/0xBB2B/bb-spec/issues/170)) ([8dddf23](https://github.com/0xBB2B/bb-spec/commit/8dddf2314c7a821ff5c0f366551491c0ca94e2ae))
+
 ## [8.14.0](https://github.com/0xBB2B/bb-spec/compare/v8.13.0...v8.14.0) (2026-06-28)
 
 
