@@ -1,5 +1,13 @@
 # Changelog
 
+## [8.14.0](https://github.com/0xBB2B/bb-spec/compare/v8.13.0...v8.14.0) (2026-06-28)
+
+
+### Features
+
+* **git-push-pr,git-workflow:** worktree 感知 + 合并判据收紧 ([#167](https://github.com/0xBB2B/bb-spec/issues/167)) ([e0691dd](https://github.com/0xBB2B/bb-spec/commit/e0691dd71bf80b86edebff2bdb5581b4055a49a3))
+* **git-push-pr:** worktree 模式下 gh pr merge/close 禁带 --delete-branch ([#169](https://github.com/0xBB2B/bb-spec/issues/169)) ([3da3a49](https://github.com/0xBB2B/bb-spec/commit/3da3a49056662a1ef8844ff390735664675d0a97))
+
 ## [8.13.0](https://github.com/0xBB2B/bb-spec/compare/v8.12.0...v8.13.0) (2026-06-28)
 
 
