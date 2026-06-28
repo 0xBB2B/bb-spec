@@ -96,19 +96,27 @@ description: 推送本地代码到远程并开 PR 全流程——识别仓库→
 
 创建后用 AskUserQuestion 让用户选（除非已显式声明）：
 
-1. **自动合并**：`gh pr merge --squash --auto --delete-branch`（GitLab 用 `--auto-merge --remove-source-branch`）
-2. **已合并**：查询状态校验 → MERGED 才继续清理
+1. **自动合并**：`gh pr merge <n> --squash --auto --delete-branch`（GitLab 用 `--auto-merge --remove-source-branch`）
+2. **已合并**：直接进入「合并结果核验」
 3. **关闭 PR**：`gh pr close --delete-branch` → 清理
 
-### 自动合并后状态处理
+**`--auto` 被拒**（仓库未开启 auto-merge，报 `Auto merge is not allowed` / `enablePullRequestAutoMerge`）→ 降级为不带 `--auto` 的 `gh pr merge <n> --squash --delete-branch` 重试。
 
-- 已合并 → 步骤 8、9
-- 仍 OPEN → 查 CI：全通过则等一下重查；进行中则告知用户挂起跳过清理；**CI 失败** → 取消自动合并 → 拉失败日志 → 机械性失败（lint/format/lockfile）自行修复后重设；业务性失败停下报告
-- 冲突 → `git rebase origin/main`：机械性冲突自行解决 + `--force-with-lease` 重推；业务性冲突停下报告
+### 合并结果核验（唯一完成判据，所有合并路径必经）
 
-### 已合并校验
+**铁律：合并是否完成，只认 `gh pr view <n> --json state,mergedAt` 的 `state == "MERGED"`。`gh pr merge` 的 stdout 与退出码一律不作数**——它可能只表示「已加入自动合并队列」，也可能在 auto 不可用时报错而根本没合并。执行任何合并动作后，**必须**查询此状态再下结论：
 
-查 PR 状态：MERGED → 清理；OPEN → 提醒用户确认；CLOSED → 提醒用户选择。
+- `state == "MERGED"`（`mergedAt` 非空）→ 进入步骤 8、9 清理
+- `state == "OPEN"` → **尚未合并：禁止进入清理、禁止宣告完成**，按下方「未合并排查」处理后重试合并并重新核验
+- `state == "CLOSED"`（未合并）→ 提醒用户选择
+
+### 未合并排查（state 仍为 OPEN）
+
+查 `gh pr view <n> --json mergeable,mergeStateStatus,statusCheckRollup`：
+
+- **冲突**（`mergeable == CONFLICTING` / `mergeStateStatus == DIRTY`）→ `git rebase origin/main`：机械性冲突自行解决 + `--force-with-lease` 重推；业务性冲突停下报告。重推后 GitHub 异步重算 mergeability，需等其不再是 `UNKNOWN`/`CONFLICTING` 再重试合并
+- **`mergeable == UNKNOWN`**（GitHub 仍在计算，常见于刚 push / rebase 后）→ 短暂轮询后重查，勿据此误判为冲突
+- **必需检查未过**：CI 进行中 → 告知用户挂起、跳过清理；**CI 失败** → 取消自动合并 → 拉失败日志 → 机械性失败（lint/format/lockfile）自行修复后重设；业务性失败停下报告
 
 ## 8. 拉取最新 main
 
