@@ -140,6 +140,7 @@ These feed rules into the pipeline above — install only the layers you need.
 - **`authz-constraints`** — Authorization (authZ): deny-by-default, centralized decision, two-tier role + resource-ownership checks to stop IDOR
 - **`observability-constraints`** — Logs / traces / metrics on OTel: one-time assembly, structured JSON with stable trace_id, bounded label cardinality
 - **`service-constraints`** — Runtime governance: env-injected secrets with fail-fast, graceful lifecycle, write idempotency, timeouts + safe retries
+- **`config-constraints`** — Config carrier tiers: env/secret for startup-critical non-hot-reload, yaml/configmap for hot-reloadable defaults, DB for dynamic business config; core credentials in secret/KMS only, envelope encryption when pushed down to DB
 
 ### bb-spec-frontend — frontend stack constraints
 
@@ -165,7 +166,7 @@ Then install whichever layers you want:
 | **bb-spec-core** _(recommended base)_ | TDD / version-policy / git-workflow discipline + 3 passive hooks | `/plugin install bb-spec-core@0xbb2b` |
 | **bb-spec-workflow** _(core)_ | spec → plan → exec → test-webview / test-api → review → revise → git-push-pr, init reverse-spec, doc-update whole-repo consistency sweep + 11 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-product** | /prd requirement brainstorm → PRD doc with concrete use cases (for PMs / requesters) | `/plugin install bb-spec-product@0xbb2b` |
-| **bb-spec-backend** | Go / REST API / DB / authN / authZ / observability / service constraints | `/plugin install bb-spec-backend@0xbb2b` |
+| **bb-spec-backend** | Go / REST API / DB / authN / authZ / observability / service / config constraints | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun stack & engineering conventions (+ bun hook) | `/plugin install bb-spec-frontend@0xbb2b` |
 
 Pick by need — e.g. just the disciplines and workflow without any stack opinions: install `bb-spec-core` + `bb-spec-workflow`. On a PM's / requester's machine: just `bb-spec-product`. Want everything: install all five.
