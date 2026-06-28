@@ -6,7 +6,7 @@ user-invocable: false
 
 # 数据库规范约束
 
-适用于：关系型数据库的表结构设计、migration / DDL 编写，以及文档 / PRD / 设计 / review 中涉及数据模型的部分。只约束 DB 侧，语言无关。
+适用于：关系型数据库的表结构设计、migration / DDL 编写，以及文档 / PRD / 设计 / review 中涉及数据模型的部分。只约束 DB 侧。
 
 ## 0. 触发与跳过
 

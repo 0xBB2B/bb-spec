@@ -13,7 +13,7 @@
     {
       "name": "bb-spec-workflow",
       "source": "./plugins/bb-spec-workflow",
-      "description": "BB-Spec 工作流：spec → plan → exec（三 Agent 隔离）→ test-webview（网页交互验证）/ test-api（后端 API e2e，语言无关、Bun TS runner）→ review（多代理对抗）→ revise → git-push-pr，含 init 反向 spec 化、doc-update 全仓一致性维护与 11 个编排 subagent。"
+      "description": "BB-Spec 工作流：spec → plan → exec（三 Agent 隔离）→ test-webview（网页交互验证）/ test-api（后端 API e2e、Bun TS runner）→ review（多代理对抗）→ revise → git-push-pr，含 init 反向 spec 化、doc-update 全仓一致性维护与 11 个编排 subagent。"
     },
     {
       "name": "bb-spec-product",
