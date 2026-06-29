@@ -2,15 +2,41 @@
   <img src="./assets/banner.jpg" alt="bb-spec — A light-weight protocol for building trust" width="100%" />
 </p>
 
-# BB-Spec
+<h1 align="center">📐 BB-Spec</h1>
 
-**English** | [中文](./README.zh.md)
+<p align="center">
+  <strong>A spec-driven Claude Code pipeline that carries fuzzy requirements all the way to shipped code.</strong>
+</p>
 
-> **A spec-driven Claude Code pipeline** that carries a fuzzy requirement all the way to reviewed, shipped code — every stage traceable, resumable, and adversarially verified, with companion stack-constraint suites (Go / Vue + bun / TDD / git discipline).
+<p align="center">
+  Every stage traceable, resumable, and adversarially verified — with companion stack-constraint suites for Go / Vue + bun / TDD / git discipline.
+</p>
+
+<p align="center">
+  <a href="https://github.com/0xBB2B/bb-spec/actions/workflows/ci.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/0xBB2B/bb-spec/ci.yml?branch=main&style=for-the-badge&logo=github&label=CI" alt="CI status" /></a>
+  <a href="https://github.com/0xBB2B/bb-spec/releases"><img src="https://img.shields.io/github/v/release/0xBB2B/bb-spec?include_prereleases&style=for-the-badge&logo=github&color=blue" alt="GitHub release" /></a>
+  <a href="https://github.com/0xBB2B/bb-spec/stargazers"><img src="https://img.shields.io/github/stars/0xBB2B/bb-spec?style=for-the-badge&color=yellow&logo=github" alt="GitHub Stars" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License" /></a>
+  <a href="https://docs.anthropic.com/en/docs/claude-code/overview"><img src="https://img.shields.io/badge/Claude%20Code-Plugin-D97757?style=for-the-badge&logo=anthropic&logoColor=white" alt="Claude Code Plugin" /></a>
+</p>
+
+<p align="center">
+  <strong>English</strong> · <a href="./README.zh.md">中文</a>
+</p>
+
+<p align="center">
+  <a href="#-30-second-start">Quick Start</a> ·
+  <a href="#-the-spec--ship-pipeline">Pipeline</a> ·
+  <a href="#-stages-at-a-glance">Stages</a> ·
+  <a href="#-companion-constraint-skills">Skills</a> ·
+  <a href="#-install">Install</a> ·
+  <a href="#-hooks-enabled-by-default">Hooks</a> ·
+  <a href="#-prior-art--acknowledgements">Acknowledgements</a>
+</p>
 
 ---
 
-## 30-second start
+## 🚀 30-second start
 
 ```bash
 /plugin marketplace add 0xBB2B/bb-spec
@@ -35,7 +61,7 @@ Optional upstream: `/prd` (PM / requester brainstorms a PRD; shipped separately 
 
 ---
 
-## The `spec → ship` pipeline
+## 🔁 The `spec → ship` pipeline
 
 ```
  (opt) /git-clone ──► clone remote + write .bb-spec.yaml
@@ -56,7 +82,7 @@ Optional upstream: `/prd` (PM / requester brainstorms a PRD; shipped separately 
 
 **Why this pipeline is reliable** — every handoff is a *file on disk*, not a memory in the chat. That's what makes it resumable, AI-swappable, and auditable end to end.
 
-### Stages at a glance (one-line role + key differentiators)
+### 🎯 Stages at a glance
 
 - **`/git-clone`** — *One-shot onboarding*: pull a remote repo locally and write `.bb-spec.yaml`.
   - **Two AskUserQuestion prompts**: ① single-repo vs multi-repo workspace (decides directory layout) ② `base_dir` (decides where every later bb-spec artifact lands)
@@ -119,7 +145,7 @@ Optional upstream: `/prd` (PM / requester brainstorms a PRD; shipped separately 
 
 ---
 
-## Companion constraint skills
+## 🧩 Companion constraint skills
 
 These feed rules into the pipeline above — install only the layers you need.
 
@@ -154,7 +180,7 @@ These feed rules into the pipeline above — install only the layers you need.
 
 ---
 
-## Install
+## 📦 Install
 
 BB-Spec ships as **five independently installable sub-plugins** — install only the constraint layers you need.
 
@@ -195,7 +221,7 @@ Or add it manually to `~/.claude/settings.json` (enable only what you want):
 }
 ```
 
-## Versioning
+## 🔄 Versioning
 
 ```bash
 /plugin update                  # check and update every installed plugin
@@ -206,7 +232,7 @@ The five sub-plugins share a single synchronized version line.
 
 ---
 
-## Hooks enabled by default (out of the box)
+## 🪝 Hooks enabled by default
 
 Each hook ships with the sub-plugin that owns its concern — install that plugin to get it.
 
@@ -219,7 +245,7 @@ Each hook ships with the sub-plugin that owns its concern — install that plugi
 
 ---
 
-## Tests
+## 🧪 Tests
 
 ```bash
 bash tests/validate.sh
@@ -231,7 +257,7 @@ CI runs automatically on PRs and pushes to main (`.github/workflows/ci.yml`).
 
 ---
 
-## Recommended companions
+## 🛠️ Recommended companions
 
 ### CLAUDE.md template
 
@@ -249,7 +275,7 @@ Reference template: [`.bb-spec.template.yaml`](./.bb-spec.template.yaml).
 
 ---
 
-## Hook switch cheat sheet
+## ⚙️ Hook switch cheat sheet
 
 | Scenario | Switch |
 |---|---|
@@ -259,7 +285,7 @@ Reference template: [`.bb-spec.template.yaml`](./.bb-spec.template.yaml).
 
 ---
 
-## Prior art & acknowledgements
+## 💡 Prior art & acknowledgements
 
 BB-Spec stands on three excellent projects. Each shaped a different part of its design — credited below, alongside what BB-Spec borrowed and how it pushed the idea further.
 
@@ -277,6 +303,10 @@ BB-Spec stands on three excellent projects. Each shaped a different part of its 
 
 ---
 
-## License
+## 📜 License
 
-MIT
+MIT — see [LICENSE](./LICENSE).
+
+<p align="center">
+  <sub>Built with ❤️ for the Claude Code community.</sub>
+</p>
