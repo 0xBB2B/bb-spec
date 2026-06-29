@@ -1,5 +1,17 @@
 # Changelog
 
+## [9.0.0](https://github.com/0xBB2B/bb-spec/compare/v8.15.0...v9.0.0) (2026-06-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* 用户直接调用的 slash 命令从 /git-push-pr 改为 /git-push；自动化脚本、CLAUDE.md、文档中引用旧名的地方均需替换。功能行为本身未变化。
+
+### Features
+
+* **prd,spec:** PRD 消费后归档到 .archive/ ([#172](https://github.com/0xBB2B/bb-spec/issues/172)) ([50ede26](https://github.com/0xBB2B/bb-spec/commit/50ede26aa5d0ef61afd09753b0a71e2209641fe4))
+* 重命名 git-push-pr → git-push 并新增 git-clone onboarding skill ([#174](https://github.com/0xBB2B/bb-spec/issues/174)) ([8a7bc32](https://github.com/0xBB2B/bb-spec/commit/8a7bc324cd8c2d241993ee0648c22194347a7f03))
+
 ## [8.15.0](https://github.com/0xBB2B/bb-spec/compare/v8.14.0...v8.15.0) (2026-06-28)
 
 
