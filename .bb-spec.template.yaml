@@ -1,7 +1,7 @@
 # .bb-spec.yaml 模板
 #
 # 复制到项目根目录并重命名为 .bb-spec.yaml，按需修改。
-# 影响 /spec、/plan、/git-push-pr 等 skill 的文档读写路径。
+# 影响 /spec、/plan、/git-push 等 skill 的文档读写路径。
 
 # bb-spec 工作根目录，其下分两个平级子树：
 #   {base_dir}/docs/   —— 交付物（spec / plan / prd / test，随仓库提交）

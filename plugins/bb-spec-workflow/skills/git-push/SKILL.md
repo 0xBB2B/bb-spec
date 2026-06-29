@@ -1,5 +1,5 @@
 ---
-name: git-push-pr
+name: git-push
 description: 推送本地代码到远程并开 PR 全流程——识别仓库→确认分支（worktree 模式自动定位目标分支）→跑全量测试→提交未暂存改动（禁 git add .）→若存在 spec INDEX.md 则 subagent 比对 spec 跑分支规范自查（违规走 /revise 循环复审）+起草 6 段 PR 描述→推送→创建 PR→清理本地与远程。触发：push 一下、提个 PR、代码推上去、准备发 PR、开 PR 前自查、对照规范看分支。跳过：未本地验证完成的功能、main/master 上无新提交。
 ---
 
@@ -11,7 +11,7 @@ description: 推送本地代码到远程并开 PR 全流程——识别仓库→
 
 ## 参数
 
-可附带目录路径指定仓库：`/git-push-pr ./my-project`。未指定则自动检测当前目录。
+可附带目录路径指定仓库：`/git-push ./my-project`。未指定则自动检测当前目录。
 
 ---
 

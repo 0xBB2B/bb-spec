@@ -27,9 +27,9 @@ The 6 mainline commands:
 | `/exec` | Three-agent isolated Test→Impl→Review | Plan is ready |
 | `/test-webview` / `/test-api` | Docker stack + acceptance (optional) | Frontend / backend e2e |
 | `/review` | Parallel finders + adversarial verify | Before opening PR |
-| `/git-push-pr` | pre-review self-check + push + open PR | Ready to ship |
+| `/git-push` | pre-review self-check + push + open PR | Ready to ship |
 
-Three branches, callable anytime: `/init-spec` (reverse-spec an existing project), `/revise` (route any deviation back to the right stage by root cause), `/doc-update` (whole-repo spec / doc / code consistency sweep).
+Four branches, callable anytime: `/git-clone` (pull a remote project locally + write `.bb-spec.yaml`, one-shot onboarding), `/init-spec` (reverse-spec an existing project), `/revise` (route any deviation back to the right stage by root cause), `/doc-update` (whole-repo spec / doc / code consistency sweep).
 
 Optional upstream: `/prd` (PM / requester brainstorms a PRD; shipped separately as bb-spec-product).
 
@@ -38,9 +38,11 @@ Optional upstream: `/prd` (PM / requester brainstorms a PRD; shipped separately 
 ## The `spec → ship` pipeline
 
 ```
+ (opt) /git-clone ──► clone remote + write .bb-spec.yaml
+                  │
  (opt) /prd ──► PRD doc
                   │
- /init-spec ──►  /spec ──► /plan ──► /exec ──► /test-* ──► /review ──► /git-push-pr
+ /init-spec ──►  /spec ──► /plan ──► /exec ──► /test-* ──► /review ──► /git-push
  (existing repo)  what       how      Red→Green→Review   e2e        finders+adv   pre-review+open PR
                                                                                        │
         ┌──────────────────────────────────────────────────────────────────────────────┘
@@ -55,6 +57,11 @@ Optional upstream: `/prd` (PM / requester brainstorms a PRD; shipped separately 
 **Why this pipeline is reliable** — every handoff is a *file on disk*, not a memory in the chat. That's what makes it resumable, AI-swappable, and auditable end to end.
 
 ### Stages at a glance (one-line role + key differentiators)
+
+- **`/git-clone`** — *One-shot onboarding*: pull a remote repo locally and write `.bb-spec.yaml`.
+  - **Two AskUserQuestion prompts**: ① single-repo vs multi-repo workspace (decides directory layout) ② `base_dir` (decides where every later bb-spec artifact lands)
+  - **Multi-repo workspace**: creates a shared parent dir and clones each member repo into it (restoring the relative layout the build tool expects); refuses to nest or overwrite
+  - Tightly scoped: **only** pulls code + writes `base_dir` — does not read code, install deps, or trigger `/init-spec`
 
 - **`/init-spec`** — *Reverse*-spec an existing project.
   - Reads code + docs and distills **already-enforced implicit conventions** into ≤100-line, one-rule-per-file specs, landing in the same structure `/spec` uses
@@ -96,7 +103,7 @@ Optional upstream: `/prd` (PM / requester brainstorms a PRD; shipped separately 
   - Classifies a deviation's **root cause** into one of three: *spec-defect* (→ `/spec`), *impl-drift* (→ `/exec`), *requirement-change*
   - Every review finding that needs fixing funnels through here
 
-- **`/git-push-pr`** — User-triggered push + PR flow (single or multi-repo).
+- **`/git-push`** — User-triggered push + PR flow (single or multi-repo).
   - When a spec `INDEX.md` exists, first runs a **branch-spec self-check (pre-review)**: a subagent diffs the branch vs main against the spec, fixes violations in a loop
   - Drafts a **6-section PR description** (background / requirement / approach / result / tests / spec, < 50 lines) used directly as the PR body
 
@@ -162,7 +169,7 @@ Then install whichever layers you want:
 | Sub-plugin | What it gives you | Command |
 |---|---|---|
 | **bb-spec-core** _(recommended base)_ | TDD / version-policy / git-workflow discipline + 3 passive hooks | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(core)_ | spec → plan → exec → test-webview / test-api → review → revise → git-push-pr, init reverse-spec, doc-update whole-repo consistency sweep + 11 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(core)_ | spec → plan → exec → test-webview / test-api → review → revise → git-push, git-clone one-shot init, init reverse-spec, doc-update whole-repo consistency sweep + 11 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-product** | /prd requirement brainstorm → PRD doc with concrete use cases (for PMs / requesters) | `/plugin install bb-spec-product@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / authN / authZ / observability / service / config constraints | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun stack & engineering conventions (+ bun hook) | `/plugin install bb-spec-frontend@0xbb2b` |

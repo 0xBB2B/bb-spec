@@ -173,7 +173,7 @@ ls ${DOCS_DIR}/spec/INDEX.md 2>/dev/null
 - 下一步建议：
   - C 类挂单 → `/revise` 逐条修
   - 若新增/调整规则 → `/plan` 重生成相关实施计划
-  - 落地 commit → `/git-push-pr` 走推送 PR 流程
+  - 落地 commit → `/git-push` 走推送 PR 流程
 ```
 
 > 本 skill 不自动 commit、不自动 push。所有改动停在工作区，由用户决定何时提交。
@@ -183,7 +183,7 @@ ls ${DOCS_DIR}/spec/INDEX.md 2>/dev/null
 ## 与其它 skill 的串联
 
 - **上游**：`/init-spec`（首次反向提炼）→ `/spec`（持续新增规则）→ `/plan` + `/exec` 实施 → 长期演进后跑 `/doc-update` 做一致性体检
-- **下游**：`/doc-update` 产出的 C 类挂单 → `/revise` 逐条 TDD 修码；落地后 → `/git-push-pr` 推送
+- **下游**：`/doc-update` 产出的 C 类挂单 → `/revise` 逐条 TDD 修码；落地后 → `/git-push` 推送
 
 ```
 [实施已落地的项目]
@@ -192,5 +192,5 @@ ls ${DOCS_DIR}/spec/INDEX.md 2>/dev/null
   ↓
 /revise（逐条修码、跑 TDD）
   ↓
-/git-push-pr（推送 PR）
+/git-push（推送 PR）
 ```
