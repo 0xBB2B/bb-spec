@@ -221,6 +221,58 @@ BB-Spec は**5 つの独立インストール可能なサブ plugin** に分割 
 }
 ```
 
+### Claude Code デスクトップアプリでのインストール(スクリーンショット付き)
+
+Claude Code デスクトップアプリ(Mac / Windows)向け。すべて GUI 操作で完結し、コマンド入力は不要。
+
+**1. プラグイン管理パネルを開く**
+
+入力欄の `+` → `Plugins` → `Manage plugins`:
+
+<p align="center">
+  <img src="./assets/desktop/01-manage-plugins.png" alt="プラグイン管理パネルを開く" width="100%" />
+</p>
+
+**2. marketplace を追加**
+
+Plugins パネル右上の `Add` → `Add marketplace`:
+
+<p align="center">
+  <img src="./assets/desktop/02-add-marketplace.png" alt="marketplace を追加" width="100%" />
+</p>
+
+**3. リポジトリから追加を選択**
+
+ダイアログで `Add from a repository` を選択:
+
+<p align="center">
+  <img src="./assets/desktop/03-from-repository.png" alt="リポジトリから追加" width="100%" />
+</p>
+
+**4. bb-spec のリポジトリ URL を入力して同期**
+
+URL に `https://github.com/0xBB2B/bb-spec` を入力し、`Sync` をクリック:
+
+<p align="center">
+  <img src="./assets/desktop/04-sync-url.png" alt="marketplace を同期" width="100%" />
+</p>
+
+**5. コア 3 点セットを有効化**
+
+Directory に bb-spec の 5 つのサブプラグインが表示される。`Bb spec core` / `Bb spec workflow` / `Bb spec product` の 3 つのカード右上の歯車アイコンをクリックして有効化(backend / frontend は必要に応じて):
+
+<p align="center">
+  <img src="./assets/desktop/05-enable-plugins.png" alt="プラグインを有効化" width="100%" />
+</p>
+
+**6. インストールを確認**
+
+入力欄に戻り、`/prd` と入力。コマンド補完が表示されればインストール成功:
+
+<p align="center">
+  <img src="./assets/desktop/06-verify-prd.png" alt="インストール確認" width="100%" />
+</p>
+
 ## 🔄 バージョンと更新 / Versioning
 
 ```bash

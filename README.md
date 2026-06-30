@@ -221,6 +221,58 @@ Or add it manually to `~/.claude/settings.json` (enable only what you want):
 }
 ```
 
+### Install via Claude Code Desktop (with screenshots)
+
+For the Claude Code Desktop app (Mac / Windows). Pure GUI flow — no commands required.
+
+**1. Open the plugin manager**
+
+Click `+` in the input box → `Plugins` → `Manage plugins`:
+
+<p align="center">
+  <img src="./assets/desktop/01-manage-plugins.png" alt="Open plugin manager" width="100%" />
+</p>
+
+**2. Add a marketplace**
+
+In the Plugins panel, click `Add` (top right) → `Add marketplace`:
+
+<p align="center">
+  <img src="./assets/desktop/02-add-marketplace.png" alt="Add marketplace" width="100%" />
+</p>
+
+**3. Choose "Add from a repository"**
+
+In the dialog, pick `Add from a repository`:
+
+<p align="center">
+  <img src="./assets/desktop/03-from-repository.png" alt="Add from a repository" width="100%" />
+</p>
+
+**4. Paste the bb-spec URL and sync**
+
+URL: `https://github.com/0xBB2B/bb-spec`, then click `Sync`:
+
+<p align="center">
+  <img src="./assets/desktop/04-sync-url.png" alt="Sync marketplace" width="100%" />
+</p>
+
+**5. Enable the core trio**
+
+The Directory now shows bb-spec's 5 sub-plugins. Click the gear icon on the `Bb spec core` / `Bb spec workflow` / `Bb spec product` cards to enable them (backend / frontend optional):
+
+<p align="center">
+  <img src="./assets/desktop/05-enable-plugins.png" alt="Enable plugins" width="100%" />
+</p>
+
+**6. Verify the install**
+
+Back in the input box, type `/prd`. If the command suggestion shows up, you're set:
+
+<p align="center">
+  <img src="./assets/desktop/06-verify-prd.png" alt="Verify install" width="100%" />
+</p>
+
 ## 🔄 Versioning
 
 ```bash

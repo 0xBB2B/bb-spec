@@ -221,6 +221,58 @@ BB-Spec은 **5개의 독립 설치 가능한 서브 plugin**으로 분할 ——
 }
 ```
 
+### Claude Code 데스크톱 앱에서 설치(스크린샷 포함)
+
+Claude Code 데스크톱 앱(Mac / Windows) 대상. 전 과정 GUI 조작이며 명령 입력은 필요 없습니다.
+
+**1. 플러그인 관리 패널 열기**
+
+입력란의 `+` → `Plugins` → `Manage plugins`:
+
+<p align="center">
+  <img src="./assets/desktop/01-manage-plugins.png" alt="플러그인 관리 패널 열기" width="100%" />
+</p>
+
+**2. marketplace 추가**
+
+Plugins 패널 우측 상단의 `Add` → `Add marketplace`:
+
+<p align="center">
+  <img src="./assets/desktop/02-add-marketplace.png" alt="marketplace 추가" width="100%" />
+</p>
+
+**3. 리포지토리에서 추가 선택**
+
+다이얼로그에서 `Add from a repository` 선택:
+
+<p align="center">
+  <img src="./assets/desktop/03-from-repository.png" alt="리포지토리에서 추가" width="100%" />
+</p>
+
+**4. bb-spec 리포지토리 URL 입력 후 동기화**
+
+URL 에 `https://github.com/0xBB2B/bb-spec` 입력 후 `Sync` 클릭:
+
+<p align="center">
+  <img src="./assets/desktop/04-sync-url.png" alt="marketplace 동기화" width="100%" />
+</p>
+
+**5. 핵심 3종 세트 활성화**
+
+Directory 에 bb-spec 의 5개 서브 플러그인이 표시됩니다. `Bb spec core` / `Bb spec workflow` / `Bb spec product` 세 카드 우측 상단의 톱니바퀴 아이콘을 클릭해 각각 활성화(backend / frontend 는 필요에 따라):
+
+<p align="center">
+  <img src="./assets/desktop/05-enable-plugins.png" alt="플러그인 활성화" width="100%" />
+</p>
+
+**6. 설치 확인**
+
+입력란으로 돌아가 `/prd` 입력. 명령 자동완성이 표시되면 설치 성공입니다:
+
+<p align="center">
+  <img src="./assets/desktop/06-verify-prd.png" alt="설치 확인" width="100%" />
+</p>
+
 ## 🔄 버전 관리 / Versioning
 
 ```bash
