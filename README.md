@@ -121,7 +121,7 @@ Optional upstream: `/prd` (PM / requester brainstorms a PRD; shipped separately 
   - App side ships **two images**: test image carries `/test/*` routes + `ENV TESTAPI=1`; production image **physically excludes** `/test/*` source; `/test/healthz` probe gates the run, no fallback
 
 - **`/review`** — Workflow-orchestrated, **adversarially verified** local PR review.
-  - Phase 1 fans out **5 finders in parallel**: code quality / security / simplicity / doc-sync / **Codex cross-model independent** review, schema-enforced
+  - Phase 1 fans out **6 finders in parallel**: code quality / security / simplicity / robustness / doc-sync / **Codex cross-model independent** review, schema-enforced
   - Phase 2 every 🔴/🟡 re-judged by **3 independent skeptic lenses** (importance / root-cause / risk-if-unfixed), majority vote
   - Read-only — never auto-edits; requires Claude Code ≥ 2.1.154
 
@@ -140,7 +140,7 @@ Optional upstream: `/prd` (PM / requester brainstorms a PRD; shipped separately 
 
 **Ships with**
 
-- **11 orchestration subagents** driven by the stages above: `test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-code-quality` / `review-security` / `review-simplicity` / `review-doc-sync` / `review-codex` / `pre-reviewer` / `rule-extractor`
+- **12 orchestration subagents** driven by the stages above: `test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-code-quality` / `review-security` / `review-simplicity` / `review-robustness` / `review-doc-sync` / `review-codex` / `pre-reviewer` / `rule-extractor`
 - **4 passive hooks** (automatic): block npm/yarn, block main commit, dependency version self-check, Stop four-point self-check
 
 ---
@@ -195,7 +195,7 @@ Then install whichever layers you want:
 | Sub-plugin | What it gives you | Command |
 |---|---|---|
 | **bb-spec-core** _(recommended base)_ | TDD / version-policy / git-workflow discipline + 3 passive hooks | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(core)_ | spec → plan → exec → test-webview / test-api → review → revise → git-push, git-clone one-shot init, init reverse-spec, doc-update whole-repo consistency sweep + 11 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(core)_ | spec → plan → exec → test-webview / test-api → review → revise → git-push, git-clone one-shot init, init reverse-spec, doc-update whole-repo consistency sweep + 12 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-product** | /prd requirement brainstorm → PRD doc with concrete use cases (for PMs / requesters) | `/plugin install bb-spec-product@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / authN / authZ / observability / service / config constraints | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun stack & engineering conventions (+ bun hook) | `/plugin install bb-spec-frontend@0xbb2b` |
