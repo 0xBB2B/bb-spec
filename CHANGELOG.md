@@ -1,5 +1,12 @@
 # Changelog
 
+## [9.2.0](https://github.com/0xBB2B/bb-spec/compare/v9.1.0...v9.2.0) (2026-06-30)
+
+
+### Features
+
+* **revise:** 把 3-Agent 派发提升为硬约束并新增流程归属判定 ([#182](https://github.com/0xBB2B/bb-spec/issues/182)) ([d912cea](https://github.com/0xBB2B/bb-spec/commit/d912cea3a506b6159baac6a78a85b61d2cdb4ba1))
+
 ## [9.1.0](https://github.com/0xBB2B/bb-spec/compare/v9.0.0...v9.1.0) (2026-06-30)
 
 
