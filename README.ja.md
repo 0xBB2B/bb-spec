@@ -121,7 +121,7 @@
   - アプリ側は**2 つのイメージを出力**:test イメージは `/test/*` ルート + `ENV TESTAPI=1` 搭載;本番イメージは `/test/*` ソースを**物理的に除外**;`/test/healthz` プローブが失敗したら中断、フォールバック禁止
 
 - **`/review`** — Workflow オーケストレーション、**敵対的検証**付きのローカル PR review。
-  - フェーズ 1 で **5 つの finder** を並列実行:コード品質 / セキュリティ / 簡潔性 / ドキュメント同期 / **Codex クロスモデル独立** review、schema 強制で構造化
+  - フェーズ 1 で **6 つの finder** を並列実行:コード品質 / セキュリティ / 簡潔性 / 堅牢性 / ドキュメント同期 / **Codex クロスモデル独立** review、schema 強制で構造化
   - フェーズ 2 で各 🔴/🟡 を **3 つの独立懐疑視点**で再判定(重要性 / 根本原因性 / 未修正リスク)、多数決で残否を決定
   - 読み取り専用、絶対に自動編集しない;Claude Code ≥ 2.1.154 が必要
 
@@ -140,7 +140,7 @@
 
 **同梱されるもの**
 
-- **11 個のオーケストレーションサブエージェント**(上記ステージに駆動される):`test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-code-quality` / `review-security` / `review-simplicity` / `review-doc-sync` / `review-codex` / `pre-reviewer` / `rule-extractor`
+- **12 個のオーケストレーションサブエージェント**(上記ステージに駆動される):`test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-code-quality` / `review-security` / `review-simplicity` / `review-robustness` / `review-doc-sync` / `review-codex` / `pre-reviewer` / `rule-extractor`
 - **4 つの受動 hook**(自動発動):npm/yarn ブロック、main コミットブロック、依存バージョンセルフチェック、Stop 時の 4 項目セルフチェック
 
 ---
@@ -195,7 +195,7 @@ BB-Spec は**5 つの独立インストール可能なサブ plugin** に分割 
 | サブ plugin | 何が手に入るか | インストールコマンド |
 |---|---|---|
 | **bb-spec-core** _(推奨ベース)_ | TDD / バージョンポリシー / Git 規律 + 3 つの受動 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(コア機能)_ | spec → plan → exec → test-webview / test-api → review → revise → git-push、git-clone ワンショット初期化、init 逆 spec、doc-update リポ全体一貫性メンテ + 11 サブエージェント | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(コア機能)_ | spec → plan → exec → test-webview / test-api → review → revise → git-push、git-clone ワンショット初期化、init 逆 spec、doc-update リポ全体一貫性メンテ + 12 サブエージェント | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-product** | /prd 要件ブレスト → 具体的ユースケース付き PRD ドキュメント(PM / 依頼者向け) | `/plugin install bb-spec-product@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / 認証 / 認可 / 可観測性 / サービスガバナンス / 設定制約 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun スタック & エンジニアリング規約(bun hook 付き) | `/plugin install bb-spec-frontend@0xbb2b` |

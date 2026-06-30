@@ -1,6 +1,6 @@
 ---
 name: review
-description: 本地 ultrareview——跨模型、多代理、对抗验证、只读的 PR 级 review（依赖 Workflow 工具，Claude Code ≥2.1.154）；默认 base=main；并发 5 个 finder（质量/安全/简洁/文档同步/Codex 跨模型），每条 🔴/🟡 发现交 3 个独立怀疑视角对抗验证、多数决去留；可选追加本次 review 重点，注入每个 finder 优先关注（不替代其他维度）。触发：/review、给当前分支做深度审查、PR 前 ultrareview。跳过：无 Workflow 工具、不在 git 仓库、当前分支=base。
+description: 本地 ultrareview——跨模型、多代理、对抗验证、只读的 PR 级 review（依赖 Workflow 工具，Claude Code ≥2.1.154）；默认 base=main；并发 6 个 finder（质量/安全/简洁/鲁棒性/文档同步/Codex 跨模型），每条 🔴/🟡 发现交 3 个独立怀疑视角对抗验证、多数决去留；可选追加本次 review 重点，注入每个 finder 优先关注（不替代其他维度）。触发：/review、给当前分支做深度审查、PR 前 ultrareview。跳过：无 Workflow 工具、不在 git 仓库、当前分支=base。
 argument-hint: [base-branch] [本次 review 重点...]
 disable-model-invocation: true
 ---
@@ -52,6 +52,7 @@ focus 是**用户希望优先关注的方向**（如"鉴权链路"/"新加的限
 | quality | 📐 | `agents/review-code-quality.md` | （默认） |
 | security | 🛡️ | `agents/review-security.md` | （默认） |
 | simplicity | 🧹 | `agents/review-simplicity.md` | （默认） |
+| robustness | 🪨 | `agents/review-robustness.md` | （默认） |
 | doc-sync | 📄 | `agents/review-doc-sync.md` | （默认） |
 | codex | 🤖 | `agents/review-codex.md` | `codex:codex-rescue` |
 
@@ -205,12 +206,12 @@ return {
 ```
 本地 ultrareview 完成 · <base>..HEAD（N commits / M 文件 / +L1 -L2）
 重点：<focus 一句话；未指定时写「未指定，全面审视」>
-finder：📐质量 🛡️安全 🧹简洁 📄文档 🤖Codex（5/5 就绪）
+finder：📐质量 🛡️安全 🧹简洁 🪨鲁棒 📄文档 🤖Codex（6/6 就绪）
 去重 N 条 → ✅ A 确认 / ❌ B 否决 / 🟢 C 未验证 ｜ 🔴 a（⭐a'）· 🟡 b（⭐b'）
 消耗：X agents · ~Y tokens · Z 分钟
 ```
 
-finder 行必须完整列出（Codex 不可用时该行写 `（4/5 就绪，🤖Codex 不可用）`）；后续表格 by 列写图标 + 文字名（与 finder 行一致，如 `📐质量`）。⭐ = 被 ≥ 2 个 finder 命中的交叉验证强信号，由表格里的 ⭐ 标记与 by 列多 finder 直接呈现，不设独立汇总行。
+finder 行必须完整列出（Codex 不可用时该行写 `（5/6 就绪，🤖Codex 不可用）`）；后续表格 by 列写图标 + 文字名（与 finder 行一致，如 `📐质量`）。⭐ = 被 ≥ 2 个 finder 命中的交叉验证强信号，由表格里的 ⭐ 标记与 by 列多 finder 直接呈现，不设独立汇总行。
 
 ### ✅ 确认问题表（质量/安全优先排序）
 

@@ -121,7 +121,7 @@
   - 앱 측은 **두 개의 이미지 산출**: test 이미지는 `/test/*` 라우트 + `ENV TESTAPI=1` 탑재; 운영 이미지는 `/test/*` 소스를 **물리적으로 제외**; `/test/healthz` 프로브 실패 시 즉시 중단, 폴백 금지
 
 - **`/review`** — Workflow 오케스트레이션, **적대적 검증**을 갖춘 로컬 PR review.
-  - Phase 1에서 **5개 finder** 병렬 실행: 코드 품질 / 보안 / 간결성 / 문서 동기화 / **Codex 크로스 모델 독립** review, schema 강제 구조화
+  - Phase 1에서 **6개 finder** 병렬 실행: 코드 품질 / 보안 / 간결성 / 견고성 / 문서 동기화 / **Codex 크로스 모델 독립** review, schema 강제 구조화
   - Phase 2에서 각 🔴/🟡을 **3개 독립 회의 관점**으로 재판정(중요도 / 근본 원인성 / 미수정 위험), 다수결로 잔존 결정
   - 읽기 전용, 절대 자동 편집하지 않음; Claude Code ≥ 2.1.154 필요
 
@@ -140,7 +140,7 @@
 
 **동봉되는 것**
 
-- **11개 오케스트레이션 subagent**(위 단계에 의해 구동): `test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-code-quality` / `review-security` / `review-simplicity` / `review-doc-sync` / `review-codex` / `pre-reviewer` / `rule-extractor`
+- **12개 오케스트레이션 subagent**(위 단계에 의해 구동): `test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-code-quality` / `review-security` / `review-simplicity` / `review-robustness` / `review-doc-sync` / `review-codex` / `pre-reviewer` / `rule-extractor`
 - **4개 수동 hook**(자동 발동): npm/yarn 차단, main 커밋 차단, 의존성 버전 자가 점검, Stop 시 4항목 자가 점검
 
 ---
@@ -195,7 +195,7 @@ BB-Spec은 **5개의 독립 설치 가능한 서브 plugin**으로 분할 ——
 | 서브 plugin | 무엇을 얻는가 | 설치 명령 |
 |---|---|---|
 | **bb-spec-core** _(권장 베이스)_ | TDD / 버전 정책 / Git 규율 + 3개 수동 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(핵심 기능)_ | spec → plan → exec → test-webview / test-api → review → revise → git-push, git-clone 일회성 초기화, init 역방향 spec, doc-update 저장소 전체 일관성 유지 + 11개 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(핵심 기능)_ | spec → plan → exec → test-webview / test-api → review → revise → git-push, git-clone 일회성 초기화, init 역방향 spec, doc-update 저장소 전체 일관성 유지 + 12개 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-product** | /prd 요구사항 브레인스토밍 → 구체적 유스케이스가 포함된 PRD 문서(PM / 의뢰자용) | `/plugin install bb-spec-product@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / 인증 / 인가 / 가관측성 / 서비스 거버넌스 / 설정 제약 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun 스택 & 엔지니어링 규약(bun hook 포함) | `/plugin install bb-spec-frontend@0xbb2b` |
