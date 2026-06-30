@@ -44,14 +44,13 @@
 /plugin install bb-spec-workflow@0xbb2b
 ```
 
-メインパイプラインの 6 コマンド:
+メインパイプラインの 5 コマンド:
 
 | コマンド | 何をするか | いつ使うか |
 |---|---|---|
 | `/spec` | 要件を 1 ルール 1 ファイルの spec に分解 | 新規要件の着手時 |
 | `/plan` | spec → 関数レベルの実装計画 | spec 完成後 |
 | `/exec` | 3 エージェント隔離で Test→Impl→Review を実行 | plan 完成後 |
-| `/test-webview` / `/test-api` | Docker フルスタック起動 + 受け入れ(オプション) | フロント / バックエンド e2e |
 | `/review` | 並列 finder + 敵対的検証 | PR 提出前 |
 | `/git-push` | pre-review セルフチェック + push + PR 作成 | リリース準備時 |
 

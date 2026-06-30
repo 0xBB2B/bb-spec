@@ -44,14 +44,13 @@
 /plugin install bb-spec-workflow@0xbb2b
 ```
 
-主流水線 6 條命令:
+主流水線 5 條命令:
 
 | 命令 | 做什麼 | 何時用 |
 |---|---|---|
 | `/spec` | 把需求拆成一規則一文件 | 新需求開工 |
 | `/plan` | spec → 函式級實施計畫 | spec 就緒 |
 | `/exec` | 三 Agent 隔離跑 Test→Impl→Review | plan 就緒 |
-| `/test-webview` / `/test-api` | Docker 整棧啟動 + 驗收(可選) | 前端 / 後端 e2e |
 | `/review` | 多 finder 並行 + 對抗驗證 | 提 PR 前 |
 | `/git-push` | pre-review 自查 + 推送 + 開 PR | 準備發版 |
 
