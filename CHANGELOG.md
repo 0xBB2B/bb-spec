@@ -1,5 +1,12 @@
 # Changelog
 
+## [9.3.0](https://github.com/0xBB2B/bb-spec/compare/v9.2.0...v9.3.0) (2026-06-30)
+
+
+### Features
+
+* **code-constraints:** 新增跨语言代码纪律 skill 并接入三 Agent + 轻量修复 ([#184](https://github.com/0xBB2B/bb-spec/issues/184)) ([58a3093](https://github.com/0xBB2B/bb-spec/commit/58a30939415f29a65956f33c10dcf691522c0fcb))
+
 ## [9.2.0](https://github.com/0xBB2B/bb-spec/compare/v9.1.0...v9.2.0) (2026-06-30)
 
 
