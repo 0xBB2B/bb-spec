@@ -67,14 +67,15 @@ Optional upstream: `/prd` (PM / requester brainstorms a PRD; shipped separately 
                   │
  (opt) /prd ──► PRD doc
                   │
- /init-spec ──►  /spec ──► /plan ──► /exec ──► /test-* ──► /review ──► /git-push
- (existing repo)  what       how      Red→Green→Review   e2e        finders+adv   pre-review+open PR
-                                                                                       │
-        ┌──────────────────────────────────────────────────────────────────────────────┘
+ /init-spec ──►  /spec ──► /plan ──► /exec ──► /review ──► /git-push
+ (existing repo)  what       how      Red→Green→Review  finders+adv  pre-review+open PR
+                                                                          │
+        ┌─────────────────────────────────────────────────────────────────┘
         │
         ▼ /revise (anytime, routed by root cause)
           spec-defect → /spec   ·   impl-drift → /exec   ·   review finding → targeted fix
 
+ (opt) /test-webview · /test-api — frontend / backend e2e between /exec and /review
  /doc-update (periodic / on-demand) — sweep whole repo → default updates spec/doc;
                                         obviously bad code stops to ask → routes to /revise
 ```
@@ -194,7 +195,7 @@ Then install whichever layers you want:
 | Sub-plugin | What it gives you | Command |
 |---|---|---|
 | **bb-spec-core** _(recommended base)_ | TDD / version-policy / git-workflow discipline + 3 passive hooks | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(core)_ | spec → plan → exec → test-webview / test-api → review → revise → git-push, git-clone one-shot init, init reverse-spec, doc-update whole-repo consistency sweep + 12 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(core)_ | spec → plan → exec → review → revise → git-push (+ opt test-webview / test-api e2e), git-clone one-shot init, init reverse-spec, doc-update whole-repo consistency sweep + 12 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-product** | /prd requirement brainstorm → PRD doc with concrete use cases (for PMs / requesters) | `/plugin install bb-spec-product@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / authN / authZ / observability / service / config constraints | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun stack & engineering conventions (+ bun hook) | `/plugin install bb-spec-frontend@0xbb2b` |

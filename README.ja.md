@@ -67,14 +67,15 @@
                   │
  (任意) /prd ──► PRD ドキュメント
                   │
- /init-spec ──►  /spec ──► /plan ──► /exec ──► /test-* ──► /review ──► /git-push
- (既存リポ)      何を作るか  どう作るか  Red→Green→Review  e2e        並列+敵対     pre-review+PR 作成
-                                                                                       │
-        ┌──────────────────────────────────────────────────────────────────────────────┘
+ /init-spec ──►  /spec ──► /plan ──► /exec ──► /review ──► /git-push
+ (既存リポ)      何を作るか  どう作るか  Red→Green→Review  並列+敵対  pre-review+PR 作成
+                                                                          │
+        ┌─────────────────────────────────────────────────────────────────┘
         │
         ▼ /revise(いつでも介入、根本原因でルーティング)
           spec 欠陥 → /spec   ·   実装ドリフト → /exec   ·   review 指摘 → ピンポイント修正
 
+ (任意) /test-webview · /test-api — フロント / バックエンド e2e、/exec と /review の間に挿入
  /doc-update(定期 / 必要時) — リポ全体のドリフト走査 → デフォルトは spec/ドキュメントを更新、
                                   明らかに不適切なコードは止まって確認 → /revise へルーティング
 ```
@@ -194,7 +195,7 @@ BB-Spec は**5 つの独立インストール可能なサブ plugin** に分割 
 | サブ plugin | 何が手に入るか | インストールコマンド |
 |---|---|---|
 | **bb-spec-core** _(推奨ベース)_ | TDD / バージョンポリシー / Git 規律 + 3 つの受動 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(コア機能)_ | spec → plan → exec → test-webview / test-api → review → revise → git-push、git-clone ワンショット初期化、init 逆 spec、doc-update リポ全体一貫性メンテ + 12 サブエージェント | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(コア機能)_ | spec → plan → exec → review → revise → git-push(+ 任意 test-webview / test-api e2e)、git-clone ワンショット初期化、init 逆 spec、doc-update リポ全体一貫性メンテ + 12 サブエージェント | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-product** | /prd 要件ブレスト → 具体的ユースケース付き PRD ドキュメント(PM / 依頼者向け) | `/plugin install bb-spec-product@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / 認証 / 認可 / 可観測性 / サービスガバナンス / 設定制約 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun スタック & エンジニアリング規約(bun hook 付き) | `/plugin install bb-spec-frontend@0xbb2b` |
