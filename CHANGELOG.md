@@ -1,5 +1,12 @@
 # Changelog
 
+## [9.1.0](https://github.com/0xBB2B/bb-spec/compare/v9.0.0...v9.1.0) (2026-06-30)
+
+
+### Features
+
+* **review:** 新增鲁棒性 review 维度 ([#177](https://github.com/0xBB2B/bb-spec/issues/177)) ([8c1b2de](https://github.com/0xBB2B/bb-spec/commit/8c1b2ded25d97f27c3a317b286d180000c4e95ad))
+
 ## [9.0.0](https://github.com/0xBB2B/bb-spec/compare/v8.15.0...v9.0.0) (2026-06-29)
 
 
