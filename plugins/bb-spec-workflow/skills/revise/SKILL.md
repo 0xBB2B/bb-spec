@@ -18,8 +18,9 @@ argument-hint: <问题或优化诉求描述>
 4. **分层修复起点**：spec-defect 必先改 spec 再改代码（禁只改代码不改 spec）；requirement-change 必先用户确认新需求再动手
 5. **修正闭环**：修正后必须验证——全量测试通过 + spec 合规 + 索引同步
 6. **最小影响**：只改必须改的层，不借修正之名扩展功能或重构（额外需求走 `/spec` → `/plan`）
-7. **Agent 隔离同 exec**：Test 不看实现，Impl 不看 spec，Review 只读不写
-8. **输出中文**
+7. **三 Agent 串行强制派发**：涉及代码修改时必须按 Test → Impl → Review 顺序派 `bb-spec-workflow:test-engineer` / `bb-spec-workflow:impl-engineer` / `bb-spec-workflow:spec-reviewer` 三个 subagent，**禁止主 agent 自己写测试、写实现、做 spec 合规检查**；唯一例外是「轻量修复判断」（见步骤 3）通过且用户同意后允许主 agent 直接 TDD 修复
+8. **Agent 隔离同 exec**：Test 不看实现，Impl 不看 spec，Review 只读不写
+9. **输出中文**
 
 ## 三类归因
 
@@ -50,6 +51,15 @@ argument-hint: <问题或优化诉求描述>
 | 测试文件 | 测试目录 + 命名惯例 | 确认"验了什么" |
 
 建立完整链路：**spec 说什么 → plan 怎么做 → 代码做了什么 → 测试验了什么**。
+
+**流程归属判定**（不论单 repo 还是多 repo，进步骤 2 前必做）：确认本次问题真属于 revise（"对既有产出做已知偏差的定向修正"）。**满足以下任一条件应退出 revise，转 `/spec` → `/plan` → `/exec`**：
+
+- 需要先拆解、协商或定义新协议才能落地（如"做快 auth 流程"、"打通 X 服务可观测性"、跨服务通信契约调整）
+- 改动有显著依赖顺序，需要 ROADMAP 表达批次门
+- 单 repo 但变更面横跨多个 spec/plan 域且涉及新设计决策
+- 跨 ≥ 2 个 repo 且**不止是被动跟随的机械级联**（proto 字段改名后 consumer 跟着改属机械级联，反之属协调式）
+
+判定退出时必须停下，提示用户改走 `/spec`，禁继续 revise 流程。
 
 ### 步骤 2：诊断归因
 
@@ -99,6 +109,10 @@ argument-hint: <问题或优化诉求描述>
 
 ### 步骤 3：按类型修复
 
+> **强制派发**：所有涉及代码修改的修复路径（除下方「轻量修复判断」通过外）**必须**通过 `Agent` 工具派 `bb-spec-workflow:test-engineer` → `bb-spec-workflow:impl-engineer` → `bb-spec-workflow:spec-reviewer` 三个 subagent 串行完成，**禁止主 agent 直接动手写测试或实现代码**。主 agent 仅做：拆分输入、按隔离矩阵传 prompt、验证每步产物、衔接下一步。
+
+> **多 repo 派发节律**（修复涉及 ≥ 2 个 repo 时适用）：以「单 repo 的 spec/code/test 链路」为最小派发单元，按 repo 顺序逐个走完整 Test→Impl→Review 循环，**禁止把多 repo 路径塞进一个 subagent**——测试惯例、spec 目录、项目约束在 repo 维度才一致，跨 repo 混传会破坏隔离矩阵。每个 repo 完成后再进入下一个，全部完成后才进入步骤 4 回归验证。
+
 **轻量修复判断**：进入修复前评估改动规模，**同时满足全部条件**时可向用户提议跳过 3-Agent 隔离直接修——归因为 impl-defect（spec/plan 无需变动）+ 改动 ≤ 1 个文件 ≤ 10 行 + 修复逻辑显而易见（拼写错误、off-by-one、条件取反）。
 
 提议话术：`"这个修复只改 <文件>，约 <N> 行，是否跳过 3-Agent 隔离直接修？"`
@@ -111,21 +125,24 @@ argument-hint: <问题或优化诉求描述>
 
 1. **改 spec**：编辑 spec 文件修正规则（遵守 spec skill 变更判定：修改=编辑原文件，废弃=删文件 + 移除索引条目）
 2. **检查 plan 影响**：需更新则改对应 plan 的业务规则/验证方式，无影响则跳过
-3. **TDD 修复实现**：派 Test Agent（`bb-spec-workflow:test-engineer`）按修正后 spec 写/改测试→Red；派 Impl Agent（`bb-spec-workflow:impl-engineer`）改实现→Green；派 Review Agent（`bb-spec-workflow:spec-reviewer`）验证合规
+3. **TDD 修复实现（强制三 Agent 派发）**：
+   - 派 `bb-spec-workflow:test-engineer`，prompt 传「修正后的 spec 业务规则 + 验证预期 + 项目测试惯例」→ 主 agent 验证 Red
+   - 派 `bb-spec-workflow:impl-engineer`，prompt 传「函数清单 + 文件路径 + 测试文件路径 + 项目约束」→ 主 agent 验证 Green
+   - 派 `bb-spec-workflow:spec-reviewer`，prompt 传「业务规则 + 验证预期 + 所有变更文件路径」→ 主 agent 处理 review 结果
 4. **同步索引**：spec/plan 的 INDEX.md 如有变动则更新
 
-#### 3b. impl-defect — spec 正确，只修实现层
+#### 3b. impl-defect — spec 正确，只修实现层（强制三 Agent 派发）
 
-1. 派 Test Agent 按被违反的 spec 规则写测试→Red（测试必须暴露 bug）
-2. 派 Impl Agent 改代码→Green
-3. 派 Review Agent 检查修复后代码 vs spec
+1. 派 `bb-spec-workflow:test-engineer`，prompt 传「被违反的 spec 规则 + 验证预期 + 项目测试惯例」→ 主 agent 验证测试能暴露 bug（Red）
+2. 派 `bb-spec-workflow:impl-engineer`，prompt 传「函数清单 + 文件路径 + 测试文件 + 项目约束」→ 主 agent 验证 Green
+3. 派 `bb-spec-workflow:spec-reviewer`，prompt 传「spec 规则 + 验证预期 + 所有变更文件路径」→ 主 agent 处理 review 结果
 
 #### 3c. requirement-change — 需求层变化，先确认再级联
 
 1. **确认新需求**：与用户对话明确新预期行为（一次 2-3 个关键问题）
 2. **更新 spec**：走 spec 变更流程（编辑/新增/删除 spec 文件 + 同步 INDEX.md）
 3. **评估级联影响**：检查哪些 plan 和实现受影响，向用户展示范围
-4. **级联修复**：按 3a 步骤 2-4 执行（改 plan → TDD 修实现 → Review 验证）
+4. **级联修复**：按 3a 步骤 2-4 执行（改 plan → 三 Agent 派发 TDD 修实现 → Review 验证）
 
 ### 步骤 4：回归验证
 
