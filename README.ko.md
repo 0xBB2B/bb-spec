@@ -44,14 +44,13 @@
 /plugin install bb-spec-workflow@0xbb2b
 ```
 
-메인 파이프라인 6개 명령:
+메인 파이프라인 5개 명령:
 
 | 명령 | 무엇을 하는가 | 언제 사용 |
 |---|---|---|
 | `/spec` | 요구사항을 한 규칙 한 파일 spec으로 분해 | 새 요구사항 착수 시 |
 | `/plan` | spec → 함수 수준 구현 계획 | spec 준비 완료 |
 | `/exec` | 3개 에이전트 격리로 Test→Impl→Review 실행 | plan 준비 완료 |
-| `/test-webview` / `/test-api` | Docker 전체 스택 기동 + 인수(선택) | 프론트 / 백엔드 e2e |
 | `/review` | 병렬 finder + 적대적 검증 | PR 제출 전 |
 | `/git-push` | pre-review 자가 점검 + push + PR 생성 | 출시 준비 |
 

@@ -44,14 +44,13 @@
 /plugin install bb-spec-workflow@0xbb2b
 ```
 
-The 6 mainline commands:
+The 5 mainline commands:
 
 | Command | What it does | When |
 |---|---|---|
 | `/spec` | Break a requirement into one-rule-per-file specs | New requirement |
 | `/plan` | spec → function-level implementation plan | Spec is ready |
 | `/exec` | Three-agent isolated Test→Impl→Review | Plan is ready |
-| `/test-webview` / `/test-api` | Docker stack + acceptance (optional) | Frontend / backend e2e |
 | `/review` | Parallel finders + adversarial verify | Before opening PR |
 | `/git-push` | pre-review self-check + push + open PR | Ready to ship |
 
