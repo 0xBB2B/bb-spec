@@ -67,14 +67,15 @@
                   │
  (선택) /prd ──► PRD 문서
                   │
- /init-spec ──►  /spec ──► /plan ──► /exec ──► /test-* ──► /review ──► /git-push
- (기존 저장소)    무엇을      어떻게    Red→Green→Review  e2e        병렬+적대     pre-review+PR 생성
-                                                                                       │
-        ┌──────────────────────────────────────────────────────────────────────────────┘
+ /init-spec ──►  /spec ──► /plan ──► /exec ──► /review ──► /git-push
+ (기존 저장소)    무엇을      어떻게    Red→Green→Review  병렬+적대  pre-review+PR 생성
+                                                                          │
+        ┌─────────────────────────────────────────────────────────────────┘
         │
         ▼ /revise (언제든 개입, 근본 원인으로 라우팅)
           spec 결함 → /spec   ·   구현 드리프트 → /exec   ·   review 지적 → 핀포인트 수정
 
+ (선택) /test-webview · /test-api — 프론트 / 백엔드 e2e, /exec 와 /review 사이에 삽입
  /doc-update (정기 / 필요 시) — 저장소 전체 드리프트 스캔 → 기본은 spec/문서 갱신,
                                   명백히 부적절한 코드는 멈추고 확인 → /revise로 라우팅
 ```
@@ -194,7 +195,7 @@ BB-Spec은 **5개의 독립 설치 가능한 서브 plugin**으로 분할 ——
 | 서브 plugin | 무엇을 얻는가 | 설치 명령 |
 |---|---|---|
 | **bb-spec-core** _(권장 베이스)_ | TDD / 버전 정책 / Git 규율 + 3개 수동 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(핵심 기능)_ | spec → plan → exec → test-webview / test-api → review → revise → git-push, git-clone 일회성 초기화, init 역방향 spec, doc-update 저장소 전체 일관성 유지 + 12개 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(핵심 기능)_ | spec → plan → exec → review → revise → git-push(+ 선택 test-webview / test-api e2e), git-clone 일회성 초기화, init 역방향 spec, doc-update 저장소 전체 일관성 유지 + 12개 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-product** | /prd 요구사항 브레인스토밍 → 구체적 유스케이스가 포함된 PRD 문서(PM / 의뢰자용) | `/plugin install bb-spec-product@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / 인증 / 인가 / 가관측성 / 서비스 거버넌스 / 설정 제약 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun 스택 & 엔지니어링 규약(bun hook 포함) | `/plugin install bb-spec-frontend@0xbb2b` |
