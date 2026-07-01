@@ -1,5 +1,12 @@
 # Changelog
 
+## [9.5.0](https://github.com/0xBB2B/bb-spec/compare/v9.4.0...v9.5.0) (2026-07-01)
+
+
+### Features
+
+* **agents:** rule-extractor 模型升到 opus 4.7 ([#190](https://github.com/0xBB2B/bb-spec/issues/190)) ([83da24a](https://github.com/0xBB2B/bb-spec/commit/83da24ae6a5e2eec32f45e384535ea7f55404305))
+
 ## [9.4.0](https://github.com/0xBB2B/bb-spec/compare/v9.3.0...v9.4.0) (2026-07-01)
 
 
