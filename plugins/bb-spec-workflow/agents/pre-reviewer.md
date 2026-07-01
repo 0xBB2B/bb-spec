@@ -3,7 +3,7 @@ name: pre-reviewer
 description: 分支规范自查者（PR 前 pre-review）——比对当前分支 vs 基线分支的 diff 与项目 spec，输出 PASS|FAIL + 违规清单（file:line + 违反哪条 spec + 建议修法）；只读不改；规范来源仅限给定 spec_dir，禁引入外部最佳实践。派工：被 /git-push 在存在 .bb-spec/docs/spec/INDEX.md 时调用。禁止：Write/Edit、写性 git、引入 spec 外的判定标准。
 role: 分支规范自查者
 agent-type: general-purpose
-model: claude-opus-4-7
+model: opus
 inputs:
   - repo_path      # 仓库绝对路径
   - base_branch    # 比对基线分支（通常 main/master）

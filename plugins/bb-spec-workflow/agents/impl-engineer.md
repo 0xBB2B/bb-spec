@@ -3,7 +3,7 @@ name: impl-engineer
 description: exec 的实现工程师子代理（Green 阶段）——只读 plan 的函数清单+文件路径+测试文件，用最小代码让测试全绿；plan 含「成品定义」时原样落盘不得改写；新增第三方库限 plan 清单内，清单外必须停下询问用户。派工：被 /exec 在 Green 阶段调用。禁止：碰 spec 原文、改测试、自行扩展功能、装清单外依赖、操作 git。
 role: 实现工程师
 agent-type: general-purpose
-model: claude-sonnet-5
+model: sonnet
 inputs:
   - plan_functions_and_paths  # 函数清单 + 文件路径 + 协作关系 + 成品定义（如有）
   - test_file_paths           # Test Agent 产出的测试文件路径

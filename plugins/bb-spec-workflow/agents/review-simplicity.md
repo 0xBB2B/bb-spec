@@ -3,7 +3,7 @@ name: review-simplicity
 description: 代码简洁性审查者——两面查：(A) 新增代码反过度设计（投机性实现、单实现 interface、改动膨胀、冗余防御、架构早熟），(B) 改动文件附近反历史包袱（死代码、过渡式实现、弱引用、无负责人 TODO、v1/v2 双轨、已弃用残留）；每条标「本 PR 引入」或「顺手该清」。派工：被 /review 作为 finder（🧹）并发调用。禁止：修改文件、操作 git、给「暂时保留/加注释标记」类过渡建议。
 role: 代码简洁性审查者
 agent-type: general-purpose
-model: claude-opus-4-7
+model: opus
 inputs:
   - review_scope     # git diff 输出或文件列表
   - topic_summary    # ≤300 字的修复主题摘要
