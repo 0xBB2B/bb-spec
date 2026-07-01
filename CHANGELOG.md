@@ -1,5 +1,18 @@
 # Changelog
 
+## [9.4.0](https://github.com/0xBB2B/bb-spec/compare/v9.3.0...v9.4.0) (2026-07-01)
+
+
+### Features
+
+* **agents:** 默认模型钉死到具体版本 ID ([#186](https://github.com/0xBB2B/bb-spec/issues/186)) ([c9d9652](https://github.com/0xBB2B/bb-spec/commit/c9d965276372fa52482bcda07d3a36a9db797638))
+* **code-constraints,template:** 收紧注释纪律，新增 R1.3-R1.8 禁写模式 ([#188](https://github.com/0xBB2B/bb-spec/issues/188)) ([2538c95](https://github.com/0xBB2B/bb-spec/commit/2538c95ecbf0868d06b130be3f8e235a52657306))
+
+
+### Bug Fixes
+
+* **plan:** 脱敏根 INDEX 示例中的具象项目名与日期 ([#189](https://github.com/0xBB2B/bb-spec/issues/189)) ([15c6c0b](https://github.com/0xBB2B/bb-spec/commit/15c6c0bae924d494eb66477eb0955cb1b59ea090))
+
 ## [9.3.0](https://github.com/0xBB2B/bb-spec/compare/v9.2.0...v9.3.0) (2026-06-30)
 
 
