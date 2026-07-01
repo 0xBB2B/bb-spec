@@ -179,8 +179,8 @@ description: <一句话概括，≤ 80 字>
 # Plan 索引
 | 主题 | 所属批次 | 概述 | 状态 | 完成时间 |
 |---|---|---|---|---|
-| [tooling-platform](2026-06-09.tooling-platform/INDEX.md) | B0 | 基础设施 | 进行中 | — |
-| [auth-refactor](2026-05-15.auth-refactor/INDEX.md) | — | 认证重构 | 已完成 | 2026-05-20 |
+| [<主题-A>](YYYY-MM-DD.<主题-A>/INDEX.md) | B0 | <基础设施> | 进行中 | — |
+| [<主题-B>](YYYY-MM-DD.<主题-B>/INDEX.md) | — | <领域> | 已完成 | YYYY-MM-DD |
 ```
 
 **主题 INDEX.md** + **PROGRESS.md**：
