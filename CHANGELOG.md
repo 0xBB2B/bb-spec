@@ -1,5 +1,13 @@
 # Changelog
 
+## [9.6.0](https://github.com/0xBB2B/bb-spec/compare/v9.5.0...v9.6.0) (2026-07-01)
+
+
+### Features
+
+* **agents:** 模型标识改用 opus / sonnet 通用别名 ([#194](https://github.com/0xBB2B/bb-spec/issues/194)) ([b7a22e8](https://github.com/0xBB2B/bb-spec/commit/b7a22e8101bf6f5fccc7953d5c49b6b2f55db888))
+* **init-spec:** 闭环对齐 /spec，落盘 spec 代码无关 ([#192](https://github.com/0xBB2B/bb-spec/issues/192)) ([158c00d](https://github.com/0xBB2B/bb-spec/commit/158c00d2262092ae0e663e3f029b61f278f2f99b))
+
 ## [9.5.0](https://github.com/0xBB2B/bb-spec/compare/v9.4.0...v9.5.0) (2026-07-01)
 
 
