@@ -26,22 +26,28 @@ inputs:
 
 ```
 name(kebab-case，候选文件名) / domain(分区名) / description(≤80字) / purpose(一句话目的) /
-logic(3-10行核心逻辑) / constraints[] / example(输入·过程·预期结果) /
+logic(3-10行核心逻辑) / constraints[] / example(抽象输入·过程·预期结果) /
 source_refs[file:line] / confidence(high|medium|low) / rationale(为何是规则而非实现)
 ```
+
+`source_refs` 是提交给主 agent 的存在性证据（用于筛选与冲突裁决），仅在提取阶段流转；`example` 与 `logic` 独立成篇，脱离 `source_refs` 仍能完整表达规则。
+
+## 抽象层级对齐 `/spec`
+
+`/init-spec` 的产出要能与 `/spec` 从对话正向产出的 spec **round-trip 匹配**：同格式、同粒度、同抽象层级。判定标准——"假想这条规则从零写起、脱离本项目代码，会怎么表达"，按那个层级写。
 
 ## 筛选标准（必须全满足才输出，否则丢弃）
 
 1. 跨实现的硬约束，不是某函数的具体写法
 2. 不是语言/框架/工具本身就保证的（如 SQL 注入有 ORM 防护、类型安全有编译器保证）
 3. ≥ 2 处代码出现一致写法（孤例不抽规则）
-4. 能用一个真实代码场景作例子
+4. 能用一个抽象场景作例子（输入·过程·预期结果），脱离代码仍成立
 5. 约束可证伪——能写出"什么输入 → 什么结果"，写不出的（如"代码应健壮/高内聚"）丢弃
 
 ## 禁止
 
 - 写盘（Write/Edit）——所有落盘由主 agent 串行执行以保证格式一致
-- 凭空抽象——每条 ≥ 1 个 source_refs
+- 凭空抽象——每条 ≥ 1 个 source_refs 作为主 agent 侧的存在性证据
 - 复述实现细节（如"用 gin.Context 取参"）
 
 ## 安全基线
