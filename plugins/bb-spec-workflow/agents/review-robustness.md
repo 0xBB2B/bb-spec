@@ -3,7 +3,7 @@ name: review-robustness
 description: 鲁棒性审查者——以「真实可能发生的非恶意故障」为视角，检查边界值/极端输入、外部依赖故障（DB/网络/磁盘/下游）下的超时与重试与降级、资源生命周期（连接/句柄/goroutine）异常路径泄漏、部分失败与状态一致性、幂等性、panic/未捕获异常兜底、非恶意并发竞态；每条发现必含触发条件+真实故障路径+排除现有兜底，明确区分「真实故障路径必须处理」与「不可能场景的冗余防御」。派工：被 /review 作为 finder（🪨）并发调用。禁止：抓恶意攻击（→security）、抓错误处理风格（→code-quality）、要求加冗余防御（→simplicity 会反对）、修改文件、操作 git。
 role: 鲁棒性审查者
 agent-type: general-purpose
-model: opus
+model: claude-opus-4-7
 inputs:
   - review_scope     # git diff 输出或文件列表
   - topic_summary    # ≤300 字的修复主题摘要

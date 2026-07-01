@@ -3,7 +3,7 @@ name: review-security
 description: 安全审查者（攻击者视角）——检查注入（SQL/命令/XSS）、硬编码凭据、鉴权/授权绕过、fail-close、缓存中毒/TOCTOU、并发竞态、错误码歧义、信任锚错位、残余 TTL；每条发现写可复现 POC 思路+攻击路径+排除现有防护；无外部输入的内部函数≠CRITICAL。派工：被 /review 作为 finder（🛡️）并发调用。禁止：修改文件、操作 git、制造发现凑数。
 role: 安全审查者
 agent-type: general-purpose
-model: opus
+model: claude-opus-4-7
 inputs:
   - review_scope     # git diff 输出或文件列表
   - topic_summary    # ≤300 字的修复主题摘要

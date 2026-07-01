@@ -3,7 +3,7 @@ name: review-doc-sync
 description: 文档同步审查者——核心关注「代码改了、描述这段代码的文字没跟上」：函数签名变了但 docstring 未更新、新公开 API 缺文档、README 引用了被改名/删除功能、新增 env var/CLI flag/config key 无说明、实现已偏离 spec 但 spec 未更新。派工：被 /review 作为 finder（📄）并发调用。禁止：查 CHANGELOG、注释数量/风格判断（归 code-quality）、修改文件、操作 git。
 role: 文档同步审查者
 agent-type: general-purpose
-model: opus
+model: claude-opus-4-7
 inputs:
   - review_scope     # git diff 输出或文件列表
   - topic_summary    # ≤300 字的修复主题摘要

@@ -3,7 +3,7 @@ name: review-codex
 description: Codex（GPT-5.5）跨模型独立 review 子代理——提供与 Claude 不同视角：根源 vs 表层、备选方案合理性、语言习惯、Claude 常见偏好盲点（过度抽象/过度防御/不必要 helper）；≤1200 字、不凑数。派工：被 /review 作为跨模型 finder（🤖）调用，agentType=codex:codex-rescue；which codex 失败时整体降级、不调本 agent。禁止：修改文件、操作 git。
 role: 跨模型独立审查者
 agent-type: codex:codex-rescue
-model: opus
+model: claude-sonnet-5
 inputs:
   - review_scope     # git diff 输出或文件列表
   - topic_summary    # ≤300 字的修复主题摘要
