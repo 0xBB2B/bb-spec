@@ -1,6 +1,6 @@
 ---
 name: code-constraints
-description: 跨语言通用代码纪律——注释 WHY 不解释 WHAT、禁 spec 溯源注释、禁未要求的功能/抽象/防御、外科手术式改动、反历史包袱。触发：编写或审查实现/测试代码；被 impl-engineer/test-engineer/spec-reviewer 及 /revise 轻量修复显式加载。跳过：纯文档、纯配置、生成代码、vendor/node_modules。
+description: 跨语言通用代码纪律——默认不写注释，仅 WHY 非显然时写；禁 spec 溯源/权威源复述/跨文件弱引用/时间性状态/表态口号/测试文件头模板/boilerplate 自证；禁未要求的功能/抽象/防御、外科手术式改动、反历史包袱。触发：编写或审查实现/测试代码；被 impl-engineer/test-engineer/spec-reviewer 及 /revise 轻量修复显式加载。跳过：纯文档、纯配置、生成代码、vendor/node_modules。
 user-invocable: false
 ---
 
@@ -19,22 +19,29 @@ user-invocable: false
 
 ## 1. 注释纪律
 
+**默认不写注释**。仅当"读代码 + 命名 + 类型 + 测试"仍无法看出 **WHY** 时，才写一条注释解释这个 WHY。以下 R1.1-R1.8 是"WHY 非显然"的例外边界与禁写模式。
+
 ### R1.1 注释 WHY，不解释 WHAT
 
 代码读得懂 WHAT（命名 + 控制流就够了），注释只解释读者**看不出来的 WHY**——隐藏约束、微妙不变量、特定 bug 的绕道、违反直觉的写法。
 
+**"复杂逻辑" 特指**算法 / 状态机 / 边界处理等**不看注释就理解不了 WHY** 的过程式代码。**声明式内容**（DDL schema、CHECK 约束、路由表、常量表、错误码枚举、struct 字段清单）**不算**——其权威源是声明本身，注释复述即 WHAT，禁写。
+
 - ✅ `// 这里禁用 timeout，否则会触发 PostgreSQL 12 的 prepared-statement bug`
 - ❌ `// 调用 saveUser 保存用户`（命名已说明）
 - ❌ `// 此函数被 X 流程调用 / 为 issue #123 添加`（属 PR description，必然 rot）
+- ❌ 文件头把 `POST /path (Middleware): body → 200/4xx` 完整复述（router 装配点已是权威源）
 
-### R1.2 禁 spec 溯源注释
+### R1.2 禁 spec 溯源与规则搬运
 
-**不得**在代码注释里写 spec 路径 / 规则编号 / 章节名作为溯源标记。
+**不得**在代码注释里写 spec 路径 / 规则编号 / 章节名作为溯源标记；**同样不得**把 spec 的规则清单**原样改写**进注释头。
 
 - ❌ `// 实现 spec foo 规则 3`
-- ❌ `// 加载（spec system-configs）`
-- ❌ `// 读出（spec platform/system-configs R 类）`
-- ❌ `// 见 .bb-spec/docs/spec/admin/mcp-tool-coverage-boundary 规则 1`
+- ❌ `// 加载（spec <模块>）`
+- ❌ `// 见 .bb-spec/docs/spec/<模块>/<规则名> 规则 1`
+- ❌ 文件头写「// R1 表存在 + 封闭列清单：… // R2 value CHECK ∈ 范围—— …」（把 spec 规则一条条改写进代码）
+
+规则就是这条测试要验的内容时，用**测试函数名**承载（如 `TestValue_OutOfRange_Rejected`），注释不再复述。
 
 理由（三点都成立）：
 1. **属性错位**——spec 溯源是 commit message / PR description 的事，不属于代码注释。
@@ -42,6 +49,62 @@ user-invocable: false
 3. **零信息量**——去掉这类括号注释，紧邻的代码照样读懂；留着只是噪声。
 
 需要追溯实现源自哪条 spec？走 `git blame` + commit message。
+
+### R1.3 禁复述权威源
+
+已存在权威源里说清楚的信息不得在其他文件的注释里复述。**同一个 WHY 只在定义点写一次**，引用点不再重复。
+
+权威源举例：迁移 SQL（列/约束/DEFAULT/SQLSTATE）、OpenAPI（路径/方法/状态码）、常量表、error sentinel 定义处的 doc、struct 字段 tag。
+
+- ❌ 迁移里写了某列 `NOT NULL`——多个测试文件头再写「// 迁移 000X 起 <列> NOT NULL：补字段值」
+- ❌ `service.ErrXxx` 定义处标 `// handler 映射 4xx CODE`，handler 的 `mapErr` switch 又标一遍
+- ❌ 同一命名妥协（如「type 名 abbr 化——同包 type 与 func 不能同名」）在同包 3 个文件重复
+- ❌ 头注复述迁移里的列清单、CHECK 范围、SQLSTATE 号
+
+理由：权威源一改，注释无人同步，注释就变谎言。
+
+### R1.4 禁跨文件弱引用注释
+
+禁 `// 见 xxx_test.go` / `// 参照迁移 0001 xxx` / `// 复用同包 helper（见 yyy.go）`。特别地：**禁在文件头列出所用 helper 的名字清单**——`grep` / IDE 一次调用 chain 就能得到，且随代码演化必漂移。
+
+- ❌ `// 复用同包共享 helper：setupX / cleanupY / … （见 xxx_test.go）`
+- ❌ `// 参照迁移 000X 注册的 <函数名>`
+- ❌ `// 迁移 000X <表名> 表`
+
+若关联足够重要 → 用**代码依赖**（import / 调用）承载，不用文字。
+
+### R1.5 禁时间性状态注释
+
+禁形如 `// 当前 X 尚未落地` / `// 本测试预期 RED` / `// 拿到实现后立即过期` / `// 断言方式：xxx 尚未实现——正确的 Red` / `// 后续 Y 主题接 API` 的时间性状态。这类信息归 commit message / PR description / CI 徽章。
+
+- ❌ `// 当前 router 未挂这两个端点，预期 RED`
+- ❌ `// 断言方式：<参数> 尚未实现——…`
+- ❌ `// 本批为空；后续 <主题> 接 API`
+
+落地即变谎言。带负责人 + 追踪链接的 TODO 允许（配合 R4.1 无负责人 TODO 禁令）。
+
+### R1.6 禁表态口号型注释
+
+禁 `// 本测试钉死的公共契约` / `// 不可变、追加只读` / `// 自包含无外键` / `// 扁平契约` / `// 钉死值` 的自我表态与口号。
+
+要么用 assertion / linter / 类型系统 / 数据库约束**执行**这个不变量，要么删掉——文字表态不是约束，是装饰。
+
+### R1.7 测试文件头模板收窄
+
+测试文件的注释头**最多**保留：
+
+- **首行 pragma**（若适用工具契约，如 `// test-pairing-exempt: <≤50 字一句话说测什么>`——Makefile lint-pairing 消费此前缀）；
+- **紧接一句** package doc（如 Go 一句话说包用途）或空行。
+
+**禁**：多行行为规则清单（R1/R2/…）、契约序言、复用 helper 目录、boilerplate 自证段落、迁移编号引用块。头块超过 3 行即需自检。
+
+反例形态：豁免摘要 + 规则 1-N 逐条改写 + 复用 helper 清单 + boilerplate 自证四合一的几十行文件头序言。
+
+### R1.8 禁 boilerplate 自证语
+
+禁在测试文件里写「// 测试值均为占位符，不含真实凭据」/「// t.Cleanup 物理 DELETE 无软删除」/「// 本文件不创建或修改任何实现文件」/「// 全库无软删除，自包含 PK 无 FK」这类自我保证语。
+
+真的关心 → 在 CI / lint 里做检查（如凭据扫描、goleak）；否则删掉——自证语本身对读者零信息量，还随项目策略变化漂移。
 
 ---
 
