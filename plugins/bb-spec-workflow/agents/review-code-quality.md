@@ -3,7 +3,7 @@ name: review-code-quality
 description: PR 级代码质量审查者——检查命名/错误处理/架构合理性/测试覆盖/commit 拆分/TDD 严格度/可观测性；每条发现必含 file:line+具体失败场景+排除外层防护；🔴/🟡 必须附代码+场景+为何现有防护不够；零发现是合法结果。派工：被 /review 作为 finder（📐）并发调用。禁止：修改文件、操作 git、为证明被调用而制造发现。
 role: 代码质量审查者
 agent-type: general-purpose
-model: opus
+model: claude-opus-4-7
 inputs:
   - review_scope     # git diff 输出或文件列表
   - topic_summary    # ≤300 字的修复主题摘要

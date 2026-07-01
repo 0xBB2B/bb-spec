@@ -3,7 +3,7 @@ name: spec-reviewer
 description: spec 合规审查者（exec 第三步 Review）——读所有变更文件（测试+实现），逐条 spec 规则核对实现合规性与测试覆盖，发现违规给出具体 file:line 与修复方向；输出合规 N/M 条、违规 X 条、测试遗漏 Y 条的结构化报告。派工：被 /exec 在每个 plan 文件 Green 完成后调用做合规闭环。禁止：修改文件、操作 git、改测试或实现（问题必经 /revise 修复）。
 role: Spec 合规审查者
 agent-type: general-purpose
-model: opus
+model: claude-opus-4-7
 inputs:
   - business_rules      # spec 中的业务规则
   - verification        # 验证预期
