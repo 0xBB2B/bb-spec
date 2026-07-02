@@ -1,5 +1,12 @@
 # Changelog
 
+## [10.1.0](https://github.com/0xBB2B/bb-spec/compare/v10.0.0...v10.1.0) (2026-07-02)
+
+
+### Features
+
+* **spec,prd:** 澄清/发散提问前先自查，能自答的呈现结论求确认 ([#199](https://github.com/0xBB2B/bb-spec/issues/199)) ([953cede](https://github.com/0xBB2B/bb-spec/commit/953cede730b55d9f56cc30ef153da737afd0816a))
+
 ## [10.0.0](https://github.com/0xBB2B/bb-spec/compare/v9.7.0...v10.0.0) (2026-07-02)
 
 
