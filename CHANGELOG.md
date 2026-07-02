@@ -1,5 +1,16 @@
 # Changelog
 
+## [10.0.0](https://github.com/0xBB2B/bb-spec/compare/v9.7.0...v10.0.0) (2026-07-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* **plugin:** 移除公开命令 /init-spec 及其专属 subagent rule-extractor。存量项目接入 bb-spec 工作流不再批量反向生成 spec，改为从下一个需求起用 /spec 增量沉淀规则；已有 spec 的长期维护继续走 /doc-update。
+
+### Features
+
+* **plugin:** 删除 /init-spec 与 rule-extractor ([#197](https://github.com/0xBB2B/bb-spec/issues/197)) ([3fdf884](https://github.com/0xBB2B/bb-spec/commit/3fdf884376765576be25b00ff4eee0a0dd7076d0))
+
 ## [9.7.0](https://github.com/0xBB2B/bb-spec/compare/v9.6.0...v9.7.0) (2026-07-02)
 
 
