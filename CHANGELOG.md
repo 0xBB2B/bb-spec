@@ -1,5 +1,12 @@
 # Changelog
 
+## [10.2.0](https://github.com/0xBB2B/bb-spec/compare/v10.1.0...v10.2.0) (2026-07-02)
+
+
+### Features
+
+* **spec,prd:** 增加 GLOSSARY 术语表机制保障跨语言跨人术语一致 ([#201](https://github.com/0xBB2B/bb-spec/issues/201)) ([1b5fb91](https://github.com/0xBB2B/bb-spec/commit/1b5fb91ae2b131aa81051cf153d60522e958b3a7))
+
 ## [10.1.0](https://github.com/0xBB2B/bb-spec/compare/v10.0.0...v10.1.0) (2026-07-02)
 
 
