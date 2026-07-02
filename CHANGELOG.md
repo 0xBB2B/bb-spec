@@ -1,5 +1,12 @@
 # Changelog
 
+## [9.7.0](https://github.com/0xBB2B/bb-spec/compare/v9.6.0...v9.7.0) (2026-07-02)
+
+
+### Features
+
+* **agents:** rule-extractor 模型升到 fable ([#195](https://github.com/0xBB2B/bb-spec/issues/195)) ([98bba4a](https://github.com/0xBB2B/bb-spec/commit/98bba4af172f38a9f65c140fc16178e17c9faa4a))
+
 ## [9.6.0](https://github.com/0xBB2B/bb-spec/compare/v9.5.0...v9.6.0) (2026-07-01)
 
 
