@@ -54,7 +54,7 @@
 | `/review` | 並列 finder + 敵対的検証 | PR 提出前 |
 | `/git-push` | pre-review セルフチェック + push + PR 作成 | リリース準備時 |
 
-いつでも介入可能な 4 つの支線:`/git-clone`(リモートプロジェクトをローカルに取得 + `.bb-spec.yaml` を生成するワンショット onboarding)、`/init-spec`(既存プロジェクトの逆 spec 化)、`/revise`(あらゆる逸脱を根本原因に基づき正しいステージに戻す)、`/doc-update`(リポジトリ全体の spec / ドキュメント / コード一貫性チェック)。
+いつでも介入可能な 3 つの支線:`/git-clone`(リモートプロジェクトをローカルに取得 + `.bb-spec.yaml` を生成するワンショット onboarding)、`/revise`(あらゆる逸脱を根本原因に基づき正しいステージに戻す)、`/doc-update`(リポジトリ全体の spec / ドキュメント / コード一貫性チェック)。
 
 オプションの上流:`/prd`(PM / 依頼者が PRD をブレストする、bb-spec-product として単独提供)。
 
@@ -64,13 +64,13 @@
 
 ```
  (任意) /git-clone ──► リモート取得 + .bb-spec.yaml 生成
-                  │
+   │
  (任意) /prd ──► PRD ドキュメント
-                  │
- /init-spec ──►  /spec ──► /plan ──► /exec ──► /review ──► /git-push
- (既存リポ)      何を作るか  どう作るか  Red→Green→Review  並列+敵対  pre-review+PR 作成
-                                                                          │
-        ┌─────────────────────────────────────────────────────────────────┘
+   │
+ /spec ──► /plan ──► /exec ──► /review ──► /git-push
+ 何を作るか  どう作るか  Red→Green→Review  並列+敵対  pre-review+PR 作成
+                                                          │
+        ┌─────────────────────────────────────────────────┘
         │
         ▼ /revise(いつでも介入、根本原因でルーティング)
           spec 欠陥 → /spec   ·   実装ドリフト → /exec   ·   review 指摘 → ピンポイント修正
@@ -87,11 +87,7 @@
 - **`/git-clone`** — *ワンショット onboarding*:リモートリポジトリをローカルに取得し `.bb-spec.yaml` を書き出す。
   - **AskUserQuestion 2 連発**:① 単一リポ / マルチリポワークスペース(ディレクトリ構造を決定) ② `base_dir`(以降すべての bb-spec 成果物の配置を決定)
   - **マルチリポワークスペース**は共通の親ディレクトリを作り各メンバーリポジトリを個別に clone(ビルドツールが期待する相対配置を復元)、ネスト禁止・上書き禁止
-  - 責務を厳格に絞る:**コード取得 + `base_dir` 書き込みのみ**、コードは読まず・依存もインストールせず・`/init-spec` も発火させない
-
-- **`/init-spec`** — 既存プロジェクトを*逆* spec 化。
-  - 既存のコード + ドキュメントを読み、**すでに実行されている暗黙の規範**を ≤100 行・1 ファイル 1 ルールの spec に蒸留、`/spec` と同じ構造で配置
-  - 大規模プロジェクトはパーティション分割でサブエージェントを並列実行;初回導入時に一度だけ実行
+  - 責務を厳格に絞る:**コード取得 + `base_dir` 書き込みのみ**、コードは読まず・依存もインストールしない
 
 - **`/spec`** — 対話で要件分解、**「何を作るか」**に答える。
   - 1 ファイル 1 ルール、≤100 行、1 件 + 1 例のみ、互いに重複なし
@@ -136,11 +132,11 @@
 - **`/doc-update`** — リポジトリ全体の spec / ドキュメント / コード**一貫性チェック**。
   - 6 種類のドリフト分類:spec-stale / doc-stale / code-violation / spec-conflict / orphan-index / uncovered-rule
   - **コードが真実、spec / ドキュメントはコードに合わせる**;コードが明らかに硬制約に違反する場合のみ止まって確認、`/revise` 経由で TDD へ
-  - `/init-spec`(ゼロ → 存在)、`/revise`(単点)、`/review` の `review-doc-sync`(PR diff スコープ)との境界を明確化
+  - `/revise`(単点)、`/review` の `review-doc-sync`(PR diff スコープ)との境界を明確化
 
 **同梱されるもの**
 
-- **12 個のオーケストレーションサブエージェント**(上記ステージに駆動される):`test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-code-quality` / `review-security` / `review-simplicity` / `review-robustness` / `review-doc-sync` / `review-codex` / `pre-reviewer` / `rule-extractor`
+- **11 個のオーケストレーションサブエージェント**(上記ステージに駆動される):`test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-code-quality` / `review-security` / `review-simplicity` / `review-robustness` / `review-doc-sync` / `review-codex` / `pre-reviewer`
 - **4 つの受動 hook**(自動発動):npm/yarn ブロック、main コミットブロック、依存バージョンセルフチェック、Stop 時の 4 項目セルフチェック
 
 ---
@@ -351,7 +347,7 @@ BB-Spec は 3 つの優れたプロジェクトの肩の上に立つ。それぞ
 
 - **3 エージェント隔離実行** —— Impl エージェントは*物理的に spec を見ない*、テストのみ見るため「意図に合わせてごまかす」ことが不可能;テスト、実装、レビューは互いに見えない 3 者がそれぞれ完成。
 - **唯一の受け渡しとしてのディスクドキュメント** —— 各ステージの受け渡しはチャット記憶ではなくファイル、そのためセッション横断、`/clear`、さらには別モデルへの引き継ぎでもロスレス再開可能。
-- **spec ⇄ code 双方向ループ** —— spec → code だけでなく、`/init-spec` で既存コードから逆方向に spec を沈殿させ、`/doc-update` でコードドリフトに対して継続的に追従。
+- **spec ⇄ code 双方向ループ** —— spec → code だけでなく、`/doc-update` がリポ全体のドリフトを走査し、spec をコードの現状へ継続的に追従させる。
 
 ---
 

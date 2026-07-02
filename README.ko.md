@@ -54,7 +54,7 @@
 | `/review` | 병렬 finder + 적대적 검증 | PR 제출 전 |
 | `/git-push` | pre-review 자가 점검 + push + PR 생성 | 출시 준비 |
 
-언제든 개입 가능한 4개 보조 라인: `/git-clone`(원격 프로젝트를 로컬로 가져오기 + `.bb-spec.yaml` 생성 일회성 onboarding), `/init-spec`(기존 프로젝트 역방향 spec화), `/revise`(모든 편차를 근본 원인에 따라 올바른 단계로 라우팅), `/doc-update`(저장소 전체 spec/문서/코드 일관성 점검).
+언제든 개입 가능한 3개 보조 라인: `/git-clone`(원격 프로젝트를 로컬로 가져오기 + `.bb-spec.yaml` 생성 일회성 onboarding), `/revise`(모든 편차를 근본 원인에 따라 올바른 단계로 라우팅), `/doc-update`(저장소 전체 spec/문서/코드 일관성 점검).
 
 선택적 상류: `/prd`(PM / 의뢰자가 PRD를 브레인스토밍, bb-spec-product로 별도 제공).
 
@@ -64,13 +64,13 @@
 
 ```
  (선택) /git-clone ──► 원격 가져오기 + .bb-spec.yaml 생성
-                  │
+   │
  (선택) /prd ──► PRD 문서
-                  │
- /init-spec ──►  /spec ──► /plan ──► /exec ──► /review ──► /git-push
- (기존 저장소)    무엇을      어떻게    Red→Green→Review  병렬+적대  pre-review+PR 생성
-                                                                          │
-        ┌─────────────────────────────────────────────────────────────────┘
+   │
+ /spec ──► /plan ──► /exec ──► /review ──► /git-push
+  무엇을      어떻게    Red→Green→Review  병렬+적대  pre-review+PR 생성
+                                                          │
+        ┌─────────────────────────────────────────────────┘
         │
         ▼ /revise (언제든 개입, 근본 원인으로 라우팅)
           spec 결함 → /spec   ·   구현 드리프트 → /exec   ·   review 지적 → 핀포인트 수정
@@ -87,11 +87,7 @@
 - **`/git-clone`** — *일회성 onboarding*: 원격 저장소를 로컬로 가져오고 `.bb-spec.yaml`을 작성한다.
   - **AskUserQuestion 2연발**: ① 단일 리포 / 멀티 리포 워크스페이스(디렉터리 구조 결정) ② `base_dir`(이후 모든 bb-spec 산출물의 배치 결정)
   - **멀티 리포 워크스페이스**는 공통 부모 디렉터리를 만들고 각 멤버 저장소를 개별 clone(빌드 도구가 기대하는 상대 배치 복원), 중첩 금지·덮어쓰기 금지
-  - 책임을 엄격히 좁힘: **코드만 가져오고 `base_dir`만 작성**, 코드를 읽지 않고·의존성을 설치하지 않고·`/init-spec`을 발화시키지 않음
-
-- **`/init-spec`** — 기존 프로젝트를 *역방향* spec화.
-  - 기존 코드 + 문서를 읽고 **이미 실행되고 있는 암묵적 규범**을 ≤100줄·한 파일 한 규칙의 spec으로 증류, `/spec`과 동일한 구조로 배치
-  - 대규모 프로젝트는 파티션 분할로 subagent를 병렬 실행; 최초 도입 시 한 번만 실행
+  - 책임을 엄격히 좁힘: **코드만 가져오고 `base_dir`만 작성**, 코드를 읽지 않고·의존성을 설치하지 않음
 
 - **`/spec`** — 대화를 통한 요구사항 분해, **"무엇을 만들 것인가"**에 답한다.
   - 한 파일 한 규칙, ≤100줄, 한 가지 + 예시 하나, 서로 중복 없음
@@ -136,11 +132,11 @@
 - **`/doc-update`** — 저장소 전체 spec / 문서 / 코드 **일관성 점검**.
   - 6종 드리프트 분류: spec-stale / doc-stale / code-violation / spec-conflict / orphan-index / uncovered-rule
   - **코드가 진실, spec / 문서는 코드에 맞춤**; 코드가 명백히 하드 제약을 위반할 때만 멈추고 확인, `/revise`를 통해 TDD로 진행
-  - `/init-spec`(제로 → 존재), `/revise`(단일 지점), `/review`의 `review-doc-sync`(PR diff 범위)와 경계를 명확히
+  - `/revise`(단일 지점), `/review`의 `review-doc-sync`(PR diff 범위)와 경계를 명확히
 
 **동봉되는 것**
 
-- **12개 오케스트레이션 subagent**(위 단계에 의해 구동): `test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-code-quality` / `review-security` / `review-simplicity` / `review-robustness` / `review-doc-sync` / `review-codex` / `pre-reviewer` / `rule-extractor`
+- **11개 오케스트레이션 subagent**(위 단계에 의해 구동): `test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-code-quality` / `review-security` / `review-simplicity` / `review-robustness` / `review-doc-sync` / `review-codex` / `pre-reviewer`
 - **4개 수동 hook**(자동 발동): npm/yarn 차단, main 커밋 차단, 의존성 버전 자가 점검, Stop 시 4항목 자가 점검
 
 ---
@@ -351,7 +347,7 @@ BB-Spec은 세 개의 우수한 프로젝트의 어깨 위에 서 있다. 각각
 
 - **3 에이전트 격리 실행** —— Impl 에이전트는 *물리적으로 spec을 보지 못함*, 테스트만 보므로 "의도에 맞춰 속임"이 불가능; 테스트, 구현, 리뷰는 서로 보지 못하는 3자가 각각 완성.
 - **유일한 인계물로서의 디스크 문서** —— 각 단계의 인계는 채팅 기억이 아닌 파일, 따라서 세션 횡단, `/clear`, 심지어 다른 모델의 인수에서도 무손실 재개 가능.
-- **spec ⇄ code 양방향 루프** —— spec → code뿐 아니라 `/init-spec`으로 기존 코드에서 역방향으로 spec을 침전시키고, `/doc-update`로 코드 드리프트에 대해 지속적으로 추종.
+- **spec ⇄ code 양방향 루프** —— spec → code뿐 아니라 `/doc-update`로 저장소 전체 드리프트를 스캔해 spec을 코드 현재 상태에 지속적으로 추종.
 
 ---
 
