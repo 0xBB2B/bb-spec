@@ -54,7 +54,7 @@
 | `/review` | 多 finder 並行 + 對抗驗證 | 提 PR 前 |
 | `/git-push` | pre-review 自查 + 推送 + 開 PR | 準備發版 |
 
-四條支線隨時可介入:`/git-clone`(拉遠端專案到本地 + 落 `.bb-spec.yaml` 一次性 onboarding)、`/init-spec`(存量專案反向 spec 化)、`/revise`(任何偏差按根因回到正確階段)、`/doc-update`(全儲存庫 spec/文件/程式碼一致性體檢)。
+三條支線隨時可介入:`/git-clone`(拉遠端專案到本地 + 落 `.bb-spec.yaml` 一次性 onboarding)、`/revise`(任何偏差按根因回到正確階段)、`/doc-update`(全儲存庫 spec/文件/程式碼一致性體檢)。
 
 可選上游:`/prd`(PM / 需求方頭腦風暴 PRD,由 bb-spec-product 單獨提供)。
 
@@ -64,13 +64,13 @@
 
 ```
  (可選) /git-clone ──► 拉遠端 + 落 .bb-spec.yaml
-                  │
+   │
  (可選) /prd ──► PRD 文件
-                  │
- /init-spec ──►  /spec ──► /plan ──► /exec ──► /review ──► /git-push
- (存量專案)      做什麼     怎麼做    Red→Green→Review  並發+對抗  pre-review+開 PR
-                                                                          │
-        ┌─────────────────────────────────────────────────────────────────┘
+   │
+ /spec ──► /plan ──► /exec ──► /review ──► /git-push
+ 做什麼     怎麼做    Red→Green→Review  並發+對抗  pre-review+開 PR
+                                                          │
+        ┌─────────────────────────────────────────────────┘
         │
         ▼ /revise(隨時介入,按根因路由)
           spec 缺陷 → /spec   ·   實作偏離 → /exec   ·   review 問題 → 定向修復
@@ -86,11 +86,7 @@
 - **`/git-clone`** — *一次性 onboarding*:把遠端儲存庫拉到本地、寫好 `.bb-spec.yaml`。
   - **AskUserQuestion 兩連**:① 單 repo / 多 repo 工作區(決定目錄結構) ② `base_dir`(決定後續所有 bb-spec 交付物落點)
   - **多 repo 工作區**建立統一父目錄 + 各成員儲存庫獨立 clone(復原建構工具期待的相對佈局),禁巢狀、禁覆寫
-  - 職責嚴格收斂:**只**拿程式碼 + 寫 `base_dir`,不讀程式碼、不裝相依套件、不觸發 `/init-spec`
-
-- **`/init-spec`** — *反向* spec 化存量專案。
-  - 讀現有程式碼 + 文件,把**已在執行的隱式規範**提煉成 ≤100 行、一檔一規則的 spec,落點與 `/spec` 一致
-  - 龐大專案按分區拆 subagent 並發提取;僅首次接入跑一次
+  - 職責嚴格收斂:**只**拿程式碼 + 寫 `base_dir`,不讀程式碼、不裝相依套件
 
 - **`/spec`** — 透過對話做需求拆解,回答**「做什麼」**。
   - 一檔一規則、≤100 行、只說一件事 + 一個範例,互不重疊
@@ -135,11 +131,11 @@
 - **`/doc-update`** — 全儲存庫 spec / 文件 / 程式碼**一致性體檢**。
   - 六類漂移定位:spec-stale / doc-stale / code-violation / spec-conflict / orphan-index / uncovered-rule
   - **程式碼是事實、spec/文件追平程式碼**;程式碼明顯違背硬約束才停下問、掛回 `/revise` 走 TDD
-  - 與 `/init-spec`(零→有)、`/revise`(單點)、`/review` 的 `review-doc-sync`(PR diff)劃清邊界
+  - 與 `/revise`(單點)、`/review` 的 `review-doc-sync`(PR diff)劃清邊界
 
 **附帶產物**
 
-- **12 個編排 subagent**(被上述環節驅動):`test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-code-quality` / `review-security` / `review-simplicity` / `review-robustness` / `review-doc-sync` / `review-codex` / `pre-reviewer` / `rule-extractor`
+- **11 個編排 subagent**(被上述環節驅動):`test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-code-quality` / `review-security` / `review-simplicity` / `review-robustness` / `review-doc-sync` / `review-codex` / `pre-reviewer`
 - **4 個被動 hook**(自動生效):攔截 npm/yarn、攔截 main commit、相依版本自檢、Stop 四項自檢
 
 ---
@@ -350,7 +346,7 @@ BB-Spec 站在三個優秀專案的肩上。它們各自塑造了 BB-Spec 設計
 
 - **三 Agent 隔離執行**——Impl Agent *物理上看不到 spec*,只看測試,無法「照著意圖矇混」;測試、實作、審查由互相看不見的三方分別完成。
 - **磁碟檔案作為唯一交接物**——每階段交接的是檔案而非會話記憶,因此跨會話、`/clear` 乃至換一個模型接手都能無損續接。
-- **spec ⇄ code 雙向閉環**——不止 spec → code,還能用 `/init-spec` 從既有程式碼反向沉澱 spec、用 `/doc-update` 在程式碼漂移時持續追平。
+- **spec ⇄ code 雙向閉環**——不止 spec → code:`/doc-update` 全儲存庫掃描漂移,持續把 spec 追平程式碼現態。
 
 ---
 

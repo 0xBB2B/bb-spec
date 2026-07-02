@@ -54,7 +54,7 @@ The 5 mainline commands:
 | `/review` | Parallel finders + adversarial verify | Before opening PR |
 | `/git-push` | pre-review self-check + push + open PR | Ready to ship |
 
-Four branches, callable anytime: `/git-clone` (pull a remote project locally + write `.bb-spec.yaml`, one-shot onboarding), `/init-spec` (reverse-spec an existing project), `/revise` (route any deviation back to the right stage by root cause), `/doc-update` (whole-repo spec / doc / code consistency sweep).
+Three branches, callable anytime: `/git-clone` (pull a remote project locally + write `.bb-spec.yaml`, one-shot onboarding), `/revise` (route any deviation back to the right stage by root cause), `/doc-update` (whole-repo spec / doc / code consistency sweep).
 
 Optional upstream: `/prd` (PM / requester brainstorms a PRD; shipped separately as bb-spec-product).
 
@@ -64,13 +64,13 @@ Optional upstream: `/prd` (PM / requester brainstorms a PRD; shipped separately 
 
 ```
  (opt) /git-clone ──► clone remote + write .bb-spec.yaml
-                  │
+   │
  (opt) /prd ──► PRD doc
-                  │
- /init-spec ──►  /spec ──► /plan ──► /exec ──► /review ──► /git-push
- (existing repo)  what       how      Red→Green→Review  finders+adv  pre-review+open PR
-                                                                          │
-        ┌─────────────────────────────────────────────────────────────────┘
+   │
+ /spec ──► /plan ──► /exec ──► /review ──► /git-push
+  what       how      Red→Green→Review  finders+adv  pre-review+open PR
+                                                          │
+        ┌─────────────────────────────────────────────────┘
         │
         ▼ /revise (anytime, routed by root cause)
           spec-defect → /spec   ·   impl-drift → /exec   ·   review finding → targeted fix
@@ -87,11 +87,7 @@ Optional upstream: `/prd` (PM / requester brainstorms a PRD; shipped separately 
 - **`/git-clone`** — *One-shot onboarding*: pull a remote repo locally and write `.bb-spec.yaml`.
   - **Two AskUserQuestion prompts**: ① single-repo vs multi-repo workspace (decides directory layout) ② `base_dir` (decides where every later bb-spec artifact lands)
   - **Multi-repo workspace**: creates a shared parent dir and clones each member repo into it (restoring the relative layout the build tool expects); refuses to nest or overwrite
-  - Tightly scoped: **only** pulls code + writes `base_dir` — does not read code, install deps, or trigger `/init-spec`
-
-- **`/init-spec`** — *Reverse*-spec an existing project.
-  - Reads code + docs and distills **already-enforced implicit conventions** into ≤100-line, one-rule-per-file specs, landing in the same structure `/spec` uses
-  - Large projects fan out across partitioned subagents; runs once on first adoption
+  - Tightly scoped: **only** pulls code + writes `base_dir` — does not read code or install deps
 
 - **`/spec`** — Requirement breakdown through dialogue. Answers **"what to build."**
   - One rule per file, ≤100 lines, one thing + one example, non-overlapping
@@ -136,11 +132,11 @@ Optional upstream: `/prd` (PM / requester brainstorms a PRD; shipped separately 
 - **`/doc-update`** — Whole-repo spec / doc / code **consistency sweep**.
   - Six drift classes: spec-stale / doc-stale / code-violation / spec-conflict / orphan-index / uncovered-rule
   - **Code is the truth; spec / docs are mirrored to it**; only obvious hard-constraint violations stop and ask, then route to `/revise` for TDD
-  - Clear boundaries against `/init-spec` (zero → existence), `/revise` (single point), and the `/review` `review-doc-sync` finder (PR-diff scope)
+  - Clear boundaries against `/revise` (single point) and the `/review` `review-doc-sync` finder (PR-diff scope)
 
 **Ships with**
 
-- **12 orchestration subagents** driven by the stages above: `test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-code-quality` / `review-security` / `review-simplicity` / `review-robustness` / `review-doc-sync` / `review-codex` / `pre-reviewer` / `rule-extractor`
+- **11 orchestration subagents** driven by the stages above: `test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-code-quality` / `review-security` / `review-simplicity` / `review-robustness` / `review-doc-sync` / `review-codex` / `pre-reviewer`
 - **4 passive hooks** (automatic): block npm/yarn, block main commit, dependency version self-check, Stop four-point self-check
 
 ---
@@ -351,7 +347,7 @@ BB-Spec stands on three excellent projects. Each shaped a different part of its 
 
 - **Three-agent isolated execution** — the Impl agent *physically never sees the spec*, only the tests, so it cannot quietly "teach to intent"; tests, implementation, and review are written by mutually-blind agents.
 - **Disk documents as the only handoff** — every stage hands off a file, not chat memory, so a run resumes losslessly across sessions, `/clear`, or even a different model picking up the work.
-- **Bidirectional spec ⇄ code loop** — not just spec → code, but `/init-spec` to distill specs out of an existing codebase and `/doc-update` to keep them in sync as the code drifts.
+- **Bidirectional spec ⇄ code loop** — not just spec → code: `/doc-update` sweeps the whole repo and updates specs as the code drifts.
 
 ---
 
