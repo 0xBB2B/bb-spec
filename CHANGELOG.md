@@ -1,5 +1,12 @@
 # Changelog
 
+## [10.6.0](https://github.com/0xBB2B/bb-spec/compare/v10.5.0...v10.6.0) (2026-07-03)
+
+
+### Features
+
+* **plan:** 启动先 worktree 感知定位 plan 现场，分批续作不再误判无需 plan ([#209](https://github.com/0xBB2B/bb-spec/issues/209)) ([9a92efc](https://github.com/0xBB2B/bb-spec/commit/9a92efca2a558267d9fc3a4989dc4af3b93bdd79))
+
 ## [10.5.0](https://github.com/0xBB2B/bb-spec/compare/v10.4.0...v10.5.0) (2026-07-03)
 
 
