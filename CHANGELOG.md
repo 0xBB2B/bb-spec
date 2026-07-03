@@ -1,5 +1,16 @@
 # Changelog
 
+## [11.0.0](https://github.com/0xBB2B/bb-spec/compare/v10.6.0...v11.0.0) (2026-07-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* **plan,exec,revise:** /plan 删除规模分流与分批 ROADMAP 整条链路（懒生成、批次状态、验证门、ROADMAP.md 产物），一律产出单 topic 计划；/exec 移除路线图衔接与完成简报中的验证门段；/revise 移除「需要 ROADMAP 表达批次门」的流程退出判定。既有项目中的 plan/ROADMAP.md 不再被工作流读取，大规模多领域需求改为按主题多次运行 /plan。
+
+### Features
+
+* **plan,exec,revise:** 移除分批 ROADMAP 模式，plan 仅保留单 topic ([#211](https://github.com/0xBB2B/bb-spec/issues/211)) ([ea0643b](https://github.com/0xBB2B/bb-spec/commit/ea0643b158ec221be8876484ce051c1024596cab))
+
 ## [10.6.0](https://github.com/0xBB2B/bb-spec/compare/v10.5.0...v10.6.0) (2026-07-03)
 
 
