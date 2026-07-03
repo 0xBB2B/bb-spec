@@ -1,6 +1,6 @@
 ---
 name: revise
-description: 产出修订（诊断→定向修正→回归验证）——对 spec→plan→exec 偏差做根因归类：spec-defect / impl-defect / requirement-change；先诊断再修正、改代码必先 Red 测试、最小影响只改必须改的层；已完成 plan 是历史审计快照禁止回改。触发：/revise、有 bug、结果不对、和预期不符、产出需要优化、review 发现违规需修复。跳过：纯新增需求（→/spec→/plan）、还没有 spec/plan/代码可对照。
+description: 产出修订（诊断→定向修正→回归验证）——对 spec→plan→exec 偏差做根因归类：spec-defect / impl-defect / requirement-change；先诊断再修正、改代码必先 Red 测试、最小影响只改必须改的层；已完成 plan 是历史审计快照禁止回改；启动先 worktree 感知定位修复现场（主仓库停在 main 时自动定位到进行中的 worktree）。触发：/revise、有 bug、结果不对、和预期不符、产出需要优化、review 发现违规需修复。跳过：纯新增需求（→/spec→/plan）、还没有 spec/plan/代码可对照。
 argument-hint: <问题或优化诉求描述>
 ---
 
@@ -40,9 +40,15 @@ argument-hint: <问题或优化诉求描述>
 **有参数**（`$ARGUMENTS` 非空）：直接使用用户传入的问题/优化描述。
 **无参数**：向用户提问（一次 2-3 个）——预期行为是什么？实际行为是什么？在哪个场景/功能下出现？
 
-### 步骤 1：读取配置 + 定位关联资产
+### 步骤 1：定位修复现场 + 读取配置 + 定位关联资产
 
-`cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`，后续所有路径基于此值。读 `${DOCS_DIR}/spec/INDEX.md` 与 `${DOCS_DIR}/plan/INDEX.md`，据问题描述定位四层资产并全部读取：
+**先定位修复现场（worktree 感知）**：主仓库目录常年停在 main，进行中的功能分支可能在 `~/.bb-spec/worktrees/` 下的某棵 worktree 里。读任何资产前先跑 `git branch --show-current` + `git worktree list --porcelain`：
+
+- **已在 linked worktree 或非 main/master 功能分支** → cwd 即修复现场，继续
+- **在主仓库且 HEAD 为 main/master**，且问题指向某棵 worktree 上进行中的工作（其 plan PROGRESS.md 未全完成，或分支领先 main）→ 后续读资产、修代码、跑测试、commit **全部定位到该 worktree 内执行**（`cd` 进去或全程用其绝对路径）；多棵候选 → AskUserQuestion 让用户选
+- **问题针对 main 上已合入的代码** → 属新修复任务，按 git-workflow 先确定开分支方式再动手，**禁止直接在 main 工作区改代码**
+
+现场确定后，在**该目录**下 `cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`，后续所有路径基于此值。读 `${DOCS_DIR}/spec/INDEX.md` 与 `${DOCS_DIR}/plan/INDEX.md`，据问题描述定位四层资产并全部读取：
 
 | 资产 | 定位方式 | 目的 |
 |---|---|---|

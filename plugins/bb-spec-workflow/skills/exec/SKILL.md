@@ -1,6 +1,6 @@
 ---
 name: exec
-description: 三 Agent 隔离执行 plan——Test→Impl→Review 串行，三方各只看各的输入互不可见；每步立即持久化 PROGRESS.md，跨会话/`/clear` 后从断点续接；commit 不自动 push、main 分支禁自动 commit。触发：/exec、开始实施 plan、继续执行 plan、从断点继续、按 plan 把代码做出来。跳过：还没 /plan 产出实施计划、纯调研/方案讨论、要改 spec 或 plan 本身（→/revise）。
+description: 三 Agent 隔离执行 plan——Test→Impl→Review 串行，三方各只看各的输入互不可见；每步立即持久化 PROGRESS.md，跨会话/`/clear` 后从断点续接；启动先 worktree 感知定位执行现场（主仓库停在 main 时自动定位到进行中的 worktree）；commit 不自动 push、main 分支禁自动 commit。触发：/exec、开始实施 plan、继续执行 plan、从断点继续、按 plan 把代码做出来。跳过：还没 /plan 产出实施计划、纯调研/方案讨论、要改 spec 或 plan 本身（→/revise）。
 argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 ---
 
@@ -47,9 +47,22 @@ argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 
 ## 工作流
 
-### 步骤 0：读取配置 + 解析参数定位目标
+### 步骤 0：定位执行现场 + 读取配置 + 解析参数
 
-`cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`。读 `${DOCS_DIR}/plan/INDEX.md`，按参数形式决定行为：
+**先定位执行现场（worktree 感知）**：git-workflow 默认用 worktree 隔离开发——功能分支常在 `~/.bb-spec/worktrees/` 下的某棵 worktree，主仓库目录始终停在 main。新窗口/新会话打开的往往是主仓库目录，直接把 cwd 当执行现场会从 main 读 plan、把测试和实现写进 main 工作区。所以读任何文件前先跑：
+
+```bash
+git branch --show-current
+git worktree list --porcelain
+```
+
+- **已在 linked worktree 或非 main/master 功能分支** → cwd 即执行现场，继续
+- **在主仓库且 HEAD 为 main/master** → 逐棵检查非 main 分支的 worktree：其 plan 目录（按该 worktree 内 `.bb-spec.yaml` 解析 `base_dir`，缺省 `.bb-spec`）下存在未全完成 PROGRESS.md 的即候选（指定了主题时须匹配该主题）：
+  - 恰一棵 → 它就是执行现场，**后续所有步骤——读 plan、写测试/实现、跑测试、commit——全部定位到该 worktree 内执行**（`cd` 进去或全程用其绝对路径）
+  - 多棵 → AskUserQuestion 列出让用户选
+  - 无 → 全新任务，按 git-workflow 先确定开分支方式再继续，**禁止把任何产出落在 main 工作区**
+
+现场确定后，在**该目录**下 `cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`。读 `${DOCS_DIR}/plan/INDEX.md`，按参数形式决定行为：
 
 | 调用方式 | 行为 |
 |---|---|
