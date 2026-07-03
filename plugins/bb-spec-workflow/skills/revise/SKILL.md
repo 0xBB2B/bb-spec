@@ -1,6 +1,6 @@
 ---
 name: revise
-description: 产出修订（诊断→定向修正→回归验证）——对 spec→plan→exec 偏差做根因归类：spec-defect / impl-defect / requirement-change；先诊断再修正、改代码必先 Red 测试、最小影响只改必须改的层。触发：/revise、有 bug、结果不对、和预期不符、产出需要优化、review 发现违规需修复。跳过：纯新增需求（→/spec→/plan）、还没有 spec/plan/代码可对照。
+description: 产出修订（诊断→定向修正→回归验证）——对 spec→plan→exec 偏差做根因归类：spec-defect / impl-defect / requirement-change；先诊断再修正、改代码必先 Red 测试、最小影响只改必须改的层；已完成 plan 是历史审计快照禁止回改。触发：/revise、有 bug、结果不对、和预期不符、产出需要优化、review 发现违规需修复。跳过：纯新增需求（→/spec→/plan）、还没有 spec/plan/代码可对照。
 argument-hint: <问题或优化诉求描述>
 ---
 
@@ -18,9 +18,10 @@ argument-hint: <问题或优化诉求描述>
 4. **分层修复起点**：spec-defect 必先改 spec 再改代码（禁只改代码不改 spec）；requirement-change 必先用户确认新需求再动手
 5. **修正闭环**：修正后必须验证——全量测试通过 + spec 合规 + 索引同步
 6. **最小影响**：只改必须改的层，不借修正之名扩展功能或重构（额外需求走 `/spec` → `/plan`）
-7. **三 Agent 串行强制派发**：涉及代码修改时必须按 Test → Impl → Review 顺序派 `bb-spec-workflow:test-engineer` / `bb-spec-workflow:impl-engineer` / `bb-spec-workflow:spec-reviewer` 三个 subagent，**禁止主 agent 自己写测试、写实现、做 spec 合规检查**；唯一例外是「轻量修复判断」（见步骤 3）通过且用户同意后允许主 agent 直接 TDD 修复
-8. **Agent 隔离同 exec**：Test 不看实现，Impl 不看 spec，Review 只读不写
-9. **输出中文**
+7. **已完成 plan 禁止回改**：PROGRESS.md 全部完成的 plan 是带日期的历史审计快照，回改即篡改记录（目录日期与内容脱节、"完成的是哪个版本"不可追溯）；仅进行中（PROGRESS.md 未全完成）的 plan 允许原地修正以保证断点续接。修复本身由本流程直接驱动，git commit 即修订记录
+8. **三 Agent 串行强制派发**：涉及代码修改时必须按 Test → Impl → Review 顺序派 `bb-spec-workflow:test-engineer` / `bb-spec-workflow:impl-engineer` / `bb-spec-workflow:spec-reviewer` 三个 subagent，**禁止主 agent 自己写测试、写实现、做 spec 合规检查**；唯一例外是「轻量修复判断」（见步骤 3）通过且用户同意后允许主 agent 直接 TDD 修复
+9. **Agent 隔离同 exec**：Test 不看实现，Impl 不看 spec，Review 只读不写
+10. **输出中文**
 
 ## 三类归因
 
@@ -124,7 +125,10 @@ argument-hint: <问题或优化诉求描述>
 #### 3a. spec-defect — 定义层出错，从 spec 起向下级联
 
 1. **改 spec**：编辑 spec 文件修正规则（遵守 spec skill 变更判定：修改=编辑原文件，废弃=删文件 + 移除索引条目）
-2. **检查 plan 影响**：需更新则改对应 plan 的业务规则/验证方式，无影响则跳过
+2. **检查 plan 影响**（先看 plan 状态再动手）：
+   - **进行中**（PROGRESS.md 未全完成）→ 原地修正对应 plan 的业务规则/验证方式，保证断点续接正确
+   - **已完成**（PROGRESS.md 全部完成）→ **不改 plan**，spec 层修正照常、修复由本流程三 Agent 直接驱动；若偏差大到需要一份新实施计划，按步骤 1 流程归属判定退出转 `/spec` → `/plan`
+   - 无影响则跳过
 3. **TDD 修复实现（强制三 Agent 派发）**：
    - 派 `bb-spec-workflow:test-engineer`，prompt 传「修正后的 spec 业务规则 + 验证预期 + 项目测试惯例」→ 主 agent 验证 Red
    - 派 `bb-spec-workflow:impl-engineer`，prompt 传「函数清单 + 文件路径 + 测试文件路径 + 项目约束」→ 主 agent 验证 Green
