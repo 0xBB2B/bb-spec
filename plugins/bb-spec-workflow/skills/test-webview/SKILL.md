@@ -38,7 +38,8 @@ disable-model-invocation: true
 
 ### 步骤 1：前置检查（任一不过即中止并给指引）
 
-- **浏览器 MCP**：当前工具列表含 `mcp__playwright__*` 或 `mcp__chrome-devtools__*` 任一 → 选定（**优先 playwright**），记为 `${MCP_FAMILY}`。都没有 → **提示安装**（`claude mcp add playwright -- npx @playwright/mcp@latest`，或安装 chrome-devtools MCP），中止。
+- **浏览器 MCP**：当前工具列表含 `mcp__playwright__*` 或 `mcp__chrome-devtools__*` 任一 → 选定（**优先 playwright**），记为 `${MCP_FAMILY}`。都没有 → **提示安装**（`claude mcp add playwright -- npx @playwright/mcp@latest --headless --isolated`，或 `claude mcp add chrome-devtools -- npx chrome-devtools-mcp@latest --headless=true --isolated=true`），中止。
+- **无头模式**：`claude mcp get <server 名>` 查选定 MCP 的启动参数——须含 `--headless`（chrome-devtools 以 `--browserUrl`/`--wsEndpoint` 连接既有浏览器的模式除外）。缺失 → **中止**，给出上一条带 `--headless` 的重装命令（先 `claude mcp remove <server 名>` 再 add），并提示重启会话后重跑：headless 无渲染开销、跑得更快，也不会弹窗打断用户。
 - **Docker 可用**：`docker info` 探测；不可用 → **报错终止**（提示安装 / 启动 Docker）。
 
 「项目是否对外提供 HTML 网页」交由步骤 2 兜底——用户在那里显式声明面向浏览器的服务及其端口，无需在此做语言/栈探测。
