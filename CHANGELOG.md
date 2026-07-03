@@ -1,5 +1,12 @@
 # Changelog
 
+## [10.4.0](https://github.com/0xBB2B/bb-spec/compare/v10.3.0...v10.4.0) (2026-07-03)
+
+
+### Features
+
+* **test-webview:** webview 测试强制无头模式并加最少调用提速纪律 ([#205](https://github.com/0xBB2B/bb-spec/issues/205)) ([0f42a91](https://github.com/0xBB2B/bb-spec/commit/0f42a91359640d9a023aa9ad408986258bfb8d01))
+
 ## [10.3.0](https://github.com/0xBB2B/bb-spec/compare/v10.2.0...v10.3.0) (2026-07-03)
 
 
