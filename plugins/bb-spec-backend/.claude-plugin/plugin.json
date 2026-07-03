@@ -1,6 +1,6 @@
 {
   "name": "bb-spec-backend",
-  "version": "10.6.0",
+  "version": "11.0.0",
   "description": "BB-Spec 后端技术框架约束：Go 三层架构与测试、REST API 设计与结构化错误码、关系型数据库、认证/授权、可观测性、服务运行时治理。",
   "author": {
     "name": "0xBB2B",
