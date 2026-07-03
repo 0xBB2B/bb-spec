@@ -96,7 +96,6 @@ Optional upstream: `/prd` (PM / requester brainstorms a PRD; shipped separately 
 - **`/plan`** — spec → self-contained, **function-level** plan. Answers **"how to build it."**
   - One independent problem per file, down to function names and responsibilities; declarative artifacts (DDL / API contracts / config) are **inlined in final form** for exec to write verbatim
   - Invocation enters **plan mode for read-only alignment** — nothing lands until you approve; **new third-party dependencies are listed as a dedicated section**, and approval counts as the explicit user consent version-policy requires
-  - Auto-scales: single-domain small scopes go single-topic; multi-domain / bootstrap / large spec drops switch to a **batched ROADMAP** with dependency arrows + verification gates, expanding only the current batch
 
 - **`/exec`** — **Three-agent isolated execution**, the core anti-cheat design.
   - *Test* agent reads spec rules only, writes failing tests (Red)
