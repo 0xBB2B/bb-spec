@@ -1,5 +1,12 @@
 # Changelog
 
+## [10.3.0](https://github.com/0xBB2B/bb-spec/compare/v10.2.0...v10.3.0) (2026-07-03)
+
+
+### Features
+
+* **revise:** 已完成 plan 禁止回改，级联修正按 plan 状态分流 ([#203](https://github.com/0xBB2B/bb-spec/issues/203)) ([50ec979](https://github.com/0xBB2B/bb-spec/commit/50ec97927b601177fdaae9442984a7ef5ceed8f4))
+
 ## [10.2.0](https://github.com/0xBB2B/bb-spec/compare/v10.1.0...v10.2.0) (2026-07-02)
 
 
