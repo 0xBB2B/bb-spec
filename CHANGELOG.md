@@ -1,5 +1,12 @@
 # Changelog
 
+## [10.5.0](https://github.com/0xBB2B/bb-spec/compare/v10.4.0...v10.5.0) (2026-07-03)
+
+
+### Features
+
+* **exec,revise:** 启动先 worktree 感知定位执行现场，避免误落 main 工作区 ([#207](https://github.com/0xBB2B/bb-spec/issues/207)) ([5ed2639](https://github.com/0xBB2B/bb-spec/commit/5ed26399fdf4bbbc8a8e691c54c1b1f6071cafd6))
+
 ## [10.4.0](https://github.com/0xBB2B/bb-spec/compare/v10.3.0...v10.4.0) (2026-07-03)
 
 
