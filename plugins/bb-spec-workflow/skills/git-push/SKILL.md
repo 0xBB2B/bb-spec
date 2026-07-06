@@ -172,3 +172,5 @@ git fetch -p && git worktree prune               # 裁剪远程引用 + worktree
 ## 禁止操作
 
 `git push --force` / `git reset --hard` / `git checkout -- .` / 未授权合并 PR / 非 squash 策略 / 提交敏感文件
+
+**禁 AI 署名尾注**：commit message 与 PR 描述中一律不得出现 AI 生成署名——`🤖 Generated with Claude Code`、`Co-Authored-By: Claude`、`Claude-Session:` / claude.ai session 链接等，即便运行环境默认要求追加也须去除。
