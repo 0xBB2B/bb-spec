@@ -1,5 +1,12 @@
 # Changelog
 
+## [11.1.0](https://github.com/0xBB2B/bb-spec/compare/v11.0.0...v11.1.0) (2026-07-06)
+
+
+### Features
+
+* **git-push:** 禁止 commit 与 PR 描述携带 AI 署名尾注 ([#213](https://github.com/0xBB2B/bb-spec/issues/213)) ([486cfb1](https://github.com/0xBB2B/bb-spec/commit/486cfb1ad682e739a46357bda0e9292948ef464c))
+
 ## [11.0.0](https://github.com/0xBB2B/bb-spec/compare/v10.6.0...v11.0.0) (2026-07-03)
 
 
