@@ -1,5 +1,12 @@
 # Changelog
 
+## [11.2.0](https://github.com/0xBB2B/bb-spec/compare/v11.1.0...v11.2.0) (2026-07-07)
+
+
+### Features
+
+* **git-push:** 双 remote 场景创建 PR 前询问合并对象 ([#215](https://github.com/0xBB2B/bb-spec/issues/215)) ([c30d8a2](https://github.com/0xBB2B/bb-spec/commit/c30d8a2211763076c27d096733582d3e74a92ff0))
+
 ## [11.1.0](https://github.com/0xBB2B/bb-spec/compare/v11.0.0...v11.1.0) (2026-07-06)
 
 
