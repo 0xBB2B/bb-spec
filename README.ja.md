@@ -175,6 +175,20 @@
 
 ---
 
+## 🧭 プラットフォーム対照 / Claude Code vs opencode
+
+BB-Spec は 2 つのホストプラットフォームに対応し、規律とワークフローの**内容は同一**です。環境に合わせてどちらかをインストールしてください(手順は下の 2 節):
+
+| 項目 | Claude Code | opencode |
+|---|---|---|
+| 配布形態 | 5 つのサブ plugin、marketplace から必要分のみ | 単一 npm パッケージ `opencode-bb-spec`、一括導入 |
+| インストール | `/plugin marketplace add 0xBB2B/bb-spec` | `opencode.json` の `plugin` 配列 |
+| Skills | 26 個、自動トリガー + スラッシュ呼び出し | 26 個、ネイティブ `skill` ツールでロード |
+| ユーザーコマンド | skill がそのまま slash command | 11 個の独立 command(`/spec` `/exec` `/review` …) |
+| Subagents | 11 個、Agent ツールで派遣;review-codex は codex プラグイン経由 | 11 個、`task` ツールで派遣;review-codex はローカル codex CLI を直接呼び出し |
+| Hooks | hooks.json + shell スクリプト 4 本 | TypeScript プラグインフック、4 つのガードが同等動作 |
+| バージョン | release-please ロックステップ、`/plugin update` で更新 | 同一バージョンライン、リリース時に npm 自動公開 |
+
 ## 📦 Claude Code インストール / Install
 
 BB-Spec は**5 つの独立インストール可能なサブ plugin** に分割 —— 必要な制約レイヤーのみインストール。
@@ -267,6 +281,21 @@ Directory に bb-spec の 5 つのサブプラグインが表示される。`Bb 
 <p align="center">
   <img src="./assets/desktop/06-verify-prd.png" alt="インストール確認" width="100%" />
 </p>
+
+## 🔌 opencode インストール / Install (opencode)
+
+BB-Spec は [opencode](https://opencode.ai) プラグイン版も提供しています。単一の npm パッケージで全 26 skills、11 subagent、11 command、4 つのワークフローガード hook を配布します(Claude Code 固有の codex クロスプラグイン参照を除き機能同等——クロスモデル review はローカルの codex CLI を直接呼び出します)。
+
+`~/.config/opencode/opencode.json`(グローバル)またはプロジェクトの `opencode.json` に宣言します:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": ["opencode-bb-spec"]
+}
+```
+
+opencode を再起動し、`opencode debug skill` で確認してください。詳細と Claude Code 版との対応表は [opencode/README.md](opencode/README.md) を参照。
 
 ## 🔄 バージョンと更新 / Versioning
 

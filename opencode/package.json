@@ -1,0 +1,37 @@
+{
+  "name": "opencode-bb-spec",
+  "version": "11.2.0",
+  "description": "BB-Spec 开发纪律与 spec→plan→exec→review 工作流的 opencode 插件：26 个 skills、11 个编排 subagent、11 个 command、4 个流程守卫 hook。",
+  "type": "module",
+  "main": "./src/index.ts",
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "bb-spec",
+    "spec-driven",
+    "tdd",
+    "workflow",
+    "skills",
+    "subagent",
+    "code-review",
+    "git-workflow"
+  ],
+  "files": [
+    "src",
+    "skills",
+    "agents",
+    "README.md"
+  ],
+  "author": {
+    "name": "0xBB2B",
+    "url": "https://github.com/0xBB2B"
+  },
+  "homepage": "https://github.com/0xBB2B/bb-spec",
+  "repository": "https://github.com/0xBB2B/bb-spec",
+  "license": "MIT",
+  "devDependencies": {
+    "@opencode-ai/plugin": "1.17.14",
+    "@types/bun": "1.3.14",
+    "typescript": "6.0.3"
+  }
+}

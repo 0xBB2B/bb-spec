@@ -174,6 +174,20 @@
 
 ---
 
+## 🧭 宿主對照 / Claude Code vs opencode
+
+BB-Spec 支援兩個宿主平台,紀律與工作流**內容一致**,依使用環境擇一安裝(安裝方式見下方兩節):
+
+| 維度 | Claude Code | opencode |
+|---|---|---|
+| 發佈形態 | 5 個子 plugin,marketplace 按需安裝 | 單一 npm 套件 `opencode-bb-spec`,一次全裝 |
+| 安裝入口 | `/plugin marketplace add 0xBB2B/bb-spec` | `opencode.json` 的 `plugin` 陣列 |
+| Skills | 26 個,自動觸發 + 斜線調用 | 26 個,原生 `skill` 工具載入 |
+| 使用者命令 | skill 即 slash command | 11 個獨立 command(`/spec` `/exec` `/review` …) |
+| Subagents | 11 個,Agent 工具派工;review-codex 經 codex 外掛跨模型 | 11 個,`task` 工具派工;review-codex 直連本機 codex CLI |
+| Hooks | hooks.json + 4 個 shell 腳本 | TypeScript 外掛鉤子,4 個守衛行為等價 |
+| 版本發佈 | release-please 鎖步,`/plugin update` 更新 | 同一版本線,發版自動發佈 npm |
+
 ## 📦 Claude Code 安裝 / Install
 
 BB-Spec 拆成**五個可獨立安裝的子 plugin**——只裝你需要的約束層。
@@ -266,6 +280,21 @@ Directory 中會看到 bb-spec 的 5 個子插件。點擊 `Bb spec core` / `Bb 
 <p align="center">
   <img src="./assets/desktop/06-verify-prd.png" alt="驗證安裝" width="100%" />
 </p>
+
+## 🔌 opencode 安裝 / Install (opencode)
+
+BB-Spec 同時提供 [opencode](https://opencode.ai) 外掛版:單一 npm 套件交付全部 26 個 skills、11 個 subagent、11 個 command 與 4 個流程守衛 hook(除 Claude Code 專有的 codex 跨外掛引用外功能對齊——跨模型 review 改為直連本機 codex CLI)。
+
+在 `~/.config/opencode/opencode.json`(全域)或專案層級 `opencode.json` 中宣告:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": ["opencode-bb-spec"]
+}
+```
+
+重啟 opencode 後用 `opencode debug skill` 驗證。細節與 Claude Code 版差異對照見 [opencode/README.md](opencode/README.md)。
 
 ## 🔄 版本與更新 / Versioning
 

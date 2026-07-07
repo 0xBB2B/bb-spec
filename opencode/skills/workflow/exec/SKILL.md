@@ -1,0 +1,144 @@
+---
+name: exec
+description: 三 Agent 隔离执行 plan——Test→Impl→Review 串行，三方各只看各的输入互不可见；每步立即持久化 PROGRESS.md，跨会话/新会话后从断点续接；启动先 worktree 感知定位执行现场（主仓库停在 main 时自动定位到进行中的 worktree）；commit 不自动 push、main 分支禁自动 commit。触发：/exec、开始实施 plan、继续执行 plan、从断点继续、按 plan 把代码做出来。跳过：还没 /plan 产出实施计划、纯调研/方案讨论、要改 spec 或 plan 本身（→/revise）。
+---
+
+# Exec 计划执行
+
+三 Agent 隔离执行 plan：Test(Red) → Impl(Green) → Review(合规)，每步完成持久化到 PROGRESS.md，支持断点续接。
+
+## 核心原则（兼硬约束）
+
+1. **逐步执行**：一次只实现一个 plan 文件，验证通过再进入下一步；跳步会破坏依赖关系
+2. **角色隔离**：三个 Agent 各看各的输入互不可见——Test **禁看**函数清单和实现路径，Impl **禁看** spec 原文，Review **禁止**修改文件
+3. **三 Agent 串行**：必须 Test → Impl → Review 顺序；每个 Agent prompt 自包含，不依赖对话上下文
+4. **进度即时持久化**：每步完成后立即更新 PROGRESS.md（不攒批），它是唯一进度事实源，重启后仅凭此文件恢复
+5. **Plan 即合同**：严格按 plan 的函数清单和业务规则实现，不自行扩展（额外需求走 `/spec` → `/plan`）；新增第三方库以 plan「新增第三方依赖」清单为上限——该清单已在 plan 批准时获用户授权，清单外需要新库时必须停下询问用户，**禁自行 import**
+6. **如实上报**：验证失败禁标 done；阻塞禁静默跳过——必须记录并告知用户
+7. **commit 守卫**：每步本地 commit 后**禁止自动 push**；在 main 分支上**禁止自动 commit**
+8. **遵守已激活 skill 约束**：exec 不重复其他 skill 的规则，但执行时必须遵守已激活约束（如 golang-testing 测试惯用法、golang-constraints 架构约束）
+9. **输出中文**
+
+## Agent 定义
+
+三个 Agent 是插件注册的 opencode subagent，经 `task` 工具派工，数据写进任务消息（每个任务消息自包含，按各 agent「输入」小节的要求组织）：
+
+| Agent | subagent | 角色 |
+|---|---|---|
+| Test Agent | `bb-spec-test-engineer` | 测试工程师：只读 spec 写测试 |
+| Impl Agent | `bb-spec-impl-engineer` | 实现工程师：只看测试写实现 |
+| Review Agent | `bb-spec-spec-reviewer` | 合规审查者：对照 spec 检查产出 |
+
+**信息隔离矩阵**：
+
+| 输入 | Test | Impl | Review |
+|---|---|---|---|
+| spec 规则（plan「业务规则」区） | ✅ | ❌ | ✅ |
+| 行为预期（plan「验证方式」区） | ✅ | ❌ | ✅ |
+| 函数清单 + 文件路径 | ❌ | ✅ | ❌ |
+| 成品定义（plan「成品定义」区，如有） | ❌ | ✅ | ❌ |
+| 新增第三方依赖清单（plan「新增第三方依赖」区，如有） | ❌ | ✅ | ❌ |
+| 协作关系 | ❌ | ✅ | ❌ |
+| 项目约束（语言/框架/架构） | ✅ | ✅ | ❌ |
+| 项目测试惯例 | ✅ | ❌ | ❌ |
+| Test Agent 写的测试文件 | — | ✅ | ✅ |
+| Impl Agent 写的代码 | — | — | ✅ |
+
+## 工作流
+
+### 步骤 0：定位执行现场 + 读取配置 + 解析参数
+
+**先定位执行现场（worktree 感知）**：git-workflow 默认用 worktree 隔离开发——功能分支常在 `~/.bb-spec/worktrees/` 下的某棵 worktree，主仓库目录始终停在 main。新窗口/新会话打开的往往是主仓库目录，直接把 cwd 当执行现场会从 main 读 plan、把测试和实现写进 main 工作区。所以读任何文件前先跑：
+
+```bash
+git branch --show-current
+git worktree list --porcelain
+```
+
+- **已在 linked worktree 或非 main/master 功能分支** → cwd 即执行现场，继续
+- **在主仓库且 HEAD 为 main/master** → 逐棵检查非 main 分支的 worktree：其 plan 目录（按该 worktree 内 `.bb-spec.yaml` 解析 `base_dir`，缺省 `.bb-spec`）下存在未全完成 PROGRESS.md 的即候选（指定了主题时须匹配该主题）：
+  - 恰一棵 → 它就是执行现场，**后续所有步骤——读 plan、写测试/实现、跑测试、commit——全部定位到该 worktree 内执行**（`cd` 进去或全程用其绝对路径）
+  - 多棵 → 列出候选向用户提问，等用户选定再继续
+  - 无 → 全新任务，按 git-workflow 先确定开分支方式再继续，**禁止把任何产出落在 main 工作区**
+
+现场确定后，在**该目录**下 `cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`。读 `${DOCS_DIR}/plan/INDEX.md`，按参数形式决定行为：
+
+| 调用方式 | 行为 |
+|---|---|
+| `/exec` | 自动选主题 → 从第一个非 `done` 步骤起依次执行到最后 |
+| `/exec <YYYY-MM-DD>.<主题>` | 指定主题 → 从第一个非 `done` 步骤起依次执行到最后 |
+| `/exec <YYYY-MM-DD>.<主题>/<plan名>` | 指定主题 + 单个 plan，只执行该 plan |
+
+**主题定位**（无参数或仅指定主题时）：INDEX.md 不存在 → 告知"建议先运行 `/plan`"终止；无 `进行中` 主题 → 告知"所有主题已完成"终止；仅一个 `进行中` → 自动选中；多个 → 列出让用户选。
+
+### 步骤 1：确定执行范围
+
+读 `PROGRESS.md`（不存在则初始化，所有步骤标 `pending`）。
+
+- **指定了单个 plan**：直接跳到该 plan 执行，不影响其他步骤状态
+- **未指定**：展示进度概况（已完成 N/M 步），**直接全部执行**——从第一个非 `done` 步骤依次到最后，不询问用户（用户若想只跑某一步，应在调用时显式带 `/<plan名>`）
+
+### 步骤 2：执行当前步骤
+
+读当前步骤对应 plan `.md`，按隔离矩阵拆为三份 Agent 输入。同时扫描项目已有测试文件，提取测试惯例（框架、目录、命名风格）。
+
+**2a. Test Agent — Red**：用 `task` 派 `bb-spec-test-engineer`，任务消息传「业务规则」+「验证方式」+ 项目测试惯例。主 Agent 验证：编译通过 + 断言失败 → ✅ Red 进 2b；编译失败 → 主 Agent 修 import/类型后重跑；意外全 PASS → 行为已存在则跳过，测试错误则修正。
+
+**2b. Impl Agent — Green**：用 `task` 派 `bb-spec-impl-engineer`，任务消息传「函数清单 + 文件路径 + 协作关系 + 成品定义（如有）+ 新增第三方依赖清单（如有）」+ 测试文件路径。主 Agent 验证：全部通过 → **依赖守卫**（diff `go.mod` / `package.json` 等依赖文件，新增第三方库不得超出 plan「新增第三方依赖」清单；超出则令 Impl Agent 改用标准库 / 已有依赖重跑，确属必需时停下询问用户、同意后先补录 plan 清单再继续）+ 简洁性审视（是否用最少实现解决问题、有无 plan 未要求的抽象/防御/功能），发现过度设计则反馈 Impl Agent 简化后重跑、通过则 ✅ Green 进 2c；有失败 → 反馈错误给 Impl Agent 重试（最多 1 次）→ 仍失败报告用户。
+
+**2c. Review Agent — Spec 合规**：用 `task` 派 `bb-spec-spec-reviewer`，任务消息传「业务规则」+「验证方式」+ 所有变更文件路径。主 Agent 处理：全 ✅ → 进步骤 3；有 ❌ 或 ⚠️ → **先归因，再按根因决定自决还是问用户**——非设计判断自行解决，不打断用户。
+
+**归因**：对照 spec → plan → 实现 → 测试链路，判定根因——spec-defect（定义层出错）/ impl-defect（spec 正确但实现不符）/ requirement-change（用户实际需要与 spec 不同）。
+
+**按根因分流**：
+
+- **impl-defect 且根因确凿**（纯实现偏差、不触碰 spec）→ 执行层问题，**自行闭环不打断用户**：补测试(Red) → 改实现(Green) → 重新 Review；自修**最多 1 次**仍不过 → 标 blocked 上报用户。无论自修成败都在 PROGRESS.md「当前」区如实记一笔并计入完成简报。
+- **spec-defect / requirement-change，或归因存疑、证据不足以定性** → 触及定义层 / 需求层，属设计判断，**必须停下**向用户提问，让用户选 **修复** / **接受例外**（记录到 PROGRESS.md）/ **暂停**（标 blocked）。「接受例外」等于默许偏离 spec，**只能由用户点头，主 Agent 禁自决接受**。选"修复"时先向用户展示归因 + 证据，确认后再按类型修：spec-defect → 改 spec → 级联 plan → TDD 重新实现（Test→Impl→Review）；requirement-change → 用户确认新需求 → 更新 spec → 级联 plan + 实现。
+
+**回归验证**：修复后跑全量测试 + spec 合规检查。
+
+### 步骤 3：持久化进度
+
+验证通过后**立即**更新 PROGRESS.md：当前步骤标 `done` + 填完成时间、"当前"区更新为下一步骤、清除已解决阻塞项。
+
+随后把本步骤产出做一次**本地** commit：先 `git branch --show-current` 确认分支（**在 main 上则跳过自动 commit**并提示按 git-workflow 先建分支）；只提交本步骤涉及文件（实现 + 测试 + `PROGRESS.md`）；message 遵循仓库历史风格（先 `git log --oneline -10`）、不硬编码类型前缀；**仅本地不自动 push**；blocked / 未通过的步骤不 commit。
+
+### 步骤 4：循环或收尾
+
+- **单个 plan 模式**：当前 plan 完成即停，输出完成简报
+- **全部执行 + 还有后续步骤**：回步骤 2 执行下一步
+- **全部执行 + 全部完成**：① 更新根 `plan/INDEX.md`，该主题状态改 `已完成` 填完成时间 ② 运行全量测试确认无回归 ③ **归档确认**：已删除的 spec 已从 `spec/INDEX.md` 移除、spec 内容与实现一致 ④ 把收尾改动做一次本地 commit（守卫同步骤 3）⑤ 输出完成简报
+
+**遇阻塞时**：在 PROGRESS.md 当前步骤标 `blocked`、"阻塞"区记录原因、告知用户等待指示。
+
+**完成简报格式**（单个 plan 模式和全部完成均用）：
+
+```
+## Exec 完成简报
+- 主题：<YYYY-MM-DD.主题>
+- 执行范围：<全部 N 步 / 单步 plan-name>
+- 完成情况：成功 N 步 / 跳过 M 步 / 阻塞 K 步
+- 变更文件：实现<路径> / 测试<路径>
+- 测试结果：✅ 全部通过（N 个测试） / ❌ 失败列表
+- Review 结论：✅ 全部合规 / ⚠️ 已接受的例外列表
+- 待解决：<阻塞项 / 已接受的例外 / 无>
+- 下一步：<如"运行 /review 做最终审查" / "继续执行剩余步骤" / 前端主题："**运行 `/test-webview` 跑一遍网页交互验收**" / "无">
+```
+
+## PROGRESS.md 操作规范
+
+**初始化**（步骤 1）：
+
+```markdown
+# 执行进度
+| 序号 | Plan | 状态 | 完成时间 |
+|---|---|---|---|
+| 01 | <name-from-index> | pending | — |
+| 02 | <name-from-index> | pending | — |
+## 当前
+准备执行 `01-<name>.md`。
+## 阻塞
+（无）
+```
+
+**更新**（步骤 3）：只改三处——当前步骤状态行、"当前"区、"阻塞"区，不重写整个文件。

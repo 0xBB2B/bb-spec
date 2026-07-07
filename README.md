@@ -175,7 +175,21 @@ These feed rules into the pipeline above — install only the layers you need.
 
 ---
 
-## 📦 Install
+## 🧭 Platforms / Claude Code vs opencode
+
+BB-Spec ships for two host platforms with **identical** discipline and workflow content — pick the one matching your environment (installation in the two sections below):
+
+| Dimension | Claude Code | opencode |
+|---|---|---|
+| Distribution | 5 sub-plugins, install on demand via marketplace | one npm package `opencode-bb-spec`, all-in-one |
+| Install entry | `/plugin marketplace add 0xBB2B/bb-spec` | `plugin` array in `opencode.json` |
+| Skills | 26, auto-trigger + slash invocation | 26, loaded via the native `skill` tool |
+| User commands | every skill doubles as a slash command | 11 dedicated commands (`/spec` `/exec` `/review` …) |
+| Subagents | 11, dispatched via the Agent tool; review-codex goes through the codex plugin | 11, dispatched via the `task` tool; review-codex shells out to the local codex CLI |
+| Hooks | hooks.json + 4 shell scripts | TypeScript plugin hooks, 4 behavior-equivalent guards |
+| Versioning | release-please lockstep, update via `/plugin update` | same version line, npm published on release |
+
+## 📦 Claude Code Install
 
 BB-Spec ships as **five independently installable sub-plugins** — install only the constraint layers you need.
 
@@ -267,6 +281,21 @@ Back in the input box, type `/prd`. If the command suggestion shows up, you're s
 <p align="center">
   <img src="./assets/desktop/06-verify-prd.png" alt="Verify install" width="100%" />
 </p>
+
+## 🔌 opencode Install
+
+BB-Spec also ships as an [opencode](https://opencode.ai) plugin: one npm package delivering all 26 skills, 11 subagents, 11 commands and 4 workflow-guard hooks (full parity except the Claude Code-specific codex cross-plugin reference — cross-model review shells out to the local codex CLI instead).
+
+Declare it in `~/.config/opencode/opencode.json` (global) or a project-level `opencode.json`:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": ["opencode-bb-spec"]
+}
+```
+
+Restart opencode, then verify with `opencode debug skill`. Details and the Claude Code ↔ opencode mapping: [opencode/README.md](opencode/README.md).
 
 ## 🔄 Versioning
 
