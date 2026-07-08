@@ -13,6 +13,10 @@
 </p>
 
 <p align="center">
+  <a href="#-claude-code-インストール--install"><strong>Claude Code</strong></a> と <a href="#-opencode-インストール--install-opencode"><strong>opencode</strong></a> の両ホストに対応 —— クリックで対応するインストール手順へ直行。
+</p>
+
+<p align="center">
   <a href="https://github.com/0xBB2B/bb-spec/actions/workflows/ci.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/0xBB2B/bb-spec/ci.yml?branch=main&style=for-the-badge&logo=github&label=CI" alt="CI ステータス" /></a>
   <a href="https://github.com/0xBB2B/bb-spec/releases"><img src="https://img.shields.io/github/v/release/0xBB2B/bb-spec?include_prereleases&style=for-the-badge&logo=github&color=blue" alt="GitHub release" /></a>
   <a href="https://github.com/0xBB2B/bb-spec/stargazers"><img src="https://img.shields.io/github/stars/0xBB2B/bb-spec?style=for-the-badge&color=yellow&logo=github" alt="GitHub Stars" /></a>
