@@ -181,13 +181,13 @@
 
 ## 🧭 플랫폼 대조 / Claude Code vs opencode
 
-두 호스트가 제공하는 것은 **동일한 내용**입니다: 26개 skills, 11개 오케스트레이션 subagent, 4개 워크플로 가드 hook(동작 동등)을 단일 버전 라인에서 잠금 동기화로 릴리스합니다. 차이는 배포 방식과 호스트 메커니즘뿐이니 사용 환경에 맞춰 하나를 선택해 설치하세요(방법은 아래 두 절 참조):
+두 호스트가 제공하는 것은 **동일한 내용**입니다: 26개 skills, 오케스트레이션 subagent(Claude Code 버전 11개, opencode 버전 10개), 4개 워크플로 가드 hook(동작 동등)을 단일 버전 라인에서 잠금 동기화로 릴리스합니다. 차이는 배포 방식과 호스트 메커니즘뿐이니 사용 환경에 맞춰 하나를 선택해 설치하세요(방법은 아래 두 절 참조):
 
 | 항목 | Claude Code | opencode |
 |---|---|---|
 | 배포와 설치 | 5개 서브 plugin, marketplace에서 필요한 계층만 설치 | 단일 npm 패키지 `opencode-bb-spec`, `opencode.json`에 한 번 선언해 일괄 설치 |
 | 명령 진입점 | 26개 skill 모두 `/이름` 슬래시 호출 가능, 상황에 따른 자동 트리거도 지원 | 11개 파이프라인 command(`/spec` `/exec` `/review` …), 나머지 skill은 모델이 필요 시 자동 로드 |
-| 크로스 모델 review | review-codex는 codex 플러그인 경유로 파견 | review-codex는 로컬 `codex` CLI 직접 호출 |
+| 크로스 모델 review | review-codex는 codex 플러그인 경유로 파견 | 제공하지 않음——opencode는 GPT 계열 모델을 네이티브로 설정 가능 |
 | 업데이트 | `/plugin update` | npm 패키지 버전 업그레이드 |
 
 ## 📦 Claude Code 설치 / Install
@@ -285,7 +285,7 @@ Directory 에 bb-spec 의 5개 서브 플러그인이 표시됩니다. `Bb spec 
 
 ## 🔌 opencode 설치 / Install (opencode)
 
-BB-Spec은 [opencode](https://opencode.ai) 플러그인 버전도 제공합니다. 단일 npm 패키지로 26개 skills, 11개 subagent, 11개 command, 4개 워크플로 가드 hook 전체를 제공합니다(Claude Code 전용 codex 크로스 플러그인 참조 제외 기능 동등——크로스 모델 review는 로컬 codex CLI를 직접 호출).
+BB-Spec은 [opencode](https://opencode.ai) 플러그인 버전도 제공합니다. 단일 npm 패키지로 26개 skills, 10개 subagent, 11개 command, 4개 워크플로 가드 hook 전체를 제공합니다(Claude Code 전용 codex 크로스 모델 review 제외 기능 동등——opencode는 GPT 계열 모델을 네이티브로 설정할 수 있어 codex CLI를 거칠 필요가 없습니다).
 
 `~/.config/opencode/opencode.json`(전역) 또는 프로젝트 `opencode.json`에 선언하세요:
 
