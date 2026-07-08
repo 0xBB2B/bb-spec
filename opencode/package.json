@@ -1,6 +1,6 @@
 {
   "name": "opencode-bb-spec",
-  "version": "11.4.1",
+  "version": "11.4.2",
   "description": "BB-Spec 开发纪律与 spec→plan→exec→review 工作流的 opencode 插件：26 个 skills、11 个编排 subagent、11 个 command、4 个流程守卫 hook。",
   "type": "module",
   "main": "./src/index.ts",

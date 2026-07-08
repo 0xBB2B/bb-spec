@@ -1,5 +1,12 @@
 # Changelog
 
+## [11.4.2](https://github.com/0xBB2B/bb-spec/compare/v11.4.1...v11.4.2) (2026-07-08)
+
+
+### Bug Fixes
+
+* **review:** 修正逐个解决模式的修复授权歧义 ([#226](https://github.com/0xBB2B/bb-spec/issues/226)) ([c2202cb](https://github.com/0xBB2B/bb-spec/commit/c2202cb201e4bb57e9a27eaededf405c70d50083))
+
 ## [11.4.1](https://github.com/0xBB2B/bb-spec/compare/v11.4.0...v11.4.1) (2026-07-08)
 
 
