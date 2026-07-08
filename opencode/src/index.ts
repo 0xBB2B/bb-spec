@@ -69,8 +69,7 @@ function loadAgents(): Record<string, AgentDef> {
 
 export const BbSpec: Plugin = async ({ client, $, directory }) => {
   const agents = loadAgents()
-  // stop 自检防循环：cooldown 表示上一轮 idle 已注入过自检，本轮放行
-  const stopState = new Map<string, "cooldown">()
+  const stopChecked = new Set<string>()
 
   const getBranch = async (dir: string): Promise<string> => {
     try {
@@ -143,24 +142,33 @@ export const BbSpec: Plugin = async ({ client, $, directory }) => {
       output.output += `\n\n依赖版本号自检（version-policy）：刚改动了 \`${filePath}\`。若本次改动写入或更新了任何外部资产的版本号（npm/Go/PyPI/Cargo/Maven/Actions/容器镜像/IaC provider/Helm/CLI 等），请确认每个版本号都通过**官方渠道**查询过最新稳定版（npm view / go list -m -versions / pip index versions / cargo search / docker manifest 等），未凭训练记忆填写。若仅改动非版本字段（脚本、依赖名、配置 key 等），请忽略本提示。`
     },
 
+    "chat.message": async (input, output) => {
+      const text = output.parts
+        .filter((part: any) => part.type === "text")
+        .map((part: any) => part.text)
+        .join("\n")
+      if (text !== SELF_CHECK) stopChecked.delete(input.sessionID)
+    },
+
     event: async ({ event }) => {
       try {
         const e = event as { type: string; properties?: any }
         if (e.type === "session.deleted") {
-          stopState.delete(e.properties?.info?.id ?? "")
+          stopChecked.delete(e.properties?.info?.id ?? "")
+          return
+        }
+        if (e.type === "command.executed") {
+          stopChecked.delete(e.properties?.sessionID ?? "")
           return
         }
         if (e.type !== "session.idle") return
         const sessionID: string = e.properties?.sessionID ?? ""
         if (!sessionID) return
-        if (stopState.get(sessionID) === "cooldown") {
-          stopState.delete(sessionID)
-          return
-        }
+        if (stopChecked.has(sessionID)) return
         const session = await client.session.get({ path: { id: sessionID } })
         const info = (session as any)?.data ?? session
         if (info?.parentID) return
-        stopState.set(sessionID, "cooldown")
+        stopChecked.add(sessionID)
         await client.session.prompt({
           path: { id: sessionID },
           body: { parts: [{ type: "text", text: SELF_CHECK }] },
