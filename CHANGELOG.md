@@ -1,5 +1,12 @@
 # Changelog
 
+## [11.4.1](https://github.com/0xBB2B/bb-spec/compare/v11.4.0...v11.4.1) (2026-07-08)
+
+
+### Bug Fixes
+
+* **opencode:** 防止 stop 自检重复触发 ([#223](https://github.com/0xBB2B/bb-spec/issues/223)) ([734d39d](https://github.com/0xBB2B/bb-spec/commit/734d39dccf973efe8c58a2094bcc0d542bc2a9d0))
+
 ## [11.4.0](https://github.com/0xBB2B/bb-spec/compare/v11.3.1...v11.4.0) (2026-07-08)
 
 
