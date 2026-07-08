@@ -1,5 +1,12 @@
 # Changelog
 
+## [11.5.0](https://github.com/0xBB2B/bb-spec/compare/v11.4.2...v11.5.0) (2026-07-08)
+
+
+### Features
+
+* **opencode:** 移除 review 的 Codex 跨模型 finder ([#228](https://github.com/0xBB2B/bb-spec/issues/228)) ([99275b4](https://github.com/0xBB2B/bb-spec/commit/99275b4319ecb13e3b3389bec0edf790a7b9985e))
+
 ## [11.4.2](https://github.com/0xBB2B/bb-spec/compare/v11.4.1...v11.4.2) (2026-07-08)
 
 
