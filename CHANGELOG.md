@@ -1,5 +1,12 @@
 # Changelog
 
+## [11.3.1](https://github.com/0xBB2B/bb-spec/compare/v11.3.0...v11.3.1) (2026-07-08)
+
+
+### Bug Fixes
+
+* **readme:** 重构宿主对照表并修正 subagent 数量 ([#219](https://github.com/0xBB2B/bb-spec/issues/219)) ([c5ddd11](https://github.com/0xBB2B/bb-spec/commit/c5ddd11803fef25d8dea6b03bf35ece89c2f2579))
+
 ## [11.3.0](https://github.com/0xBB2B/bb-spec/compare/v11.2.0...v11.3.0) (2026-07-08)
 
 
