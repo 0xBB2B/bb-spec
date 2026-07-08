@@ -1,5 +1,12 @@
 # Changelog
 
+## [11.7.0](https://github.com/0xBB2B/bb-spec/compare/v11.6.0...v11.7.0) (2026-07-08)
+
+
+### Features
+
+* **opencode:** skill 交互提问升级为原生 question 工具 ([#232](https://github.com/0xBB2B/bb-spec/issues/232)) ([a4e53b9](https://github.com/0xBB2B/bb-spec/commit/a4e53b92bfab8f4da1af5edfd7ecbb0f3ec3f701))
+
 ## [11.6.0](https://github.com/0xBB2B/bb-spec/compare/v11.5.0...v11.6.0) (2026-07-08)
 
 
