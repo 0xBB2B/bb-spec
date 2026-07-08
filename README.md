@@ -181,13 +181,13 @@ These feed rules into the pipeline above — install only the layers you need.
 
 ## 🧭 Platforms / Claude Code vs opencode
 
-Both hosts ship the **same content** — 26 skills, 11 orchestration subagents, and 4 workflow-guard hooks (behavior-equivalent) — released in lockstep on a single version line. The differences are only in distribution and host mechanics; pick the one matching your environment (installation in the two sections below):
+Both hosts ship the **same content** — 26 skills, orchestration subagents (11 on Claude Code, 10 on opencode), and 4 workflow-guard hooks (behavior-equivalent) — released in lockstep on a single version line. The differences are only in distribution and host mechanics; pick the one matching your environment (installation in the two sections below):
 
 | Dimension | Claude Code | opencode |
 |---|---|---|
 | Distribution & install | 5 sub-plugins via marketplace — install only the layers you need | one npm package `opencode-bb-spec`, declared once in `opencode.json` |
 | Command entry | all 26 skills invocable as `/name` slash commands, plus context auto-trigger | 11 pipeline commands (`/spec` `/exec` `/review` …); remaining skills auto-loaded by the model on demand |
-| Cross-model review | review-codex dispatched through the codex plugin | review-codex shells out to the local `codex` CLI |
+| Cross-model review | review-codex dispatched through the codex plugin | Not provided — opencode can natively run GPT-family models |
 | Updates | `/plugin update` | bump the npm package version |
 
 ## 📦 Claude Code Install
@@ -285,7 +285,7 @@ Back in the input box, type `/prd`. If the command suggestion shows up, you're s
 
 ## 🔌 opencode Install
 
-BB-Spec also ships as an [opencode](https://opencode.ai) plugin: one npm package delivering all 26 skills, 11 subagents, 11 commands and 4 workflow-guard hooks (full parity except the Claude Code-specific codex cross-plugin reference — cross-model review shells out to the local codex CLI instead).
+BB-Spec also ships as an [opencode](https://opencode.ai) plugin: one npm package delivering all 26 skills, 10 subagents, 11 commands and 4 workflow-guard hooks (full parity except the Claude Code-specific codex cross-model review — opencode can natively run GPT-family models, so no codex CLI detour is needed).
 
 Declare it in `~/.config/opencode/opencode.json` (global) or a project-level `opencode.json`:
 

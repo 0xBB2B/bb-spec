@@ -180,13 +180,13 @@
 
 ## 🧭 宿主对照 / Claude Code vs opencode
 
-两个宿主交付的是**同一套内容**:26 个 skills、11 个编排 subagent、4 个流程守卫 hook(行为等价),共用同一条版本线同步发版。差异只在分发方式与宿主机制,按使用环境择一安装(步骤见下方两节):
+两个宿主交付的是**同一套内容**:26 个 skills、编排 subagent(Claude Code 版 11 个、opencode 版 10 个)、4 个流程守卫 hook(行为等价),共用同一条版本线同步发版。差异只在分发方式与宿主机制,按使用环境择一安装(步骤见下方两节):
 
 | 维度 | Claude Code | opencode |
 |---|---|---|
 | 分发与安装 | 5 个子 plugin,marketplace 按需安装、只装需要的层 | 单一 npm 包 `opencode-bb-spec`,`opencode.json` 声明一次全装 |
 | 命令入口 | 26 个 skill 均可 `/名称` 斜杠调用,也随场景自动触发 | 11 个流水线 command(`/spec` `/exec` `/review` …),其余 skill 由模型按需自动加载 |
-| 跨模型 review | review-codex 经 codex 插件派工 | review-codex 直连本机 `codex` CLI |
+| 跨模型 review | review-codex 经 codex 插件派工 | 不提供——opencode 可原生配置 GPT 系列模型 |
 | 更新方式 | `/plugin update` | 升级 npm 包版本 |
 
 ## 📦 Claude Code 安装 / Install
@@ -284,7 +284,7 @@ Directory 中会看到 bb-spec 的 5 个子插件。点击 `Bb spec core` / `Bb 
 
 ## 🔌 opencode 安装 / Install (opencode)
 
-BB-Spec 同时提供 [opencode](https://opencode.ai) 插件版:单个 npm 包交付全部 26 个 skills、11 个 subagent、11 个 command 与 4 个流程守卫 hook(除 Claude Code 专有的 codex 跨插件引用外功能对齐——跨模型 review 改为直连本机 codex CLI)。
+BB-Spec 同时提供 [opencode](https://opencode.ai) 插件版:单个 npm 包交付全部 26 个 skills、10 个 subagent、11 个 command 与 4 个流程守卫 hook(除 Claude Code 专有的 codex 跨模型 review 外功能对齐——opencode 本身可直接配置 GPT 系列模型,无需借道 codex CLI)。
 
 在 `~/.config/opencode/opencode.json`(全局)或项目级 `opencode.json` 中声明:
 
