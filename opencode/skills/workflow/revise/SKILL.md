@@ -44,7 +44,7 @@ description: 产出修订（诊断→定向修正→回归验证）——对 spe
 **先定位修复现场（worktree 感知）**：主仓库目录常年停在 main，进行中的功能分支可能在 `~/.bb-spec/worktrees/` 下的某棵 worktree 里。读任何资产前先跑 `git branch --show-current` + `git worktree list --porcelain`：
 
 - **已在 linked worktree 或非 main/master 功能分支** → cwd 即修复现场，继续
-- **在主仓库且 HEAD 为 main/master**，且问题指向某棵 worktree 上进行中的工作（其 plan PROGRESS.md 未全完成，或分支领先 main）→ 后续读资产、修代码、跑测试、commit **全部定位到该 worktree 内执行**（`cd` 进去或全程用其绝对路径）；多棵候选 → 选项式提问 让用户选
+- **在主仓库且 HEAD 为 main/master**，且问题指向某棵 worktree 上进行中的工作（其 plan PROGRESS.md 未全完成，或分支领先 main）→ 后续读资产、修代码、跑测试、commit **全部定位到该 worktree 内执行**（`cd` 进去或全程用其绝对路径）；多棵候选 → `question` 工具 让用户选
 - **问题针对 main 上已合入的代码** → 属新修复任务，按 git-workflow 先确定开分支方式再动手，**禁止直接在 main 工作区改代码**
 
 现场确定后，在**该目录**下 `cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`，后续所有路径基于此值。读 `${DOCS_DIR}/spec/INDEX.md` 与 `${DOCS_DIR}/plan/INDEX.md`，据问题描述定位四层资产并全部读取：

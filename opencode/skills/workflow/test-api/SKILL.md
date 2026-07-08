@@ -45,7 +45,7 @@ disable-model-invocation: true
 读 `${DOCS_DIR}/test/api/INDEX.md` frontmatter 的**已确认环境配置**：
 
 - **已有配置** → 直接用，**不再询问**。
-- **首次（无配置）**：用 `选项式提问` 顺序确认：
+- **首次（无配置）**：用 `question` 工具 顺序确认：
   1. `compose.e2e.yaml` **落点**（推荐顺序作 default：① 后端单服务 → `backend/compose.e2e.yaml`；② 后端多服务 / 跨 frontend → `<root>/compose.e2e.yaml`；③ 已有 deploy 约定 → `deploy/e2e/compose.e2e.yaml`；多 repo + 跨 repo 整栈 → 强制落工作区根）。文件不存在 → 引导用户按 `references/test-only-endpoints.md` 创建后再继续，**不自动生成**。
   2. **后端 service 名 + 端口**：从 compose 文件解析候选，让用户确认要测的 API service 与 published port。
   3. **健康检查 URL**：缺省 `<base_url>/test/healthz`（与 `references/test-only-endpoints.md` 约定一致）。
@@ -60,7 +60,7 @@ API e2e 用例的生成与覆盖完整性都由本 skill 独占负责。
 **覆盖对齐**（仅全量模式执行；`/test-api <scope>` 定向跑某类时跳过本环节）：读 `${DOCS_DIR}/spec/`、`${DOCS_DIR}/plan/`、PRD（都没有则项目其他文档），把其中的 API 行为验收点 + 时间敏感规则归纳为「应有场景集」，与 `${DOCS_DIR}/test/api/` 现有用例比对，算缺口：
 
 - **现有用例为空** → 缺口即全部，按 `references/api-testcase-format.md` 生成全部用例。
-- **有缺口** → `选项式提问` 展示清单，二选一：①补全后再跑 ②先跑现有、缺口记入报告（步骤 5 显式列出，**禁静默漏测**）。
+- **有缺口** → `question` 工具 展示清单，二选一：①补全后再跑 ②先跑现有、缺口记入报告（步骤 5 显式列出，**禁静默漏测**）。
 - **无缺口** → 直接进入收集。
 
 新生成的用例按后端 scope 建顶层文件夹、其下按 category 分（格式见 `references/api-testcase-format.md`），落盘前先向用户展示清单确认。
@@ -117,7 +117,7 @@ bun run runner.ts > ${CACHE_DIR}/test-api-logs/runner.log 2>&1
 **下一步**：
 
 - **全通过** → 收尾完成。
-- **有失败 / 错误** → `选项式提问` 询问是否 `/revise` 修复。同意 → 用 `skill` 工具加载 `revise`，把失败用例的**标题 / scope / 失败步骤 / 期望 vs 实际 / 相关 docker logs 片段**作为输入传入；本 skill 不自行改代码。
+- **有失败 / 错误** → `question` 工具 询问是否 `/revise` 修复。同意 → 用 `skill` 工具加载 `revise`，把失败用例的**标题 / scope / 失败步骤 / 期望 vs 实际 / 相关 docker logs 片段**作为输入传入；本 skill 不自行改代码。
 
 ### 步骤 6：清理（无条件执行）
 

@@ -35,7 +35,7 @@ description: 推送本地代码到远程并开 PR 全流程——识别仓库→
   git rev-list --count main..<branch>  # 对每棵非 main 的 worktree 分支：> 0 即有待推送提交
   ```
 
-  - **存在 ≥1 棵就绪 worktree**（领先 main）→ 这才是要推送的目标。用 **选项式提问** 列出让用户选推哪棵，然后把后续步骤 3-8 全部定位到该 worktree 目录执行（`cd` 进去，或全程 `git -C <worktree>`）。
+  - **存在 ≥1 棵就绪 worktree**（领先 main）→ 这才是要推送的目标。用 **`question` 工具** 列出让用户选推哪棵，然后把后续步骤 3-8 全部定位到该 worktree 目录执行（`cd` 进去，或全程 `git -C <worktree>`）。
   - **无任何就绪 worktree** → 确是新任务还没开分支 → 必须先从 main 创建新分支再继续。
 
 **worktree 模式标志**：只要最终在 linked worktree 里执行（上面任一路径定位到 worktree），就记下此标志，步骤 8 按 worktree-aware 清理。判定：
@@ -109,7 +109,7 @@ description: 推送本地代码到远程并开 PR 全流程——识别仓库→
 
 ### 合并对象确认（fork / 双 remote 场景）
 
-`git remote` 同时存在 `origin` 与 `upstream`，且两者都有 main/master（`git ls-remote --heads <remote> main master` 探测）→ **先用 选项式提问 询问 PR 合并到哪个仓库**，`origin/main` 放首位标（Recommended）；只有 origin → 直接以 origin 为合并对象，不问。选定结果记为 **base repo**，本步及后续全程生效：
+`git remote` 同时存在 `origin` 与 `upstream`，且两者都有 main/master（`git ls-remote --heads <remote> main master` 探测）→ **先用 `question` 工具 询问 PR 合并到哪个仓库**，`origin/main` 放首位标（Recommended）；只有 origin → 直接以 origin 为合并对象，不问。选定结果记为 **base repo**，本步及后续全程生效：
 
 - **base 为 origin** → `gh pr create` 显式带 `--repo <origin 的 owner/repo>`。fork 的 clone 里 gh 默认把 PR 开到 parent 仓库（upstream），不显式指定会开错地方。
 - **base 为 upstream** → `--repo <upstream 的 owner/repo>`；且步骤 7 所有 `gh pr view/merge/close` 同样显式带该 `--repo`，冲突 rebase 基线换成 `upstream/main`，步骤 8 的 `git pull` 源换成 `upstream main`（拉完可再 `git push origin main` 同步 fork）。GitLab 对应 `glab mr create --target-project`。
@@ -123,7 +123,7 @@ description: 推送本地代码到远程并开 PR 全流程——识别仓库→
 
 **worktree 模式铁律**：步骤 2 标记为 worktree 模式时，本步所有 `gh pr merge` / `gh pr close` **一律去掉 `--delete-branch`**（GitLab：`--remove-source-branch`）。原因：gh 在合并/关闭成功后会立即试图删本地分支，但分支被 worktree 占用必失败（gh 报非零退出码——而服务端合并实际已完成）。本地与远程分支删除统一交给步骤 8 在 `worktree remove` 之后做。
 
-创建后用 选项式提问 让用户选（除非已显式声明）：
+创建后用 `question` 工具 让用户选（除非已显式声明）：
 
 1. **自动合并**：`gh pr merge <n> --squash --auto --delete-branch`（GitLab：`--auto-merge --remove-source-branch`；worktree 模式去掉删分支 flag）
 2. **已合并**：直接进入「合并结果核验」

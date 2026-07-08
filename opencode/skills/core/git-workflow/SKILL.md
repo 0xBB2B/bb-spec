@@ -1,6 +1,6 @@
 ---
 name: git-workflow
-description: Git 开发流程纪律——禁 main 直接提交；新任务前扫工作区根，有 workspace 标记走多 repo 工作区，否则 选项式提问 询问 worktree（默认）或切分支；worktree 一律落 `~/.bb-spec/worktrees/` 下、禁嵌套当前 repo / 禁放 sibling 目录；本地 commit 不立即 push、整功能验证完才推；合并后清理本地+远程。触发：开始改代码、提到开分支、要求 commit/push/开 PR、PR 合并后清理。跳过：纯咨询/阅读、极小打字纠错。
+description: Git 开发流程纪律——禁 main 直接提交；新任务前扫工作区根，有 workspace 标记走多 repo 工作区，否则 `question` 工具 询问 worktree（默认）或切分支；worktree 一律落 `~/.bb-spec/worktrees/` 下、禁嵌套当前 repo / 禁放 sibling 目录；本地 commit 不立即 push、整功能验证完才推；合并后清理本地+远程。触发：开始改代码、提到开分支、要求 commit/push/开 PR、PR 合并后清理。跳过：纯咨询/阅读、极小打字纠错。
 ---
 
 # Git 工作流纪律
@@ -14,7 +14,7 @@ description: Git 开发流程纪律——禁 main 直接提交；新任务前扫
 | 检测信号（根目录存在以下任一） | 走哪条 |
 |---|---|
 | `go.work` / `pnpm-workspace.yaml`（或 `package.json` 含 `workspaces` 字段）/ `Cargo.toml` 含 `[workspace]` / `settings.gradle(.kts)` 含 `includeBuild` | → **§1「多 repo 工作区」**：统一父目录 + 各成员 repo 各拉 worktree + 根文件手拷，**禁止只对单个成员 repo 拉 worktree** |
-| 其他（普通单仓） | → **§1「开新任务一律询问开分支方式」**：单仓 worktree 或直接切分支，按 选项式提问 走 |
+| 其他（普通单仓） | → **§1「开新任务一律询问开分支方式」**：单仓 worktree 或直接切分支，按 `question` 工具 走 |
 
 > 判断时机：在执行"开始任务前必查"那两条 `git` 命令**之前**就先扫一眼根目录信号，分流错了后面整个 §1 都会跑偏。
 
@@ -41,7 +41,7 @@ git status --short               # 工作区是否有未提交改动
 
 ### 开新任务一律询问开分支方式
 
-开任何新任务前，用 **选项式提问** 让用户选开分支方式，**默认 worktree**：
+开任何新任务前，用 **`question` 工具** 让用户选开分支方式，**默认 worktree**：
 
 - **worktree（默认）** → 从 main 新建隔离 worktree 并行，不切换、不打断、不污染当前分支
 
@@ -55,7 +55,7 @@ git status --short               # 工作区是否有未提交改动
   git pull && git switch -c <branch>
   ```
 
-**唯一例外（不问）**：本次是**延续当前分支的同一任务**（不是开新活儿）→ 直接在当前分支继续，既不新建 worktree 也不切分支。无法判断是延续还是新任务时，照常 选项式提问 询问。
+**唯一例外（不问）**：本次是**延续当前分支的同一任务**（不是开新活儿）→ 直接在当前分支继续，既不新建 worktree 也不切分支。无法判断是延续还是新任务时，照常 `question` 工具 询问。
 
 ### 多 repo 工作区（go.work / pnpm-workspace / Cargo / Gradle composite 等）
 
@@ -73,7 +73,7 @@ git status --short               # 工作区是否有未提交改动
 
 - **工作区根文件**（`go.work` / `pnpm-workspace.yaml` 等）位于非 repo 的容器层、不被任何 git 跟踪，拉 worktree 时不会自动带过来——**需手动放一份到统一父目录**（相对路径原样可用，无需改）。
 - 清理对称：各成员 repo 各自 `git worktree remove`，统一父目录手动删。
-- **依然要 选项式提问**：多 repo 场景的询问点不是"worktree vs 直接切分支"（工作区根本身不是 repo、无法直接切），而是 **① 本次任务涉及哪些成员 repo**（避免给无关 repo 拉空分支）**② 分支名**。问完再按确认范围执行上面的 `worktree add`。
+- **依然要 `question` 工具**：多 repo 场景的询问点不是"worktree vs 直接切分支"（工作区根本身不是 repo、无法直接切），而是 **① 本次任务涉及哪些成员 repo**（避免给无关 repo 拉空分支）**② 分支名**。问完再按确认范围执行上面的 `worktree add`。
 
 ---
 
