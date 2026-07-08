@@ -51,7 +51,7 @@ git worktree list --porcelain
 - **已在 linked worktree 或非 main/master 功能分支** → cwd 即 plan 现场，继续
 - **在主仓库且 HEAD 为 main/master** → 逐棵检查非 main 分支的 worktree（`${DOCS_DIR}` 按该 worktree 内 `.bb-spec.yaml` 解析，缺省 `.bb-spec`）：spec 有变更（`git diff main...HEAD -- '${DOCS_DIR}/spec/'` 非空）的即候选：
   - 恰一棵 → 它就是 plan 现场，**后续所有步骤——读 spec、产出 plan、更新索引、commit——全部定位到该 worktree 内执行**（`cd` 进去或全程用其绝对路径）
-  - 多棵 → 选项式提问 列出让用户选
+  - 多棵 → `question` 工具 列出让用户选
   - 无 → 全新任务，按 git-workflow 先确定开分支方式再继续，**禁止把 plan 文档落在 main 工作区**
 
 现场确定后，在**该目录**下 `cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`。运行 `git diff main...HEAD --name-status -- '${DOCS_DIR}/spec/'`：

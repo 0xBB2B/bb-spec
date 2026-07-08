@@ -103,7 +103,7 @@ description: 前端技术栈强制约束——默认 Vue 3 + TS + Vite + Tailwin
 | 既有项目，有 `pnpm-lock.yaml` | **pnpm**（跟随，不强制迁移） |
 
 - 既有项目以仓库内现存 lockfile 为唯一判定依据：**用什么 lockfile，就用什么工具**，禁止混用（如在 npm 项目里跑 `bun add`，会产生第二份 lockfile）。
-- 多种 lockfile 并存时属于异常状态，用 选项式提问 让用户选以哪个为准（选项 = 现存各 lockfile 对应工具：bun.lock→bun / package-lock.json→npm / yarn.lock→yarn / pnpm-lock.yaml→pnpm），确认后删除其余。
+- 多种 lockfile 并存时属于异常状态，用 `question` 工具 让用户选以哪个为准（选项 = 现存各 lockfile 对应工具：bun.lock→bun / package-lock.json→npm / yarn.lock→yarn / pnpm-lock.yaml→pnpm），确认后删除其余。
 - 迁移到 bun **仅在用户明确要求时**进行，禁止 Agent 自作主张迁移。
 
 ### 3.2 bun 管理的项目：禁止 npm / yarn / pnpm
