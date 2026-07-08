@@ -1,6 +1,6 @@
 {
   "name": "bb-spec-frontend",
-  "version": "11.2.0",
+  "version": "11.3.0",
   "description": "BB-Spec 前端技术框架约束：Vue 3 + TypeScript + Vite + Tailwind + bun 技术栈与前端工程约定；含 block-non-bun-pm hook 强制 bun。",
   "author": {
     "name": "0xBB2B",

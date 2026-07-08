@@ -1,5 +1,12 @@
 # Changelog
 
+## [11.3.0](https://github.com/0xBB2B/bb-spec/compare/v11.2.0...v11.3.0) (2026-07-08)
+
+
+### Features
+
+* **opencode:** 新增 opencode 插件移植版（除 codex 跨插件引用外全功能） ([#217](https://github.com/0xBB2B/bb-spec/issues/217)) ([3b01d05](https://github.com/0xBB2B/bb-spec/commit/3b01d05bdeaa3838f91dcba6cf618e9b24975f05))
+
 ## [11.2.0](https://github.com/0xBB2B/bb-spec/compare/v11.1.0...v11.2.0) (2026-07-07)
 
 
