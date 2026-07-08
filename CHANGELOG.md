@@ -1,5 +1,12 @@
 # Changelog
 
+## [11.6.0](https://github.com/0xBB2B/bb-spec/compare/v11.5.0...v11.6.0) (2026-07-08)
+
+
+### Features
+
+* **opencode:** review 逐项展开强制四段式输出 ([#230](https://github.com/0xBB2B/bb-spec/issues/230)) ([772bb15](https://github.com/0xBB2B/bb-spec/commit/772bb15c84ba626b8b5b90ec1229240342fefe28))
+
 ## [11.5.0](https://github.com/0xBB2B/bb-spec/compare/v11.4.2...v11.5.0) (2026-07-08)
 
 
