@@ -177,17 +177,14 @@ These feed rules into the pipeline above — install only the layers you need.
 
 ## 🧭 Platforms / Claude Code vs opencode
 
-BB-Spec ships for two host platforms with **identical** discipline and workflow content — pick the one matching your environment (installation in the two sections below):
+Both hosts ship the **same content** — 26 skills, 11 orchestration subagents, and 4 workflow-guard hooks (behavior-equivalent) — released in lockstep on a single version line. The differences are only in distribution and host mechanics; pick the one matching your environment (installation in the two sections below):
 
 | Dimension | Claude Code | opencode |
 |---|---|---|
-| Distribution | 5 sub-plugins, install on demand via marketplace | one npm package `opencode-bb-spec`, all-in-one |
-| Install entry | `/plugin marketplace add 0xBB2B/bb-spec` | `plugin` array in `opencode.json` |
-| Skills | 26, auto-trigger + slash invocation | 26, loaded via the native `skill` tool |
-| User commands | every skill doubles as a slash command | 11 dedicated commands (`/spec` `/exec` `/review` …) |
-| Subagents | 11, dispatched via the Agent tool; review-codex goes through the codex plugin | 11, dispatched via the `task` tool; review-codex shells out to the local codex CLI |
-| Hooks | hooks.json + 4 shell scripts | TypeScript plugin hooks, 4 behavior-equivalent guards |
-| Versioning | release-please lockstep, update via `/plugin update` | same version line, npm published on release |
+| Distribution & install | 5 sub-plugins via marketplace — install only the layers you need | one npm package `opencode-bb-spec`, declared once in `opencode.json` |
+| Command entry | all 26 skills invocable as `/name` slash commands, plus context auto-trigger | 11 pipeline commands (`/spec` `/exec` `/review` …); remaining skills auto-loaded by the model on demand |
+| Cross-model review | review-codex dispatched through the codex plugin | review-codex shells out to the local `codex` CLI |
+| Updates | `/plugin update` | bump the npm package version |
 
 ## 📦 Claude Code Install
 
@@ -204,7 +201,7 @@ Then install whichever layers you want:
 | Sub-plugin | What it gives you | Command |
 |---|---|---|
 | **bb-spec-core** _(recommended base)_ | TDD / version-policy / git-workflow discipline + 3 passive hooks | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(core)_ | spec → plan → exec → review → revise → git-push (+ opt test-webview / test-api e2e), git-clone one-shot init, init reverse-spec, doc-update whole-repo consistency sweep + 12 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(core)_ | spec → plan → exec → review → revise → git-push (+ opt test-webview / test-api e2e), git-clone one-shot init, init reverse-spec, doc-update whole-repo consistency sweep + 11 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-product** | /prd requirement brainstorm → PRD doc with concrete use cases (for PMs / requesters) | `/plugin install bb-spec-product@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / authN / authZ / observability / service / config constraints | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun stack & engineering conventions (+ bun hook) | `/plugin install bb-spec-frontend@0xbb2b` |

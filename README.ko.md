@@ -177,17 +177,14 @@
 
 ## 🧭 플랫폼 대조 / Claude Code vs opencode
 
-BB-Spec은 두 호스트 플랫폼을 지원하며 규율과 워크플로 **내용은 동일**합니다. 사용 환경에 맞춰 하나를 선택해 설치하세요(설치 방법은 아래 두 절 참조):
+두 호스트가 제공하는 것은 **동일한 내용**입니다: 26개 skills, 11개 오케스트레이션 subagent, 4개 워크플로 가드 hook(동작 동등)을 단일 버전 라인에서 잠금 동기화로 릴리스합니다. 차이는 배포 방식과 호스트 메커니즘뿐이니 사용 환경에 맞춰 하나를 선택해 설치하세요(방법은 아래 두 절 참조):
 
 | 항목 | Claude Code | opencode |
 |---|---|---|
-| 배포 형태 | 5개 서브 plugin, marketplace에서 필요한 것만 설치 | 단일 npm 패키지 `opencode-bb-spec`, 일괄 설치 |
-| 설치 방법 | `/plugin marketplace add 0xBB2B/bb-spec` | `opencode.json`의 `plugin` 배열 |
-| Skills | 26개, 자동 트리거 + 슬래시 호출 | 26개, 네이티브 `skill` 도구로 로드 |
-| 사용자 명령 | skill이 곧 slash command | 11개 독립 command(`/spec` `/exec` `/review` …) |
-| Subagents | 11개, Agent 도구로 파견; review-codex는 codex 플러그인 경유 | 11개, `task` 도구로 파견; review-codex는 로컬 codex CLI 직접 호출 |
-| Hooks | hooks.json + shell 스크립트 4개 | TypeScript 플러그인 훅, 4개 가드 동작 동등 |
-| 버전 관리 | release-please 잠금 동기화, `/plugin update`로 갱신 | 동일 버전 라인, 릴리스 시 npm 자동 배포 |
+| 배포와 설치 | 5개 서브 plugin, marketplace에서 필요한 계층만 설치 | 단일 npm 패키지 `opencode-bb-spec`, `opencode.json`에 한 번 선언해 일괄 설치 |
+| 명령 진입점 | 26개 skill 모두 `/이름` 슬래시 호출 가능, 상황에 따른 자동 트리거도 지원 | 11개 파이프라인 command(`/spec` `/exec` `/review` …), 나머지 skill은 모델이 필요 시 자동 로드 |
+| 크로스 모델 review | review-codex는 codex 플러그인 경유로 파견 | review-codex는 로컬 `codex` CLI 직접 호출 |
+| 업데이트 | `/plugin update` | npm 패키지 버전 업그레이드 |
 
 ## 📦 Claude Code 설치 / Install
 
@@ -204,7 +201,7 @@ BB-Spec은 **5개의 독립 설치 가능한 서브 plugin**으로 분할 ——
 | 서브 plugin | 무엇을 얻는가 | 설치 명령 |
 |---|---|---|
 | **bb-spec-core** _(권장 베이스)_ | TDD / 버전 정책 / Git 규율 + 3개 수동 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(핵심 기능)_ | spec → plan → exec → review → revise → git-push(+ 선택 test-webview / test-api e2e), git-clone 일회성 초기화, init 역방향 spec, doc-update 저장소 전체 일관성 유지 + 12개 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(핵심 기능)_ | spec → plan → exec → review → revise → git-push(+ 선택 test-webview / test-api e2e), git-clone 일회성 초기화, init 역방향 spec, doc-update 저장소 전체 일관성 유지 + 11개 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-product** | /prd 요구사항 브레인스토밍 → 구체적 유스케이스가 포함된 PRD 문서(PM / 의뢰자용) | `/plugin install bb-spec-product@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / 인증 / 인가 / 가관측성 / 서비스 거버넌스 / 설정 제약 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun 스택 & 엔지니어링 규약(bun hook 포함) | `/plugin install bb-spec-frontend@0xbb2b` |

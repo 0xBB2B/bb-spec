@@ -177,17 +177,14 @@
 
 ## 🧭 プラットフォーム対照 / Claude Code vs opencode
 
-BB-Spec は 2 つのホストプラットフォームに対応し、規律とワークフローの**内容は同一**です。環境に合わせてどちらかをインストールしてください(手順は下の 2 節):
+2 つのホストが提供するのは**同一の内容**です:26 個の skills、11 個のオーケストレーション subagent、4 つのワークフローガード hook(動作同等)を、単一のバージョンラインでロックステップリリース。違いは配布方式とホスト機構だけです。環境に合わせてどちらかをインストールしてください(手順は下の 2 節):
 
 | 項目 | Claude Code | opencode |
 |---|---|---|
-| 配布形態 | 5 つのサブ plugin、marketplace から必要分のみ | 単一 npm パッケージ `opencode-bb-spec`、一括導入 |
-| インストール | `/plugin marketplace add 0xBB2B/bb-spec` | `opencode.json` の `plugin` 配列 |
-| Skills | 26 個、自動トリガー + スラッシュ呼び出し | 26 個、ネイティブ `skill` ツールでロード |
-| ユーザーコマンド | skill がそのまま slash command | 11 個の独立 command(`/spec` `/exec` `/review` …) |
-| Subagents | 11 個、Agent ツールで派遣;review-codex は codex プラグイン経由 | 11 個、`task` ツールで派遣;review-codex はローカル codex CLI を直接呼び出し |
-| Hooks | hooks.json + shell スクリプト 4 本 | TypeScript プラグインフック、4 つのガードが同等動作 |
-| バージョン | release-please ロックステップ、`/plugin update` で更新 | 同一バージョンライン、リリース時に npm 自動公開 |
+| 配布とインストール | 5 つのサブ plugin、marketplace から必要な層のみ導入 | 単一 npm パッケージ `opencode-bb-spec`、`opencode.json` に一度宣言して一括導入 |
+| コマンド入口 | 26 個の skill すべて `/名前` でスラッシュ呼び出し可、文脈に応じた自動トリガーも有効 | 11 個のパイプライン command(`/spec` `/exec` `/review` …)、残りの skill はモデルが必要時に自動ロード |
+| クロスモデル review | review-codex は codex プラグイン経由で派遣 | review-codex はローカル `codex` CLI を直接呼び出し |
+| 更新方法 | `/plugin update` | npm パッケージのバージョンを更新 |
 
 ## 📦 Claude Code インストール / Install
 
@@ -204,7 +201,7 @@ BB-Spec は**5 つの独立インストール可能なサブ plugin** に分割 
 | サブ plugin | 何が手に入るか | インストールコマンド |
 |---|---|---|
 | **bb-spec-core** _(推奨ベース)_ | TDD / バージョンポリシー / Git 規律 + 3 つの受動 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(コア機能)_ | spec → plan → exec → review → revise → git-push(+ 任意 test-webview / test-api e2e)、git-clone ワンショット初期化、init 逆 spec、doc-update リポ全体一貫性メンテ + 12 サブエージェント | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(コア機能)_ | spec → plan → exec → review → revise → git-push(+ 任意 test-webview / test-api e2e)、git-clone ワンショット初期化、init 逆 spec、doc-update リポ全体一貫性メンテ + 11 サブエージェント | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-product** | /prd 要件ブレスト → 具体的ユースケース付き PRD ドキュメント(PM / 依頼者向け) | `/plugin install bb-spec-product@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / 認証 / 認可 / 可観測性 / サービスガバナンス / 設定制約 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun スタック & エンジニアリング規約(bun hook 付き) | `/plugin install bb-spec-frontend@0xbb2b` |
