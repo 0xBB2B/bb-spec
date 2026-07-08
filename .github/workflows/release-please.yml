@@ -7,6 +7,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  id-token: write
 
 jobs:
   release-please:
@@ -34,3 +35,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "${{ steps.release.outputs.tag_name }}" bb-spec-prd-skill.zip --clobber
+
+      # 发版后把 opencode 插件包发布到 npm（依赖仓库 secret NPM_TOKEN）
+      - uses: actions/setup-node@v6
+        if: ${{ steps.release.outputs.release_created }}
+        with:
+          node-version: lts/*
+          registry-url: https://registry.npmjs.org
+
+      - name: Publish opencode plugin to npm
+        if: ${{ steps.release.outputs.release_created }}
+        working-directory: opencode
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public

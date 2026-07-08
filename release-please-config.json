@@ -27,6 +27,11 @@
           "type": "json",
           "path": "plugins/bb-spec-frontend/.claude-plugin/plugin.json",
           "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "opencode/package.json",
+          "jsonpath": "$.version"
         }
       ]
     }
