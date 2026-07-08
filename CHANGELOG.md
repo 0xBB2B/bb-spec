@@ -1,5 +1,12 @@
 # Changelog
 
+## [11.4.0](https://github.com/0xBB2B/bb-spec/compare/v11.3.1...v11.4.0) (2026-07-08)
+
+
+### Features
+
+* **plan:** 要求验证方式包含测试契约 ([#221](https://github.com/0xBB2B/bb-spec/issues/221)) ([6626eb4](https://github.com/0xBB2B/bb-spec/commit/6626eb46e19006e27f4adb676de44568fc1c19b7))
+
 ## [11.3.1](https://github.com/0xBB2B/bb-spec/compare/v11.3.0...v11.3.1) (2026-07-08)
 
 
