@@ -1,5 +1,12 @@
 # Changelog
 
+## [11.8.0](https://github.com/0xBB2B/bb-spec/compare/v11.7.0...v11.8.0) (2026-07-09)
+
+
+### Features
+
+* **review,revise:** 修复方向自审 + 诊断降通报 ([#234](https://github.com/0xBB2B/bb-spec/issues/234)) ([7a13d56](https://github.com/0xBB2B/bb-spec/commit/7a13d5628f1cad112472ac286814823e6994a830))
+
 ## [11.7.0](https://github.com/0xBB2B/bb-spec/compare/v11.6.0...v11.7.0) (2026-07-08)
 
 
