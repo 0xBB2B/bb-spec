@@ -1,6 +1,6 @@
 ---
 name: exec
-description: 三 Agent 隔离执行 plan——Test→Impl→Review 串行，三方各只看各的输入互不可见；每步立即持久化 PROGRESS.md，跨会话/新会话后从断点续接；启动先 worktree 感知定位执行现场（主仓库停在 main 时自动定位到进行中的 worktree）；commit 不自动 push、main 分支禁自动 commit。触发：/exec、开始实施 plan、继续执行 plan、从断点继续、按 plan 把代码做出来。跳过：还没 /plan 产出实施计划、纯调研/方案讨论、要改 spec 或 plan 本身（→/revise）。
+description: 三 Agent 隔离执行 plan——Test→Impl→Review 串行，三方各只看各的输入互不可见；互不依赖且文件目录不重叠的 plan 编为并行组、经用户确认后并发推进；每步立即持久化 PROGRESS.md，跨会话/新会话后从断点续接；启动先 worktree 感知定位执行现场（主仓库停在 main 时自动定位到进行中的 worktree）；commit 不自动 push、main 分支禁自动 commit。触发：/exec、开始实施 plan、继续执行 plan、从断点继续、按 plan 把代码做出来。跳过：还没 /plan 产出实施计划、纯调研/方案讨论、要改 spec 或 plan 本身（→/revise）。
 ---
 
 # Exec 计划执行
@@ -9,7 +9,7 @@ description: 三 Agent 隔离执行 plan——Test→Impl→Review 串行，三�
 
 ## 核心原则（兼硬约束）
 
-1. **逐步执行**：一次只实现一个 plan 文件，验证通过再进入下一步；跳步会破坏依赖关系
+1. **逐组执行**：一次只推进一个执行组，验证通过再进入下一组；跳组会破坏依赖关系。默认一组一个 plan，满足并行条件且用户同意时一组多个 plan 并发，组内每个 plan 的 Test→Impl→Review 仍严格串行
 2. **角色隔离**：三个 Agent 各看各的输入互不可见——Test **禁看**函数清单和实现路径，Impl **禁看** spec 原文，Review **禁止**修改文件
 3. **三 Agent 串行**：必须 Test → Impl → Review 顺序；每个 Agent prompt 自包含，不依赖对话上下文
 4. **进度即时持久化**：每步完成后立即更新 PROGRESS.md（不攒批），它是唯一进度事实源，重启后仅凭此文件恢复
@@ -78,9 +78,18 @@ git worktree list --porcelain
 - **指定了单个 plan**：直接跳到该 plan 执行，不影响其他步骤状态
 - **未指定**：展示进度概况（已完成 N/M 步），**直接全部执行**——从第一个非 `done` 步骤依次到最后，不询问用户（用户若想只跑某一步，应在调用时显式带 `/<plan名>`）
 
-### 步骤 2：执行当前步骤
+**并行编组**（仅未指定单个 plan 时）：读主题 `INDEX.md` 的 `## <阶段>` 分组与 `[依赖: <name>]` 标注，把待执行步骤切成执行组。多个 plan 编入同一组须**同时**满足两条：
 
-读当前步骤对应 plan `.md`，按隔离矩阵拆为三份 Agent 输入。同时扫描项目已有测试文件，提取测试惯例（框架、目录、命名风格）。
+- **互不依赖**：彼此不在对方依赖链上，且各自依赖的 plan 均已 `done`
+- **文件目录不重叠**：各自「函数清单」的文件路径落在不同目录——同目录即同编译单元，一个 plan 的半成品会让同组其他 plan 一起编译失败
+
+存在可编组的多个 plan 时，向用户提问并等待选定：首选项「并行执行这 N 个：<plan 列表>」，另一选项「逐个串行」。选串行则整个主题按序号逐个执行。无可编组时不询问，直接逐个执行。
+
+### 步骤 2：执行当前组
+
+读当前组每个 plan 的 `.md`，按隔离矩阵各拆为三份 Agent 输入。同时扫描项目已有测试文件，提取测试惯例（框架、目录、命名风格）。
+
+组内每个 plan 各自完整走一遍 2a→2b→2c，多 plan 时组内各 plan 并发推进。**并行期间跑测试只跑本 plan 涉及的包 / 目录**（如 `go test ./internal/xxx`），不跑全量——同组其他 plan 此刻可能仍在 Red，全量结果无法判定本 plan 是否通过。
 
 **2a. Test Agent — Red**：用 `task` 派 `bb-spec-test-engineer`，任务消息传「业务规则」+「验证方式」+ 项目测试惯例。主 Agent 验证：编译通过 + 断言失败 → ✅ Red 进 2b；编译失败 → 主 Agent 修 import/类型后重跑；意外全 PASS → 行为已存在则跳过，测试错误则修正。
 
@@ -95,21 +104,21 @@ git worktree list --porcelain
 - **impl-defect 且根因确凿**（纯实现偏差、不触碰 spec）→ 执行层问题，**自行闭环不打断用户**：补测试(Red) → 改实现(Green) → 重新 Review；自修**最多 1 次**仍不过 → 标 blocked 上报用户。无论自修成败都在 PROGRESS.md「当前」区如实记一笔并计入完成简报。
 - **spec-defect / requirement-change，或归因存疑、证据不足以定性** → 触及定义层 / 需求层，属设计判断，**必须停下**向用户提问，让用户选 **修复** / **接受例外**（记录到 PROGRESS.md）/ **暂停**（标 blocked）。「接受例外」等于默许偏离 spec，**只能由用户点头，主 Agent 禁自决接受**。选"修复"时先向用户展示归因 + 证据，确认后再按类型修：spec-defect → 改 spec → 级联 plan → TDD 重新实现（Test→Impl→Review）；requirement-change → 用户确认新需求 → 更新 spec → 级联 plan + 实现。
 
-**回归验证**：修复后跑全量测试 + spec 合规检查。
+**回归验证**：修复后跑测试（并行期间仍只跑本 plan 涉及范围）+ spec 合规检查。
 
 ### 步骤 3：持久化进度
 
 验证通过后**立即**更新 PROGRESS.md：当前步骤标 `done` + 填完成时间、"当前"区更新为下一步骤、清除已解决阻塞项。
 
-随后把本步骤产出做一次**本地** commit：先 `git branch --show-current` 确认分支（**在 main 上则跳过自动 commit**并提示按 git-workflow 先建分支）；只提交本步骤涉及文件（实现 + 测试 + `PROGRESS.md`）；message 遵循仓库历史风格（先 `git log --oneline -10`）、不硬编码类型前缀；**仅本地不自动 push**；blocked / 未通过的步骤不 commit。
+随后把本步骤产出做一次**本地** commit：先 `git branch --show-current` 确认分支（**在 main 上则跳过自动 commit**并提示按 git-workflow 先建分支）；按文件路径逐一 `git add`，只提交本步骤涉及文件（实现 + 测试 + `PROGRESS.md`）——并行期间工作区含同组其他 plan 的半成品，**禁 `git add .` / `git add -A`**；message 遵循仓库历史风格（先 `git log --oneline -10`）、不硬编码类型前缀；**仅本地不自动 push**；blocked / 未通过的步骤不 commit。
 
 ### 步骤 4：循环或收尾
 
 - **单个 plan 模式**：当前 plan 完成即停，输出完成简报
-- **全部执行 + 还有后续步骤**：回步骤 2 执行下一步
+- **全部执行 + 还有后续组**：并行组须**整组结束**（含阻塞项）后跑一次全量测试确认组内产出无交叉破坏，再回步骤 2 推进下一组——下一组可能依赖本组产出
 - **全部执行 + 全部完成**：① 更新根 `plan/INDEX.md`，该主题状态改 `已完成` 填完成时间 ② 运行全量测试确认无回归 ③ **归档确认**：已删除的 spec 已从 `spec/INDEX.md` 移除、spec 内容与实现一致 ④ 把收尾改动做一次本地 commit（守卫同步骤 3）⑤ 输出完成简报
 
-**遇阻塞时**：在 PROGRESS.md 当前步骤标 `blocked`、"阻塞"区记录原因、告知用户等待指示。
+**遇阻塞时**：在 PROGRESS.md 当前步骤标 `blocked`、"阻塞"区记录原因、告知用户等待指示。并行组内单个 plan 阻塞**不中断整组**——其余 plan 照常跑完各自的 Test→Impl→Review 并 commit，阻塞项汇总进完成简报。
 
 **完成简报格式**（单个 plan 模式和全部完成均用）：
 
@@ -117,6 +126,7 @@ git worktree list --porcelain
 ## Exec 完成简报
 - 主题：<YYYY-MM-DD.主题>
 - 执行范围：<全部 N 步 / 单步 plan-name>
+- 执行方式：<逐个串行 / 并行组：<组内 plan 列表>>
 - 完成情况：成功 N 步 / 跳过 M 步 / 阻塞 K 步
 - 变更文件：实现<路径> / 测试<路径>
 - 测试结果：✅ 全部通过（N 个测试） / ❌ 失败列表
@@ -141,4 +151,4 @@ git worktree list --porcelain
 （无）
 ```
 
-**更新**（步骤 3）：只改三处——当前步骤状态行、"当前"区、"阻塞"区，不重写整个文件。
+**更新**（步骤 3）：只改三处——当前步骤状态行、"当前"区、"阻塞"区，不重写整个文件。并行组内某个 plan 完成即单独更新它的状态行，不等整组；"当前"区列出组内所有 plan 及各自所处阶段。
