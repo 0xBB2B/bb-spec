@@ -1,5 +1,12 @@
 # Changelog
 
+## [11.9.0](https://github.com/0xBB2B/bb-spec/compare/v11.8.0...v11.9.0) (2026-07-29)
+
+
+### Features
+
+* **exec:** 无依赖 plan 支持并行编组执行 ([#236](https://github.com/0xBB2B/bb-spec/issues/236)) ([c38eef1](https://github.com/0xBB2B/bb-spec/commit/c38eef129e3ef0124309bf1946ce33b7b8c590a0))
+
 ## [11.8.0](https://github.com/0xBB2B/bb-spec/compare/v11.7.0...v11.8.0) (2026-07-09)
 
 
