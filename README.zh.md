@@ -317,8 +317,6 @@ BB-Spec 同时提供 [opencode](https://opencode.ai) 插件版:单个 npm 包交
 | `block-non-bun-pm` | bb-spec-frontend | PreToolUse(Bash) | 拦截 `npm` / `yarn` / `pnpm` 的包管理动作,强制 `bun`;既有项目已存在匹配 lockfile(如 `package-lock.json`)时放行 |
 | `git-workflow-guard` | bb-spec-core | PreToolUse(Bash) | 拦截 `main` / `master` 分支的 `git commit`;其余 git 流程动作(开分支 / push / worktree / merge / PR)放行并注入 git-workflow 纪律与实时 git 状态 |
 | `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | 编辑依赖文件后注入「先查官方最新版」自检提示 |
-| `stop-self-check` | bb-spec-core | Stop | 任务结束前强制四项自检:临时文件 / 改动范围 / 孤立残留 / 历史包袱 |
-
 ---
 
 ## 🧪 测试

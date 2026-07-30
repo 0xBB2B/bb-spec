@@ -41,7 +41,7 @@ BREAKING CHANGE: 详细描述影响范围与迁移办法
 ### 示例
 
 - ✅ `feat(spec,init): spec 文档强制按领域建子目录`（SKILL 行为变化，要 bump）
-- ✅ `fix(hooks): 修正 stop-self-check.sh 路径变量未引用`
+- ✅ `fix(hooks): 修正 git-workflow-guard.sh 路径变量未引用`
 - ✅ `docs(readme): 重写 workflow 章节、补全阶段流转`（仅根 README，纯对外说明、不 bump）
 - ✅ `feat(plugin)!: 重命名 .bb-spec/ 为 .spec/`（正文带 `BREAKING CHANGE:` 段）
 - ❌ `docs: 调整 SKILL.md 约束` → SKILL 是产品本体，改用 `feat(scope): …` / `fix(scope): …`
