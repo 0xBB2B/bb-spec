@@ -1,46 +1,33 @@
 import { describe, expect, test } from "bun:test"
 import { BbSpec } from "./index"
 
-function userText(sessionID: string, text: string) {
-  return {
-    message: { id: "m", sessionID, role: "user", time: { created: 1 }, agent: "build", model: { providerID: "p", modelID: "m" } },
-    parts: [{ id: "p", sessionID, messageID: "m", type: "text", text }],
-  } as any
-}
-
-describe("stop self-check", () => {
-  test("连续 idle 只注入一次，直到真实用户消息解除", async () => {
-    const prompts: any[] = []
+describe("config 钩子：agent 注册与默认 agent", () => {
+  async function runConfig(initial: Record<string, any> = {}) {
     const hooks = await BbSpec({
-      client: {
-        session: {
-          get: async () => ({ data: { id: "s" } }),
-          prompt: async (input: any) => prompts.push(input),
-        },
-      },
       directory: "/tmp",
       $: {} as any,
     } as any)
+    const cfg = initial
+    await hooks.config?.(cfg as any)
+    return cfg
+  }
 
-    await hooks.event?.({ event: { type: "session.idle", properties: { sessionID: "s" } } as any })
-    await hooks.event?.({ event: { type: "session.idle", properties: { sessionID: "s" } } as any })
+  test("manager 注册为 primary agent 且成为 default_agent", async () => {
+    const cfg = await runConfig()
+    expect(cfg.agent.manager.mode).toBe("primary")
+    expect(cfg.agent.manager.permission).toEqual({ edit: "allow", bash: "allow" })
+    expect(cfg.default_agent).toBe("manager")
+  })
 
-    expect(prompts).toHaveLength(1)
+  test("subagent 仍带 bb-spec- 前缀且 edit:deny 硬化", async () => {
+    const cfg = await runConfig()
+    expect(cfg.agent["bb-spec-spec-reviewer"].mode).toBe("subagent")
+    expect(cfg.agent["bb-spec-spec-reviewer"].permission).toEqual({ edit: "deny" })
+    expect(cfg.agent["bb-spec-impl-engineer"].permission).toBeUndefined()
+  })
 
-    const selfCheck = prompts[0].body.parts[0].text
-    await hooks["chat.message"]?.({ sessionID: "s" } as any, userText("s", selfCheck))
-    await hooks.event?.({ event: { type: "session.idle", properties: { sessionID: "s" } } as any })
-
-    expect(prompts).toHaveLength(1)
-
-    await hooks["chat.message"]?.({ sessionID: "s" } as any, userText("s", "继续处理下一个问题"))
-    await hooks.event?.({ event: { type: "session.idle", properties: { sessionID: "s" } } as any })
-
-    expect(prompts).toHaveLength(2)
-
-    await hooks.event?.({ event: { type: "command.executed", properties: { sessionID: "s", name: "review", arguments: "", messageID: "m" } } as any })
-    await hooks.event?.({ event: { type: "session.idle", properties: { sessionID: "s" } } as any })
-
-    expect(prompts).toHaveLength(3)
+  test("用户预设 default_agent 时不覆盖", async () => {
+    const cfg = await runConfig({ default_agent: "plan" })
+    expect(cfg.default_agent).toBe("plan")
   })
 })
