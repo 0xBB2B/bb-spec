@@ -1,6 +1,6 @@
 # opencode-bb-spec
 
-BB-Spec 的 [opencode](https://opencode.ai) 插件版：一个 npm 包交付全部 26 个 skills、10 个编排 subagent、11 个 slash command 与 4 个流程守卫 hook，覆盖 Claude Code 插件版除「Codex 跨模型 review（跨插件引用 `codex:codex-rescue`）」外的全部功能——opencode 本身即可直接配置 GPT 系列模型，无需借道 codex CLI 获得跨模型视角。
+BB-Spec 的 [opencode](https://opencode.ai) 插件版：一个 npm 包交付全部 26 个 skills、1 个 primary agent（`manager`，安装后默认即此 agent）、10 个编排 subagent、11 个 slash command 与 4 个流程守卫 hook，覆盖 Claude Code 插件版除「Codex 跨模型 review（跨插件引用 `codex:codex-rescue`）」外的全部功能——opencode 本身即可直接配置 GPT 系列模型，无需借道 codex CLI 获得跨模型视角。
 
 ## 安装
 
@@ -27,6 +27,7 @@ BB-Spec 的 [opencode](https://opencode.ai) 插件版：一个 npm 包交付全�
 | 类别 | 数量 | 说明 |
 |---|---|---|
 | skills | 26 | 按域分组：core（TDD/代码纪律/git 流程/版本策略）、backend（Go/API/DB/认证/授权/配置/可观测/服务治理）、frontend（Vue 栈/工程约定）、product（PRD）、workflow（spec→plan→exec→review→revise→git-push 及 test-api/test-webview/doc-update/git-clone） |
+| primary agent | 1 | `manager`：产品经理角色主 agent（任务分流/编码四铁律/注释纪律/收尾自检），`mode: primary`、`edit`+`bash` 全开；安装后自动设为 `default_agent`（用户已自设则尊重） |
 | subagents | 10 | `bb-spec-` 前缀注册：test-engineer、impl-engineer、spec-reviewer、pre-reviewer、review-code-quality/security/simplicity/robustness/doc-sync、webview-test-runner；审查类一律 `edit: deny` 权限硬化 |
 | commands | 11 | `/prd` `/spec` `/plan` `/exec` `/revise` `/review` `/git-push` `/git-clone` `/doc-update` `/test-api` `/test-webview`，每个 command 先加载同名 skill 再按其流程执行 |
 | hooks | 4 | 见下表 |
@@ -38,7 +39,6 @@ BB-Spec 的 [opencode](https://opencode.ai) 插件版：一个 npm 包交付全�
 | git-workflow-guard | `tool.execute.before` / `tool.execute.after`（bash） | main/master 上 `git commit` → 拦截；`git worktree add` 目标不在 `~/.bb-spec/worktrees/` 下 → 拦截；其余 git/gh pr 流程动作放行并在工具输出尾部注入 git-workflow 纪律 + 实时分支状态 |
 | block-non-bun-pm | `tool.execute.before`（bash） | npm/yarn/pnpm 的包管理动作 → 拦截并给 bun 等价命令；向上找到匹配 lockfile 的既有项目放行 |
 | dep-version-check | `tool.execute.after`（write/edit） | 改动 package.json/go.mod/Dockerfile/CI/IaC 等钉版本文件后，注入「版本号须经官方渠道查询」自检提示 |
-| stop-self-check | `event`（session.idle） | 主会话每轮结束注入一次「临时文件清理/改动范围/孤立残留/历史包袱」四项自检 + 简报格式要求；同一轮内重复 idle 不再注入，直到新的用户消息解除，子会话不注入 |
 
 ## 与 Claude Code 插件版的对应关系
 

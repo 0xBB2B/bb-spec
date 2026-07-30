@@ -318,8 +318,6 @@ opencode 재시작 후 `opencode debug skill`로 확인합니다. 자세한 내�
 | `block-non-bun-pm` | bb-spec-frontend | PreToolUse(Bash) | `npm` / `yarn` / `pnpm`의 패키지 관리 동작을 차단하고 `bun` 강제; 기존 프로젝트에 매칭되는 lockfile(예: `package-lock.json`)이 존재할 경우 통과 |
 | `git-workflow-guard` | bb-spec-core | PreToolUse(Bash) | `main` / `master` 브랜치의 `git commit` 차단; 다른 git 흐름 동작(브랜치 생성 / push / worktree / merge / PR)은 통과시키고 git-workflow 규율과 실시간 git 상태 주입 |
 | `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | 의존성 파일 편집 후 "공식 최신 버전 먼저 확인" 자가 점검 리마인더 주입 |
-| `stop-self-check` | bb-spec-core | Stop | 태스크 종료 전 4항목 자가 점검 강제: 임시 파일 / 변경 범위 / 고립 잔재 / 레거시 유물 |
-
 ---
 
 ## 🧪 테스트

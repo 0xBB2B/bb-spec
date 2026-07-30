@@ -318,8 +318,6 @@ opencode を再起動し、`opencode debug skill` で確認してください。
 | `block-non-bun-pm` | bb-spec-frontend | PreToolUse(Bash) | `npm` / `yarn` / `pnpm` のパッケージ管理動作をブロックし `bun` を強制;既存プロジェクトで対応する lockfile(例 `package-lock.json`)がある場合は通過 |
 | `git-workflow-guard` | bb-spec-core | PreToolUse(Bash) | `main` / `master` ブランチでの `git commit` をブロック;他の git フロー動作(ブランチ作成 / push / worktree / merge / PR)は通過させ git-workflow 規律とリアルタイム git ステータスを注入 |
 | `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | 依存ファイル編集後に「公式最新版を先に確認」セルフチェックリマインダを注入 |
-| `stop-self-check` | bb-spec-core | Stop | タスク終了前に 4 項目のセルフチェックを強制:一時ファイル / 変更範囲 / 孤立した残滓 / レガシー残骸 |
-
 ---
 
 ## 🧪 テスト

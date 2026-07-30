@@ -29,23 +29,9 @@ const GIT_DISCIPLINE = `[git-workflow 纪律] 本次涉及 git 流程操作。�
 - 阶段性 commit 后不立即 push；仅当功能本地完成 + 测试通过 + 用户确认后才推送。
 - 开 PR 用六段式描述；PR 合并后清理本地分支 + 远程引用。`
 
-const SELF_CHECK = `任务结束前必须完成下列自检，逐条核对后才能停下。如本回合未涉及编码改动，仅口头核对即可：
-
-1. **临时文件清理**：列出本次任务产生的任何临时文件（测试输出、日志、缓存、临时打包文件等），并确认已清理；未清理的请立即清理。
-2. **改动范围**：检查本次 diff 是否仅限本次需求所必须，是否混入了"顺手优化"/无关重构/相邻代码风格调整。若有，回滚无关改动。
-3. **孤立残留**：本次改动导致的不再使用的 import / 变量 / 函数是否已清掉。
-4. **历史包袱**：是否在文档或代码里写了"保留原 X 以兼容"/"加注释标记已废弃"/"新旧并列"等过渡式表述。若有，按 No Legacy Baggage 原则直接清掉。
-
-逐条核对完成后，再按下面的简报格式收尾，然后停下：
-
-## 简报
-- 已完成：<用一句话说明做了些什么>
-- 待解决：<有什么还未解决的问题>
-- 下一步：<下一步建议做什么>`
-
 interface AgentDef {
   description: string
-  mode: "subagent"
+  mode: "primary" | "subagent"
   prompt: string
   permission?: Record<string, string>
 }
@@ -59,17 +45,27 @@ function loadAgents(): Record<string, AgentDef> {
     const raw = readFileSync(join(dir, file), "utf8")
     const match = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/)
     if (!match) continue
-    const description = match[1].match(/^description:\s*(.+)$/m)?.[1]?.trim() ?? name
-    const def: AgentDef = { description, mode: "subagent", prompt: match[2].trim() }
-    if (!EDIT_ALLOWED_AGENTS.has(name)) def.permission = { edit: "deny" }
-    agents[`bb-spec-${name}`] = def
+    const fm = match[1]
+    const description = fm.match(/^description:\s*(.+)$/m)?.[1]?.trim() ?? name
+    const mode = (fm.match(/^mode:\s*(.+)$/m)?.[1]?.trim() ?? "subagent") as "primary" | "subagent"
+    const def: AgentDef = { description, mode, prompt: match[2].trim() }
+    const permBlock = fm.match(/^permission:\s*\n((?:[ \t]+[^\n]+\n?)+)/m)?.[1] ?? ""
+    for (const line of permBlock.split("\n")) {
+      const m = line.match(/^\s+(\S+):\s*(.+)$/)
+      if (m) (def.permission ??= {})[m[1]] = m[2].trim()
+    }
+    if (mode === "subagent") {
+      if (!EDIT_ALLOWED_AGENTS.has(name)) def.permission = { edit: "deny" }
+      agents[`bb-spec-${name}`] = def
+    } else {
+      agents[name] = def
+    }
   }
   return agents
 }
 
-export const BbSpec: Plugin = async ({ client, $, directory }) => {
+export const BbSpec: Plugin = async ({ $, directory }) => {
   const agents = loadAgents()
-  const stopChecked = new Set<string>()
 
   const getBranch = async (dir: string): Promise<string> => {
     try {
@@ -89,6 +85,9 @@ export const BbSpec: Plugin = async ({ client, $, directory }) => {
 
       cfg.agent ??= {}
       for (const [name, def] of Object.entries(agents)) cfg.agent[name] ??= def
+
+      const primaryAgent = Object.entries(agents).find(([, def]) => def.mode === "primary")?.[0]
+      if (primaryAgent) cfg.default_agent ??= primaryAgent
 
       cfg.command ??= {}
       for (const [name, cmd] of Object.entries(COMMANDS)) {
@@ -140,40 +139,6 @@ export const BbSpec: Plugin = async ({ client, $, directory }) => {
       const filePath: string = input.args?.filePath ?? ""
       if (!filePath || !versionFileHit(filePath)) return
       output.output += `\n\n依赖版本号自检（version-policy）：刚改动了 \`${filePath}\`。若本次改动写入或更新了任何外部资产的版本号（npm/Go/PyPI/Cargo/Maven/Actions/容器镜像/IaC provider/Helm/CLI 等），请确认每个版本号都通过**官方渠道**查询过最新稳定版（npm view / go list -m -versions / pip index versions / cargo search / docker manifest 等），未凭训练记忆填写。若仅改动非版本字段（脚本、依赖名、配置 key 等），请忽略本提示。`
-    },
-
-    "chat.message": async (input, output) => {
-      const text = output.parts
-        .filter((part: any) => part.type === "text")
-        .map((part: any) => part.text)
-        .join("\n")
-      if (text !== SELF_CHECK) stopChecked.delete(input.sessionID)
-    },
-
-    event: async ({ event }) => {
-      try {
-        const e = event as { type: string; properties?: any }
-        if (e.type === "session.deleted") {
-          stopChecked.delete(e.properties?.info?.id ?? "")
-          return
-        }
-        if (e.type === "command.executed") {
-          stopChecked.delete(e.properties?.sessionID ?? "")
-          return
-        }
-        if (e.type !== "session.idle") return
-        const sessionID: string = e.properties?.sessionID ?? ""
-        if (!sessionID) return
-        if (stopChecked.has(sessionID)) return
-        const session = await client.session.get({ path: { id: sessionID } })
-        const info = (session as any)?.data ?? session
-        if (info?.parentID) return
-        stopChecked.add(sessionID)
-        await client.session.prompt({
-          path: { id: sessionID },
-          body: { parts: [{ type: "text", text: SELF_CHECK }] },
-        })
-      } catch {}
     },
   }
 }
