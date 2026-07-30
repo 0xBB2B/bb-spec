@@ -1,5 +1,16 @@
 # Changelog
 
+## [12.0.0](https://github.com/0xBB2B/bb-spec/compare/v11.9.0...v12.0.0) (2026-07-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* opencode 插件不再在会话停止时注入收尾自检提示。迁移办法：切换到新增的 manager 主 agent（agents/manager.md，含任务分流、编码四铁律、收尾自检与简报格式），或将等价约束写入项目 AGENTS.md。
+
+### Features
+
+* 收尾自检由 Stop hook 迁移为 CLAUDE.md 模板 / manager agent 约束 ([#238](https://github.com/0xBB2B/bb-spec/issues/238)) ([3884589](https://github.com/0xBB2B/bb-spec/commit/388458960a338c7c865ffa2313d404fe88e94fb3))
+
 ## [11.9.0](https://github.com/0xBB2B/bb-spec/compare/v11.8.0...v11.9.0) (2026-07-29)
 
 
