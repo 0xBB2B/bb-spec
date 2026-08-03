@@ -1,5 +1,12 @@
 # Changelog
 
+## [12.0.1](https://github.com/0xBB2B/bb-spec/compare/v12.0.0...v12.0.1) (2026-08-03)
+
+
+### Bug Fixes
+
+* **opencode:** 恢复提问点的 question 工具绑定并加 manager 全局裁决约束 ([#240](https://github.com/0xBB2B/bb-spec/issues/240)) ([dd3d76f](https://github.com/0xBB2B/bb-spec/commit/dd3d76ff3cb699bc76fe4ccb98df606408d3508c))
+
 ## [12.0.0](https://github.com/0xBB2B/bb-spec/compare/v11.9.0...v12.0.0) (2026-07-30)
 
 
