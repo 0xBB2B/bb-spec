@@ -5,6 +5,3 @@
 .idea/
 .vscode/
 *.log
-.claude/settings.local.json
-.claude/.headroom_*
-.tokensave/
