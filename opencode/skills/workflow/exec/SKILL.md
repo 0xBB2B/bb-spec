@@ -58,7 +58,7 @@ git worktree list --porcelain
 - **已在 linked worktree 或非 main/master 功能分支** → cwd 即执行现场，继续
 - **在主仓库且 HEAD 为 main/master** → 逐棵检查非 main 分支的 worktree：其 plan 目录（按该 worktree 内 `.bb-spec.yaml` 解析 `base_dir`，缺省 `.bb-spec`）下存在未全完成 PROGRESS.md 的即候选（指定了主题时须匹配该主题）：
   - 恰一棵 → 它就是执行现场，**后续所有步骤——读 plan、写测试/实现、跑测试、commit——全部定位到该 worktree 内执行**（`cd` 进去或全程用其绝对路径）
-  - 多棵 → 列出候选向用户提问，等用户选定再继续
+  - 多棵 → 用 `question` 工具 列出候选让用户选
   - 无 → 全新任务，按 git-workflow 先确定开分支方式再继续，**禁止把任何产出落在 main 工作区**
 
 现场确定后，在**该目录**下 `cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`。读 `${DOCS_DIR}/plan/INDEX.md`，按参数形式决定行为：
@@ -83,7 +83,7 @@ git worktree list --porcelain
 - **互不依赖**：彼此不在对方依赖链上，且各自依赖的 plan 均已 `done`
 - **文件目录不重叠**：各自「函数清单」的文件路径落在不同目录——同目录即同编译单元，一个 plan 的半成品会让同组其他 plan 一起编译失败
 
-存在可编组的多个 plan 时，向用户提问并等待选定：首选项「并行执行这 N 个：<plan 列表>」，另一选项「逐个串行」。选串行则整个主题按序号逐个执行。无可编组时不询问，直接逐个执行。
+存在可编组的多个 plan 时，用 `question` 工具 询问用户：首选项「并行执行这 N 个：<plan 列表>」，另一选项「逐个串行」。选串行则整个主题按序号逐个执行。无可编组时不询问，直接逐个执行。
 
 ### 步骤 2：执行当前组
 
@@ -102,7 +102,7 @@ git worktree list --porcelain
 **按根因分流**：
 
 - **impl-defect 且根因确凿**（纯实现偏差、不触碰 spec）→ 执行层问题，**自行闭环不打断用户**：补测试(Red) → 改实现(Green) → 重新 Review；自修**最多 1 次**仍不过 → 标 blocked 上报用户。无论自修成败都在 PROGRESS.md「当前」区如实记一笔并计入完成简报。
-- **spec-defect / requirement-change，或归因存疑、证据不足以定性** → 触及定义层 / 需求层，属设计判断，**必须停下**向用户提问，让用户选 **修复** / **接受例外**（记录到 PROGRESS.md）/ **暂停**（标 blocked）。「接受例外」等于默许偏离 spec，**只能由用户点头，主 Agent 禁自决接受**。选"修复"时先向用户展示归因 + 证据，确认后再按类型修：spec-defect → 改 spec → 级联 plan → TDD 重新实现（Test→Impl→Review）；requirement-change → 用户确认新需求 → 更新 spec → 级联 plan + 实现。
+- **spec-defect / requirement-change，或归因存疑、证据不足以定性** → 触及定义层 / 需求层，属设计判断，**必须停下**用 `question` 工具 让用户选 **修复** / **接受例外**（记录到 PROGRESS.md）/ **暂停**（标 blocked）。「接受例外」等于默许偏离 spec，**只能由用户点头，主 Agent 禁自决接受**。选"修复"时先向用户展示归因 + 证据，确认后再按类型修：spec-defect → 改 spec → 级联 plan → TDD 重新实现（Test→Impl→Review）；requirement-change → 用户确认新需求 → 更新 spec → 级联 plan + 实现。
 
 **回归验证**：修复后跑测试（并行期间仍只跑本 plan 涉及范围）+ spec 合规检查。
 
