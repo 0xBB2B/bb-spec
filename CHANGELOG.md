@@ -1,5 +1,12 @@
 # Changelog
 
+## [12.0.2](https://github.com/0xBB2B/bb-spec/compare/v12.0.1...v12.0.2) (2026-08-04)
+
+
+### Bug Fixes
+
+* **review,plan,revise,doc-update:** 输出模板字段分行排版，消除连排长段 ([#243](https://github.com/0xBB2B/bb-spec/issues/243)) ([fd8a20b](https://github.com/0xBB2B/bb-spec/commit/fd8a20b2d0c6fe69879ec20f8082efe965f3175f))
+
 ## [12.0.1](https://github.com/0xBB2B/bb-spec/compare/v12.0.0...v12.0.1) (2026-08-03)
 
 
