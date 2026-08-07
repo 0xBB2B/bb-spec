@@ -1,5 +1,18 @@
 # Changelog
 
+## [12.1.0](https://github.com/0xBB2B/bb-spec/compare/v12.0.2...v12.1.0) (2026-08-07)
+
+
+### Features
+
+* **git-push:** 允许 commit/PR 保留 AI 署名 ([#245](https://github.com/0xBB2B/bb-spec/issues/245)) ([b08f80f](https://github.com/0xBB2B/bb-spec/commit/b08f80f1b4ff4764ce1bacfba391f8e3f8fae233))
+
+
+### Bug Fixes
+
+* **hooks,opencode:** 守卫分支判定锚定命令实际执行目录 ([#248](https://github.com/0xBB2B/bb-spec/issues/248)) ([6ec11de](https://github.com/0xBB2B/bb-spec/commit/6ec11de3514f9d33b7adc8e9784e478569df31c5))
+* **opencode:** 同步 [#243](https://github.com/0xBB2B/bb-spec/issues/243) 输出模板分行排版到 opencode 副本 ([#247](https://github.com/0xBB2B/bb-spec/issues/247)) ([c7586ec](https://github.com/0xBB2B/bb-spec/commit/c7586ec0cc145b4302ab2852e89a37faa7dde33b))
+
 ## [12.0.2](https://github.com/0xBB2B/bb-spec/compare/v12.0.1...v12.0.2) (2026-08-04)
 
 
