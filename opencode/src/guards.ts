@@ -15,7 +15,8 @@ const FLOW_GIT_VERBS = new Set([
 
 export interface GitGuardResult {
   flow: boolean
-  gitCPath: string
+  statusDir: string
+  fallback: boolean
   deny?: { kind: "branch"; branch: string } | { kind: "worktree-path"; path: string }
 }
 
@@ -35,10 +36,21 @@ function stripPrefixes(tokens: string[]): string[] {
 }
 
 function expandHome(p: string, home: string): string {
-  let out = p
-  if (out === "~") out = home
-  else if (out.startsWith("~/")) out = `${home}/${out.slice(2)}`
-  return out.replaceAll("$HOME", home)
+  if (p === "~" || p === "$HOME") return home
+  if (p.startsWith("~/")) return `${home}/${p.slice(2)}`
+  if (p.startsWith("$HOME/")) return `${home}/${p.slice(6)}`
+  return p
+}
+
+function resolvePath(raw: string, home: string, baseDir: string): string | null {
+  let p = raw
+  if (p.length >= 2 && ((p[0] === '"' && p[p.length - 1] === '"') || (p[0] === "'" && p[p.length - 1] === "'"))) {
+    p = p.slice(1, -1)
+  }
+  p = expandHome(p, home)
+  if (p.includes("$") || p.includes("`")) return null
+  if (p.startsWith("/")) return p
+  return join(baseDir, p)
 }
 
 export async function gitGuard(
@@ -46,11 +58,32 @@ export async function gitGuard(
   home: string,
   getBranch: (dir: string) => Promise<string>,
 ): Promise<GitGuardResult> {
-  const result: GitGuardResult = { flow: false, gitCPath: "" }
+  const result: GitGuardResult = { flow: false, statusDir: ".", fallback: false }
+  let derivedDir = "."
+  let derivedFallback = false
 
   for (const seg of splitSegments(command)) {
     const tokens = stripPrefixes(seg.split(/\s+/))
     const first = tokens[0]
+
+    if (first === "cd") {
+      const arg = tokens[1]
+      if (!arg) {
+        derivedDir = home
+        derivedFallback = false
+      } else {
+        const resolved = resolvePath(arg, home, derivedDir)
+        if (resolved !== null) {
+          derivedDir = resolved
+          derivedFallback = false
+        } else {
+          derivedDir = "."
+          derivedFallback = true
+        }
+      }
+      continue
+    }
+
     if (first === "gh") {
       if (tokens[1] === "pr") result.flow = true
       continue
@@ -58,19 +91,28 @@ export async function gitGuard(
     if (first !== "git") continue
 
     let rest = tokens.slice(1)
-    let segC = ""
+    let segDir = derivedDir
+    let segFallback = derivedFallback
     if (rest[0] === "-C" && rest[1]) {
-      segC = rest[1]
+      const resolved = resolvePath(rest[1], home, derivedDir)
+      if (resolved !== null) {
+        segDir = resolved
+        segFallback = false
+      } else {
+        segDir = "."
+        segFallback = true
+      }
       rest = rest.slice(2)
     }
     const verb = rest[0]
     if (!verb || !FLOW_GIT_VERBS.has(verb)) continue
 
     result.flow = true
-    if (segC) result.gitCPath = segC
+    result.statusDir = segDir
+    if (result.deny?.kind !== "branch") result.fallback = segFallback
 
     if (verb === "commit") {
-      const branch = await getBranch(segC || ".")
+      const branch = await getBranch(segDir)
       if (branch === "main" || branch === "master") {
         result.deny = { kind: "branch", branch }
       }

@@ -31,3 +31,20 @@ describe("config 钩子：agent 注册与默认 agent", () => {
     expect(cfg.default_agent).toBe("plan")
   })
 })
+
+describe("tool.execute.after 钩子：git 状态查询的目录锚点", () => {
+  test("cd 相对路径场景，状态查询目录基于会话 directory 拼接为绝对路径而非裸相对路径", async () => {
+    const dirs: string[] = []
+    const $ = ((_strings: TemplateStringsArray, ...values: unknown[]) => {
+      dirs.push(String(values[0]))
+      return { quiet: () => ({ nothrow: () => ({ text: async () => "feat-x\n" }) }) }
+    }) as any
+    const hooks = await BbSpec({ directory: "/session/repo", $ } as any)
+    await hooks["tool.execute.after"]?.(
+      { tool: "bash", args: { command: "cd sub && git commit -m m" } } as any,
+      { output: "" } as any,
+    )
+    expect(dirs).not.toContain("sub")
+    expect(dirs).toContain("/session/repo/sub")
+  })
+})
