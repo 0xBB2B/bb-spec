@@ -17,3 +17,6 @@ jobs:
 
       - name: Run structural validation
         run: bash tests/validate.sh
+
+      - name: Run git-workflow-guard behavior tests
+        run: bash tests/git-workflow-guard.test.sh

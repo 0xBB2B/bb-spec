@@ -32,7 +32,38 @@ DENY=0            # 命中 main / master 上的 commit → 需拦截
 DENY_BRANCH=""    # 触发 deny 时的分支名（用于提示文案）
 DENY_WT_PATH=""   # 触发 deny 时的 worktree 目标路径（用于提示文案）
 DENY_KIND=""      # branch | worktree-path
-GIT_C_PATH=""     # 最近一个流程段的 `git -C <path>` 工作目录覆盖
+STATUS_DIR="."    # 最近一个流程段的判定目录，"." 表示会话目录
+DERIVED_DIR="."   # cd 逐段推导出的当前目录，"." 表示会话目录
+DERIVED_FALLBACK=0 # DERIVED_DIR 是否因 cd 目标不可解析而回退会话目录
+FALLBACK=0        # 产生最终判定/状态注入的那一段是否回退会话目录
+
+# 解析 cd / -C 的目标路径参数，结果写入 RESOLVED；无法静态解析时返回 1。
+resolve_path() {
+  local raw="$1" base="$2"
+  local p="$raw"
+  if [ "${#p}" -ge 2 ]; then
+    local first="${p:0:1}" last="${p: -1}"
+    if [ "$first" = '"' ] && [ "$last" = '"' ]; then
+      p="${p#\"}"; p="${p%\"}"
+    elif [ "$first" = "'" ] && [ "$last" = "'" ]; then
+      p="${p#\'}"; p="${p%\'}"
+    fi
+  fi
+  case "$p" in
+    "~") p="$HOME" ;;
+    "~/"*) p="${HOME}/${p:2}" ;;
+    "\$HOME") p="$HOME" ;;
+    "\$HOME/"*) p="${HOME}/${p:6}" ;;
+  esac
+  case "$p" in
+    *'$'*|*'`'*) RESOLVED=""; return 1 ;;
+  esac
+  case "$p" in
+    /*) RESOLVED="$p" ;;
+    *) if [ "$base" = "." ]; then RESOLVED="./$p"; else RESOLVED="${base}/$p"; fi ;;
+  esac
+  return 0
+}
 
 while IFS= read -r SEG; do
   [ -z "$SEG" ] && continue
@@ -45,25 +76,43 @@ while IFS= read -r SEG; do
   done
 
   case "$FIRST" in
+    cd)
+      read -r CD_ARG _ <<<"$REST" || true
+      if [ -z "$CD_ARG" ]; then
+        DERIVED_DIR="$HOME"
+        DERIVED_FALLBACK=0
+      elif resolve_path "$CD_ARG" "$DERIVED_DIR"; then
+        DERIVED_DIR="$RESOLVED"
+        DERIVED_FALLBACK=0
+      else
+        DERIVED_DIR="."
+        DERIVED_FALLBACK=1
+      fi
+      ;;
     git)
-      # 处理 `git -C <path> ...` 的工作目录覆盖
+      # 处理 `git -C <path> ...` 的工作目录覆盖：只影响本段判定目录，不改 DERIVED_DIR
       read -r SECOND REST2 <<<"$REST" || true
-      SEG_C=""
+      SEG_DIR="$DERIVED_DIR"
+      SEG_FALLBACK="$DERIVED_FALLBACK"
       if [ "$SECOND" = "-C" ]; then
-        read -r SEG_C REST3 <<<"$REST2" || true
-        read -r SECOND _ <<<"$REST3" || true
+        read -r C_ARG REST3 <<<"$REST2" || true
+        if resolve_path "$C_ARG" "$DERIVED_DIR"; then
+          SEG_DIR="$RESOLVED"
+          SEG_FALLBACK=0
+        else
+          SEG_DIR="."
+          SEG_FALLBACK=1
+        fi
+        read -r SECOND REST2 <<<"$REST3" || true
       fi
       case "$SECOND" in
         commit|push|switch|checkout|branch|worktree|merge|rebase|cherry-pick)
           FLOW=1
-          [ -n "$SEG_C" ] && GIT_C_PATH="$SEG_C"
+          STATUS_DIR="$SEG_DIR"
+          [ "$DENY_KIND" = "branch" ] || FALLBACK="$SEG_FALLBACK"
           if [ "$SECOND" = "commit" ]; then
-            # 取该段所在仓库的当前分支，判断是否在主干
-            if [ -n "$SEG_C" ]; then
-              BR=$(git -C "$SEG_C" branch --show-current 2>/dev/null || true)
-            else
-              BR=$(git branch --show-current 2>/dev/null || true)
-            fi
+            # 取该段判定目录的当前分支，判断是否在主干
+            BR=$(git -C "$SEG_DIR" branch --show-current 2>/dev/null || true)
             case "$BR" in
               main|master) DENY=1; DENY_KIND="branch"; DENY_BRANCH="$BR" ;;
             esac
@@ -92,8 +141,9 @@ while IFS= read -r SEG; do
                 case "$WT_PATH" in
                   "~") WT_PATH="$HOME" ;;
                   "~/"*) WT_PATH="${HOME}/${WT_PATH:2}" ;;
+                  "\$HOME") WT_PATH="$HOME" ;;
+                  "\$HOME/"*) WT_PATH="${HOME}/${WT_PATH:6}" ;;
                 esac
-                WT_PATH="${WT_PATH//\$HOME/$HOME}"
                 # 必须落在 ~/.bb-spec/worktrees/ 下（单 repo / 多 repo 工作区共用此前缀）
                 case "$WT_PATH" in
                   "$HOME/.bb-spec/worktrees/"*) : ;;
@@ -117,7 +167,8 @@ done <<<"$SEGMENTS"
 if [ "$DENY" = "1" ]; then
   case "$DENY_KIND" in
     branch)
-      REASON=$(printf 'Git 工作流纪律：当前分支为 %s，禁止直接 commit 到主干。请先 `git switch -c <feature-branch>` 切到新分支再提交。' "$DENY_BRANCH") ;;
+      REASON=$(printf 'Git 工作流纪律：当前分支为 %s，禁止直接 commit 到主干。请先 `git switch -c <feature-branch>` 切到新分支再提交。' "$DENY_BRANCH")
+      [ "$FALLBACK" = "1" ] && REASON="${REASON}（目标目录含无法解析的变量，已按会话目录判定）" ;;
     worktree-path)
       REASON=$(printf 'Git 工作流纪律：worktree 必须落在 ~/.bb-spec/worktrees/ 下（单 repo: <repo>-<branch>；多 repo 工作区: <project>-<branch>/<repo>），禁止嵌套当前 repo 或放 sibling 目录。本次目标路径：%s' "$DENY_WT_PATH") ;;
     *)
@@ -137,11 +188,13 @@ fi
 [ "$FLOW" = "1" ] || exit 0
 
 # 职责二：放行流程动作，同时注入 git-workflow 纪律 + 实时 git 状态
-[ -n "$GIT_C_PATH" ] && GROOT="$GIT_C_PATH" || GROOT="."
+GROOT="$STATUS_DIR"
 BRANCH=$(git -C "$GROOT" branch --show-current 2>/dev/null || true)
 [ -n "$BRANCH" ] || BRANCH="(detached / 非 git 仓库)"
 DIRTY=$(git -C "$GROOT" status --short 2>/dev/null | head -5 || true)
 [ -n "$DIRTY" ] || DIRTY="(clean)"
+FALLBACK_LINE=""
+[ "$FALLBACK" = "1" ] && FALLBACK_LINE=$'\n- 说明：目标目录含无法解析的变量，已按会话目录判定'
 
 CONTEXT=$(cat <<EOF
 [git-workflow 纪律] 本次涉及 git 流程操作。执行前请遵循 bb-spec-core 的 git-workflow skill（若尚未加载，先加载再操作）。核心约束：
@@ -152,7 +205,7 @@ CONTEXT=$(cat <<EOF
 实时 git 状态：
 - 当前分支：${BRANCH}
 - 工作区：
-${DIRTY}
+${DIRTY}${FALLBACK_LINE}
 EOF
 )
 

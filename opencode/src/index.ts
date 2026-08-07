@@ -1,6 +1,6 @@
 import type { Plugin } from "@opencode-ai/plugin"
 import { readFileSync, readdirSync } from "node:fs"
-import { basename, dirname, join } from "node:path"
+import { basename, dirname, isAbsolute, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { bunGuard, gitGuard, versionFileHit } from "./guards"
 
@@ -67,9 +67,11 @@ function loadAgents(): Record<string, AgentDef> {
 export const BbSpec: Plugin = async ({ $, directory }) => {
   const agents = loadAgents()
 
+  const anchorDir = (d: string): string => (isAbsolute(d) ? d : join(directory, d))
+
   const getBranch = async (dir: string): Promise<string> => {
     try {
-      const out = await $`git -C ${dir === "." ? directory : dir} branch --show-current`.quiet().nothrow().text()
+      const out = await $`git -C ${anchorDir(dir)} branch --show-current`.quiet().nothrow().text()
       return out.trim()
     } catch {
       return ""
@@ -108,8 +110,9 @@ export const BbSpec: Plugin = async ({ $, directory }) => {
 
       const guard = await gitGuard(command, process.env.HOME ?? "", getBranch)
       if (guard.deny?.kind === "branch") {
+        const fallbackNote = guard.fallback ? "（目标目录含无法解析的变量，已按会话目录判定）" : ""
         throw new Error(
-          `Git 工作流纪律：当前分支为 ${guard.deny.branch}，禁止直接 commit 到主干。请先 \`git switch -c <feature-branch>\` 切到新分支再提交。`,
+          `Git 工作流纪律：当前分支为 ${guard.deny.branch}，禁止直接 commit 到主干。请先 \`git switch -c <feature-branch>\` 切到新分支再提交。${fallbackNote}`,
         )
       }
       if (guard.deny?.kind === "worktree-path") {
@@ -125,14 +128,15 @@ export const BbSpec: Plugin = async ({ $, directory }) => {
         if (!command) return
         const guard = await gitGuard(command, process.env.HOME ?? "", async () => "")
         if (!guard.flow) return
-        const dir = guard.gitCPath || directory
+        const dir = anchorDir(guard.statusDir)
         const branch = (await getBranch(dir)) || "(detached / 非 git 仓库)"
         let dirty = ""
         try {
           const status = await $`git -C ${dir} status --short`.quiet().nothrow().text()
           dirty = status.split("\n").filter(Boolean).slice(0, 5).join("\n")
         } catch {}
-        output.output += `\n\n${GIT_DISCIPLINE}\n\n实时 git 状态：\n- 当前分支：${branch}\n- 工作区：\n${dirty || "(clean)"}`
+        const fallbackLine = guard.fallback ? "\n- 说明：目标目录含无法解析的变量，已按会话目录判定" : ""
+        output.output += `\n\n${GIT_DISCIPLINE}\n\n实时 git 状态：\n- 当前分支：${branch}\n- 工作区：\n${dirty || "(clean)"}${fallbackLine}`
         return
       }
 
