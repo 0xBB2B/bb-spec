@@ -1,5 +1,12 @@
 # Changelog
 
+## [12.2.0](https://github.com/0xBB2B/bb-spec/compare/v12.1.0...v12.2.0) (2026-08-27)
+
+
+### Features
+
+* **review:** 第一参数改为待审分支，基线固定 main ([#249](https://github.com/0xBB2B/bb-spec/issues/249)) ([ce0292e](https://github.com/0xBB2B/bb-spec/commit/ce0292e432c1aa35e60659635f0d37a9d0cfa1fb))
+
 ## [12.1.0](https://github.com/0xBB2B/bb-spec/compare/v12.0.2...v12.1.0) (2026-08-07)
 
 
