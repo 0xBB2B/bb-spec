@@ -1,5 +1,12 @@
 # Changelog
 
+## [12.3.0](https://github.com/0xBB2B/bb-spec/compare/v12.2.0...v12.3.0) (2026-08-28)
+
+
+### Features
+
+* **review:** 分片 finder、同类扫描、修复复审与报告落盘，review 两轮收敛 ([#251](https://github.com/0xBB2B/bb-spec/issues/251)) ([dd96d64](https://github.com/0xBB2B/bb-spec/commit/dd96d6416056703c7155a3ec1bbf6be3573c9869))
+
 ## [12.2.0](https://github.com/0xBB2B/bb-spec/compare/v12.1.0...v12.2.0) (2026-08-27)
 
 
