@@ -10,7 +10,7 @@ argument-hint: [可选：限定范围，如某分区名 / 某目录 / 某 spec �
 
 > 与相邻 skill 的边界
 > - `/revise`：单点 bug 或定向修复（用户带具体偏差描述）；本 skill 做全仓批量同步
-> - `/review` 内的 `review-doc-sync` 子代理：PR diff 范围的只读发现器；本 skill 是全仓 + 落盘修改
+> - `/review` 内的 `review-design` 子代理（文档同步视角）：PR diff 范围的只读发现器；本 skill 是全仓 + 落盘修改
 > - `/spec`：新增需求规则；本 skill 不引入新规则、只追平既有规则与现态的漂移（**例外**：发现代码已稳定执行但 spec 未覆盖的硬约束级行为，可补一条新 spec，但仍走"先展示再批准"流程）
 
 ## 核心原则（兼硬约束）

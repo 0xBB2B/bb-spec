@@ -119,9 +119,10 @@
   - 應用端**產雙 image**:test image 帶 `/test/*` 路由 + `ENV TESTAPI=1`;生產 image **物理排除** `/test/*` 原始碼;`/test/healthz` 探測失敗即中止、禁降級
 
 - **`/review`** — Workflow 編排、**對抗驗證**的本地 PR review。
-  - Phase 1 diff 按 ≤1500 行分片,每片並發 **6 個 finder**:程式碼品質 / 安全 / 簡潔性 / 強健性 / 文件同步 / **Codex 跨模型獨立** review,schema 強制結構化
-  - Phase 2 每條 🔴/🟡 由 **3 個獨立懷疑視角**重判(重要性 / 根源性 / 不修風險),多數決去留
-  - Phase 3 每條確認項**同類掃描**兄弟位點,交 `/revise` 一次修一類;NIT 可一鍵批次清理
+  - Phase 1 diff 按 ≤1500 行分片,每片 diff 落盤一次供所有 agent 共讀,每片並發 **3 個 finder**:缺陷(安全 / 強健性 / 正確性)/ 設計(品質 / 簡潔性 / 文件同步)/ **Codex 跨模型獨立** review,schema 強制結構化
+  - Phase 2 每片 **1 個仲裁者**對本片全部 🔴/🟡 做三視角裁決(重要性 / 根源性 / 不修風險),多數決去留
+  - Phase 3 每片 **1 個掃描者**為全部確認項在本片內**同類掃描**兄弟位點,交 `/revise` 一次修一類;NIT 可一鍵批次清理
+  - 三個階段都按片派 agent,成本約 300 tokens / diff 行(15k 行 diff ≈ 50 agent / 5M tokens)
   - 修復落地後對修復 diff **自動複審一輪**;報告落盤 `.bb-spec/.cache/review/`,下一輪據此標記復發、跳過已否決項
   - 唯讀、絕不自動改程式碼;要求 Claude Code ≥ 2.1.154
 
@@ -136,11 +137,11 @@
 - **`/doc-update`** — 全儲存庫 spec / 文件 / 程式碼**一致性體檢**。
   - 六類漂移定位:spec-stale / doc-stale / code-violation / spec-conflict / orphan-index / uncovered-rule
   - **程式碼是事實、spec/文件追平程式碼**;程式碼明顯違背硬約束才停下問、掛回 `/revise` 走 TDD
-  - 與 `/revise`(單點)、`/review` 的 `review-doc-sync`(PR diff)劃清邊界
+  - 與 `/revise`(單點)、`/review` 的 `review-design`(文件同步視角)(PR diff)劃清邊界
 
 **附帶產物**
 
-- **11 個編排 subagent**(被上述環節驅動):`test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-code-quality` / `review-security` / `review-simplicity` / `review-robustness` / `review-doc-sync` / `review-codex` / `pre-reviewer`
+- **8 個編排 subagent**(被上述環節驅動):`test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-defect` / `review-design` / `review-codex` / `pre-reviewer`
 - **4 個被動 hook**(自動生效):攔截 npm/yarn、攔截 main commit、相依版本自檢、Stop 四項自檢
 
 ---

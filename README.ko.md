@@ -120,9 +120,10 @@
   - 앱 측은 **두 개의 이미지 산출**: test 이미지는 `/test/*` 라우트 + `ENV TESTAPI=1` 탑재; 운영 이미지는 `/test/*` 소스를 **물리적으로 제외**; `/test/healthz` 프로브 실패 시 즉시 중단, 폴백 금지
 
 - **`/review`** — Workflow 오케스트레이션, **적대적 검증**을 갖춘 로컬 PR review.
-  - Phase 1에서 diff를 ≤1500줄 단위로 분할하고 각 슬라이스마다 **6개 finder** 병렬 실행: 코드 품질 / 보안 / 간결성 / 견고성 / 문서 동기화 / **Codex 크로스 모델 독립** review, schema 강제 구조화
-  - Phase 2에서 각 🔴/🟡을 **3개 독립 회의 관점**으로 재판정(중요도 / 근본 원인성 / 미수정 위험), 다수결로 잔존 결정
-  - Phase 3에서 확인된 각 항목의 **동일 결함 클래스 형제 위치를 스윕**하여 `/revise`로 한 클래스씩 수정; NIT는 일괄 정리 가능
+  - Phase 1에서 diff를 ≤1500줄 단위로 분할하고 각 슬라이스의 diff를 한 번만 디스크에 기록해 모든 agent가 공유, 각 슬라이스마다 **3개 finder** 병렬 실행: 결함(보안 / 견고성 / 정확성) / 설계(품질 / 간결성 / 문서 동기화) / **Codex 크로스 모델 독립** review, schema 강제 구조화
+  - Phase 2에서 슬라이스마다 **1개 회의적 판정자**가 해당 슬라이스의 모든 🔴/🟡을 세 관점(중요도 / 근본 원인성 / 미수정 위험)으로 판정, 다수결로 잔존 결정
+  - Phase 3에서 슬라이스마다 **1개 스위퍼**가 확인된 모든 항목의 **동일 결함 클래스 형제 위치**를 해당 슬라이스 안에서 스윕, `/revise`로 한 클래스씩 수정; NIT는 일괄 정리 가능
+  - 모든 단계가 슬라이스 단위로 agent를 파견하므로 비용은 diff 한 줄당 약 300 tokens(15k줄 diff ≈ 50 agent / 5M tokens)
   - 수정 반영 후 수정 diff를 **자동으로 1회 재검토**; 리포트는 `.bb-spec/.cache/review/`에 저장되어 다음 실행 시 재발 표시와 기각 항목 건너뛰기에 사용
   - 읽기 전용, 절대 자동 편집하지 않음; Claude Code ≥ 2.1.154 필요
 
@@ -137,11 +138,11 @@
 - **`/doc-update`** — 저장소 전체 spec / 문서 / 코드 **일관성 점검**.
   - 6종 드리프트 분류: spec-stale / doc-stale / code-violation / spec-conflict / orphan-index / uncovered-rule
   - **코드가 진실, spec / 문서는 코드에 맞춤**; 코드가 명백히 하드 제약을 위반할 때만 멈추고 확인, `/revise`를 통해 TDD로 진행
-  - `/revise`(단일 지점), `/review`의 `review-doc-sync`(PR diff 범위)와 경계를 명확히
+  - `/revise`(단일 지점), `/review`의 `review-design`(문서 동기화 관점)(PR diff 범위)와 경계를 명확히
 
 **동봉되는 것**
 
-- **11개 오케스트레이션 subagent**(위 단계에 의해 구동): `test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-code-quality` / `review-security` / `review-simplicity` / `review-robustness` / `review-doc-sync` / `review-codex` / `pre-reviewer`
+- **8개 오케스트레이션 subagent**(위 단계에 의해 구동): `test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-defect` / `review-design` / `review-codex` / `pre-reviewer`
 - **4개 수동 hook**(자동 발동): npm/yarn 차단, main 커밋 차단, 의존성 버전 자가 점검, Stop 시 4항목 자가 점검
 
 ---

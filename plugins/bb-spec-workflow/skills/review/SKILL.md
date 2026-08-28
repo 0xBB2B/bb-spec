@@ -1,6 +1,6 @@
 ---
 name: review
-description: 本地 ultrareview——跨模型、多代理、对抗验证、只读的 PR 级 review（依赖 Workflow 工具，Claude Code ≥2.1.154）；第一参数指定待审分支（默认当前分支），对比基线固定 main（无则 master）；diff 按 ≤1500 行分片，每片并发 6 个 finder（质量/安全/简洁/鲁棒性/文档同步/Codex 跨模型），每条 🔴/🟡 发现交 3 个独立怀疑视角对抗验证、多数决去留，确认项再做同类扫描把兄弟位点并入一项、一次修一类；修复闭环后对修复 diff 自动复审一轮；报告落盘 .cache/review 并注入下一轮识别复发/已否决；可选追加本次 review 重点。触发：/review、给当前或指定分支做深度审查、PR 前 ultrareview。跳过：无 Workflow 工具、不在 git 仓库、待审分支=基线分支。
+description: 本地 ultrareview——跨模型、多代理、对抗验证、只读的 PR 级 review（依赖 Workflow 工具，Claude Code ≥2.1.154）；第一参数指定待审分支（默认当前分支），对比基线固定 main（无则 master）；diff 按 ≤1500 行分片，三个阶段都按片派 agent：每片 3 个 finder（缺陷=安全+鲁棒+正确性 / 设计=质量+简洁+文档同步 / Codex 跨模型）并行审查，每片 1 个仲裁者对本片全部 🔴/🟡 做三视角裁决、多数决去留，每片 1 个扫描者为全部确认项找兄弟位点并入一项、一次修一类；成本约 300 tokens/diff 行（15k 行 ≈ 50 agents / 5M）；修复闭环后对修复 diff 自动复审一轮；报告落盘 .cache/review 并注入下一轮识别复发/已否决；可选追加本次 review 重点。触发：/review、给当前或指定分支做深度审查、PR 前 ultrareview。跳过：无 Workflow 工具、不在 git 仓库、待审分支=基线分支。
 argument-hint: [branch] [本次 review 重点...]
 disable-model-invocation: true
 ---
@@ -30,7 +30,7 @@ disable-model-invocation: true
 
 - 确认 git 仓库 / branch ≠ base / branch 与 base 均存在 / 未提交改动仅警告不中止
 - **Workflow 工具**：本 skill 依赖 Workflow 工具（Claude Code ≥ 2.1.154）。当前环境工具列表中没有 Workflow → **中止**，提示用户升级 Claude Code,不降级执行
-- **Codex 探测**：`which codex` 失败 → finder 缩为 5 个（去掉 Codex），报告中说明
+- **Codex 探测**：`which codex` 失败 → 每片 finder 缩为 2 个（去掉 Codex），报告中说明
 - 记下 `HEAD0 = git rev-parse <branch>`，修复复审（§4）以它为增量起点
 
 回显：`review 范围：<base>..<branch> | commits：N | diff：M 文件 +L1/-L2 | 分片：K 片 | 重点：<focus 或「未指定」> | 上轮对照：<report 文件名 或「无」>`
@@ -44,6 +44,8 @@ finder 单次输出有限，通读全量 diff 时写出十来条就会停笔，�
 - 总量不超阈值则只有 1 片
 
 每片记录：序号 `i/K`、文件清单（`path +a/-b`）、行数合计。
+
+每片 diff 落盘一次、所有 agent 共读：`git diff <base>...<branch> -- <本片文件> > <base_dir>/.cache/review/<branch>/slices/<i>.diff`（`base_dir` 取 `.bb-spec.yaml` 的 `base_dir`，缺省 `.bb-spec`；branch 中的 `/` 替换为 `__`；每次 review 覆盖重写）。finder / 仲裁者 / 扫描者都以「Read 一次这个文件」代替逐个 Read 源文件——agent 的成本几乎全部来自工具调用把内容反复装进上下文，读一份 diff 比读十几个源文件便宜一个量级。
 
 ### 上轮对照（history）
 
@@ -69,46 +71,45 @@ focus 是**用户希望优先关注的方向**（如"鉴权链路"/"新加的限
 
 ## 2. 组装 finder
 
-finder = **维度 × 分片**：每个维度对每一片各派一个 agent。每个 finder prompt 由对应定义文件（插件根目录 `agents/`）+ 本次 review 上下文组合而成。派工前用 Read 读取 agent 定义，填充模板变量：
+finder = **finder 身份 × 分片**：每片派 3 个 finder（Codex 不可用时 2 个），每个 finder 独立读完本片 diff。每个 finder prompt 由对应定义文件（插件根目录 `agents/`）+ 本次 review 上下文组合而成。派工前用 Read 读取 agent 定义，填充模板变量：
 
-- `{review_scope}`：`<base>..<branch>` + 本片序号 `i/K` + 本片文件清单（`path +a/-b`）+ 一句范围纪律：「本片每个文件都必须读完再收工；本片外的文件只作上下文查阅，不在本片报出」
+- `{review_scope}`：`<base>..<branch>` + 本片序号 `i/K` + 本片文件清单（`path +a/-b`）+ 本片 diff 落盘路径 + 一句范围纪律：「本片 diff 必须读完再收工；本片外的文件只作上下文查阅，不在本片报出」
 - `{topic_summary}` / `{constraints}` / `{focus}`：全片相同；`{focus}` 为空时填入「本次未指定，按默认维度全面审视」
 - `{history}`：§1 的三份清单；为空时填「无上轮记录」
 
-| key | 图标 | 定义文件 | agentType |
-|---|---|---|---|
-| quality | 📐 | `agents/review-code-quality.md` | （默认） |
-| security | 🛡️ | `agents/review-security.md` | （默认） |
-| simplicity | 🧹 | `agents/review-simplicity.md` | （默认） |
-| robustness | 🪨 | `agents/review-robustness.md` | （默认） |
-| doc-sync | 📄 | `agents/review-doc-sync.md` | （默认） |
-| codex | 🤖 | `agents/review-codex.md` | `codex:codex-rescue` |
+| key | 图标 | 定义文件 | agentType | 视角 |
+|---|---|---|---|---|
+| defect | 🛠️ | `agents/review-defect.md` | （默认） | 安全 + 鲁棒性 + 正确性 |
+| design | 📐 | `agents/review-design.md` | （默认） | 质量 + 简洁 + 文档同步 |
+| codex | 🤖 | `agents/review-codex.md` | `codex:codex-rescue` | 跨模型独立视角 |
 
-图标是 finder 在最终报告中的身份标识（报告表格 by 列写图标 + 文字名，如 `📐质量`，多个 finder 空格分隔）；刻意用物体类 emoji，与严重度的 🔴🟡🟢 圆点在视觉上分属两类，避免混淆。
+图标是 finder 在最终报告中的身份标识（报告表格 by 列写图标 + 文字名，如 `🛠️缺陷`，多个 finder 空格分隔）；刻意用物体类 emoji，与严重度的 🔴🟡🟢 圆点在视觉上分属两类，避免混淆。
 
-构造 `finders` 数组：`[{key, slice, prompt, agentType?}, ...]`（Codex 不可用则不含 codex 项）。
+构造 `FINDERS` 数组：`[{key, slice, prompt, agentType?}, ...]`（Codex 不可用则不含 codex 项）；`SLICES` 数组：`[{slice: 'i/K', files: ['path', ...], diffPath}, ...]`。
 
 ---
 
 ## 3. Workflow 编排
 
-调用 Workflow 工具，**不使用 `args` 传参**（大对象经 args 易被序列化成字符串导致脚本取不到字段），把数据直接内嵌进脚本：将模板顶部的 `FINDERS` 替换为组装好的 finders 数组、`CONTEXT` 替换为一段自包含的 review 上下文文本（范围 `<base>..<branch>`、主题摘要、约束清单、**本次重点 focus**——为空时写「本次未指定」）、`CHANGED_FILES_CMD` 替换为实际的 `git diff --name-only <base>...<branch>`。内嵌长文本用模板字符串时注意转义内容中的 `` ` `` 与 `${`。`script` 用下面模板：
+三个阶段都**按片派 agent**：每片 3 个 finder、1 个仲裁者、1 个同类扫描者，同一片 diff 在整个 review 里只被这 5 个 agent 读过。成本量级约 300 tokens / diff 行——15k 行 diff ≈ 50 个 agent / 5M tokens，1–2k 行的日常 PR ≈ 15 个 agent / 0.5M tokens。
+
+调用 Workflow 工具，**不使用 `args` 传参**（大对象经 args 易被序列化成字符串导致脚本取不到字段），把数据直接内嵌进脚本：将模板顶部的 `FINDERS` / `SLICES` 替换为组装好的数组、`CONTEXT` 替换为一段自包含的 review 上下文文本（范围 `<base>..<branch>`、主题摘要、约束清单、**本次重点 focus**——为空时写「本次未指定」）。内嵌长文本用模板字符串时注意转义内容中的 `` ` `` 与 `${`。`script` 用下面模板：
 
 ```js
 export const meta = {
   name: 'local-ultrareview',
-  description: '分片多维 finder 并行审查 + 逐条对抗验证 + 确认项同类扫描的本地 review',
+  description: '按片派 finder 并行审查 + 按片批量对抗验证 + 按片同类扫描的本地 review',
   phases: [
-    { title: 'Find', detail: '维度 × 分片 finder 并行审查' },
-    { title: 'Verify', detail: '每条 🔴/🟡 × 3 个独立怀疑视角对抗验证' },
-    { title: 'Sweep', detail: '每条确认项扫描同类兄弟位点并合并' },
+    { title: 'Find', detail: '每片 3 个 finder 并行审查' },
+    { title: 'Verify', detail: '每片 1 个仲裁者对本片全部 🔴/🟡 做三视角裁决' },
+    { title: 'Sweep', detail: '每片 1 个扫描者为全部确认项找本片内的兄弟位点' },
   ],
 }
 
 // ===== review 输入（派工前由协调者填充，禁用 args 传参） =====
 const FINDERS = [/* {key, slice, prompt, agentType?}, ... */]
+const SLICES = [/* {slice: 'i/K', files: ['path', ...], diffPath}, ... */]
 const CONTEXT = `/* 自包含 review 上下文：范围、主题摘要、约束清单、本次重点 */`
-const CHANGED_FILES_CMD = 'git diff --name-only <base>...<branch>'
 
 // finder 的结构化发现 schema
 const FINDINGS = {
@@ -133,24 +134,37 @@ const FINDINGS = {
   },
 }
 
-// 验证者的裁决 schema
-const VERDICT = {
-  type: 'object', required: ['valid', 'reason'],
+// 仲裁者的裁决 schema：一次返回本片全部发现的三视角裁决
+const VERDICTS = {
+  type: 'object', required: ['verdicts'],
   properties: {
-    valid: { type: 'boolean', description: '该发现在本仲裁视角下是否站得住脚' },
-    reason: { type: 'string', description: '一句话裁决理由' },
+    verdicts: {
+      type: 'array',
+      items: {
+        type: 'object',
+        required: ['index', 'importance', 'rootCause', 'risk', 'reason'],
+        properties: {
+          index: { type: 'integer', description: '待仲裁清单中的编号' },
+          importance: { type: 'boolean', description: '对用户/业务/维护者真的重要，不是风格偏好或凑数' },
+          rootCause: { type: 'boolean', description: '指出的是根因而非表层症状，建议是根本修复而非缓解' },
+          risk: { type: 'boolean', description: '不修复会在真实场景触发正确性/安全/重大可维护性问题' },
+          reason: { type: 'string', description: '一句话裁决理由（三个视角各一短句）' },
+        },
+      },
+    },
   },
 }
 
-// 同类扫描的兄弟位点 schema
+// 同类扫描的兄弟位点 schema：一次返回本片内命中的全部位点
 const SIBLINGS = {
   type: 'object', required: ['siblings'],
   properties: {
     siblings: {
       type: 'array',
       items: {
-        type: 'object', required: ['file', 'lines', 'note'],
+        type: 'object', required: ['index', 'file', 'lines', 'note'],
         properties: {
+          index: { type: 'integer', description: '所属确认项编号' },
           file: { type: 'string', description: '相对仓库根的文件路径' },
           lines: { type: 'string', description: '行号或区间' },
           note: { type: 'string', description: '一句话：为何与主位点同类' },
@@ -170,6 +184,12 @@ function overlap(a, b) {
   const [s1, e1] = span(a.lines), [s2, e2] = span(b.lines)
   return s1 <= e2 && s2 <= e1
 }
+function describe(f) {
+  return `标题：${f.title}\n位置：${f.file}:${f.lines}\n严重度：${f.severity}\n事实：${f.fact}\n影响：${f.impact}\n建议：${f.suggestion}`
+}
+function sliceScope(s) {
+  return `本片 ${s.slice}，diff 已落盘：${s.diffPath}（先 Read 一次读完）；本片文件：\n${s.files.map(p => `- ${p}`).join('\n')}`
+}
 
 phase('Find')
 // 模型钉死 opus，不继承会话模型（会话可能跑更贵的档位）；
@@ -181,13 +201,13 @@ const rounds = await parallel(FINDERS.map(f => () =>
   })
 ))
 
-// 展平并标注发现者（agent 被跳过/出错时 rounds 对应项为 null）
+// 展平并标注发现者与所在片（agent 被跳过/出错时 rounds 对应项为 null）
 const raw = rounds
-  .map((r, i) => (r ? r.findings.map(x => ({ ...x, by: FINDERS[i].key })) : []))
+  .map((r, i) => (r ? r.findings.map(x => ({ ...x, by: FINDERS[i].key, slice: FINDERS[i].slice })) : []))
   .flat()
 
-// 纯代码去重：同文件且行区间重叠 → 合并（发现者并集、严重度取最高）
-// 去重必须等全部 finder 完成（跨片、跨维度操作），此处 barrier 是合法的
+// 纯代码去重：同文件且行区间重叠 → 合并（发现者并集、严重度取最高、片沿用首条）
+// 去重必须等全部 finder 完成（跨片、跨 finder 操作），此处 barrier 是合法的
 const SEV = { BLOCKER: 3, IMPORTANT: 2, NIT: 1 }
 const merged = []
 for (const f of raw) {
@@ -200,60 +220,71 @@ for (const f of raw) {
   }
 }
 
-// NIT 不值得验证成本，直接带回报告；🔴/🟡 逐条进对抗验证
+// NIT 不值得验证成本，直接带回报告；🔴/🟡 进对抗验证
 const nits = merged.filter(f => f.severity === 'NIT')
-const toVerify = merged.filter(f => f.severity !== 'NIT')
-log(`去重后 ${merged.length} 条：🔴/🟡 ${toVerify.length} 条进入对抗验证，🟢 ${nits.length} 条直接列出`)
+const toVerify = merged.filter(f => f.severity !== 'NIT').map((f, i) => ({ ...f, index: i + 1 }))
+log(`原始 ${raw.length} 条，去重后 ${merged.length} 条：🔴/🟡 ${toVerify.length} 条进入对抗验证，🟢 ${nits.length} 条直接列出`)
 
 phase('Verify')
-// 三个独立怀疑视角，每个只裁决一个维度，多数决（≥2/3）定去留
-const LENSES = [
-  { key: 'importance', q: '这个问题对用户/业务/维护者真的重要吗，还是风格偏好或凑数？' },
-  { key: 'root-cause', q: '它指出的是根因还是表层症状？建议是根本修复还是缓解/绕过？' },
-  { key: 'risk', q: '不修复会在真实场景触发正确性/安全/重大可维护性问题吗？' },
-]
-const verified = await parallel(toVerify.map(f => () =>
-  parallel(LENSES.map(l => () =>
-    agent(
-      `你是独立的 review 仲裁者，立场是怀疑：优先尝试否决下面这条发现，证据不足或站不住脚就判 valid=false。\n\n` +
-      `仲裁视角（只回答这一个维度）：${l.q}\n\n` +
-      `Review 上下文：\n${CONTEXT}\n\n` +
-      `待仲裁发现（由 ${f.by.join('/')} 提出）：\n` +
-      `标题：${f.title}\n位置：${f.file}:${f.lines}\n严重度：${f.severity}\n` +
-      `事实：${f.fact}\n影响：${f.impact}\n建议：${f.suggestion}\n\n` +
-      `要求：先用 Read/Grep 实地核对 ${f.file} 相关代码再裁决，不得仅凭描述判断。只读，不修改任何文件、不操作 git。`,
-      { label: `verify:${l.key}:${f.file}`, phase: 'Verify', schema: VERDICT, model: 'opus' },
-    )
-  )).then(vs => {
-    const votes = vs.map((v, i) => (v ? { lens: LENSES[i].key, ...v } : null)).filter(Boolean)
-    return { ...f, votes, pass: votes.filter(v => v.valid).length >= 2 }
-  })
-))
+// 每片一个仲裁者，拿到本片全部 🔴/🟡，逐条给出三视角裁决；多数决（≥2/3）定去留。
+// 三个视角由同一个 agent 在读过一次代码后一并回答——分三个 agent 只是把同一段代码读三遍
+const verdictBySlice = await parallel(SLICES.map(s => () => {
+  const mine = toVerify.filter(f => f.slice === s.slice)
+  if (mine.length === 0) return Promise.resolve(null)
+  return agent(
+    `你是独立的 review 仲裁者，立场是怀疑：对下面每条发现优先尝试否决，证据不足或站不住脚就判 false。\n\n` +
+    `对每条发现分别回答三个视角（互相独立，不要因为一个成立就全部成立）：\n` +
+    `- importance：这个问题对用户/业务/维护者真的重要吗，还是风格偏好或凑数？\n` +
+    `- rootCause：它指出的是根因还是表层症状？建议是根本修复还是缓解/绕过？\n` +
+    `- risk：不修复会在真实场景触发正确性/安全/重大可维护性问题吗？\n\n` +
+    `Review 上下文：\n${CONTEXT}\n\n${sliceScope(s)}\n\n` +
+    `待仲裁清单（共 ${mine.length} 条，verdicts 必须按编号逐条返回、一条不漏）：\n\n` +
+    mine.map(f => `#${f.index}（由 ${f.by.join('/')} 提出）\n${describe(f)}`).join('\n\n') + `\n\n` +
+    `要求：先 Read 本片 diff，再对每条发现实地核对相关代码后裁决，不得仅凭描述判断。只读，不修改任何文件、不操作 git。`,
+    { label: `verify:${s.slice}`, phase: 'Verify', schema: VERDICTS, model: 'opus' },
+  )
+}))
 
-const kept = verified.filter(Boolean)
-const rejected = kept.filter(f => !f.pass)
+const verdictOf = new Map()
+for (const r of verdictBySlice) for (const v of (r && r.verdicts) || []) verdictOf.set(v.index, v)
+const verified = toVerify.map(f => {
+  const v = verdictOf.get(f.index)
+  const votes = v
+    ? [{ lens: 'importance', valid: v.importance }, { lens: 'root-cause', valid: v.rootCause }, { lens: 'risk', valid: v.risk }]
+    : []
+  return { ...f, votes, reason: v ? v.reason : '仲裁者未返回该条裁决', pass: votes.filter(x => x.valid).length >= 2 }
+})
+const passed = verified.filter(f => f.pass)
+const rejected = verified.filter(f => !f.pass)
+log(`对抗验证：${passed.length} 条通过 / ${rejected.length} 条否决`)
 
 phase('Sweep')
-// 每条确认项扫一遍同类兄弟位点：点修不修类是 review 不收敛的主因
-const swept = await parallel(kept.filter(f => f.pass).map(f => () =>
+// 每片一个扫描者，拿到全部确认项，只在本片内找兄弟位点：点修不修类是 review 不收敛的主因。
+// 模式匹配活，用 sonnet
+const siblingsBySlice = passed.length === 0 ? [] : await parallel(SLICES.map(s => () =>
   agent(
-    `你是同类扫描者。下面是一条已经对抗验证确认的缺陷，任务不是复核它，而是找出它的兄弟位点：` +
-    `在 review 范围内的改动文件里（先执行 \`${CHANGED_FILES_CMD}\` 取清单），同一缺陷模式在别处的出现——` +
-    `同类调用缺同样的处理、同类输入缺同样的校验、同类路径缺同样的信号检查。\n\n` +
-    `判定标准：把这条缺陷的修法原样搬过去也成立，才算同类；只是"看起来相似"的不算。` +
-    `每个位点必须实地 Read 核对，不得凭文件名或函数名猜测。只读，不修改任何文件、不操作 git。无同类位点返回空数组。\n\n` +
-    `Review 上下文：\n${CONTEXT}\n\n` +
-    `已确认缺陷：\n标题：${f.title}\n主位点：${f.file}:${f.lines}\n事实：${f.fact}\n建议：${f.suggestion}`,
-    { label: `sweep:${f.file}`, phase: 'Sweep', schema: SIBLINGS, model: 'opus' },
-  ).then(r => ({
-    ...f,
-    sites: [{ file: f.file, lines: f.lines, note: '主位点' }, ...((r && r.siblings) || [])],
-  }))
+    `你是同类扫描者。下面是若干条已经对抗验证确认的缺陷，任务不是复核它们，而是在**本片文件内**找出它们的兄弟位点：` +
+    `同一缺陷模式在别处的出现——同类调用缺同样的处理、同类输入缺同样的校验、同类路径缺同样的信号检查。\n\n` +
+    `判定标准：把这条缺陷的修法原样搬过去也成立，才算同类；只是"看起来相似"的不算。主位点本身不要重复返回。` +
+    `每个位点必须实地核对，不得凭文件名或函数名猜测。只读，不修改任何文件、不操作 git。无同类位点返回空数组。\n\n` +
+    `Review 上下文：\n${CONTEXT}\n\n${sliceScope(s)}\n\n` +
+    `已确认缺陷（返回的 siblings 用 index 标明属于哪条）：\n\n` +
+    passed.map(f => `#${f.index}\n标题：${f.title}\n主位点：${f.file}:${f.lines}\n事实：${f.fact}\n建议：${f.suggestion}`).join('\n\n'),
+    { label: `sweep:${s.slice}`, phase: 'Sweep', schema: SIBLINGS, model: 'sonnet' },
+  )
 ))
+
+const swept = passed.map(f => {
+  const sites = [{ file: f.file, lines: f.lines, note: '主位点' }]
+  for (const r of siblingsBySlice) for (const s of (r && r.siblings) || []) {
+    if (s.index === f.index && !sites.some(t => overlap(s, t))) sites.push({ file: s.file, lines: s.lines, note: s.note })
+  }
+  return { ...f, sites }
+})
 
 // 兄弟位点命中另一条确认项 → 两条是同一类，合并为一项（发现者并集、严重度取高、位点并集）
 const confirmed = []
-for (const f of swept.filter(Boolean)) {
+for (const f of swept) {
   const host = confirmed.find(g => g.sites.some(s => f.sites.some(t => overlap(s, t))))
   if (host) {
     host.by = [...new Set([...host.by, ...f.by])]
@@ -263,9 +294,22 @@ for (const f of swept.filter(Boolean)) {
     confirmed.push(f)
   }
 }
-log(`确认 ${confirmed.length} 项（同类合并前 ${swept.length} 条），含兄弟位点的 ${confirmed.filter(f => f.sites.length > 1).length} 项`)
 
-return { confirmed, rejected, nits }
+const stats = {
+  sliceCount: SLICES.length,
+  finderCount: FINDERS.length,
+  rawCount: raw.length,
+  mergedCount: merged.length,
+  verifiedCount: toVerify.length,
+  passedCount: passed.length,
+  rejectedCount: rejected.length,
+  confirmedCount: confirmed.length,
+  siblingCount: confirmed.reduce((n, f) => n + f.sites.length - 1, 0),
+  nitCount: nits.length,
+}
+log(`确认 ${stats.confirmedCount} 项（同类合并前 ${stats.passedCount} 条），兄弟位点 ${stats.siblingCount} 处`)
+
+return { confirmed, rejected, nits, stats }
 ```
 
 ---
@@ -288,24 +332,24 @@ return { confirmed, rejected, nits }
 ```
 本地 ultrareview 完成 · <base>..<branch>（N commits / M 文件 / +L1 -L2 / K 片）
 重点：<focus 一句话；未指定时写「未指定，全面审视」>
-finder：📐质量 🛡️安全 🧹简洁 🪨鲁棒 📄文档 🤖Codex（6/6 就绪 × K 片）
-去重 N 条 → ✅ A 确认（含同类位点 a''）/ ❌ B 否决 / 🟢 C 未验证 ｜ 🔴 a（⭐a'）· 🟡 b（⭐b'）· ♻️ 复发 r
+finder：🛠️缺陷 📐设计 🤖Codex（3/3 就绪 × K 片）
+原始 R 条 → 去重 D 条 → 验证 V 条：✅ P 通过 → 同类合并 C 项（含兄弟位点 S 处）/ ❌ B 否决 / 🟢 N 未验证 ｜ 🔴 a（⭐a'）· 🟡 b（⭐b'）· ♻️ 复发 r
 上轮对照：<report 文件名 或「无」>
 消耗：X agents · ~Y tokens · Z 分钟
 ```
 
-finder 行必须完整列出（Codex 不可用时该行写 `（5/6 就绪，🤖Codex 不可用）`）；后续表格 by 列写图标 + 文字名（与 finder 行一致，如 `📐质量`）。⭐ = 被 ≥ 2 个 finder 命中的交叉验证强信号，由表格里的 ⭐ 标记与 by 列多 finder 直接呈现，不设独立汇总行。♻️ = 命中上轮已修复项的复发。
+**计数一律取自 workflow 返回值**：R/D/V/P/C/S/B/N 分别对应 `stats.rawCount / mergedCount / verifiedCount / passedCount / confirmedCount / siblingCount / rejectedCount / nitCount`，🔴/🟡/⭐/♻️ 由 `confirmed` 数组统计，消耗行取自 Workflow 完成通知里的 agents / tokens / 时长；禁止主 agent 手写或心算任何一个数字。finder 行必须完整列出（Codex 不可用时该行写 `（2/3 就绪，🤖Codex 不可用）`）；后续表格 by 列写图标 + 文字名（与 finder 行一致，如 `🛠️缺陷`）。⭐ = 被 ≥ 2 个 finder 命中的交叉验证强信号，由表格里的 ⭐ 标记与 by 列多 finder 直接呈现，不设独立汇总行。♻️ = 命中上轮已修复项的复发。
 
 ### ✅ 确认问题表（质量/安全优先排序）
 
-排序键依次为：①by 含 📐质量 或 🛡️安全 的优先；②其中"风险"仲裁视角 ✓（不修会出真实问题）的优先；③严重度 🔴 → 🟡；④⭐ 交叉验证优先。逐个解决模式按此表顺序处理。
+排序键依次为：①by 含 🛠️缺陷 的优先；②其中"风险"仲裁视角 ✓（不修会出真实问题）的优先；③严重度 🔴 → 🟡；④⭐ 交叉验证优先。逐个解决模式按此表顺序处理。
 
 ```
 **✅ 确认问题**（回复编号即从该项开始讲解）
 
 | # | 级 | 问题 | 位置 | by |
 |---|----|------|------|----|
-| 1 | 🔴⭐ | 标题 | file:lines（+2 同类） | 📐质量 🧹简洁 |
+| 1 | 🔴⭐ | 标题 | file:lines（+2 同类） | 🛠️缺陷 📐设计 |
 | 2 | 🟡 | ♻️ 标题 | file:lines | 🤖Codex |
 ```
 
@@ -319,7 +363,7 @@ finder 行必须完整列出（Codex 不可用时该行写 `（5/6 就绪，🤖
 
 | # | 问题 | 位置 | by |
 |---|------|------|----|
-| N1 | 标题 | file:lines | 📐质量 |
+| N1 | 标题 | file:lines | 📐设计 |
 ```
 
 ### ❌ 否决表（透明化，用户可质询）
@@ -329,7 +373,7 @@ finder 行必须完整列出（Codex 不可用时该行写 `（5/6 就绪，🤖
 
 | 原级 | 问题 | 重要 | 根源 | 风险 | 票 | 关键理由 |
 |------|------|:--:|:--:|:--:|----|----------|
-| 🔴 | 标题 | ✗ | ✗ | ✗ | 3:0 | 一句话（多数 ✗ 维度的核心依据） |
+| 🔴 | 标题 | ✗ | ✗ | ✗ | 3:0 | 一句话（取自仲裁 reason 中多数 ✗ 视角的依据） |
 ```
 
 票 = 否决:通过。用户回复 `展开否决项` / `展开第 N 项` 才给完整内容。
@@ -377,7 +421,7 @@ finder 行必须完整列出（Codex 不可用时该行写 `（5/6 就绪，🤖
 
 **修复一律走 /revise，一次修一类**：用户确认修某个问题后，用 Skill 工具调用 `revise`，把该 finding 的完整上下文（标题、**全部位点**（主位点 + 兄弟位点各自的 file:lines 与同类说明）、事实、影响、初步修复方向，`[测试缺陷]` 类附归因提示）作为参数传入，并写明「以上位点属同一缺陷类，须在同一次修复中全部处理，禁止只修主位点」。归因诊断及确认、修复方案、TDD 修正、全量测试、本地 commit、完成简报全部由 revise 闭环——review 端不自行改代码、不另跑测试、不另做前后对照确认，禁止绕过 revise 在对话里直接改代码。
 
-**文档同步类例外（自动修复，不询问）**：finding 同时满足 ①仅由 📄文档 发现 ②修复只涉及文档/注释、不改变任何代码行为 → 展开后不等待用户确认、不走 /revise，直接外科手术式修好，单行说明改动后进入复核与下一条。两个条件任一不满足 → 按普通问题处理。
+**文档同步类例外（自动修复，不询问）**：finding 同时满足 ①仅由 📐设计 发现且属文档同步（位置写的是文档侧 → 代码侧）②修复只涉及文档/注释、不改变任何代码行为 → 展开后不等待用户确认、不走 /revise，直接外科手术式修好，单行说明改动后进入复核与下一条。两个条件任一不满足 → 按普通问题处理。
 
 1. **展开当前问题**（仅此一条），按下方骨架输出——每个字段独立成段、空行分隔，段内用子弹或表格分点，禁止把任何字段写成连排长段：
 
@@ -386,7 +430,7 @@ finder 行必须完整列出（Codex 不可用时该行写 `（5/6 就绪，🤖
 
    位置：file:lines
    同类位点：file:lines — <为何同类>（一行一个；无则省略本行）
-   发现者：📐质量 🧹简洁 · 对抗验证：X/3 票通过（重要性 ✓/✗ · 根源性 ✓/✗ · 风险 ✓/✗）
+   发现者：🛠️缺陷 📐设计 · 对抗验证：X/3 票通过（重要性 ✓/✗ · 根源性 ✓/✗ · 风险 ✓/✗）
 
    **背景**
 
@@ -449,7 +493,7 @@ NIT 不做对抗验证，也从不进逐个解决队列，放着就会每轮原�
 修复代码没有经过与初始代码同等强度的审查，是下一轮 review 冒出"新"问题的直接来源。确认队列与 NIT 处理都结束后：
 
 1. `git rev-list --count <HEAD0>..HEAD` 为 0（本轮没有修复 commit）→ 跳过，收尾写「修复复审：无」
-2. 否则以 `<HEAD0>..HEAD` 为范围再跑一次 §3 的 Workflow：finder 只派 📐质量 🛡️安全 🪨鲁棒（修复 diff 小，单片；`{review_scope}` 写清「本范围是上一轮 review 的修复代码」；`{history}` 注入本轮已修清单，命中同类标 ♻️），Verify 与 Sweep 照常
+2. 否则以 `<HEAD0>..HEAD` 为范围再跑一次 §3 的 Workflow：finder 只派 🛠️缺陷 📐设计（修复 diff 小，单片；`{review_scope}` 写清「本范围是上一轮 review 的修复代码」；`{history}` 注入本轮已修清单，命中同类标 ♻️），Verify 与 Sweep 照常
 3. 输出 `🔁 修复复审 · <HEAD0 短 sha>..<HEAD 短 sha>（n commits / m 文件）` + 同格式的确认/NIT/否决表；有确认项则回到逐个解决模式处理
 4. **复审只做一轮**：复审修复后的代码不再自动复审，留给下一次 /review；收尾小结与 report 都写明这一点
 
@@ -460,7 +504,7 @@ NIT 不做对抗验证，也从不进逐个解决队列，放着就会每轮原�
 ## 5. 硬约束
 
 - review 过程不修代码、不做写性 git 操作、不扩大范围（只看 base..branch 与修复复审的 HEAD0..HEAD）；唯一的写入例外：①逐个解决模式中的修复——普通问题经用户逐条确认后走 /revise，文档同步类按例外规则自动修复；②批量清 NIT 的非行为类直接修；③report 写入 `<base_dir>/.cache/review/`
-- finder 必须按维度 × 分片派工，禁止把多片合并给一个 finder；每片 ≤ 1500 行且 ≤ 15 文件
+- 三个阶段都按片派工：每片 3 个 finder（Codex 不可用时 2 个）+ 1 个仲裁者 + 1 个扫描者，禁止把多片合并给一个 agent、禁止按发现或按确认项派 agent；每片 ≤ 1500 行且 ≤ 15 文件，diff 落盘一次供本片所有 agent 共读
 - 确认项必须经 Sweep 同类扫描后才出报告；交给 /revise 时必须带全部位点并要求一次修一类
 - focus 仅影响**关注优先级与排序**，不缩小审视面：finder 不得因「不在 focus 内」而丢弃本应报出的发现，尤其安全/正确性维度
 - history 中的已否决项无新证据不重报；已修复项再次命中必须标 ♻️，禁止静默当新问题
@@ -471,5 +515,6 @@ NIT 不做对抗验证，也从不进逐个解决队列，放着就会每轮原�
 - finder / 验证者 / 同类扫描者 prompt 自包含（agent 看不到本对话）
 - 编排必须走 Workflow 工具；环境无 Workflow 工具 → 中止提示升级，禁止退回主 agent 手工派工
 - 发现者与验证者隔离：验证者必须实地核对代码，不得只复读 finding 描述
-- Codex 不可用时 finder 缩为 5 个
+- Codex 不可用时每片 finder 缩为 2 个
+- 报告中的每个计数都来自 workflow 返回值 `stats` / `confirmed` 与 Workflow 完成通知，禁止手写
 - 输出语言跟随用户工作语言
