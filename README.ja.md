@@ -120,9 +120,10 @@
   - アプリ側は**2 つのイメージを出力**:test イメージは `/test/*` ルート + `ENV TESTAPI=1` 搭載;本番イメージは `/test/*` ソースを**物理的に除外**;`/test/healthz` プローブが失敗したら中断、フォールバック禁止
 
 - **`/review`** — Workflow オーケストレーション、**敵対的検証**付きのローカル PR review。
-  - フェーズ 1 で diff を ≤1500 行ごとに分割し、各スライスに **6 つの finder** を並列実行:コード品質 / セキュリティ / 簡潔性 / 堅牢性 / ドキュメント同期 / **Codex クロスモデル独立** review、schema 強制で構造化
-  - フェーズ 2 で各 🔴/🟡 を **3 つの独立懐疑視点**で再判定(重要性 / 根本原因性 / 未修正リスク)、多数決で残否を決定
-  - フェーズ 3 で確認済みの各項目について**同種の兄弟箇所を走査**し、`/revise` で一クラスまとめて修正;NIT は一括処理可能
+  - フェーズ 1 で diff を ≤1500 行ごとに分割し、各スライスの diff を一度だけディスクに書き出して全 agent で共有、各スライスに **3 つの finder** を並列実行:欠陥(セキュリティ / 堅牢性 / 正確性)/ 設計(品質 / 簡潔性 / ドキュメント同期)/ **Codex クロスモデル独立** review、schema 強制で構造化
+  - フェーズ 2 で各スライスに **1 つの懐疑的仲裁者**を割り当て、そのスライス内の全 🔴/🟡 を三視点(重要性 / 根本原因性 / 未修正リスク)で判定、多数決で残否を決定
+  - フェーズ 3 で各スライスに **1 つの走査者**を割り当て、確認済み全項目の**同種の兄弟箇所**をそのスライス内で走査、`/revise` で一クラスまとめて修正;NIT は一括処理可能
+  - 全フェーズがスライス単位で agent を派遣するため、コストは diff 1 行あたり約 300 tokens(15k 行の diff ≈ 50 agent / 5M tokens)
   - 修正が入った後、修正 diff を**自動で 1 回再レビュー**;レポートは `.bb-spec/.cache/review/` に保存され、次回実行時に再発の検出と却下済み項目のスキップに使われる
   - 読み取り専用、絶対に自動編集しない;Claude Code ≥ 2.1.154 が必要
 
@@ -137,11 +138,11 @@
 - **`/doc-update`** — リポジトリ全体の spec / ドキュメント / コード**一貫性チェック**。
   - 6 種類のドリフト分類:spec-stale / doc-stale / code-violation / spec-conflict / orphan-index / uncovered-rule
   - **コードが真実、spec / ドキュメントはコードに合わせる**;コードが明らかに硬制約に違反する場合のみ止まって確認、`/revise` 経由で TDD へ
-  - `/revise`(単点)、`/review` の `review-doc-sync`(PR diff スコープ)との境界を明確化
+  - `/revise`(単点)、`/review` の `review-design`(ドキュメント同期視点)(PR diff スコープ)との境界を明確化
 
 **同梱されるもの**
 
-- **11 個のオーケストレーションサブエージェント**(上記ステージに駆動される):`test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-code-quality` / `review-security` / `review-simplicity` / `review-robustness` / `review-doc-sync` / `review-codex` / `pre-reviewer`
+- **8 個のオーケストレーションサブエージェント**(上記ステージに駆動される):`test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-defect` / `review-design` / `review-codex` / `pre-reviewer`
 - **4 つの受動 hook**(自動発動):npm/yarn ブロック、main コミットブロック、依存バージョンセルフチェック、Stop 時の 4 項目セルフチェック
 
 ---

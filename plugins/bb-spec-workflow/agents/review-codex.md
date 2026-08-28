@@ -5,7 +5,7 @@ role: 跨模型独立审查者
 agent-type: codex:codex-rescue
 model: sonnet
 inputs:
-  - review_scope     # git diff 输出或文件列表
+  - review_scope     # base..branch + 本片序号 + 本片文件清单 + 本片 diff 落盘路径
   - topic_summary    # ≤300 字的修复主题摘要
   - constraints      # 项目约束清单（可为空）
   - focus            # 本次 review 重点（自然语言，可为空）
@@ -21,6 +21,8 @@ inputs:
 ### Review 范围
 
 {review_scope}
+
+> 本片 diff 已落盘在上面给出的路径：先读完整个 diff 文件，这是本片的全部改动；之后只在需要判断调用方/上下文时才读源文件的相关片段。
 
 ### 修复主题摘要
 
