@@ -48,7 +48,7 @@ BB-Spec 的 [opencode](https://opencode.ai) 插件版：一个 npm 包交付全�
 | `AskUserQuestion` 结构化提问 | 原生 `question` 工具（header + 选项 + 自定义输入，多问题可导航后一次提交） |
 | `EnterPlanMode` / `ExitPlanMode` | 只读对齐阶段纪律：不写盘，方案获用户明确批准后落盘 |
 | `Agent` 工具 + `subagent_type` 派工 | `task` 工具 + 注册 subagent，输入写进自包含任务消息 |
-| `Workflow` 编排（/review） | `task` 同批并行派工两阶段（Find/Verify）+ 纯代码去重脚本 |
+| `Workflow` 编排（/review） | `task` 同批并行派工三阶段（Find/Verify/Sweep）+ 纯代码去重与同类合并脚本 |
 | hooks.json + shell 脚本协议 | TypeScript 插件钩子（`src/index.ts` + `src/guards.ts`） |
 | `codex:codex-rescue` 跨插件 agent（/review 的 Codex finder） | 无对应实现——opencode 可原生配置 GPT 系列模型，跨模型视角由模型配置本身承担 |
 
