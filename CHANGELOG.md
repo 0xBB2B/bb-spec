@@ -1,5 +1,12 @@
 # Changelog
 
+## [12.4.0](https://github.com/0xBB2B/bb-spec/compare/v12.3.0...v12.4.0) (2026-08-28)
+
+
+### Features
+
+* **review:** 三阶段按片派 agent，单次 review 从 30M tokens 降到 5M 量级 ([#253](https://github.com/0xBB2B/bb-spec/issues/253)) ([73e5d55](https://github.com/0xBB2B/bb-spec/commit/73e5d551bca4da5186fb7931d5c11679dcd24e39))
+
 ## [12.3.0](https://github.com/0xBB2B/bb-spec/compare/v12.2.0...v12.3.0) (2026-08-28)
 
 
