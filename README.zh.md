@@ -103,7 +103,7 @@
 - **`/exec`** — **三 Agent 隔离执行**,核心反作弊设计。
   - *Test* Agent 只读 spec 规则写失败测试(Red)
   - *Impl* Agent **看不到 spec**,只看测试 + 函数清单写实现(Green),无法「照着意图作弊」;新增第三方库受 plan 已批依赖清单约束
-  - *Review* Agent 对照 spec 检查,只读不写
+  - *Review* Agent 对照 spec 检查并过一遍鲁棒性/安全视角,只读不写
   - 每步进度写 `PROGRESS.md`,token 耗尽也能**无损续接**
 
 - **`/test-webview`** — 前端 / 网页项目的**交互验收**。
@@ -119,8 +119,10 @@
   - 应用侧**产双 image**:test image 带 `/test/*` 路由 + `ENV TESTAPI=1`;生产 image **物理排除** `/test/*` 源码;`/test/healthz` 探测失败即中止、禁降级
 
 - **`/review`** — Workflow 编排、**对抗验证**的本地 PR review。
-  - Phase 1 并发 **6 个 finder**:代码质量 / 安全 / 简洁性 / 鲁棒性 / 文档同步 / **Codex 跨模型独立** review,schema 强制结构化
+  - Phase 1 diff 按 ≤1500 行分片,每片并发 **6 个 finder**:代码质量 / 安全 / 简洁性 / 鲁棒性 / 文档同步 / **Codex 跨模型独立** review,schema 强制结构化
   - Phase 2 每条 🔴/🟡 由 **3 个独立怀疑视角**重判(重要性 / 根源性 / 不修风险),多数决去留
+  - Phase 3 每条确认项**同类扫描**兄弟位点,交 `/revise` 一次修一类;NIT 可一键批量清
+  - 修复落地后对修复 diff **自动复审一轮**;报告落盘 `.bb-spec/.cache/review/`,下一轮据此标记复发、跳过已否决项
   - 只读、绝不自动改码;要求 Claude Code ≥ 2.1.154
 
 - **`/revise`** — 随时介入的异常处理。

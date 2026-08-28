@@ -1,6 +1,6 @@
 ---
 name: review-codex
-description: Codex（GPT-5.5）跨模型独立 review 子代理——提供与 Claude 不同视角：根源 vs 表层、备选方案合理性、语言习惯、Claude 常见偏好盲点（过度抽象/过度防御/不必要 helper）；≤1200 字、不凑数。派工：被 /review 作为跨模型 finder（🤖）调用，agentType=codex:codex-rescue；which codex 失败时整体降级、不调本 agent。禁止：修改文件、操作 git。
+description: Codex（GPT-5.5）跨模型独立 review 子代理——提供与 Claude 不同视角：根源 vs 表层、备选方案合理性、语言习惯、Claude 常见偏好盲点（过度抽象/过度防御/不必要 helper）；不凑数、不因篇幅收工。派工：被 /review 作为跨模型 finder（🤖）调用，agentType=codex:codex-rescue；which codex 失败时整体降级、不调本 agent。禁止：修改文件、操作 git。
 role: 跨模型独立审查者
 agent-type: codex:codex-rescue
 model: sonnet
@@ -9,6 +9,7 @@ inputs:
   - topic_summary    # ≤300 字的修复主题摘要
   - constraints      # 项目约束清单（可为空）
   - focus            # 本次 review 重点（自然语言，可为空）
+  - history          # 上轮对照：已修复 / 已否决 / 未处理 NIT 清单（可为空）
 ---
 
 # Codex Cross-Model Review Agent
@@ -35,6 +36,12 @@ inputs:
 
 > 重点用于排序与严重度判定上的轻度偏倚（命中重点的发现优先列出、可酌情偏严），**不缩小**审视面：与重点无关但本应报出的根因/方案问题仍须照常发现。
 
+### 上轮对照
+
+{history}
+
+> 已否决项无新证据不重报，有新证据须在事实里写明；已修复项再次命中同位置或同类时照常报出并在标题前加 ♻️；未处理 NIT 照常报出。
+
 ## 检查维度
 
 - **根源 vs 表层**：修复是否触及根源，还是只缓解症状
@@ -55,7 +62,7 @@ inputs:
 建议：≤ 3 行
 ```
 
-≤ 1200 字。只报有实质意义的发现，不凑数。
+不设总字数上限，发现数量以本片实际缺陷为准——既不凑数，也不因篇幅提前收工；本片清单里的每个文件都读完才能交卷。
 
 ## 安全基线
 

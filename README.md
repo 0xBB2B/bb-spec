@@ -104,7 +104,7 @@ Optional upstream: `/prd` (PM / requester brainstorms a PRD; shipped separately 
 - **`/exec`** — **Three-agent isolated execution**, the core anti-cheat design.
   - *Test* agent reads spec rules only, writes failing tests (Red)
   - *Impl* agent **never sees the spec**, only the tests + function list, so it can't quietly "teach to intent"; new third-party libs capped by the plan's approved list
-  - *Review* agent checks against the spec, read-only
+  - *Review* agent checks against the spec plus a robustness/security pass, read-only
   - Progress written to `PROGRESS.md` after every step — **token-exhausted runs resume losslessly**
 
 - **`/test-webview`** — **Web-interaction acceptance** for frontend / web projects.
@@ -120,8 +120,10 @@ Optional upstream: `/prd` (PM / requester brainstorms a PRD; shipped separately 
   - App side ships **two images**: test image carries `/test/*` routes + `ENV TESTAPI=1`; production image **physically excludes** `/test/*` source; `/test/healthz` probe gates the run, no fallback
 
 - **`/review`** — Workflow-orchestrated, **adversarially verified** local PR review.
-  - Phase 1 fans out **6 finders in parallel**: code quality / security / simplicity / robustness / doc-sync / **Codex cross-model independent** review, schema-enforced
+  - Phase 1 slices the diff (≤1500 lines per slice) and fans out **6 finders per slice in parallel**: code quality / security / simplicity / robustness / doc-sync / **Codex cross-model independent** review, schema-enforced
   - Phase 2 every 🔴/🟡 re-judged by **3 independent skeptic lenses** (importance / root-cause / risk-if-unfixed), majority vote
+  - Phase 3 every confirmed finding is **swept for sibling sites** of the same defect class and handed to `/revise` as one class; NITs can be cleared in one batch
+  - Once fixes land, the fix diff gets **one automatic re-review**; the report is persisted under `.bb-spec/.cache/review/` so the next run flags recurrences and skips already-rejected items
   - Read-only — never auto-edits; requires Claude Code ≥ 2.1.154
 
 - **`/revise`** — The exception handler, callable anytime.
