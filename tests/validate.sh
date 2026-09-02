@@ -128,6 +128,20 @@ for pdir in "$PLUGINS_DIR"/*/; do
       else
         fail "name='$fm_name' 与目录名 '$skill_name' 不一致"
       fi
+
+      # Workflow 脚本模板：脚本体由 Workflow 运行时包进 async 函数，顶层 await / return 合法，
+      # 所以不能直接 node --check，改为剥掉 export 后交给 AsyncFunction 构造器解析
+      for js in "${d}"references/*.js; do
+        [[ -f "$js" ]] || continue
+        if node -e '
+          const src = require("fs").readFileSync(process.argv[1], "utf8").replace(/^export const meta/m, "const meta");
+          new ((async () => {}).constructor)(src);
+        ' "$js" 2>/dev/null; then
+          pass
+        else
+          fail "$(basename "$js") 不是合法的 Workflow 脚本"
+        fi
+      done
     done
   fi
 

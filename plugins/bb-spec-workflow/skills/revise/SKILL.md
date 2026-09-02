@@ -1,6 +1,6 @@
 ---
 name: revise
-description: 产出修订（诊断→定向修正→回归验证）——对 spec→plan→exec 偏差做根因归类：spec-defect / impl-defect / requirement-change；先诊断再修正、改代码必先 Red 测试、最小影响只改必须改的层；已完成 plan 是历史审计快照禁止回改；启动先 worktree 感知定位修复现场（主仓库停在 main 时自动定位到进行中的 worktree）。触发：/revise、有 bug、结果不对、和预期不符、产出需要优化、review 发现违规需修复。跳过：纯新增需求（→/spec→/plan）、还没有 spec/plan/代码可对照。
+description: 产出修订（诊断→定向修正→回归验证）——对 spec→plan→exec 偏差做根因归类：spec-defect / impl-defect / requirement-change；先诊断再修正、改代码必先 Red 测试、最小影响只改必须改的层；已完成 plan 是历史审计快照禁止回改；TDD 修复复用 exec 的 Workflow 流水线（依赖 Workflow 工具，Red→Green→Gate→Review，agent 不 commit）；启动先 worktree 感知定位修复现场（主仓库停在 main 时自动定位到进行中的 worktree）。触发：/revise、有 bug、结果不对、和预期不符、产出需要优化、review 发现违规需修复。跳过：无 Workflow 工具、纯新增需求（→/spec→/plan）、还没有 spec/plan/代码可对照。
 argument-hint: <问题或优化诉求描述>
 ---
 
@@ -19,8 +19,8 @@ argument-hint: <问题或优化诉求描述>
 5. **修正闭环**：修正后必须验证——全量测试通过 + spec 合规 + 索引同步
 6. **最小影响**：只改必须改的层，不借修正之名扩展功能或重构（额外需求走 `/spec` → `/plan`）
 7. **已完成 plan 禁止回改**：PROGRESS.md 全部完成的 plan 是带日期的历史审计快照，回改即篡改记录（目录日期与内容脱节、"完成的是哪个版本"不可追溯）；仅进行中（PROGRESS.md 未全完成）的 plan 允许原地修正以保证断点续接。修复本身由本流程直接驱动，git commit 即修订记录
-8. **三 Agent 串行强制派发**：涉及代码修改时必须按 Test → Impl → Review 顺序派 `bb-spec-workflow:test-engineer` / `bb-spec-workflow:impl-engineer` / `bb-spec-workflow:spec-reviewer` 三个 subagent，**禁止主 agent 自己写测试、写实现、做 spec 合规检查**；唯一例外是「轻量修复判断」（见步骤 3）通过且用户同意后允许主 agent 直接 TDD 修复
-9. **Agent 隔离同 exec**：Test 不看实现，Impl 不看 spec，Review 只读不写
+8. **TDD 修复走 exec 的 Workflow 流水线**：涉及代码修改时必须调用 Workflow 工具运行 exec 的 `exec-group` 脚本（Red→Green→Gate→Review，agentType 依次为 `bb-spec-workflow:test-engineer` / `bb-spec-workflow:impl-engineer` / `general-purpose` / `bb-spec-workflow:spec-reviewer`），把本次修复组装成单个 plan 项传入；**禁止主 agent 自己写测试、写实现、做 spec 合规检查，也禁止绕过 Workflow 手工派 subagent**；环境无 Workflow 工具 → 中止并提示升级 Claude Code（≥ 2.1.154）。唯一例外是「轻量修复判断」（见步骤 3）通过且用户同意后允许主 agent 直接 TDD 修复
+9. **Agent 隔离同 exec**：Test 不看实现，Impl 不看 spec，Gate 与 Review 只读不写；Workflow 内的 agent 不写进度、不操作 git，commit 由主 agent 在步骤 4 完成
 10. **输出中文**
 
 ## 三类归因
@@ -120,9 +120,11 @@ argument-hint: <问题或优化诉求描述>
 
 ### 步骤 3：按类型修复
 
-> **强制派发**：所有涉及代码修改的修复路径（除下方「轻量修复判断」通过外）**必须**通过 `Agent` 工具派 `bb-spec-workflow:test-engineer` → `bb-spec-workflow:impl-engineer` → `bb-spec-workflow:spec-reviewer` 三个 subagent 串行完成，**禁止主 agent 直接动手写测试或实现代码**。主 agent 仅做：拆分输入、按隔离矩阵传 prompt、验证每步产物、衔接下一步。
+> **强制派发**：所有涉及代码修改的修复路径（除下方「轻量修复判断」通过外）**必须**通过 Workflow 工具跑一次 exec 的流水线脚本——读 exec skill 目录下的 `references/exec-group.js`（与本 skill 同级的 `exec/` 目录），把顶部四个常量替换后整段作为 `script` 传入，**不使用 `args` 传参**：`SITE` = 修复现场绝对路径；`PROJECT` = 语言 / 框架 / 架构约束；`TESTING` = 项目测试惯例；`PLANS` 只含一项 `{ name, rules, verification, functions, artifacts, deps, testScope }`——`name` 为修复主题，`rules` 为被违反或修正后的 spec 规则，`verification` 为能暴露本 bug 的验证预期（多位点问题列出全部位点），`functions` 为函数清单 + 文件路径（覆盖全部位点），`artifacts` 为成品定义（无则空串），`deps` 为所属 plan 的新增第三方依赖清单（无则「无」），`testScope` 为只跑受影响包 / 目录的测试命令。脚本内 Red → Green → Gate → Review 的隔离矩阵、重试上限（各 ≤1 次）、impl-defect 自修一次的规则与 exec 完全一致。**禁止主 agent 直接动手写测试或实现代码，禁止绕过 Workflow 手工派 subagent**。主 agent 仅做：拆分输入、组装 plan 项、处理返回值。
 
-> **多 repo 派发节律**（修复涉及 ≥ 2 个 repo 时适用）：以「单 repo 的 spec/code/test 链路」为最小派发单元，按 repo 顺序逐个走完整 Test→Impl→Review 循环，**禁止把多 repo 路径塞进一个 subagent**——测试惯例、spec 目录、项目约束在 repo 维度才一致，跨 repo 混传会破坏隔离矩阵。每个 repo 完成后再进入下一个，全部完成后才进入步骤 4 回归验证。
+> **处理返回值**：脚本返回 `{ results, stats }`，取 `results[0]`——`status` 为 `done` → 进步骤 4；`skipped`（Red 阶段确认行为已存在）→ 问题已不复现或归因有误，回步骤 2 重新诊断；`blocked` → 按 `stage` / `reason` 分流：清单外依赖 → AskUserQuestion 请用户批准（补录所属 plan 清单后重跑）或拒绝；Review 含 spec-defect / uncertain → 向用户展示 `review.findings` 的归因与证据，spec-defect 转 3a 从改 spec 起重走，uncertain 由用户裁决方向；其余（Red 失败 / Green 重试仍不过 / 自修后仍违规）→ 把 `reason` 原文告知用户等待指示，不 commit。
+
+> **多 repo 派发节律**（修复涉及 ≥ 2 个 repo 时适用）：以「单 repo 的 spec/code/test 链路」为最小派发单元，按 repo 顺序各跑一次 Workflow，**禁止把多 repo 路径塞进一个 plan 项**——测试惯例、spec 目录、项目约束在 repo 维度才一致，跨 repo 混传会破坏隔离矩阵。每个 repo 完成后再进入下一个，全部完成后才进入步骤 4 回归验证。
 
 **轻量修复判断**：进入修复前评估改动规模，**同时满足全部条件**时可向用户提议跳过 3-Agent 隔离直接修——归因为 impl-defect（spec/plan 无需变动）+ 改动 ≤ 1 个文件 ≤ 10 行 + 修复逻辑显而易见（拼写错误、off-by-one、条件取反）。
 
@@ -137,26 +139,22 @@ argument-hint: <问题或优化诉求描述>
 1. **改 spec**：编辑 spec 文件修正规则（遵守 spec skill 变更判定：修改=编辑原文件，废弃=删文件 + 移除索引条目）
 2. **检查 plan 影响**（先看 plan 状态再动手）：
    - **进行中**（PROGRESS.md 未全完成）→ 原地修正对应 plan 的业务规则/验证方式，保证断点续接正确
-   - **已完成**（PROGRESS.md 全部完成）→ **不改 plan**，spec 层修正照常、修复由本流程三 Agent 直接驱动；若偏差大到需要一份新实施计划，按步骤 1 流程归属判定退出转 `/spec` → `/plan`
+   - **已完成**（PROGRESS.md 全部完成）→ **不改 plan**，spec 层修正照常、修复由本流程的 Workflow 流水线直接驱动；若偏差大到需要一份新实施计划，按步骤 1 流程归属判定退出转 `/spec` → `/plan`
    - 无影响则跳过
-3. **TDD 修复实现（强制三 Agent 派发）**：
-   - 派 `bb-spec-workflow:test-engineer`，prompt 传「修正后的 spec 业务规则 + 验证预期 + 项目测试惯例」→ 主 agent 验证 Red
-   - 派 `bb-spec-workflow:impl-engineer`，prompt 传「函数清单 + 文件路径 + 测试文件路径 + 项目约束」→ 主 agent 验证 Green
-   - 派 `bb-spec-workflow:spec-reviewer`，prompt 传「业务规则 + 验证预期 + 所有变更文件路径」→ 主 agent 处理 review 结果
+3. **TDD 修复实现（强制派发）**：按步骤 3 开头的强制派发跑一次 Workflow，`rules` / `verification` 取**修正后**的 spec，随后按「处理返回值」分流
 4. **同步索引**：spec/plan 的 INDEX.md 如有变动则更新
 
-#### 3b. impl-defect — spec 正确，只修实现层（强制三 Agent 派发）
+#### 3b. impl-defect — spec 正确，只修实现层（强制派发）
 
-1. 派 `bb-spec-workflow:test-engineer`，prompt 传「被违反的 spec 规则 + 验证预期 + 项目测试惯例」→ 主 agent 验证测试能暴露 bug（Red）
-2. 派 `bb-spec-workflow:impl-engineer`，prompt 传「函数清单 + 文件路径 + 测试文件 + 项目约束」→ 主 agent 验证 Green
-3. 派 `bb-spec-workflow:spec-reviewer`，prompt 传「spec 规则 + 验证预期 + 所有变更文件路径」→ 主 agent 处理 review 结果
+1. 按步骤 3 开头的强制派发跑一次 Workflow，`rules` 为被违反的 spec 规则，`verification` 须能暴露 bug（Red 阶段的测试必须先失败）
+2. 按「处理返回值」分流
 
 #### 3c. requirement-change — 需求层变化，先确认再级联
 
 1. **确认新需求**：与用户对话明确新预期行为（一次 2-3 个关键问题）
 2. **更新 spec**：走 spec 变更流程（编辑/新增/删除 spec 文件 + 同步 INDEX.md）
 3. **评估级联影响**：检查哪些 plan 和实现受影响，向用户展示范围
-4. **级联修复**：按 3a 步骤 2-4 执行（改 plan → 三 Agent 派发 TDD 修实现 → Review 验证）
+4. **级联修复**：按 3a 步骤 2-4 执行（改 plan → Workflow TDD 修实现 → 处理返回值）
 
 ### 步骤 4：回归验证
 
@@ -182,10 +180,11 @@ argument-hint: <问题或优化诉求描述>
 
 ## Agent 隔离规则
 
-修复阶段复用 exec 的三 Agent 隔离，信息边界不变：
+修复阶段复用 exec 的 Workflow 流水线，信息边界不变：
 
 | Agent | 可见 | 不可见 |
 |---|---|---|
-| Test Agent | 修正后的 spec 规则 + 验证预期 + 项目测试惯例 | 函数清单、实现路径、现有实现代码 |
-| Impl Agent | 函数清单 + 文件路径 + 成品定义（如有）+ 测试文件 + 项目约束 | spec 原文 |
+| Test Agent | 修正后的 spec 规则 + 验证预期 + 项目约束 + 项目测试惯例 + 测试范围 | 函数清单、实现路径、现有实现代码 |
+| Impl Agent | 函数清单 + 文件路径 + 成品定义（如有）+ 依赖清单 + 测试文件 + 项目约束 + 测试范围 | spec 原文 |
+| Gate Agent | 函数清单 + 依赖清单 + 测试范围 + 实现文件 | spec 原文；只读不写 |
 | Review Agent | spec 规则 + 验证预期 + 所有变更文件 | 不修改任何文件 |

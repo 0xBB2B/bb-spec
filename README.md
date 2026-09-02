@@ -105,7 +105,8 @@ Optional upstream: `/prd` (PM / requester brainstorms a PRD; shipped separately 
   - *Test* agent reads spec rules only, writes failing tests (Red)
   - *Impl* agent **never sees the spec**, only the tests + function list, so it can't quietly "teach to intent"; new third-party libs capped by the plan's approved list
   - *Review* agent checks against the spec plus a robustness/security pass, read-only
-  - Progress written to `PROGRESS.md` after every step — **token-exhausted runs resume losslessly**
+  - Each execution group is one Workflow run: plans in the group run concurrently, each through Red→Green→Gate→Review, with retry caps and blocking decided by the script
+  - Progress written to `PROGRESS.md` after every group — **token-exhausted runs resume losslessly**
 
 - **`/test-webview`** — **Web-interaction acceptance** for frontend / web projects.
   - Brings the app up via the project's Docker stack (confirmed once, then remembered; `down -v` cleans up afterward), drives a real browser via the browser MCP
