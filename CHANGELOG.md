@@ -1,5 +1,12 @@
 # Changelog
 
+## [12.5.0](https://github.com/0xBB2B/bb-spec/compare/v12.4.0...v12.5.0) (2026-09-02)
+
+
+### Features
+
+* **exec,revise:** TDD 流水线改为按执行组派 Workflow，重试与阻塞由脚本确定性控制 ([#255](https://github.com/0xBB2B/bb-spec/issues/255)) ([d2cbc06](https://github.com/0xBB2B/bb-spec/commit/d2cbc06d315b6c68f4a187029b3f85dd28b8779a))
+
 ## [12.4.0](https://github.com/0xBB2B/bb-spec/compare/v12.3.0...v12.4.0) (2026-08-28)
 
 
