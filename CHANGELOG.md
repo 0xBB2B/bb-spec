@@ -1,5 +1,12 @@
 # Changelog
 
+## [12.7.0](https://github.com/0xBB2B/bb-spec/compare/v12.6.1...v12.7.0) (2026-09-17)
+
+
+### Features
+
+* **git-push:** 推送前新增「同步基线」步骤，分支落后目标分支则先 rebase 再开 PR ([#261](https://github.com/0xBB2B/bb-spec/issues/261)) ([e2c7f5c](https://github.com/0xBB2B/bb-spec/commit/e2c7f5cdba5958411e7828ece48fdea0c62a40a2))
+
 ## [12.6.1](https://github.com/0xBB2B/bb-spec/compare/v12.6.0...v12.6.1) (2026-09-08)
 
 
