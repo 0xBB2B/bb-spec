@@ -1,13 +1,13 @@
 ---
 name: git-push
-description: 推送本地代码到远程并开 PR 全流程——识别仓库→确认分支（worktree 模式自动定位目标分支）→跑全量测试→提交未暂存改动（禁 git add .）→若存在 spec INDEX.md 则 subagent 比对 spec 跑分支规范自查（违规走 /revise 循环复审）+起草 6 段 PR 描述→推送→创建 PR（origin+upstream 双 remote 时先问合并对象、默认 origin/main）→清理本地与远程。触发：push 一下、提个 PR、代码推上去、准备发 PR、开 PR 前自查、对照规范看分支。跳过：未本地验证完成的功能、main/master 上无新提交。
+description: 推送本地代码到远程并开 PR 全流程——识别仓库→确认分支（worktree 模式自动定位目标分支）→跑全量测试→提交未暂存改动（禁 git add .）→同步基线（origin+upstream 双 remote 时先问合并对象、默认 origin/main；分支落后基线则先 rebase 再重跑测试）→若存在 spec INDEX.md 则 subagent 比对 spec 跑分支规范自查（违规走 /revise 循环复审）+起草 6 段 PR 描述→推送→创建 PR→清理本地与远程。触发：push 一下、提个 PR、代码推上去、准备发 PR、开 PR 前自查、对照规范看分支。跳过：未本地验证完成的功能、main/master 上无新提交。
 ---
 
 # 仓库提交与 PR 流程
 
 ## 概览
 
-确认分支（worktree 模式自动定位目标）→ 跑测试 → 提交 → **分支规范自查 + PR 草稿**（仅当仓库或项目根存在 `.bb-spec/docs/spec/INDEX.md`）→ 推送 → 创建 PR → 处理 PR → 清理分支 / worktree。
+确认分支（worktree 模式自动定位目标）→ 跑测试 → 提交 → **同步基线**（落后则 rebase）→ **分支规范自查 + PR 草稿**（仅当仓库或项目根存在 `.bb-spec/docs/spec/INDEX.md`）→ 推送 → 创建 PR → 处理 PR → 清理分支 / worktree。
 
 ## 参数
 
@@ -52,6 +52,22 @@ description: 推送本地代码到远程并开 PR 全流程——识别仓库→
 ## 4. 提交未暂存改动
 
 `git status --short`。有改动 → 明确暂存相关文件（禁止 `git add .`）+ commit。不确定的文件（`.env`、凭据）必须先问。工作区干净 → 跳过。
+
+## 4.3 同步基线（rebase）
+
+### 合并对象确认（fork / 双 remote 场景）
+
+`git remote` 同时存在 `origin` 与 `upstream`，且两者都有 main/master（`git ls-remote --heads <remote> main master` 探测）→ **先用 `question` 工具 询问 PR 合并到哪个仓库**，`origin/main` 放首位标（Recommended）；只有 origin → 直接以 origin 为合并对象，不问。选定结果记为 **base repo**，其 main/master 记为 **基线**（`origin/main` 或 `upstream/main`），本步及后续全程生效。
+
+### 检查落后并 rebase
+
+```bash
+git fetch <base remote>
+git rev-list --count HEAD..<基线>   # > 0 即基线已领先、分支落后
+```
+
+- **= 0** → 分支已基于最新基线，跳过。
+- **> 0** → `git rebase <基线>`：机械性冲突（格式化、lockfile、相邻行改动）自行解决后 `git rebase --continue`；业务性冲突 → `git rebase --abort` 停下报告。rebase 完成后**重跑步骤 3 全量测试**——两批各自通过的改动叠加后仍可能失败，失败即停止报告。
 
 ## 4.5 分支规范自查与 PR 草稿（pre-review）
 
@@ -101,18 +117,14 @@ description: 推送本地代码到远程并开 PR 全流程——识别仓库→
 
 ## 5. 推送到远程
 
-`git push -u origin <branch>`。失败 → 停止报告。
+`git push -u origin <branch>`；分支此前已推过且 4.3 做过 rebase → `git push --force-with-lease origin <branch>`。失败 → 停止报告。
 
 ## 6. 创建 PR
 
-根据 `git remote get-url origin` 判断平台（github → `gh`，gitlab → `glab`）。
-
-### 合并对象确认（fork / 双 remote 场景）
-
-`git remote` 同时存在 `origin` 与 `upstream`，且两者都有 main/master（`git ls-remote --heads <remote> main master` 探测）→ **先用 `question` 工具 询问 PR 合并到哪个仓库**，`origin/main` 放首位标（Recommended）；只有 origin → 直接以 origin 为合并对象，不问。选定结果记为 **base repo**，本步及后续全程生效：
+根据 `git remote get-url origin` 判断平台（github → `gh`，gitlab → `glab`）。合并对象沿用步骤 4.3 选定的 base repo：
 
 - **base 为 origin** → `gh pr create` 显式带 `--repo <origin 的 owner/repo>`。fork 的 clone 里 gh 默认把 PR 开到 parent 仓库（upstream），不显式指定会开错地方。
-- **base 为 upstream** → `--repo <upstream 的 owner/repo>`；且步骤 7 所有 `gh pr view/merge/close` 同样显式带该 `--repo`，冲突 rebase 基线换成 `upstream/main`，步骤 8 的 `git pull` 源换成 `upstream main`（拉完可再 `git push origin main` 同步 fork）。GitLab 对应 `glab mr create --target-project`。
+- **base 为 upstream** → `--repo <upstream 的 owner/repo>`；且步骤 7 所有 `gh pr view/merge/close` 同样显式带该 `--repo`，步骤 8 的 `git pull` 源换成 `upstream main`（拉完可再 `git push origin main` 同步 fork）。GitLab 对应 `glab mr create --target-project`。
 
 ### 创建
 
@@ -143,7 +155,7 @@ description: 推送本地代码到远程并开 PR 全流程——识别仓库→
 
 查 `gh pr view <n> --json mergeable,mergeStateStatus,statusCheckRollup`：
 
-- **冲突**（`mergeable == CONFLICTING` / `mergeStateStatus == DIRTY`）→ `git rebase origin/main`：机械性冲突自行解决 + `--force-with-lease` 重推；业务性冲突停下报告。重推后 GitHub 异步重算 mergeability，需等其不再是 `UNKNOWN`/`CONFLICTING` 再重试合并
+- **冲突**（`mergeable == CONFLICTING` / `mergeStateStatus == DIRTY`）→ `git rebase <基线>`（4.3 选定）：机械性冲突自行解决 + `--force-with-lease` 重推；业务性冲突停下报告。重推后 GitHub 异步重算 mergeability，需等其不再是 `UNKNOWN`/`CONFLICTING` 再重试合并
 - **`mergeable == UNKNOWN`**（GitHub 仍在计算，常见于刚 push / rebase 后）→ 短暂轮询后重查，勿据此误判为冲突
 - **必需检查未过**：CI 进行中 → 告知用户挂起、跳过清理；**CI 失败** → 取消自动合并 → 拉失败日志 → 机械性失败（lint/format/lockfile）自行修复后重设；业务性失败停下报告
 
