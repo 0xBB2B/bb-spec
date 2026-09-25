@@ -13,10 +13,6 @@
 </p>
 
 <p align="center">
-  <a href="#-claude-code-インストール--install"><strong>Claude Code</strong></a> と <a href="#-opencode-インストール--install-opencode"><strong>opencode</strong></a> の両ホストに対応 —— クリックで対応するインストール手順へ直行。
-</p>
-
-<p align="center">
   <a href="https://github.com/0xBB2B/bb-spec/actions/workflows/ci.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/0xBB2B/bb-spec/ci.yml?branch=main&style=for-the-badge&logo=github&label=CI" alt="CI ステータス" /></a>
   <a href="https://github.com/0xBB2B/bb-spec/releases"><img src="https://img.shields.io/github/v/release/0xBB2B/bb-spec?include_prereleases&style=for-the-badge&logo=github&color=blue" alt="GitHub release" /></a>
   <a href="https://github.com/0xBB2B/bb-spec/stargazers"><img src="https://img.shields.io/github/stars/0xBB2B/bb-spec?style=for-the-badge&color=yellow&logo=github" alt="GitHub Stars" /></a>
@@ -182,17 +178,6 @@
 
 ---
 
-## 🧭 プラットフォーム対照 / Claude Code vs opencode
-
-2 つのホストが提供するのは**同一の内容**です:26 個の skills、オーケストレーション subagent(Claude Code 版 11 個、opencode 版 10 個)、4 つのワークフローガード hook(動作同等)を、単一のバージョンラインでロックステップリリース。違いは配布方式とホスト機構だけです。環境に合わせてどちらかをインストールしてください(手順は下の 2 節):
-
-| 項目 | Claude Code | opencode |
-|---|---|---|
-| 配布とインストール | 5 つのサブ plugin、marketplace から必要な層のみ導入 | 単一 npm パッケージ `opencode-bb-spec`、`opencode.json` に一度宣言して一括導入 |
-| コマンド入口 | 26 個の skill すべて `/名前` でスラッシュ呼び出し可、文脈に応じた自動トリガーも有効 | 11 個のパイプライン command(`/spec` `/exec` `/review` …)、残りの skill はモデルが必要時に自動ロード |
-| クロスモデル review | review-codex は codex プラグイン経由で派遣 | 提供なし——opencode は GPT 系モデルをネイティブに設定可能 |
-| 更新方法 | `/plugin update` | npm パッケージのバージョンを更新 |
-
 ## 📦 Claude Code インストール / Install
 
 BB-Spec は**5 つの独立インストール可能なサブ plugin** に分割 —— 必要な制約レイヤーのみインストール。
@@ -285,21 +270,6 @@ Directory に bb-spec の 5 つのサブプラグインが表示される。`Bb 
 <p align="center">
   <img src="./assets/desktop/06-verify-prd.png" alt="インストール確認" width="100%" />
 </p>
-
-## 🔌 opencode インストール / Install (opencode)
-
-BB-Spec は [opencode](https://opencode.ai) プラグイン版も提供しています。単一の npm パッケージで全 26 skills、10 subagent、11 command、4 つのワークフローガード hook を配布します(Claude Code 固有の codex クロスモデル review を除き機能同等——opencode は GPT 系モデルをネイティブに設定できるため、codex CLI を経由する必要がありません)。
-
-`~/.config/opencode/opencode.json`(グローバル)またはプロジェクトの `opencode.json` に宣言します:
-
-```json
-{
-  "$schema": "https://opencode.ai/config.json",
-  "plugin": ["opencode-bb-spec"]
-}
-```
-
-opencode を再起動し、`opencode debug skill` で確認してください。詳細と Claude Code 版との対応表は [opencode/README.md](opencode/README.md) を参照。
 
 ## 🔄 バージョンと更新 / Versioning
 

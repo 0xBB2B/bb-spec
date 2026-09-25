@@ -13,10 +13,6 @@
 </p>
 
 <p align="center">
-  同時支援 <a href="#-claude-code-安裝--install"><strong>Claude Code</strong></a> 與 <a href="#-opencode-安裝--install-opencode"><strong>opencode</strong></a> 兩個宿主 —— 點擊直達對應的安裝方式。
-</p>
-
-<p align="center">
   <a href="https://github.com/0xBB2B/bb-spec/actions/workflows/ci.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/0xBB2B/bb-spec/ci.yml?branch=main&style=for-the-badge&logo=github&label=CI" alt="CI 狀態" /></a>
   <a href="https://github.com/0xBB2B/bb-spec/releases"><img src="https://img.shields.io/github/v/release/0xBB2B/bb-spec?include_prereleases&style=for-the-badge&logo=github&color=blue" alt="GitHub release" /></a>
   <a href="https://github.com/0xBB2B/bb-spec/stargazers"><img src="https://img.shields.io/github/stars/0xBB2B/bb-spec?style=for-the-badge&color=yellow&logo=github" alt="GitHub Stars" /></a>
@@ -181,17 +177,6 @@
 
 ---
 
-## 🧭 宿主對照 / Claude Code vs opencode
-
-兩個宿主交付的是**同一套內容**:26 個 skills、編排 subagent(Claude Code 版 11 個、opencode 版 10 個)、4 個流程守衛 hook(行為等價),共用同一條版本線同步發版。差異只在發佈方式與宿主機制,依使用環境擇一安裝(步驟見下方兩節):
-
-| 維度 | Claude Code | opencode |
-|---|---|---|
-| 發佈與安裝 | 5 個子 plugin,marketplace 按需安裝、只裝需要的層 | 單一 npm 套件 `opencode-bb-spec`,`opencode.json` 宣告一次全裝 |
-| 命令入口 | 26 個 skill 均可 `/名稱` 斜線調用,也隨情境自動觸發 | 11 個流水線 command(`/spec` `/exec` `/review` …),其餘 skill 由模型按需自動載入 |
-| 跨模型 review | review-codex 經 codex 外掛派工 | 不提供——opencode 可原生配置 GPT 系列模型 |
-| 更新方式 | `/plugin update` | 升級 npm 套件版本 |
-
 ## 📦 Claude Code 安裝 / Install
 
 BB-Spec 拆成**五個可獨立安裝的子 plugin**——只裝你需要的約束層。
@@ -284,21 +269,6 @@ Directory 中會看到 bb-spec 的 5 個子插件。點擊 `Bb spec core` / `Bb 
 <p align="center">
   <img src="./assets/desktop/06-verify-prd.png" alt="驗證安裝" width="100%" />
 </p>
-
-## 🔌 opencode 安裝 / Install (opencode)
-
-BB-Spec 同時提供 [opencode](https://opencode.ai) 外掛版:單一 npm 套件交付全部 26 個 skills、10 個 subagent、11 個 command 與 4 個流程守衛 hook(除 Claude Code 專有的 codex 跨模型 review 外功能對齊——opencode 本身可直接配置 GPT 系列模型,無需借道 codex CLI)。
-
-在 `~/.config/opencode/opencode.json`(全域)或專案層級 `opencode.json` 中宣告:
-
-```json
-{
-  "$schema": "https://opencode.ai/config.json",
-  "plugin": ["opencode-bb-spec"]
-}
-```
-
-重啟 opencode 後用 `opencode debug skill` 驗證。細節與 Claude Code 版差異對照見 [opencode/README.md](opencode/README.md)。
 
 ## 🔄 版本與更新 / Versioning
 
