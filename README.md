@@ -13,10 +13,6 @@
 </p>
 
 <p align="center">
-  Runs on both <a href="#-claude-code-install"><strong>Claude Code</strong></a> and <a href="#-opencode-install"><strong>opencode</strong></a> — jump straight to the install guide for your host.
-</p>
-
-<p align="center">
   <a href="https://github.com/0xBB2B/bb-spec/actions/workflows/ci.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/0xBB2B/bb-spec/ci.yml?branch=main&style=for-the-badge&logo=github&label=CI" alt="CI status" /></a>
   <a href="https://github.com/0xBB2B/bb-spec/releases"><img src="https://img.shields.io/github/v/release/0xBB2B/bb-spec?include_prereleases&style=for-the-badge&logo=github&color=blue" alt="GitHub release" /></a>
   <a href="https://github.com/0xBB2B/bb-spec/stargazers"><img src="https://img.shields.io/github/stars/0xBB2B/bb-spec?style=for-the-badge&color=yellow&logo=github" alt="GitHub Stars" /></a>
@@ -182,17 +178,6 @@ These feed rules into the pipeline above — install only the layers you need.
 
 ---
 
-## 🧭 Platforms / Claude Code vs opencode
-
-Both hosts ship the **same content** — 26 skills, orchestration subagents (11 on Claude Code, 10 on opencode), and 4 workflow-guard hooks (behavior-equivalent) — released in lockstep on a single version line. The differences are only in distribution and host mechanics; pick the one matching your environment (installation in the two sections below):
-
-| Dimension | Claude Code | opencode |
-|---|---|---|
-| Distribution & install | 5 sub-plugins via marketplace — install only the layers you need | one npm package `opencode-bb-spec`, declared once in `opencode.json` |
-| Command entry | all 26 skills invocable as `/name` slash commands, plus context auto-trigger | 11 pipeline commands (`/spec` `/exec` `/review` …); remaining skills auto-loaded by the model on demand |
-| Cross-model review | review-codex dispatched through the codex plugin | Not provided — opencode can natively run GPT-family models |
-| Updates | `/plugin update` | bump the npm package version |
-
 ## 📦 Claude Code Install
 
 BB-Spec ships as **five independently installable sub-plugins** — install only the constraint layers you need.
@@ -285,21 +270,6 @@ Back in the input box, type `/prd`. If the command suggestion shows up, you're s
 <p align="center">
   <img src="./assets/desktop/06-verify-prd.png" alt="Verify install" width="100%" />
 </p>
-
-## 🔌 opencode Install
-
-BB-Spec also ships as an [opencode](https://opencode.ai) plugin: one npm package delivering all 26 skills, 10 subagents, 11 commands and 4 workflow-guard hooks (full parity except the Claude Code-specific codex cross-model review — opencode can natively run GPT-family models, so no codex CLI detour is needed).
-
-Declare it in `~/.config/opencode/opencode.json` (global) or a project-level `opencode.json`:
-
-```json
-{
-  "$schema": "https://opencode.ai/config.json",
-  "plugin": ["opencode-bb-spec"]
-}
-```
-
-Restart opencode, then verify with `opencode debug skill`. Details and the Claude Code ↔ opencode mapping: [opencode/README.md](opencode/README.md).
 
 ## 🔄 Versioning
 
