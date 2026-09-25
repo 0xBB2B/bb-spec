@@ -1,5 +1,16 @@
 # Changelog
 
+## [13.0.0](https://github.com/0xBB2B/bb-spec/compare/v12.7.0...v13.0.0) (2026-09-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* 不再提供 opencode 插件，npm 包 opencode-bb-spec 停止发布新版本。opencode 用户请改用 Claude Code 插件版。
+
+### Features
+
+* 移除 opencode 版本，新增改动授权与反历史包袱分流规则 ([#263](https://github.com/0xBB2B/bb-spec/issues/263)) ([f6dbfcc](https://github.com/0xBB2B/bb-spec/commit/f6dbfcc29400b4868d12ec4d2940e3637bbbb075))
+
 ## [12.7.0](https://github.com/0xBB2B/bb-spec/compare/v12.6.1...v12.7.0) (2026-09-17)
 
 
