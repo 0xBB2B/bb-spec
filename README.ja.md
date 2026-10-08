@@ -5,7 +5,7 @@
 <h1 align="center">📐 BB-Spec</h1>
 
 <p align="center">
-  <strong>曖昧な要件を出荷可能なコードまで運ぶ、spec 駆動の Claude Code パイプライン。</strong>
+  <strong>曖昧な要件を出荷可能なコードまで運ぶ、PRD 駆動の Claude Code パイプライン。</strong>
 </p>
 
 <p align="center">
@@ -26,7 +26,7 @@
 
 <p align="center">
   <a href="#-30-秒で開始">クイックスタート</a> ·
-  <a href="#-コアパイプライン-spec--ship">パイプライン</a> ·
+  <a href="#-コアパイプライン-prd--ship">パイプライン</a> ·
   <a href="#-ステージ一覧">ステージ</a> ·
   <a href="#-付属の制約-skills">制約 Skills</a> ·
   <a href="#-claude-code-インストール--install">インストール</a> ·
@@ -48,36 +48,34 @@
 
 | コマンド | 何をするか | いつ使うか |
 |---|---|---|
-| `/spec` | 要件を 1 ルール 1 ファイルの spec に分解 | 新規要件の着手時 |
-| `/plan` | spec → 関数レベルの実装計画 | spec 完成後 |
-| `/exec` | 3 エージェント隔離で Test→Impl→Review を実行 | plan 完成後 |
+| `/prd` | 質疑→明確化→分解、1 回の承認で PRD + AGENTS.md を書き出し、plan → exec を自動実行 | 新規要件の着手時 |
+| `/plan` | PRD → 関数レベルの実装計画、完了後に exec を自動実行 | `/prd` から自動呼び出し |
+| `/exec` | 3 エージェント隔離で Test→Impl→Review を実行、仕上げに doc-update を自動実行 | `/plan` から自動呼び出し;中断時は手動で再開 |
 | `/review` | 並列 finder + 敵対的検証 | PR 提出前 |
 | `/git-push` | pre-review セルフチェック + push + PR 作成 | リリース準備時 |
 
-いつでも介入可能な 3 つの支線:`/git-clone`(リモートプロジェクトをローカルに取得 + `.bb-spec.yaml` を生成するワンショット onboarding)、`/revise`(あらゆる逸脱を根本原因に基づき正しいステージに戻す)、`/doc-update`(リポジトリ全体の spec / ドキュメント / コード一貫性チェック)。
-
-オプションの上流:`/prd`(PM / 依頼者が PRD をブレストする、bb-spec-product として単独提供)。
+いつでも介入可能な 4 つの支線:`/git-clone`(リモートプロジェクトをローカルに取得 + `.bb-spec.yaml` を生成するワンショット onboarding)、`/revise`(あらゆる逸脱を根本原因に基づき正しいステージに戻す)、`/doc-update`(ドキュメントとコードの一貫性チェック;`/exec` と `/revise` の終了時には今回の変更範囲を自動で一度実行)、`/prd-migrate`(spec を使っていた旧プロジェクトのワンショット移行)。
 
 ---
 
-## 🔁 コアパイプライン `spec → ship`
+## 🔁 コアパイプライン `prd → ship`
 
 ```
  (任意) /git-clone ──► リモート取得 + .bb-spec.yaml 生成
    │
- (任意) /prd ──► PRD ドキュメント
-   │
- /spec ──► /plan ──► /exec ──► /review ──► /git-push
- 何を作るか  どう作るか  Red→Green→Review  並列+敵対  pre-review+PR 作成
+ /prd ══► /plan ══► /exec ══► /doc-update ──► /review ──► /git-push
+ 何を作るか どう作るか Red→Green  ドキュメントをコードに追従  並列+敵対  pre-review+PR 作成
+ (唯一の承認)          →Review
+ ══► 自動で接続、再確認なし(新規第三者依存の追加や設計判断が必要な時のみ停止)
                                                           │
         ┌─────────────────────────────────────────────────┘
         │
         ▼ /revise(いつでも介入、根本原因でルーティング)
-          spec 欠陥 → /spec   ·   実装ドリフト → /exec   ·   review 指摘 → ピンポイント修正
+          PRD 欠陥 → 本ブランチの PRD を修正   ·   実装ドリフト → TDD で修正   ·   大きな要件変更 → /prd
 
  (任意) /test-webview · /test-api — フロント / バックエンド e2e、/exec と /review の間に挿入
- /doc-update(定期 / 必要時) — リポ全体のドリフト走査 → デフォルトは spec/ドキュメントを更新、
-                                  明らかに不適切なコードは止まって確認 → /revise へルーティング
+ /doc-update(定期 / 必要時) — ドキュメントとコードのドリフト走査 → デフォルトはドキュメントを更新、
+                                  コードがプロジェクト制約に違反する場合のみ止まって確認 → /revise へルーティング
 ```
 
 **このパイプラインが信頼できる理由** —— すべての受け渡しが**ディスク上のファイル**であり、チャット内の一時記憶ではない。これが再開可能・AI 交代可能・端から端までトレース可能な根本である。
@@ -89,24 +87,29 @@
   - **マルチリポワークスペース**は共通の親ディレクトリを作り各メンバーリポジトリを個別に clone(ビルドツールが期待する相対配置を復元)、ネスト禁止・上書き禁止
   - 責務を厳格に絞る:**コード取得 + `base_dir` 書き込みのみ**、コードは読まず・依存もインストールしない
 
-- **`/spec`** — 対話で要件分解、**「何を作るか」**に答える。
-  - 1 ファイル 1 ルール、≤100 行、1 件 + 1 例のみ、互いに重複なし
-  - 軽量な `INDEX.md` が統率、読み手はインデックスをスキャンしてから必要に応じて読み込む
+- **`/prd`** — 新規要件の唯一の入口、**「何を作るか・なぜ作るか」**に答える。
+  - 質疑前置(結論が「やる価値なし」でも可)→ 段階的明確化 → 分解、全工程を **plan モードで読み取り専用の整合**;ユーザーの**承認はこの 1 回だけ**、以降 `/plan` → `/exec` → `/doc-update` を自動で最後まで実行
+  - **PRD**(`docs/prd/<日付>.<テーマ>/`:背景、目標、非目標、ユーザーストーリー、テスト可能な制約と受け入れ基準、決定記録)と **AGENTS.md**(プロジェクト全体に効く制約、例:「ジェネリクス禁止」)を書き出す
+  - PRD は本ブランチ内では変更可(実装中に方針の問題が見つかれば直接修正)、マージ後は凍結;**コードが「今どう動くか」の唯一の情報源**、PRD は「なぜ」だけに答える
+  - 以降の各 commit に `Requirement: <PRD ディレクトリ名>` マーカーを付与:`git log -L :関数:ファイル` でその関数を変更した要件を一覧でき、対応する PRD の決定記録を読めば当時の設計理由がわかる
 
-- **`/plan`** — spec → 自己完結型・**関数レベル**の実装計画、**「どう作るか」**に答える。
-  - 1 ファイル 1 独立問題、関数名と責務まで詳細化;宣言型成果物(DDL / API 契約 / 設定)は**最終成果物の形で直接インライン**、exec はそのまま書き出す
-  - 呼び出し時に **plan モードの読み取り専用整合**に入り、承認後にのみ書き出し;**新規追加の第三者依存は独立セクション**、承認は version-policy が要求するユーザー同意とみなす
+- **`/plan`** — PRD → 自己完結型・**関数レベル**の実装計画、**「どう作るか」**に答える。
+  - 1 ファイル 1 独立問題、関数名と責務まで詳細化;宣言的成果物(DDL / API 契約 / 設定)は**最終成果物を直接インライン**、exec がそのまま書き出す
+  - `/prd` から自動呼び出し、個別の承認は不要;**新規第三者依存の追加**が必要な時だけ止まってユーザーの同意を求め、同意は version-policy が要求する承認とみなす
+  - plan は実行中だけ存在し、全完了後に `/exec` が削除 —— PRD との重複を避ける
 
 - **`/exec`** — **3 エージェント隔離実行**、不正対策のコア設計。
-  - *Test* エージェントは spec ルールのみ読んで失敗テストを書く(Red)
-  - *Impl* エージェントは **spec を見ない**、テスト + 関数リストのみ見て実装を書く(Green)、「意図に合わせて不正」できない;新規追加の第三者ライブラリは plan で承認された依存リストに制限
-  - *Review* エージェントは spec と照合し、堅牢性/セキュリティの観点でもチェック、読み取り専用
+  - *Test* エージェントは PRD の制約のみ読んで失敗テストを書く(Red)
+  - *Impl* エージェントは **PRD を見ない**、テスト + 関数リストのみ見て実装を書く(Green)、「意図に合わせて不正」できない;新規追加の第三者ライブラリは plan で承認された依存リストに制限
+  - *Review* エージェントは PRD の受け入れ基準と AGENTS.md に照合し、堅牢性/セキュリティの観点でもチェック、読み取り専用
   - 各ステップの進捗を `PROGRESS.md` に記録、token 枯渇でも**ロスレス再開**可能
+  - 実装中に方針の問題が見つかったら止まって選択を求める:コードを直す / 今回の PRD を直す / 一時停止;小さな変更はその場で修正、大きな変更は `/prd` に戻って再承認
+  - 全完了後に `/doc-update` の仕上げモードを自動実行、今回の PRD と README などのドキュメントを実際の成果物に追従させる
 
 - **`/test-webview`** — フロントエンド / ウェブプロジェクトの**インタラクション受け入れ**。
   - Docker フルスタック起動(初回確認後に記憶、終了後 `down -v` でクリーンアップ)、ブラウザ MCP で実ブラウザを駆動
   - **各ケースに隔離されたシリアルサブエージェントを割り当て**、数百ケースでもメインコンテキストを溢れさせない;全工程シリアル(ブラウザ単一インスタンス)
-  - ケースは spec / plan / PRD から自動生成;実行前に**カバレッジ整合**、ギャップを暗黙に見逃さない;失敗は `/revise` へ
+  - ケースは本ブランチの PRD の受け入れ基準と検証パスから自動生成(マージ済みの過去 PRD は読まない);実行前に**カバレッジ整合**、ギャップを暗黙に見逃さない;失敗は `/revise` へ
   - ブラウザ MCP(playwright / chrome-devtools)が必要
 
 - **`/test-api`** — バックエンド**API e2e**。
@@ -124,21 +127,28 @@
   - 読み取り専用、絶対に自動編集しない;Claude Code ≥ 2.1.154 が必要
 
 - **`/revise`** — いつでも介入可能な例外処理。
-  - 逸脱を**根本原因で 3 分類**:*spec 欠陥*(→ `/spec`)、*実装ドリフト*(→ `/exec`)、*要件変更*
+  - まずコードを読んで現状を確認し、`git log -L` で関連 PRD を辿ってから、逸脱を**根本原因で 3 分類**:*PRD 欠陥*、*実装ドリフト*、*要件変更*
+  - 本ブランチの PRD は変更可;マージ済み PRD は変更せず、修正理由を commit 本文に書く
   - 修正が必要なすべての review 指摘はここに集約
+  - 修正後に `/doc-update` の仕上げモードを自動実行
 
 - **`/git-push`** — ユーザートリガーの push + PR フロー(単一 / マルチリポジトリ)。
-  - spec `INDEX.md` がある場合、まず**ブランチ規範セルフチェック(pre-review)**を実行:サブエージェントが spec vs ブランチ diff を比較、違反を反復修正
+  - AGENTS.md または本ブランチの PRD がある場合、まず**ブランチ規範セルフチェック(pre-review)**を実行:サブエージェントがプロジェクト制約と PRD vs ブランチ diff を比較、違反を反復修正
+  - PR 説明に `Requirement:` マーカーを付与;squash マージは「PR タイトルと説明」または「PR タイトルと commit 詳細」に設定する必要あり、さもないとマーカーが失われる
   - **6 セクションの PR 説明**(背景 / 要件 / アプローチ / 結果 / テスト / 規範、< 50 行)を起草、そのまま PR body として使用
 
-- **`/doc-update`** — リポジトリ全体の spec / ドキュメント / コード**一貫性チェック**。
-  - 6 種類のドリフト分類:spec-stale / doc-stale / code-violation / spec-conflict / orphan-index / uncovered-rule
-  - **コードが真実、spec / ドキュメントはコードに合わせる**;コードが明らかに硬制約に違反する場合のみ止まって確認、`/revise` 経由で TDD へ
-  - `/revise`(単点)、`/review` の `review-design`(ドキュメント同期視点)(PR diff スコープ)との境界を明確化
+- **`/doc-update`** — ドキュメントとコードの**一貫性チェック**。
+  - 4 種類の検出:doc-stale(ルートドキュメントの陳腐化)/ prd-stale(本ブランチの PRD と成果物の不一致)/ code-violation(コードが AGENTS.md に違反)/ agents-conflict(プロジェクト制約同士の矛盾)
+  - **コードが真実、ドキュメントはコードに合わせる**;コード変更は必ず先に確認し、`/revise` 経由で TDD へ;マージ済みの PRD はどのモードでも触らない
+  - **仕上げモード**(`--tail`):`/exec`・`/revise` の終了時に自動呼び出し、本ブランチの変更範囲だけを扱う
+
+- **`/prd-migrate`** — spec を使っていた旧プロジェクトの**ワンショット移行**。
+  - 元の PRD はそのまま `prd/` に戻し、spec は領域ごとに legacy PRD へ変換;`commits:` に関連 commit ハッシュを記録し、古いコードも git から PRD へ逆引き可能
+  - 出典のある内容だけを書き、各設計理由に出典を付記、見つからなければ「不明」としてユーザーに確認、**AI に捏造させない**;プロジェクト単位の制約は AGENTS.md へ移す
 
 **同梱されるもの**
 
-- **8 個のオーケストレーションサブエージェント**(上記ステージに駆動される):`test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-defect` / `review-design` / `review-codex` / `pre-reviewer`
+- **8 個のオーケストレーションサブエージェント**(上記ステージに駆動される):`test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `review-defect` / `review-design` / `review-codex` / `pre-reviewer`
 - **4 つの受動 hook**(自動発動):npm/yarn ブロック、main コミットブロック、依存バージョンセルフチェック、Stop 時の 4 項目セルフチェック
 
 ---
@@ -147,16 +157,10 @@
 
 上記のパイプラインにルールを供給する —— 必要なレイヤーのみインストール。
 
-### bb-spec-product — プロダクト要件(パイプライン上流)
-
-- **`prd`** — PM / 依頼者が AI とブレスト:質疑前置(却下も有効な結末)→ 発散 → 収束、自己完結型 PRD を生成 —— 目標 / 非目標、優先度付きユーザーストーリー(各 P0 に具体的ユースケースと受け入れ基準を付与)、エンジニアに残す未解決の質問;git リポやコード文脈は不要、`/spec` が直接消費
-
-> **PM は Claude Code 不要**:リリースごとに [`bb-spec-prd-skill.zip`](https://github.com/0xBB2B/bb-spec/releases/latest/download/bb-spec-prd-skill.zip) を自動パッケージング、ダウンロード後 claude.ai ウェブ版 / デスクトップ版の **Settings → Customize → Skills** からアップロードすれば skill 単独で利用可能(有料プランかつコード実行有効化が必要)、生成された PRD はダウンロード可能なファイルとしてエンジニアに引き渡し。
-
 ### bb-spec-core — 汎用規律
 
 - **`tdd-workflow`** — Red-Green-Refactor 規律、追加 / 修正 / 削除 3 シナリオの標準フローをカバー
-- **`version-policy`** — 標準 / 公式ライブラリ優先、新規第三者ライブラリ導入はユーザーの明示的同意が必要(plan で承認された依存リストは同意とみなす);バージョン固定前に依存の公式最新版を確認、訓練記憶に頼ることを禁止
+- **`version-policy`** — 標準 / 公式ライブラリ優先、新規第三者ライブラリ導入はユーザーの明示的同意が必要(`/plan` 段階でユーザーが同意した依存リストは同意とみなす);バージョン固定前に依存の公式最新版を確認、訓練記憶に頼ることを禁止
 - **`git-workflow`** — ブランチ決定、段階的 commit、6 セクション PR 説明、マージ後クリーンアップ
 
 ### bb-spec-backend — バックエンドスタック制約
@@ -180,7 +184,7 @@
 
 ## 📦 Claude Code インストール / Install
 
-BB-Spec は**5 つの独立インストール可能なサブ plugin** に分割 —— 必要な制約レイヤーのみインストール。
+BB-Spec は**4 つの独立インストール可能なサブ plugin** に分割 —— 必要な制約レイヤーのみインストール。
 
 まず一度 marketplace を追加(Claude Code 内で実行):
 
@@ -193,12 +197,11 @@ BB-Spec は**5 つの独立インストール可能なサブ plugin** に分割 
 | サブ plugin | 何が手に入るか | インストールコマンド |
 |---|---|---|
 | **bb-spec-core** _(推奨ベース)_ | TDD / バージョンポリシー / Git 規律 + 3 つの受動 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(コア機能)_ | spec → plan → exec → review → revise → git-push(+ 任意 test-webview / test-api e2e)、git-clone ワンショット初期化、init 逆 spec、doc-update リポ全体一貫性メンテ + 11 サブエージェント | `/plugin install bb-spec-workflow@0xbb2b` |
-| **bb-spec-product** | /prd 要件ブレスト → 具体的ユースケース付き PRD ドキュメント(PM / 依頼者向け) | `/plugin install bb-spec-product@0xbb2b` |
+| **bb-spec-workflow** _(コア機能)_ | prd → plan → exec → doc-update → review → revise → git-push(+ 任意 test-webview / test-api e2e)、git-clone ワンショット初期化、prd-migrate 旧プロジェクト移行 + 8 サブエージェント | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / 認証 / 認可 / 可観測性 / サービスガバナンス / 設定制約 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun スタック & エンジニアリング規約(bun hook 付き) | `/plugin install bb-spec-frontend@0xbb2b` |
 
-必要に応じて選択 —— 例えば規律とワークフローのみでスタック意見なし:`bb-spec-core` + `bb-spec-workflow`;PM / 依頼者のマシン:`bb-spec-product` のみ;フルセット:5 つすべて。
+必要に応じて選択 —— 例えば規律とワークフローのみでスタック意見なし:`bb-spec-core` + `bb-spec-workflow`;フルセット:4 つすべて。
 
 または `~/.claude/settings.json` に手動追加(必要なものだけ enable):
 
@@ -212,7 +215,6 @@ BB-Spec は**5 つの独立インストール可能なサブ plugin** に分割 
   "enabledPlugins": {
     "bb-spec-core@0xbb2b": true,
     "bb-spec-workflow@0xbb2b": true,
-    "bb-spec-product@0xbb2b": false,
     "bb-spec-backend@0xbb2b": false,
     "bb-spec-frontend@0xbb2b": false
   }
@@ -255,9 +257,9 @@ URL に `https://github.com/0xBB2B/bb-spec` を入力し、`Sync` をクリッ�
   <img src="./assets/desktop/04-sync-url.png" alt="marketplace を同期" width="100%" />
 </p>
 
-**5. コア 3 点セットを有効化**
+**5. コア 2 点セットを有効化**
 
-Directory に bb-spec の 5 つのサブプラグインが表示される。`Bb spec core` / `Bb spec workflow` / `Bb spec product` の 3 つのカード右上の歯車アイコンをクリックして有効化(backend / frontend は必要に応じて):
+Directory に bb-spec の 4 つのサブプラグインが表示される。`Bb spec core` / `Bb spec workflow` の 2 つのカード右上の歯車アイコンをクリックして有効化(backend / frontend は必要に応じて):
 
 <p align="center">
   <img src="./assets/desktop/05-enable-plugins.png" alt="プラグインを有効化" width="100%" />
@@ -278,7 +280,7 @@ Directory に bb-spec の 5 つのサブプラグインが表示される。`Bb 
 /plugin update bb-spec-core     # 特定のサブ plugin のみ更新
 ```
 
-5 つのサブ plugin は単一の同期されたバージョンラインを共有。
+4 つのサブ plugin は単一の同期されたバージョンラインを共有。
 
 ---
 
@@ -307,16 +309,16 @@ CI は PR と main への push で自動実行(`.github/workflows/ci.yml`)。
 
 ## 🛠️ 推奨コンパニオン
 
-### CLAUDE.md テンプレート
+### AGENTS.md:プロジェクト制約と調査ルール
 
-リポジトリルートの [`CLAUDE.template.md`](./CLAUDE.template.md) は付属の「鉄則インデックス」リファレンス。**自動インストールされない** —— 必要に応じて `~/.claude/CLAUDE.md` またはプロジェクトルートの `CLAUDE.md` にコピーし、好みに合わせて削減。
+`/prd` はプロジェクト全体に効く制約(「ジェネリクス禁止」「SQL の join は 3 テーブルまで」など)をプロジェクトルートの `AGENTS.md` に、特定機能だけの制約を PRD に書き、同じ制約を 2 か所に書くことはない。`AGENTS.md` には「機能・問題の調べ方」の節もある:「システムが今どう動くか」に答えるには必ず先にコードを読み `ファイル:行番号` を示す;「なぜ」を調べるには `git log -L` でその関数を変更した要件を見つけて PRD を読む;PRD とコードが食い違う場合はコードを正とする。Claude Code が読むのは `CLAUDE.md` だけで `AGENTS.md` は直接読まないため、`/prd` はプロジェクトルートの `CLAUDE.md` に `@AGENTS.md` の 1 行を入れてインポートさせる。
 
 ### .bb-spec.yaml プロジェクト設定
 
-`/prd`、`/spec`、`/plan` はデフォルトで `.bb-spec/docs/` 配下に出力(`.bb-spec/docs/prd/`、`…/spec/`、`…/plan/`);ランタイムの一過性成果物(webview スクリーンショット等)は隣接する `.bb-spec/.cache/` へ(自動 gitignore)。プロジェクトルートに `.bb-spec.yaml` を作成して bb-spec ルートディレクトリを上書き可能:
+`/prd`、`/plan` はデフォルトで `.bb-spec/docs/` 配下に出力(`.bb-spec/docs/prd/`、`…/plan/`);ランタイムの一過性成果物(webview スクリーンショット等)は隣接する `.bb-spec/.cache/` へ(自動 gitignore)。プロジェクトルートに `.bb-spec.yaml` を作成して bb-spec ルートディレクトリを上書き可能:
 
 ```yaml
-base_dir: my/bb  # → my/bb/docs/{prd,spec,plan,test}/ と my/bb/.cache/ ; ./ を指定するとプロジェクトルートに直接配置
+base_dir: my/bb  # → my/bb/docs/{prd,plan,test}/ と my/bb/.cache/ ; ./ を指定するとプロジェクトルートに直接配置
 ```
 
 参考テンプレート:[`.bb-spec.template.yaml`](./.bb-spec.template.yaml)。
@@ -339,15 +341,15 @@ BB-Spec は 3 つの優れたプロジェクトの肩の上に立つ。それぞ
 
 | プロジェクト | 何が最も得意か | BB-Spec が借用し強化した点 |
 |---|---|---|
-| [**Superpowers**](https://github.com/obra/Superpowers)(obra)—— 完全なコーディングエージェント方法論 | エンドツーエンドのステージ化ワークフロー、サブエージェント駆動開発 + 段階的レビュー、TDD レッド-グリーン-リファクタ、git worktree 隔離、ソクラテス式ブレスト、構成可能なスキルライブラリ | `spec → ship` パイプライン全体の骨格、ロール別サブ Agent 協調、強制 TDD、多段階 / 敵対的レビュー、対話先行の要件明確化 |
+| [**Superpowers**](https://github.com/obra/Superpowers)(obra)—— 完全なコーディングエージェント方法論 | エンドツーエンドのステージ化ワークフロー、サブエージェント駆動開発 + 段階的レビュー、TDD レッド-グリーン-リファクタ、git worktree 隔離、ソクラテス式ブレスト、構成可能なスキルライブラリ | `prd → ship` パイプライン全体の骨格、ロール別サブ Agent 協調、強制 TDD、多段階 / 敵対的レビュー、対話先行の要件明確化 |
 | [**ECC**](https://github.com/affaan-m/ECC)(affaan-m)—— エージェントハーネスの「オペレーティングシステム」 | agents / skills / hooks / rules の大規模階層体系、受動 hook の自動強制、インフラとしてのルール、セッション横断記憶持続化 | 階層化された独立インストール可能なサブプラグインスイート、受動 hook による規律強制、エンジニアリング規約をロード可能な制約 skill として沈殿 |
-| [**skills**](https://github.com/mattpocock/skills)(mattpocock)——「Skills For Real Engineers」 | 真の失敗モード(要件不整合 / 冗長性 / 品質 / アーキテクチャ)に焦点、意図を整合させる深掘り質問、共有ドメイン言語、ユーザー呼び出し vs モデル呼び出し双形態 skill、垂直スライス | 質疑前置、コーディング前の対話で要件確定、デュアルトリガー skill(slash コマンド + モデル自動トリガー)、1 ファイル 1 ルールのミニマリズム |
+| [**skills**](https://github.com/mattpocock/skills)(mattpocock)——「Skills For Real Engineers」 | 真の失敗モード(要件不整合 / 冗長性 / 品質 / アーキテクチャ)に焦点、意図を整合させる深掘り質問、共有ドメイン言語、ユーザー呼び出し vs モデル呼び出し双形態 skill、垂直スライス | 質疑前置、コーディング前の対話で要件確定、デュアルトリガー skill(slash コマンド + モデル自動トリガー)、情報源を 1 つだけに保つミニマリズム |
 
 **BB-Spec 独自の選択** —— 3 つのいずれも同時に備えない差別化要素:
 
-- **3 エージェント隔離実行** —— Impl エージェントは*物理的に spec を見ない*、テストのみ見るため「意図に合わせてごまかす」ことが不可能;テスト、実装、レビューは互いに見えない 3 者がそれぞれ完成。
+- **3 エージェント隔離実行** —— Impl エージェントは*物理的に PRD を見ない*、テストのみ見るため「意図に合わせてごまかす」ことが不可能;テスト、実装、レビューは互いに見えない 3 者がそれぞれ完成。
 - **唯一の受け渡しとしてのディスクドキュメント** —— 各ステージの受け渡しはチャット記憶ではなくファイル、そのためセッション横断、`/clear`、さらには別モデルへの引き継ぎでもロスレス再開可能。
-- **spec ⇄ code 双方向ループ** —— spec → code だけでなく、`/doc-update` がリポ全体のドリフトを走査し、spec をコードの現状へ継続的に追従させる。
+- **コード ⇄ PRD を git で双方向に辿れる** —— コードが唯一の情報源、PRD は「なぜ」だけを書く;各 commit に要件マーカーを付けるので、機能からコードへ、関数から当時の要件と取捨へ辿れ、人手で同期が必要な・陳腐化しうるルール文書を間に挟まない。
 
 ---
 

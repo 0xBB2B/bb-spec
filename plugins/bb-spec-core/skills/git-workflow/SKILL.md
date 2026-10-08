@@ -82,6 +82,7 @@ git status --short               # 工作区是否有未提交改动
 
 - 每完成一个可独立验证的子任务 → `git commit`（本地）
 - commit message 遵循仓库历史风格（先 `git log --oneline -20` 看一眼）
+- bb-spec 项目（有 `.bb-spec/` 或 `.bb-spec.yaml`）的 commit 说明末尾带一行 `Requirement: <PRD 目录名>`；和任何需求都无关的改动写 `Requirement: none`，并在正文写一句原因
 - **禁止阶段性 commit 后立即 push**（本地未推时可 amend/rebase 修正）
 - 任务队列还有待办 → commit 后直接继续，不中断询问
 
@@ -117,7 +118,7 @@ git status --short               # 工作区是否有未提交改动
 验证方式、覆盖场景。
 
 ## 规范
-遵循或涉及的规范（无 spec 时写"无"）。
+涉及的 PRD（目录名）与 AGENTS.md 项目约束；都没有时写"无"。
 ```
 
 reviewer 不跳转 issue 也能完整理解。禁止：只一行 What / 仅链接 issue / 仅粘贴 commit。

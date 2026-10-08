@@ -12,7 +12,7 @@
 
 **为什么这样分**：本项目用 release-please 自动发版——`feat`(minor) / `fix`(patch) / `!`(major) 触发版本 bump 并进 CHANGELOG，`docs` 既不 bump 也不进 CHANGELOG。
 
-- **产品本体**——`SKILL.md`、`agents/*.md`、`hooks/*`、`plugin.json` / `marketplace.json`、`.bb-spec` spec 规则——**即便是 Markdown**，改了也会改变插件对使用者的行为或约束，**必须**用 `feat` / `fix`（要 bump + 可追溯）。
+- **产品本体**——`SKILL.md`、`agents/*.md`、`hooks/*`、`plugin.json` / `marketplace.json`、PRD / AGENTS.md 等文档约定——**即便是 Markdown**，改了也会改变插件对使用者的行为或约束，**必须**用 `feat` / `fix`（要 bump + 可追溯）。
 - **说明文档与开发约定**——仓库根 README、`CLAUDE.md`、贡献指南等不随插件交付的内容——改了不影响插件行为，用 `docs`（不该让一次 README 措辞调整或开发约定更新就 bump 版本号）。
 
 **判断标准一句话**：改动会不会改变插件交付给使用者的行为 / 约束？会 → `feat` / `fix`；不会、且只是仓库说明 / 开发约定 → `docs`。纯配置 / 纯测试改动若服务于某项功能或修复，仍归 `feat` / `fix`。
@@ -40,7 +40,7 @@ BREAKING CHANGE: 详细描述影响范围与迁移办法
 
 ### 示例
 
-- ✅ `feat(spec,init): spec 文档强制按领域建子目录`（SKILL 行为变化，要 bump）
+- ✅ `feat(prd): PRD 强制在 OVERVIEW 写 features 字段`（SKILL 行为变化，要 bump）
 - ✅ `fix(hooks): 修正 git-workflow-guard.sh 路径变量未引用`
 - ✅ `docs(readme): 重写 workflow 章节、补全阶段流转`（仅根 README，纯对外说明、不 bump）
 - ✅ `feat(plugin)!: 重命名 .bb-spec/ 为 .spec/`（正文带 `BREAKING CHANGE:` 段）

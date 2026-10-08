@@ -7,6 +7,7 @@
 #   2) 其余 git / gh pr 流程动作（开分支 / commit / push / worktree / merge / PR …）
 #                                                 → allow + 注入 git-workflow 约束与实时 git 状态
 #   3) 其它命令                                   → 静默放行（exit 0）
+#   附：bb-spec 项目（仓库根有 .bb-spec.yaml 或 .bb-spec/）的 git commit，命令里能看到说明却缺 `Requirement:` 行 → 注入里追加提醒（不拦截）
 # 输入：标准 PreToolUse stdin JSON。
 # 设计：注入而非拦截——不打断模型，只在 git 操作发生时把 git-workflow 纪律推到模型眼前，
 #       配合 SKILL.md 给不了的实时 git 状态（当前分支、工作区是否干净）。
@@ -36,6 +37,8 @@ STATUS_DIR="."    # 最近一个流程段的判定目录，"." 表示会话目�
 DERIVED_DIR="."   # cd 逐段推导出的当前目录，"." 表示会话目录
 DERIVED_FALLBACK=0 # DERIVED_DIR 是否因 cd 目标不可解析而回退会话目录
 FALLBACK=0        # 产生最终判定/状态注入的那一段是否回退会话目录
+COMMIT_DIR=""     # 最近一个 git commit 段的判定目录（空 = 无 commit 段）
+COMMIT_FILE_MSG="" # git commit -F <文件> 读到的说明内容
 
 # 解析 cd / -C 的目标路径参数，结果写入 RESOLVED；无法静态解析时返回 1。
 resolve_path() {
@@ -111,6 +114,21 @@ while IFS= read -r SEG; do
           STATUS_DIR="$SEG_DIR"
           [ "$DENY_KIND" = "branch" ] || FALLBACK="$SEG_FALLBACK"
           if [ "$SECOND" = "commit" ]; then
+            COMMIT_DIR="$SEG_DIR"
+            # -F <文件> / --file=<文件>：能静态解析就读出说明内容，供缺标记判断；`-F -` 的说明在命令本身（heredoc）里
+            read -ra COMMIT_ARGS <<<"$REST2" || true
+            i=0
+            while [ "$i" -lt "${#COMMIT_ARGS[@]}" ]; do
+              F_ARG=""
+              case "${COMMIT_ARGS[$i]}" in
+                -F|--file) i=$((i + 1)); F_ARG="${COMMIT_ARGS[$i]:-}" ;;
+                --file=*) F_ARG="${COMMIT_ARGS[$i]#--file=}" ;;
+              esac
+              if [ -n "$F_ARG" ] && [ "$F_ARG" != "-" ] && resolve_path "$F_ARG" "$SEG_DIR" && [ -r "$RESOLVED" ]; then
+                COMMIT_FILE_MSG="${COMMIT_FILE_MSG}$(cat "$RESOLVED" 2>/dev/null || true)"
+              fi
+              i=$((i + 1))
+            done
             # 取该段判定目录的当前分支，判断是否在主干
             BR=$(git -C "$SEG_DIR" branch --show-current 2>/dev/null || true)
             case "$BR" in
@@ -196,6 +214,20 @@ DIRTY=$(git -C "$GROOT" status --short 2>/dev/null | head -5 || true)
 FALLBACK_LINE=""
 [ "$FALLBACK" = "1" ] && FALLBACK_LINE=$'\n- 说明：目标目录含无法解析的变量，已按会话目录判定'
 
+# bb-spec 项目的 commit 缺 `Requirement:` 标记 → 追加提醒；命令里看不到说明（如交给编辑器写）就不判断
+REQ_LINE=""
+if [ -n "$COMMIT_DIR" ]; then
+  CROOT=$(git -C "$COMMIT_DIR" rev-parse --show-toplevel 2>/dev/null || true)
+  [ -n "$CROOT" ] || CROOT="$COMMIT_DIR"
+  if [ -f "$CROOT/.bb-spec.yaml" ] || [ -d "$CROOT/.bb-spec" ]; then
+    MSG_VISIBLE=0
+    [[ "$CMD" =~ [[:space:]](-[a-zA-Z]*m|--message)([[:space:]=]|$) || "$CMD" == *"<<"* || -n "$COMMIT_FILE_MSG" ]] && MSG_VISIBLE=1
+    if [ "$MSG_VISIBLE" = "1" ] && [[ "$CMD" != *"Requirement:"* && "$COMMIT_FILE_MSG" != *"Requirement:"* ]]; then
+      REQ_LINE=$'\n\n提醒：bb-spec 项目的 commit 说明末尾应带 `Requirement: <PRD 目录名>`；和任何需求无关写 `Requirement: none` 并在正文写原因。'
+    fi
+  fi
+fi
+
 CONTEXT=$(cat <<EOF
 [git-workflow 纪律] 本次涉及 git 流程操作。执行前请遵循 bb-spec-core 的 git-workflow skill（若尚未加载，先加载再操作）。核心约束：
 - 开新任务先用 AskUserQuestion 选开分支方式（默认 worktree），禁止在 main 直接开发 / 提交。
@@ -205,7 +237,7 @@ CONTEXT=$(cat <<EOF
 实时 git 状态：
 - 当前分支：${BRANCH}
 - 工作区：
-${DIRTY}${FALLBACK_LINE}
+${DIRTY}${FALLBACK_LINE}${REQ_LINE}
 EOF
 )
 
