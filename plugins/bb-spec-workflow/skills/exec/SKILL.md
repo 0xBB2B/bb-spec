@@ -63,7 +63,9 @@ git worktree list --porcelain
   - 多棵 → AskUserQuestion 列出让用户选
   - 无 → 全新任务，按 git-workflow 先确定开分支方式再继续，**禁止把任何产出落在 main 工作区**
 
-现场确定后，在**该目录**下 `cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`。`${DOCS_DIR}/plan/` 下主题目录内 `PROGRESS.md` 含非 `done` 行的才是进行中的 plan（完成后整个目录会被删除）；全部 `done` 的主题目录和根 `plan/INDEX.md` 是旧版本留下的，提示用户 `git rm -r` 清掉、不执行。按参数形式决定行为：
+现场确定后，在**该目录**下 `cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`。**多仓库工作区**（`${DOCS_DIR}` 所在的 git 仓库与代码不是同一个，如工作区根不是 git 仓库、`docs/` 与各服务各自独立）：文档仓库 = `git -C ${DOCS_DIR} rev-parse --show-toplevel`，下文 PRD / plan 相关的 git 命令都在文档仓库里执行、路径相对文档仓库根；代码相关的 git 命令（测试、`git log -L`、commit）在各代码仓库里分别执行。
+
+`${DOCS_DIR}/plan/` 下主题目录内 `PROGRESS.md` 含非 `done` 行的才是进行中的 plan（完成后整个目录会被删除）；全部 `done` 的主题目录和根 `plan/INDEX.md` 是旧版本留下的，提示用户 `git rm -r` 清掉、不执行。按参数形式决定行为：
 
 | 调用方式 | 行为 |
 |---|---|
@@ -114,13 +116,13 @@ git worktree list --porcelain
 
 验证通过后**立即**更新 PROGRESS.md：当前步骤标 `done` + 填完成时间、"当前"区更新为下一步骤、清除已解决阻塞项。
 
-随后把本步骤产出做一次**本地** commit：先 `git branch --show-current` 确认分支（**在 main 上则跳过自动 commit**并提示按 git-workflow 先建分支）；按文件路径逐一 `git add`，只提交本步骤涉及文件（实现 + 测试 + `PROGRESS.md`）——并行期间工作区含同组其他 plan 的半成品，**禁 `git add .` / `git add -A`**；message 遵循仓库历史风格（先 `git log --oneline -10`）、不硬编码类型前缀，末尾带 `Requirement: <本次 PRD 目录名>`；**仅本地不自动 push**；blocked / 未通过的步骤不 commit。
+随后把本步骤产出做一次**本地** commit：先 `git branch --show-current` 确认分支（**在 main 上则跳过自动 commit**并提示按 git-workflow 先建分支）；按文件路径逐一 `git add`，只提交本步骤涉及文件（实现 + 测试 + `PROGRESS.md`；多仓库时实现与测试在各自代码仓库提交、`PROGRESS.md` 在文档仓库提交，每个 commit 都带标记）——并行期间工作区含同组其他 plan 的半成品，**禁 `git add .` / `git add -A`**；message 遵循仓库历史风格（先 `git log --oneline -10`）、不硬编码类型前缀，带 `Requirement: <本次 PRD 目录名>`（`Requirement:` 写在 commit 说明最后一段，与 `Co-Authored-By:` 等尾注同段、中间不空行，否则 git 认不出）；**仅本地不自动 push**；blocked / 未通过的步骤不 commit。
 
 ### 步骤 4：循环或收尾
 
 - **单个 plan 模式**：当前 plan 完成即停，输出完成简报；若它是本主题最后一个未完成的 plan，按下方「全部完成」收尾
 - **全部执行 + 还有后续组**：并行组须**整组结束**（含阻塞项）后跑一次全量测试确认组内产出无交叉破坏，再回步骤 2 推进下一组——下一组可能依赖本组产出
-- **全部执行 + 全部完成**：① 运行全量测试确认无回归 ② 调用 `Skill bb-spec-workflow:doc-update`，参数 `--tail`（收尾模式：让本次 PRD 与 README、AGENTS.md 等文档追平实际交付，其他 PRD 不碰）③ `git rm -r` 删除本主题 plan 目录——plan 内联复述了 PRD，留着会和 PRD 重复，历史靠 git 追溯 ④ 把 doc-update 改动与 plan 删除做一次本地 commit（守卫同步骤 3）⑤ 输出完成简报
+- **全部执行 + 全部完成**：① 运行全量测试确认无回归 ② 调用 `Skill bb-spec-workflow:doc-update`，参数 `--tail`（收尾模式：让本次 PRD 与 README、AGENTS.md 等文档追平实际交付，其他 PRD 不碰）③ `git rm -r` 删除本主题 plan 目录（多仓库时在文档仓库执行）——plan 内联复述了 PRD，留着会和 PRD 重复，历史靠 git 追溯 ④ 把 doc-update 改动与 plan 删除做一次本地 commit（守卫同步骤 3）⑤ 输出完成简报
 
 **遇阻塞时**：在 PROGRESS.md 当前步骤标 `blocked`、"阻塞"区记录原因、告知用户等待指示。并行组内单个 plan 阻塞**不中断整组**——其余 plan 照常跑完各自的 Test→Impl→Review 并 commit，阻塞项汇总进完成简报。
 

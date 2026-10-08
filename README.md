@@ -92,6 +92,7 @@ Four branches, callable anytime: `/git-clone` (pull a remote project locally + w
   - Writes the **PRD** (`docs/prd/<date>.<topic>/`: background, goals, non-goals, user stories, testable constraints and acceptance criteria, decision log) and **AGENTS.md** (constraints that apply to the whole project, e.g. "no generics")
   - The PRD stays editable within its branch (fix the plan mid-implementation by editing it) and freezes once merged; **code is the single source of truth for "what it does now"** — the PRD only answers "why"
   - Every later commit carries a `Requirement: <PRD dir name>` trailer: `git log -L :function:file` lists the requirements that touched a function, and the matching PRD's decision log tells you why it was built that way
+  - Supports multi-repo workspaces (e.g. `docs/` and each service are separate repos): the PRD and AGENTS.md live in the docs repo, and commits in every repo carry the trailer
 
 - **`/plan`** — PRD → self-contained, **function-level** plan. Answers **"how to build it."**
   - One independent problem per file, down to function names and responsibilities; declarative artifacts (DDL / API contracts / config) are **inlined in final form** for exec to write verbatim
@@ -143,7 +144,7 @@ Four branches, callable anytime: `/git-clone` (pull a remote project locally + w
   - **Tail mode** (`--tail`): auto-invoked when `/exec` or `/revise` finishes; covers only what the current branch touched
 
 - **`/prd-migrate`** — **One-shot migration** for older projects that used specs.
-  - Original PRDs move back into `prd/` unchanged; specs are converted per domain into legacy PRDs; a `commits:` field records the related commit hashes so old code can also be traced back to its PRD through git
+  - Original PRDs move back into `prd/` unchanged; specs are converted per domain into legacy PRDs; a `commits:` field records the related commit hashes so old code can also be traced back to its PRD through git; in multi-repo workspaces code commits are linked via the plan's file list and time window, and inferred links are confirmed with you
   - Writes only what has a source — every design rationale is tagged with where it came from, and anything unknown is marked "unknown" for you to confirm, **never invented by the AI**; project-level constraints move into AGENTS.md
 
 **Ships with**

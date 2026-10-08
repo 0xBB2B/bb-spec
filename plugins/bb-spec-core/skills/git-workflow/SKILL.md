@@ -82,7 +82,7 @@ git status --short               # 工作区是否有未提交改动
 
 - 每完成一个可独立验证的子任务 → `git commit`（本地）
 - commit message 遵循仓库历史风格（先 `git log --oneline -20` 看一眼）
-- bb-spec 项目（有 `.bb-spec/` 或 `.bb-spec.yaml`）的 commit 说明末尾带一行 `Requirement: <PRD 目录名>`；和任何需求都无关的改动写 `Requirement: none`，并在正文写一句原因
+- bb-spec 项目（仓库或其所在工作区有 `.bb-spec/` 或 `.bb-spec.yaml`）的 commit 说明最后一段带一行 `Requirement: <PRD 目录名>`，与 `Co-Authored-By:` 等尾注同段、中间不空行（git 只认最后一段为尾注）；多仓库工作区每个仓库的 commit 都带；和任何需求都无关的改动写 `Requirement: none`，并在正文写一句原因
 - **禁止阶段性 commit 后立即 push**（本地未推时可 amend/rebase 修正）
 - 任务队列还有待办 → commit 后直接继续，不中断询问
 

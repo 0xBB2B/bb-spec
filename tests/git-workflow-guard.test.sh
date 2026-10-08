@@ -223,6 +223,13 @@ echo "[非 bb-spec 项目 commit 缺标记 → 不含提醒]"
 out=$(run_hook "git commit -m m" "$FEAT_REPO")
 if [[ "$(decision_of "$out")" == "allow" && "$(context_of "$out")" != *"提醒："* ]]; then pass; else fail "预期 allow 且不含提醒，实际：$out"; fi
 
+echo "[多仓库工作区：.bb-spec.yaml 在上级目录、成员仓库缺标记 → 含提醒]"
+WS="$FIXROOT/ws"
+mkdir -p "$WS" && printf 'base_dir: ./\n' > "$WS/.bb-spec.yaml"
+mkgitrepo "$WS/trade" feat-x
+out=$(run_hook "git commit -m m" "$WS/trade")
+if [[ "$(decision_of "$out")" == "allow" && "$(context_of "$out")" == *"Requirement: <PRD 目录名>"* ]]; then pass; else fail "预期 allow 且含提醒，实际：$out"; fi
+
 echo "[bb-spec 项目 main 上 commit → 仍 deny]"
 out=$(run_hook "git commit -m m" "$BBSPEC_MAIN")
 if [[ "$(decision_of "$out")" == "deny" && "$(reason_of "$out")" == *main* ]]; then pass; else fail "预期 deny 含 main，实际：$out"; fi

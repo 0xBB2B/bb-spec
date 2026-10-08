@@ -17,7 +17,7 @@ argument-hint: [--tail | 可选：限定范围，如某目录 / 某文档]
 
 1. **代码是事实，文档追平代码**：禁止凭文档反推代码该怎么写
 2. **不改代码**：发现代码违反项目约束，停下用 `AskUserQuestion` 请用户拍板，同意后产出挂单交给 `/revise`，本 skill 不直接改实现
-3. **已合并的 PRD 只读**：PRD 是需求记录，合并后冻结，任何模式下都不改、不删。唯一能改的是收尾模式下的**本分支 PRD**——判定：`git cat-file -e <基线分支>:${DOCS_DIR}/prd/<目录>/OVERVIEW.md` 失败（基线分支 main 或 master 上还没有它）
+3. **已合并的 PRD 只读**：PRD 是需求记录，合并后冻结，任何模式下都不改、不删。唯一能改的是收尾模式下的**本分支 PRD**——判定：`git -C <文档仓库> cat-file -e <基线分支>:<PRD 根>/<目录>/OVERVIEW.md` 失败（基线分支 main 或 master 上还没有它；单仓库时文档仓库就是当前仓库、`<PRD 根>` 为 `${DOCS_DIR}/prd`，多仓库工作区时文档仓库是 `${DOCS_DIR}` 所在的独立仓库、`<PRD 根>` 相对它的根）
 4. **批改前先汇总**（收尾模式下 A 类除外）：所有发现分类列出 + 默认动作 + 待裁决项一次性展示，用户批准后才落盘
 5. **冲突不自决**：AGENTS.md 内部互相矛盾、或与已激活的技术栈 skill 冲突时，一律 `AskUserQuestion`
 6. **最小影响**：只改确实过期的那几行，不借机整理排版、调整标题层级
@@ -57,7 +57,7 @@ cat .bb-spec.yaml 2>/dev/null
 
 取 `base_dir`（缺省 `.bb-spec`），`${DOCS_DIR}` = `<base_dir>/docs`。
 
-- `$ARGUMENTS` 是 `--tail` → 收尾模式。本分支改动文件：`git diff <基线分支>...HEAD --name-only`；本分支 PRD：`git diff <基线分支>...HEAD --diff-filter=A --name-only -- '${DOCS_DIR}/prd/'` 所在目录
+- `$ARGUMENTS` 是 `--tail` → 收尾模式。本分支改动文件：在本次改动的每个仓库里 `git diff <基线分支>...HEAD --name-only`；本分支 PRD：文档仓库里 `git diff <基线分支>...HEAD --name-only -- <PRD 根>` 列出的目录中，按上面的判定属于本分支新增的那些
 - `$ARGUMENTS` 是其他非空内容 → 全仓模式，只处理参数指定的目录或文档
 - 为空 → 全仓模式
 

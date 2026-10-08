@@ -73,10 +73,10 @@ git rev-list --count HEAD..<基线>   # > 0 即基线已领先、分支落后
 
 ### 前置探测
 
-读取仓库根 `.bb-spec.yaml` 的 `base_dir`（默认 `.bb-spec`），`${DOCS_DIR}` = `<base_dir>/docs`，探测两类规范来源：
+读取 `.bb-spec.yaml` 的 `base_dir`（默认 `.bb-spec`；先找仓库根，找不到再往上级目录找——多仓库工作区的配置在工作区根），`${DOCS_DIR}` = `<base_dir>/docs`。文档仓库 = `git -C ${DOCS_DIR} rev-parse --show-toplevel`：与当前仓库相同为单仓库，不同为多仓库工作区。探测两类规范来源：
 
-1. **项目约束**：仓库根 `AGENTS.md`
-2. **本分支 PRD**：`git diff <基线>...HEAD --diff-filter=A --name-only -- '${DOCS_DIR}/prd/'` 命中的 PRD 目录
+1. **项目约束**：文档仓库根（单仓库即仓库根）的 `AGENTS.md`
+2. **本分支 PRD**：在文档仓库里 `git diff <基线>...HEAD --name-only -- <PRD 根>` 列出的目录中，`git cat-file -e <基线>:<PRD 根>/<目录>/OVERVIEW.md` 失败的（基线上还没有 = 本分支新增）；`<PRD 根>` 为 PRD 目录相对文档仓库根的路径
 
 任一存在 → 进入自查；两者都不存在 → 跳过整个 4.5。
 
@@ -116,7 +116,7 @@ git rev-list --count HEAD..<基线>   # > 0 即基线已领先、分支落后
 Requirement: <本分支 PRD 目录名>
 ```
 
-「规范」段写本次涉及的 PRD 目录与相关项目约束（无则写"无"）。最后一行 `Requirement:` 标记必须保留：本分支有新增 PRD 写其目录名（多个用逗号分隔），没有写 `none`。直接作为步骤 6 的 `--body`。
+「规范」段写本次涉及的 PRD 目录与相关项目约束（无则写"无"）。最后一行 `Requirement:` 标记必须保留：本分支有新增 PRD 写其目录名（多个用逗号分隔），没有写 `none`；多仓库工作区每个仓库的 PR 都带，代码仓库的 PR 写文档仓库里本次 PRD 的目录名。直接作为步骤 6 的 `--body`。
 
 ## 5. 推送到远程
 

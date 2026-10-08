@@ -7,7 +7,7 @@
 #   2) 其余 git / gh pr 流程动作（开分支 / commit / push / worktree / merge / PR …）
 #                                                 → allow + 注入 git-workflow 约束与实时 git 状态
 #   3) 其它命令                                   → 静默放行（exit 0）
-#   附：bb-spec 项目（仓库根有 .bb-spec.yaml 或 .bb-spec/）的 git commit，命令里能看到说明却缺 `Requirement:` 行 → 注入里追加提醒（不拦截）
+#   附：bb-spec 项目（仓库根或其上级目录有 .bb-spec.yaml 或 .bb-spec/，上级目录覆盖多仓库工作区，查到 $HOME 为止）的 git commit，命令里能看到说明却缺 `Requirement:` 行 → 注入里追加提醒（不拦截）
 # 输入：标准 PreToolUse stdin JSON。
 # 设计：注入而非拦截——不打断模型，只在 git 操作发生时把 git-workflow 纪律推到模型眼前，
 #       配合 SKILL.md 给不了的实时 git 状态（当前分支、工作区是否干净）。
@@ -219,11 +219,18 @@ REQ_LINE=""
 if [ -n "$COMMIT_DIR" ]; then
   CROOT=$(git -C "$COMMIT_DIR" rev-parse --show-toplevel 2>/dev/null || true)
   [ -n "$CROOT" ] || CROOT="$COMMIT_DIR"
-  if [ -f "$CROOT/.bb-spec.yaml" ] || [ -d "$CROOT/.bb-spec" ]; then
+  # 多仓库工作区的 .bb-spec.yaml 在代码仓库的上级目录；不查 $HOME 本身——~/.bb-spec/ 是 worktree 存放目录，不代表项目
+  IS_BBSPEC=0
+  D="$CROOT"
+  while [ -n "$D" ] && [ "$D" != "/" ] && [ "$D" != "$HOME" ]; do
+    if [ -f "$D/.bb-spec.yaml" ] || [ -d "$D/.bb-spec" ]; then IS_BBSPEC=1; break; fi
+    P=$(dirname "$D"); [ "$P" = "$D" ] && break; D="$P"
+  done
+  if [ "$IS_BBSPEC" = "1" ]; then
     MSG_VISIBLE=0
     [[ "$CMD" =~ [[:space:]](-[a-zA-Z]*m|--message)([[:space:]=]|$) || "$CMD" == *"<<"* || -n "$COMMIT_FILE_MSG" ]] && MSG_VISIBLE=1
     if [ "$MSG_VISIBLE" = "1" ] && [[ "$CMD" != *"Requirement:"* && "$COMMIT_FILE_MSG" != *"Requirement:"* ]]; then
-      REQ_LINE=$'\n\n提醒：bb-spec 项目的 commit 说明末尾应带 `Requirement: <PRD 目录名>`；和任何需求无关写 `Requirement: none` 并在正文写原因。'
+      REQ_LINE=$'\n\n提醒：bb-spec 项目的 commit 说明最后一段应带 `Requirement: <PRD 目录名>`（与 Co-Authored-By 等尾注同段、不空行）；和任何需求无关写 `Requirement: none` 并在正文写原因。'
     fi
   fi
 fi

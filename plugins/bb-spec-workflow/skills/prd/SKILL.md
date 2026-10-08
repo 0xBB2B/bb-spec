@@ -13,11 +13,23 @@ description: 新需求的唯一入口——质疑→澄清→拆解，启动即 
 |---|---|---|
 | **代码（含测试）** | 系统**现在**做什么。唯一事实来源 | `/exec`、`/revise` |
 | **PRD** `${DOCS_DIR}/prd/<YYYY-MM-DD>.<主题>/` | 这个需求**为什么**做、要什么、取舍了什么 | 本分支新增的 PRD 可改；合并到基线分支后冻结，谁都不改 |
-| **AGENTS.md**（项目根） | 对整个项目都生效的约束，如"禁止泛型""SQL join 不超过 3 张表"；以及查功能、查问题的规矩 | `/prd`（经用户确认） |
+| **AGENTS.md**（项目根；多仓库工作区为文档仓库根） | 对整个项目都生效的约束，如"禁止泛型""SQL join 不超过 3 张表"；以及查功能、查问题的规矩 | `/prd`（经用户确认） |
 
-代码和 PRD 用 git 连起来：每个 commit 说明末尾带一行 `Requirement: <PRD 目录名>`（如 `Requirement: 2026-10-08.order-export`，只写目录名、不带路径前缀）。想知道某段代码为什么这样写，`git log -L` 查改过它的 commit，读标记指向的 PRD。
+代码和 PRD 用 git 连起来：每个 commit 说明带一行 `Requirement: <PRD 目录名>`（如 `Requirement: 2026-10-08.order-export`，只写目录名、不带路径前缀）。想知道某段代码为什么这样写，`git log -L` 查改过它的 commit，读标记指向的 PRD。
 
-**本分支 PRD 的判定**（所有 skill 共用这一条）：`git cat-file -e <基线分支>:${DOCS_DIR}/prd/<目录>/OVERVIEW.md` 失败（基线分支 main 或 master 上还没有它）= 本分支新增 = 可改；成功 = 已合并 = 冻结。
+**标记的位置**：`Requirement:` 是 git 尾注（trailer），必须写在 commit 说明的**最后一段**，和 `Co-Authored-By:` 等其他尾注放在同一段、中间不留空行——git 只把最后一段当尾注，隔了空行 `%(trailers:key=Requirement)` 就读不到。
+
+**仓库布局**（所有 skill 共用这一节的定义）：
+
+- **单仓库**：PRD 与代码在同一个 git 仓库，`${DOCS_DIR}` 就在这个仓库里
+- **多仓库工作区**：`${DOCS_DIR}` 所在的 git 仓库（`git -C ${DOCS_DIR} rev-parse --show-toplevel`）与代码不在同一个仓库，常见为工作区根目录不是 git 仓库、`docs/` 与各服务各自是独立仓库。此时：
+  - **文档仓库** = `${DOCS_DIR}` 所在仓库；**代码仓库** = 工作区里其他 git 仓库（go.work 的 `use`、pnpm workspace 成员、或根目录下含 `.git` 的子目录）
+  - 涉及 PRD 的 git 命令都在文档仓库里执行（`git -C <文档仓库>`），路径用相对文档仓库根的写法，下文记作 `<PRD 根>`（单仓库时就是 `${DOCS_DIR}/prd`）
+  - 查代码历史的 git 命令（`git log -L`、`git log --grep "Requirement: …"`）在每个相关代码仓库里分别执行
+  - 本次需求涉及的每个仓库（文档仓库 + 改动的代码仓库）都按 git-workflow 开同名功能分支，各自的 commit 都带 `Requirement:` 标记
+  - 跨仓库记录 commit 时写成 `<仓库目录名>@<短哈希>`（如 `trade@9153a78`），单仓库直接写短哈希
+
+**本分支 PRD 的判定**（所有 skill 共用这一条）：`git -C <文档仓库> cat-file -e <基线分支>:<PRD 根>/<目录>/OVERVIEW.md` 失败（基线分支 main 或 master 上还没有它）= 本分支新增 = 可改；成功 = 已合并 = 冻结。单仓库时 `<文档仓库>` 就是当前仓库。
 
 **一条约束放哪**：问"删掉相关功能后这条约束还成立吗？"——还成立 → 项目级，进 AGENTS.md；随功能一起消失 → 功能约束，进本次 PRD。已被某个已激活 skill（如 golang-constraints、database-constraints）覆盖的通用约束，两边都不写。
 
@@ -57,7 +69,7 @@ cat ${DOCS_DIR}/prd/GLOSSARY.md 2>/dev/null                    # 术语权威源
 grep -h '^features:' ${DOCS_DIR}/prd/*/OVERVIEW.md 2>/dev/null  # 已有功能名
 ```
 
-**了解相关功能的现状**：按本次涉及的功能名搜 `features:` 找到相关 PRD 目录，用 `git log --grep "Requirement: <目录名>" --name-only` 查出改过的文件，**读这些代码**确认现在的行为；需要了解当时为什么这样设计时，只读最新那份相关 PRD 的「决策记录」。
+**了解相关功能的现状**：按本次涉及的功能名搜 `features:` 找到相关 PRD 目录，在各代码仓库里用 `git log --grep "Requirement: <目录名>" --name-only` 查出改过的文件，**读这些代码**确认现在的行为；需要了解当时为什么这样设计时，只读最新那份相关 PRD 的「决策记录」。
 
 **重叠判定**：
 
@@ -144,7 +156,7 @@ grep -h '^features:' ${DOCS_DIR}/prd/*/OVERVIEW.md 2>/dev/null  # 已有功能�
 git branch --show-current
 ```
 
-在 main/master 上 → 按 git-workflow 用 AskUserQuestion 选开分支方式（默认 worktree），切过去后**后续所有落盘、commit、自动实施都在新现场进行**；已在功能分支或 linked worktree → 直接继续。
+在 main/master 上 → 按 git-workflow 用 AskUserQuestion 选开分支方式（默认 worktree），切过去后**后续所有落盘、commit、自动实施都在新现场进行**；已在功能分支或 linked worktree → 直接继续。多仓库工作区：检查的是文档仓库与本次要改动的代码仓库，按 git-workflow 的多 repo 规则给它们开同名功能分支。
 
 ### 步骤 7：落盘
 
@@ -154,9 +166,10 @@ git branch --show-current
 
 **7c. AGENTS.md**：
 
+- 位置：单仓库放项目根；多仓库工作区放文档仓库根（随文档一起提交——工作区根目录不受 git 管）
 - 不存在 → 按模板新建，路径写成实际的 `${DOCS_DIR}`
 - 已存在 → 只在「项目约束」节增删改；缺「查功能、查问题的规矩」节时按模板补上；其他内容不动
-- 确保项目根 `CLAUDE.md` 含导入行 `@AGENTS.md`（Claude Code 只读 CLAUDE.md，靠这一行把 AGENTS.md 一起加载）：没有 CLAUDE.md → 新建只含这一行的文件；有但缺这一行 → 加在文件最前面
+- 确保会话启动目录（单仓库为项目根，多仓库为工作区根）的 `CLAUDE.md` 含导入行 `@<AGENTS.md 相对它的路径>`（单仓库为 `@AGENTS.md`，多仓库如 `@docs/AGENTS.md`；Claude Code 只读 CLAUDE.md，靠这一行把 AGENTS.md 一起加载）：没有 CLAUDE.md → 新建只含这一行的文件；有但缺这一行 → 加在文件最前面
 
 ### 步骤 8：自检
 
@@ -164,11 +177,11 @@ git branch --show-current
 - [ ] 质疑已完成；OVERVIEW 有背景、目标、非目标、子需求清单、整体验证路径、决策记录；frontmatter 含 name + description（≤ 80 字）+ date + 单行写法的 `features: [a, b]`？
 - [ ] 每份子文档：每条约束可测且在验收里有对应项；每条 P0 有主路径用例；有验证路径；全文无实现方案；没有引用其他文档？
 - [ ] `features:` 复用了已有功能名，新功能名已经用户确认？
-- [ ] 项目级约束只在 AGENTS.md、功能约束只在 PRD，没有一条写在两处？AGENTS.md 有查询规矩节？CLAUDE.md 已含 `@AGENTS.md`？
+- [ ] 项目级约束只在 AGENTS.md、功能约束只在 PRD，没有一条写在两处？AGENTS.md 有查询规矩节？CLAUDE.md 已含指向 AGENTS.md 的导入行？
 
 ### 步骤 9：本地 commit
 
-只提交本次涉及的文件（PRD 目录 + GLOSSARY + AGENTS.md + CLAUDE.md），message 遵循仓库历史风格（先 `git log --oneline -10`），**末尾带 `Requirement: <本次 PRD 目录名>`**，**仅本地、不 push**。`/plan` 靠 `git diff <基线分支>...HEAD` 发现本次 PRD，不提交就检测不到。
+只提交本次涉及的文件（PRD 目录 + GLOSSARY + AGENTS.md + 受 git 管的 CLAUDE.md；多仓库时在文档仓库提交），message 遵循仓库历史风格（先 `git log --oneline -10`），**最后一段尾注带 `Requirement: <本次 PRD 目录名>`**（与其他尾注同段、不空行），**仅本地、不 push**。`/plan` 靠 `git diff <基线分支>...HEAD` 发现本次 PRD，不提交就检测不到。
 
 ### 步骤 10：简报 + 自动实施
 
@@ -275,11 +288,11 @@ date: <YYYY-MM-DD>
 
 ## 查功能、查问题的规矩
 1. 先读代码再回答：凡是"系统现在怎么做"的结论，必须来自本次实际读过的代码，并给出 `文件:行号`；还没读到代码就说"还没确认"，不许猜。
-2. 按功能找代码：`grep -l '^features:.*<功能名>' <DOCS_DIR>/prd/*/OVERVIEW.md` 找到相关需求目录，再用 `git log --grep "Requirement: <目录名>" --name-only` 查出改过的文件。
-3. 查为什么：`git log -L :<函数名>:<文件> -s --format='%h %s | %(trailers:key=Requirement,valueonly)'` 列出改过这个函数的 commit，最新的在前；按函数名报 "no match"（如缩进的类方法）时，先读文件确认行号，改用 `git log -L <起始行>,<结束行>:<文件>`。读最新那个 `Requirement` 指向的 PRD「决策记录」和 commit 说明正文；更早的 PRD 只在需要追溯时才读。commit 没有 `Requirement` 标记时，用它的哈希 `grep -rl <哈希> <DOCS_DIR>/prd/` 找迁移来的 PRD。
+2. 按功能找代码：`grep -l '^features:.*<功能名>' <DOCS_DIR>/prd/*/OVERVIEW.md` 找到相关需求目录，再在每个代码仓库里用 `git log --grep "Requirement: <目录名>" --name-only` 查出改过的文件。
+3. 查为什么：在该文件所在的仓库里执行 `git log -L :<函数名>:<文件> -s --format='%h %s | %(trailers:key=Requirement,valueonly)'` 列出改过这个函数的 commit，最新的在前；按函数名报 "no match"（如缩进的类方法）时，先读文件确认行号，改用 `git log -L <起始行>,<结束行>:<文件>`。读最新那个 `Requirement` 指向的 PRD「决策记录」和 commit 说明正文；更早的 PRD 只在需要追溯时才读。commit 没有 `Requirement` 标记时，用它的短哈希 `grep -rl <短哈希> <DOCS_DIR>/prd/` 找迁移来的 PRD（多仓库时 PRD 里写作 `<仓库>@<短哈希>`，按短哈希搜同样能命中）。
 4. PRD 和代码不一致时以代码为准，并在回答里指出哪里不一致。
 5. 改代码前按第 3 条查清设计原因，改动不能违背；确实要改设计，新需求走 `/prd`、修正走 `/revise`。
-6. 每个 commit 说明末尾带一行 `Requirement: <PRD 目录名>`；和任何需求都无关的改动写 `Requirement: none`，并在正文写一句原因。
+6. 每个 commit 说明的最后一段带一行 `Requirement: <PRD 目录名>`，和 `Co-Authored-By:` 等尾注同段、中间不空行；和任何需求都无关的改动写 `Requirement: none`，并在正文写一句原因。多仓库时每个仓库的 commit 都要带。
 
 ## 项目约束
 - <约束>（原因：<一句话>）

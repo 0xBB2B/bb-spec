@@ -48,10 +48,12 @@ git worktree list --porcelain
   - 多棵 → AskUserQuestion 列出让用户选
   - 无 → 全新任务，按 git-workflow 先确定开分支方式再继续，**禁止把 plan 文档落在 main 工作区**
 
-现场确定后，在**该目录**下 `cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`。找本分支新增的 PRD 目录（基线分支是 master 时把 main 换成 master）：`git diff main...HEAD --name-only -- '${DOCS_DIR}/prd/'` 列出有改动的 PRD 目录，再逐个用 `git cat-file -e main:${DOCS_DIR}/prd/<目录>/OVERVIEW.md` 判定——失败的才是本分支新增（成功的是已合并 PRD，不作为本次输入）：
+现场确定后，在**该目录**下 `cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`。**多仓库工作区**（`${DOCS_DIR}` 所在的 git 仓库与代码不是同一个，如工作区根不是 git 仓库、`docs/` 与各服务各自独立）：文档仓库 = `git -C ${DOCS_DIR} rev-parse --show-toplevel`，下文 PRD / plan 相关的 git 命令都在文档仓库里执行、路径相对文档仓库根；代码相关的 git 命令（测试、`git log -L`、commit）在各代码仓库里分别执行。
+
+找本分支新增的 PRD 目录（基线分支是 master 时把 main 换成 master）：`git diff main...HEAD --name-only -- '${DOCS_DIR}/prd/'` 列出有改动的 PRD 目录，再逐个用 `git cat-file -e main:${DOCS_DIR}/prd/<目录>/OVERVIEW.md` 判定——失败的才是本分支新增（成功的是已合并 PRD，不作为本次输入）：
 
 - **非 git / 无基线分支 / 无新增 PRD**：告知"建议先运行 `/prd`"后终止
-- **有**：完整读该目录的 OVERVIEW 与全部子文档（约束、验收、验证路径、决策记录）；读项目根 `AGENTS.md` 的项目约束——拆分与函数设计不得违背。PRD 要改已有行为时，按 OVERVIEW `features:` 与 `git log --grep "Requirement: <相关目录>"` 找到现有实现，读代码确认现状
+- **有**：完整读该目录的 OVERVIEW 与全部子文档（约束、验收、验证路径、决策记录）；读项目根 `AGENTS.md` 的项目约束——拆分与函数设计不得违背。PRD 要改已有行为时，按 OVERVIEW `features:` 与各代码仓库里的 `git log --grep "Requirement: <相关目录>"` 找到现有实现，读代码确认现状
 
 ### 步骤 1：摸清项目现状
 
@@ -97,7 +99,7 @@ git worktree list --porcelain
 
 ### 步骤 7：本地 commit
 
-先 `git branch --show-current` 确认分支（**在 main 上则跳过自动 commit**，提示按 git-workflow 先建分支）；只提交本次涉及文件（主题目录内的 plan 文档 + 主题 INDEX + PROGRESS）；message 遵循仓库历史风格（先 `git log --oneline -10`），不硬编码类型前缀，末尾带 `Requirement: <本次 PRD 目录名>`；**仅本地不自动 push**。
+先 `git branch --show-current` 确认分支（**在 main 上则跳过自动 commit**，提示按 git-workflow 先建分支）；只提交本次涉及文件（主题目录内的 plan 文档 + 主题 INDEX + PROGRESS）；message 遵循仓库历史风格（先 `git log --oneline -10`），不硬编码类型前缀，带 `Requirement: <本次 PRD 目录名>`（`Requirement:` 写在 commit 说明最后一段，与 `Co-Authored-By:` 等尾注同段、中间不空行，否则 git 认不出）；多仓库时 plan 提交在文档仓库；**仅本地不自动 push**。
 
 ### 步骤 8：简报 + 自动执行
 
