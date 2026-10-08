@@ -31,7 +31,7 @@
   <a href="#-동반-제약-skills">제약 Skills</a> ·
   <a href="#-claude-code-설치--install">설치</a> ·
   <a href="#-기본-활성화-hooks">Hooks</a> ·
-  <a href="#-설계-유래선행-사례와-비교">설계 유래</a>
+  <a href="#-설계-유래-선행-사례와-비교">설계 유래</a>
 </p>
 
 ---
