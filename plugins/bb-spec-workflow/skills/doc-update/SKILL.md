@@ -1,6 +1,6 @@
 ---
 name: doc-update
-description: 文档与代码一致性维护——代码是事实，让 README、CLAUDE.md、AGENTS.md 等根文档追平代码现状，并检查代码是否违反 AGENTS.md 项目约束；/exec 与 /revise 收尾时以 --tail 收尾模式自动调用，额外核对本分支 PRD 与实际交付是否一致；已合并的 PRD 任何模式都不碰；改代码一律先问用户、转 /revise。触发：/doc-update、文档和代码不一致、README 过期、维护一下文档。跳过：单点 bug 或定向修复（→/revise）、新需求（→/prd）、老项目从 spec 迁移（→/prd-migrate）。
+description: 文档与代码一致性维护——代码是事实，让 README、CLAUDE.md、AGENTS.md 等根文档追平代码现状，并检查代码是否违反 AGENTS.md 项目约束；/exec 与 /revise 收尾时以 --tail 收尾模式自动调用，额外核对本分支 PRD 与实际交付是否一致；已合并的 PRD 任何模式都不碰；改代码一律先问用户、转 /revise。触发：/doc-update、文档和代码不一致、README 过期、维护一下文档。跳过：单点 bug 或定向修复（→/revise）、新需求（→/prd）。
 argument-hint: [--tail | 可选：限定范围，如某目录 / 某文档]
 ---
 

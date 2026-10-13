@@ -54,7 +54,7 @@
 | `/review` | 多 finder 并行 + 对抗验证 | 提 PR 前 |
 | `/git-push` | pre-review 自查 + 推 + 开 PR | 准备发版 |
 
-四条支线随时可介入:`/git-clone`（拉远程项目到本地 + 落 `.bb-spec.yaml` 一次性 onboarding）、`/revise`（任何偏差按根因回到正确阶段）、`/doc-update`（文档与代码一致性体检;`/exec` 与 `/revise` 收尾时会自动跑一遍本次改动的范围）、`/prd-migrate`（用过 spec 的老项目一次性迁移）。
+三条支线随时可介入:`/git-clone`（拉远程项目到本地 + 落 `.bb-spec.yaml` 一次性 onboarding）、`/revise`（任何偏差按根因回到正确阶段）、`/doc-update`（文档与代码一致性体检;`/exec` 与 `/revise` 收尾时会自动跑一遍本次改动的范围）。
 
 ---
 
@@ -142,10 +142,6 @@
   - **代码是事实、文档追平代码**;改代码一律先问、挂回 `/revise` 走 TDD;已合并的 PRD 任何模式都不碰
   - **收尾模式**(`--tail`):`/exec`、`/revise` 结束时自动调用,只处理本分支改动涉及的范围
 
-- **`/prd-migrate`** — 用过 spec 的老项目**一次性迁移**。
-  - 原始 PRD 原样移回 `prd/`,spec 按领域转成 legacy PRD;用 `commits:` 记下相关 commit 哈希,老代码也能经 git 反查回 PRD;多仓库时按 plan 的文件清单和时间窗关联代码 commit,推断出的关联请你确认
-  - 只写有出处的内容,每条设计原因标来源,查不到写「未知」请你确认,**不让 AI 编**;项目级约束移入 AGENTS.md
-
 **附带产物**
 
 - **8 个编排 subagent**(被上述环节驱动):`test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `review-defect` / `review-design` / `review-codex` / `pre-reviewer`
@@ -197,7 +193,7 @@ BB-Spec 拆成**四个可独立安装的子 plugin**——只装你需要的约�
 | 子 plugin | 装了得到什么 | 安装命令 |
 |---|---|---|
 | **bb-spec-core** _(推荐基座)_ | TDD / 版本策略 / Git 纪律 + 3 个被动 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(核心功能)_ | prd → plan → exec → doc-update → review → revise → git-push(+ 可选 test-webview / test-api e2e)、git-clone 一次性初始化、prd-migrate 旧项目迁移 + 8 个 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(核心功能)_ | prd → plan → exec → doc-update → review → revise → git-push(+ 可选 test-webview / test-api e2e)、git-clone 一次性初始化 + 8 个 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / 数据库 / 认证 / 授权 / 可观测性 / 服务治理 / 配置约束 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun 技术栈与工程约定(含 bun hook) | `/plugin install bb-spec-frontend@0xbb2b` |
 

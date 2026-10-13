@@ -19,7 +19,7 @@ argument-hint: <问题或优化诉求描述>
 5. **PRD 改不改看是否合并**：本分支新增的 PRD 可改（判定：`git -C <文档仓库> cat-file -e <基线分支>:<PRD 根>/<目录>/OVERVIEW.md` 失败；单仓库时文档仓库就是当前仓库、`<PRD 根>` 为 `${DOCS_DIR}/prd`，多仓库工作区时文档仓库是 `${DOCS_DIR}` 所在的独立仓库、`<PRD 根>` 相对它的根）；已合并的 PRD 冻结不改——此时期望行为以用户确认为准，修订原因写进 commit 正文，`git log -L` 会把它和代码一起找出来
 6. **修正闭环**：修正后必须验证——全量测试通过 + 期望行为合规 + 文档同步
 7. **最小影响**：只改必须改的层，不借修正之名扩展功能或重构（额外需求走 `/prd`）
-8. **plan 只在执行期间存在**：`/exec` 完成后会删除整个 plan 主题目录，`${DOCS_DIR}/plan/` 下 `PROGRESS.md` 含非 `done` 行的才是进行中的 plan，允许原地修正以保证断点续接；找不到对应 plan 说明已完成，修复由本流程直接驱动、不新建 plan
+8. **plan 只在执行期间存在**：`/exec` 完成后会删除整个 plan 主题目录，`${DOCS_DIR}/plan/` 下 `PROGRESS.md` 含非 `done` 行、且未登记在根 `plan/INDEX.md`（旧版本留下的索引）里的才是进行中的 plan，允许原地修正以保证断点续接；找不到对应 plan 说明已完成，修复由本流程直接驱动、不新建 plan
 9. **三 Agent 串行强制派发**：涉及代码修改时必须按 Test → Impl → Review 顺序派 `bb-spec-workflow:test-engineer` / `bb-spec-workflow:impl-engineer` / `bb-spec-workflow:prd-reviewer` 三个 subagent，**禁止主 agent 自己写测试、写实现、做合规检查**；唯一例外是「轻量修复判断」（见步骤 3）通过且用户同意后允许主 agent 直接 TDD 修复
 10. **Agent 隔离同 exec**：Test 不看实现，Impl 不看 PRD，Review 只读不写
 11. **输出中文**
@@ -57,7 +57,7 @@ argument-hint: <问题或优化诉求描述>
 |---|---|---|
 | 实现代码 | 按问题描述的功能名搜 `${DOCS_DIR}/prd/*/OVERVIEW.md` 的 `features:` → 在各代码仓库里 `git log --grep "Requirement: <目录名>" --name-only`；或 codegraph / grep | 确认"实际做了什么"（附 `文件:行号`） |
 | 测试文件 | 测试目录 + 命名惯例 | 确认"验了什么" |
-| 相关 PRD | 在函数所在仓库里对出问题的函数跑 `git log -L :<函数>:<文件> -s --format='%h %s \| %(trailers:key=Requirement,valueonly)'`（按函数名 no match 时改用行号范围），读最新 `Requirement` 指向的 PRD 与 commit 正文；无标记的 commit 用短哈希 grep `${DOCS_DIR}/prd/` 找迁移来的 PRD（多仓库时写作 `<仓库>@<短哈希>`，按短哈希搜同样命中） | 确认"当初要的行为与为什么" |
+| 相关 PRD | 在函数所在仓库里对出问题的函数跑 `git log -L :<函数>:<文件> -s --format='%h %s \| %(trailers:key=Requirement,valueonly)'`（按函数名 no match 时改用行号范围），读最新 `Requirement` 指向的 PRD 与 commit 正文；无标记的 commit 是接入 bb-spec 之前的老代码，没有对应 PRD | 确认"当初要的行为与为什么" |
 | plan 文件 | 进行中主题的 INDEX.md（无进行中 plan 则跳过） | 确认"怎么做"的设计 |
 
 建立完整链路：**PRD 要什么 → plan 怎么做 → 代码做了什么 → 测试验了什么**。
@@ -71,6 +71,8 @@ argument-hint: <问题或优化诉求描述>
 判定退出时必须停下，提示用户改走 `/prd`，禁继续 revise 流程。
 
 ### 步骤 2：诊断归因
+
+找不到相关 PRD（老代码）→ 期望行为以用户确认为准，跳过下面第 1、2 步，从第 3 步开始。
 
 ```
 1. 相关 PRD 是否正确描述了用户要的行为？
@@ -95,7 +97,7 @@ argument-hint: <问题或优化诉求描述>
 ## 诊断结果
 - 归因：<prd-defect / impl-defect / requirement-change>
 - 证据：
-  - PRD 要求：<原文 + 目录名，标明本分支 / 已合并>
+  - PRD 要求：<原文 + 目录名，标明本分支 / 已合并；找不到写「无，以用户确认为准」>
   - plan 说：<原文 / 已删除>
   - 代码做了：<实际行为 + 文件:行号>
   - 测试验了：<覆盖情况>
@@ -131,7 +133,7 @@ argument-hint: <问题或优化诉求描述>
 
 不满足上述条件时，**禁止提议跳过，直接走标准流程**。
 
-下文「期望行为」指：本分支 PRD 的约束与验收；PRD 已合并时，指用户在步骤 2 确认的正确行为。
+下文「期望行为」指：本分支 PRD 的约束与验收；PRD 已合并或找不到相关 PRD 时，指用户在步骤 2 确认的正确行为。
 
 #### 3a. prd-defect
 

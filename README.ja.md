@@ -54,7 +54,7 @@
 | `/review` | 並列 finder + 敵対的検証 | PR 提出前 |
 | `/git-push` | pre-review セルフチェック + push + PR 作成 | リリース準備時 |
 
-いつでも介入可能な 4 つの支線:`/git-clone`(リモートプロジェクトをローカルに取得 + `.bb-spec.yaml` を生成するワンショット onboarding)、`/revise`(あらゆる逸脱を根本原因に基づき正しいステージに戻す)、`/doc-update`(ドキュメントとコードの一貫性チェック;`/exec` と `/revise` の終了時には今回の変更範囲を自動で一度実行)、`/prd-migrate`(spec を使っていた旧プロジェクトのワンショット移行)。
+いつでも介入可能な 3 つの支線:`/git-clone`(リモートプロジェクトをローカルに取得 + `.bb-spec.yaml` を生成するワンショット onboarding)、`/revise`(あらゆる逸脱を根本原因に基づき正しいステージに戻す)、`/doc-update`(ドキュメントとコードの一貫性チェック;`/exec` と `/revise` の終了時には今回の変更範囲を自動で一度実行)。
 
 ---
 
@@ -143,10 +143,6 @@
   - **コードが真実、ドキュメントはコードに合わせる**;コード変更は必ず先に確認し、`/revise` 経由で TDD へ;マージ済みの PRD はどのモードでも触らない
   - **仕上げモード**(`--tail`):`/exec`・`/revise` の終了時に自動呼び出し、本ブランチの変更範囲だけを扱う
 
-- **`/prd-migrate`** — spec を使っていた旧プロジェクトの**ワンショット移行**。
-  - 元の PRD はそのまま `prd/` に戻し、spec は領域ごとに legacy PRD へ変換;`commits:` に関連 commit ハッシュを記録し、古いコードも git から PRD へ逆引き可能;マルチリポジトリでは plan のファイル一覧と期間でコード commit を関連付け、推定した関連はあなたに確認
-  - 出典のある内容だけを書き、各設計理由に出典を付記、見つからなければ「不明」としてユーザーに確認、**AI に捏造させない**;プロジェクト単位の制約は AGENTS.md へ移す
-
 **同梱されるもの**
 
 - **8 個のオーケストレーションサブエージェント**(上記ステージに駆動される):`test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `review-defect` / `review-design` / `review-codex` / `pre-reviewer`
@@ -198,7 +194,7 @@ BB-Spec は**4 つの独立インストール可能なサブ plugin** に分割 
 | サブ plugin | 何が手に入るか | インストールコマンド |
 |---|---|---|
 | **bb-spec-core** _(推奨ベース)_ | TDD / バージョンポリシー / Git 規律 + 3 つの受動 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(コア機能)_ | prd → plan → exec → doc-update → review → revise → git-push(+ 任意 test-webview / test-api e2e)、git-clone ワンショット初期化、prd-migrate 旧プロジェクト移行 + 8 サブエージェント | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(コア機能)_ | prd → plan → exec → doc-update → review → revise → git-push(+ 任意 test-webview / test-api e2e)、git-clone ワンショット初期化 + 8 サブエージェント | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / 認証 / 認可 / 可観測性 / サービスガバナンス / 設定制約 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun スタック & エンジニアリング規約(bun hook 付き) | `/plugin install bb-spec-frontend@0xbb2b` |
 

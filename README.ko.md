@@ -54,7 +54,7 @@
 | `/review` | 병렬 finder + 적대적 검증 | PR 제출 전 |
 | `/git-push` | pre-review 자가 점검 + push + PR 생성 | 출시 준비 |
 
-언제든 개입 가능한 4개 보조 라인: `/git-clone`(원격 프로젝트를 로컬로 가져오기 + `.bb-spec.yaml` 생성 일회성 onboarding), `/revise`(모든 편차를 근본 원인에 따라 올바른 단계로 라우팅), `/doc-update`(문서와 코드의 일관성 점검; `/exec`와 `/revise` 마무리 시 이번 변경 범위에 대해 자동 실행), `/prd-migrate`(spec을 사용하던 기존 프로젝트의 일회성 마이그레이션).
+언제든 개입 가능한 3개 보조 라인: `/git-clone`(원격 프로젝트를 로컬로 가져오기 + `.bb-spec.yaml` 생성 일회성 onboarding), `/revise`(모든 편차를 근본 원인에 따라 올바른 단계로 라우팅), `/doc-update`(문서와 코드의 일관성 점검; `/exec`와 `/revise` 마무리 시 이번 변경 범위에 대해 자동 실행).
 
 ---
 
@@ -143,10 +143,6 @@
   - **코드가 진실, 문서는 코드에 맞춤**; 코드 수정은 항상 먼저 확인하고 `/revise`를 통해 TDD로 진행; 머지된 PRD는 어떤 모드에서도 건드리지 않음
   - **마무리 모드**(`--tail`): `/exec`, `/revise` 종료 시 자동 호출, 이번 브랜치 변경과 관련된 범위만 처리
 
-- **`/prd-migrate`** — spec을 사용하던 기존 프로젝트의 **일회성 마이그레이션**.
-  - 원본 PRD는 그대로 `prd/`로 되돌리고, spec은 영역별로 legacy PRD로 변환; `commits:`에 관련 commit 해시를 기록해 오래된 코드도 git으로 PRD를 역조회 가능; 멀티 저장소에서는 plan의 파일 목록과 시간 범위로 코드 commit을 연결하고, 추정한 연결은 사용자에게 확인
-  - 출처가 있는 내용만 기록하며 설계 이유마다 출처를 표시, 찾지 못하면 "알 수 없음"으로 적고 확인을 요청 —— **AI가 지어내지 않음**; 프로젝트 수준 제약은 AGENTS.md로 이동
-
 **동봉되는 것**
 
 - **8개 오케스트레이션 subagent**(위 단계에 의해 구동): `test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `review-defect` / `review-design` / `review-codex` / `pre-reviewer`
@@ -198,7 +194,7 @@ BB-Spec은 **4개의 독립 설치 가능한 서브 plugin**으로 분할 ——
 | 서브 plugin | 무엇을 얻는가 | 설치 명령 |
 |---|---|---|
 | **bb-spec-core** _(권장 베이스)_ | TDD / 버전 정책 / Git 규율 + 3개 수동 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(핵심 기능)_ | prd → plan → exec → doc-update → review → revise → git-push(+ 선택 test-webview / test-api e2e), git-clone 일회성 초기화, prd-migrate 기존 프로젝트 마이그레이션 + 8개 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(핵심 기능)_ | prd → plan → exec → doc-update → review → revise → git-push(+ 선택 test-webview / test-api e2e), git-clone 일회성 초기화 + 8개 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / 인증 / 인가 / 가관측성 / 서비스 거버넌스 / 설정 제약 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun 스택 & 엔지니어링 규약(bun hook 포함) | `/plugin install bb-spec-frontend@0xbb2b` |
 
