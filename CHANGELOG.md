@@ -1,5 +1,16 @@
 # Changelog
 
+## [14.0.0](https://github.com/0xBB2B/bb-spec/compare/v13.0.0...v14.0.0) (2026-10-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* **workflow:** 删除 /spec 命令与 spec 文档层（docs/spec/、INDEX.md），删除 bb-spec-product 插件与 Release 附带的 bb-spec-prd-skill.zip，删除 CLAUDE.template.md；新需求入口改为 /prd，批准后自动依次运行 /plan、/exec、/doc-update，/plan 不再单独批准；plan 执行完即删除，不再使用根 plan/INDEX.md 与 prd/.archive/；spec-reviewer 改名 prd-reviewer。迁移：用过 spec 的项目运行一次 /prd-migrate；之前通过 bb-spec-product 使用 /prd 的用户改装 bb-spec-workflow；GitHub squash 合并需设为「PR 标题和描述」或「PR 标题和 commit 详情」，否则 Requirement 标记会丢失。
+
+### Features
+
+* **workflow:** 删除 spec 文档层，改为 PRD + 代码 + git 标记 ([#265](https://github.com/0xBB2B/bb-spec/issues/265)) ([42034c7](https://github.com/0xBB2B/bb-spec/commit/42034c7ff900a13099220b8b67a748ac328a5884))
+
 ## [13.0.0](https://github.com/0xBB2B/bb-spec/compare/v12.7.0...v13.0.0) (2026-09-25)
 
 
