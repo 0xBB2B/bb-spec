@@ -221,58 +221,6 @@ BB-Spec 拆成**四个可独立安装的子 plugin**——只装你需要的约�
 }
 ```
 
-### 在 Claude Code 桌面版安装(图文版)
-
-适用于 Claude Code 桌面版 app(Mac / Windows),全程 GUI 操作,无需手敲命令。
-
-**1. 打开插件管理面板**
-
-输入框点 `+` → `Plugins` → `Manage plugins`:
-
-<p align="center">
-  <img src="./assets/desktop/01-manage-plugins.png" alt="打开插件管理面板" width="100%" />
-</p>
-
-**2. 添加 marketplace**
-
-Plugins 面板右上角点 `Add` → `Add marketplace`:
-
-<p align="center">
-  <img src="./assets/desktop/02-add-marketplace.png" alt="添加 marketplace" width="100%" />
-</p>
-
-**3. 选择从仓库添加**
-
-弹窗中选 `Add from a repository`:
-
-<p align="center">
-  <img src="./assets/desktop/03-from-repository.png" alt="从仓库添加" width="100%" />
-</p>
-
-**4. 填入 bb-spec 仓库地址并同步**
-
-URL 填 `https://github.com/0xBB2B/bb-spec`,点 `Sync`:
-
-<p align="center">
-  <img src="./assets/desktop/04-sync-url.png" alt="同步 marketplace" width="100%" />
-</p>
-
-**5. 启用核心两件套**
-
-Directory 中会看到 bb-spec 的 4 个子插件。点击 `Bb spec core` / `Bb spec workflow` 两张卡片右上角的齿轮按钮分别启用(后端 / 前端按需启用):
-
-<p align="center">
-  <img src="./assets/desktop/05-enable-plugins.png" alt="启用插件" width="100%" />
-</p>
-
-**6. 验证安装**
-
-回到对话输入框,输入 `/prd` 看到命令补全提示即表示安装成功:
-
-<p align="center">
-  <img src="./assets/desktop/06-verify-prd.png" alt="验证安装" width="100%" />
-</p>
-
 ## 🔄 版本与更新 / Versioning
 
 ```bash
