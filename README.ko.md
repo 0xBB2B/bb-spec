@@ -134,7 +134,7 @@
   - 수정 후 `/doc-update` 마무리 모드를 자동 실행
 
 - **`/git-push`** — 사용자 트리거 push + PR 흐름(단일 / 다중 저장소).
-  - AGENTS.md 또는 이 브랜치의 PRD가 있을 때 먼저 **브랜치 규범 자가 점검(pre-review)** 실행: subagent가 프로젝트 제약과 PRD vs 브랜치 diff를 비교, 위반을 반복 수정
+  - AGENTS.md 또는 이 브랜치의 PRD가 있거나 이 브랜치의 commit이 병합된 PRD를 가리킬 때 먼저 **브랜치 규범 자가 점검(pre-review)** 실행: subagent가 프로젝트 제약, PRD, commit 본문의 변경 설명 vs 브랜치 diff를 비교, 위반을 반복 수정
   - PR 설명에 `Requirement:` 태그 포함; squash 머지는 "PR 제목과 설명" 또는 "PR 제목과 commit 상세"로 설정해야 태그가 사라지지 않음
   - **6개 섹션 PR 설명**(배경 / 요구사항 / 접근법 / 결과 / 테스트 / 규범, < 50줄)을 기초하여 그대로 PR body로 사용
 

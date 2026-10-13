@@ -1,13 +1,13 @@
 ---
 name: git-push
-description: 推送本地代码到远程并开 PR 全流程——识别仓库→确认分支（worktree 模式自动定位目标分支）→跑全量测试→提交未暂存改动（禁 git add .）→同步基线（origin+upstream 双 remote 时先问合并对象、默认 origin/main；分支落后基线则先 rebase 再重跑测试）→若存在 AGENTS.md 或本分支有新增 PRD 则 subagent 比对项目约束与 PRD 跑分支规范自查（违规走 /revise 循环复审）+起草 6 段 PR 描述（末尾带 `Requirement:` 标记）→推送→创建 PR→清理本地与远程。触发：push 一下、提个 PR、代码推上去、准备发 PR、开 PR 前自查、对照规范看分支。跳过：未本地验证完成的功能、main/master 上无新提交。
+description: 推送本地代码到远程并开 PR 全流程——识别仓库→确认分支（worktree 模式自动定位目标分支）→跑全量测试→提交未暂存改动（禁 git add .）→同步基线（origin+upstream 双 remote 时先问合并对象、默认 origin/main；分支落后基线则先 rebase 再重跑测试）→若存在 AGENTS.md、本分支有新增 PRD 或本分支 commit 指向已合并 PRD 则 subagent 比对项目约束、PRD 与 commit 正文的改动说明跑分支规范自查（违规走 /revise 循环复审）+起草 6 段 PR 描述（末尾带 `Requirement:` 标记）→推送→创建 PR→清理本地与远程。触发：push 一下、提个 PR、代码推上去、准备发 PR、开 PR 前自查、对照规范看分支。跳过：未本地验证完成的功能、main/master 上无新提交。
 ---
 
 # 仓库提交与 PR 流程
 
 ## 概览
 
-确认分支（worktree 模式自动定位目标）→ 跑测试 → 提交 → **同步基线**（落后则 rebase）→ **分支规范自查 + PR 草稿**（仅当仓库根存在 `AGENTS.md` 或本分支有新增 PRD）→ 推送 → 创建 PR → 处理 PR → 清理分支 / worktree。
+确认分支（worktree 模式自动定位目标）→ 跑测试 → 提交 → **同步基线**（落后则 rebase）→ **分支规范自查 + PR 草稿**（仅当仓库根存在 `AGENTS.md`、本分支有新增 PRD 或本分支 commit 指向已合并 PRD）→ 推送 → 创建 PR → 处理 PR → 清理分支 / worktree。
 
 ## 参数
 
@@ -73,12 +73,13 @@ git rev-list --count HEAD..<基线>   # > 0 即基线已领先、分支落后
 
 ### 前置探测
 
-读取 `.bb-spec.yaml` 的 `base_dir`（默认 `.bb-spec`；先找仓库根，找不到再往上级目录找——多仓库工作区的配置在工作区根），`${DOCS_DIR}` = `<base_dir>/docs`。文档仓库 = `git -C ${DOCS_DIR} rev-parse --show-toplevel`：与当前仓库相同为单仓库，不同为多仓库工作区。探测两类规范来源：
+读取 `.bb-spec.yaml` 的 `base_dir`（默认 `.bb-spec`；先找仓库根，找不到再往上级目录找——多仓库工作区的配置在工作区根），`${DOCS_DIR}` = `<base_dir>/docs`。文档仓库 = `git -C ${DOCS_DIR} rev-parse --show-toplevel`：与当前仓库相同为单仓库，不同为多仓库工作区。探测三类规范来源：
 
 1. **项目约束**：文档仓库根（单仓库即仓库根）的 `AGENTS.md`
 2. **本分支 PRD**：在文档仓库里 `git diff <基线>...HEAD --name-only -- <PRD 根>` 列出的目录中，`git cat-file -e <基线>:<PRD 根>/<目录>/OVERVIEW.md` 失败的（基线上还没有 = 本分支新增）；`<PRD 根>` 为 PRD 目录相对文档仓库根的路径
+3. **已合并 PRD**：在当前仓库 `git log <基线>..HEAD --format=%B | grep '^Requirement:'` 取出的目录名（去掉 `none`）中，`git -C <文档仓库> cat-file -e <基线>:<PRD 根>/<目录>/OVERVIEW.md` 成功的——本分支在改已合并的功能，期望行为写在 commit 正文里
 
-任一存在 → 进入自查；两者都不存在 → 跳过整个 4.5。
+任一存在 → 进入自查；三者都不存在 → 跳过整个 4.5。
 
 ### 核心原则
 
@@ -94,9 +95,11 @@ git rev-list --count HEAD..<基线>   # > 0 即基线已领先、分支落后
 - `base_branch`：比对基线分支
 - `agents_md`：仓库根 AGENTS.md 路径（不存在则为空）
 - `prd_dirs`：本分支新增的 PRD 目录列表（无则为空）
+- `change_notes`：`git log <基线>..HEAD --format='%h %s%n%b'` 的输出
+- `merged_prd_dirs`：已合并 PRD 目录列表（无则为空）
 - `diff_summary`：diff 概况（commit 数、规模、审查重点）
 
-审查指令、输出格式（`## 结论 PASS|FAIL` → `## 违规项` → `## 备注`）、只读约束均由 agent 定义自包含。
+审查指令、输出格式（`## 结论 PASS|FAIL` → `## PRD 逐条检查` → `## 违规项` → `## 备注`）、只读约束均由 agent 定义自包含。
 
 ### 4.5.2 经 /revise 修复
 

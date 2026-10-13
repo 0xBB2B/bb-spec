@@ -134,7 +134,7 @@ Three branches, callable anytime: `/git-clone` (pull a remote project locally + 
   - Auto-runs `/doc-update` in tail mode after the fix
 
 - **`/git-push`** — User-triggered push + PR flow (single or multi-repo).
-  - When AGENTS.md or a PRD on this branch exists, first runs a **branch self-check (pre-review)**: a subagent checks the branch diff against the project constraints and the PRD, fixes violations in a loop
+  - When AGENTS.md or a PRD on this branch exists, or this branch's commits point to a merged PRD, first runs a **branch self-check (pre-review)**: a subagent checks the branch diff against the project constraints, the PRD and the change notes in commit messages, fixes violations in a loop
   - The PR description carries the `Requirement:` trailer; squash merges must be set to "PR title and description" or "PR title and commit details", otherwise the trailer is lost
   - Drafts a **6-section PR description** (background / requirement / approach / result / tests / conventions, < 50 lines) used directly as the PR body
 
