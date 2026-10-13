@@ -1,6 +1,6 @@
 ---
 name: prd
-description: 新需求的唯一入口——质疑→澄清→拆解，启动即 EnterPlanMode 只读对齐，用户批准一次后落盘 PRD（.bb-spec/docs/prd/<日期>.<主题>/，写「为什么」与可测的约束和验收；本分支内可改、合并后冻结）与项目级约束（项目根 AGENTS.md，含"先读代码再回答"的查询规矩），然后自动依次运行 /plan → /exec（/exec 收尾自动 /doc-update）；之后每个 commit 带 `Requirement: <PRD 目录名>` 标记，代码经 git 可反查回 PRD。触发：/prd、新需求、新增功能、头脑风暴需求、写个 PRD、需求拆解。跳过：修 bug 或改已有行为的细节（→/revise）、纯技术方案讨论、老项目从 spec 迁移（→/prd-migrate）。
+description: 新需求的唯一入口——质疑→澄清→拆解，启动即 EnterPlanMode 只读对齐，用户批准一次后落盘 PRD（.bb-spec/docs/prd/<日期>.<主题>/，写「为什么」与可测的约束和验收；本分支内可改、合并后冻结）与项目级约束（项目根 AGENTS.md，含"先读代码再回答"的查询规矩），然后自动依次运行 /plan → /exec（/exec 收尾自动 /doc-update）；之后每个 commit 带 `Requirement: <PRD 目录名>` 标记，代码经 git 可反查回 PRD。触发：/prd、新需求、新增功能、头脑风暴需求、写个 PRD、需求拆解。跳过：修 bug 或改已有行为的细节（→/revise）、纯技术方案讨论。
 ---
 
 # PRD：质疑 → 澄清 → 拆解 → 落盘 → 自动实施
@@ -61,15 +61,15 @@ description: 新需求的唯一入口——质疑→澄清→拆解，启动即 
 cat .bb-spec.yaml 2>/dev/null
 ```
 
-有 `base_dir` → 用其值作为 bb-spec 根目录；文件不存在或无该字段 → 缺省 `.bb-spec`。`${DOCS_DIR}` = `<base_dir>/docs`，后续所有路径基于此值。存在 `${DOCS_DIR}/spec/` → 这是还没迁移的老项目，提示用户先运行 `/prd-migrate`，`ExitPlanMode` 后终止。
+有 `base_dir` → 用其值作为 bb-spec 根目录；文件不存在或无该字段 → 缺省 `.bb-spec`。`${DOCS_DIR}` = `<base_dir>/docs`，后续所有路径基于此值。旧版本留下的 `${DOCS_DIR}/spec/`、`${DOCS_DIR}/prd/.archive/`、根 `plan/INDEX.md` 照常保留、不拦截，除下面的旧术语表外都不读。
 
 ```bash
 cat AGENTS.md 2>/dev/null                                      # 项目级约束与查询规矩
-cat ${DOCS_DIR}/prd/GLOSSARY.md 2>/dev/null                    # 术语权威源
+cat ${DOCS_DIR}/prd/GLOSSARY.md 2>/dev/null || cat ${DOCS_DIR}/spec/GLOSSARY.md 2>/dev/null  # 术语权威源；没有时读旧版本留在 spec/ 的术语表
 grep -h '^features:' ${DOCS_DIR}/prd/*/OVERVIEW.md 2>/dev/null  # 已有功能名
 ```
 
-**了解相关功能的现状**：按本次涉及的功能名搜 `features:` 找到相关 PRD 目录，在各代码仓库里用 `git log --grep "Requirement: <目录名>" --name-only` 查出改过的文件，**读这些代码**确认现在的行为；需要了解当时为什么这样设计时，只读最新那份相关 PRD 的「决策记录」。
+**了解相关功能的现状**：按本次涉及的功能名搜 `features:` 找到相关 PRD 目录，在各代码仓库里用 `git log --grep "Requirement: <目录名>" --name-only` 查出改过的文件，**读这些代码**确认现在的行为（搜不到 PRD 的是接入 bb-spec 之前的老代码，直接在代码里搜）；需要了解当时为什么这样设计时，只读最新那份相关 PRD 的「决策记录」。
 
 **重叠判定**：
 
@@ -162,7 +162,7 @@ git branch --show-current
 
 **7a. PRD**：写入 `${DOCS_DIR}/prd/<YYYY-MM-DD>.<主题>/`（主题 kebab-case）——`OVERVIEW.md` + 每个子需求一份 `<序号>-<子需求>.md`（`01-`、`02-`…）。
 
-**7b. GLOSSARY.md**：按术语变更队列增行、并别名、改定义，删除不再被使用的术语；所有定义冲突必须已经用户裁决，禁静默覆盖。
+**7b. GLOSSARY.md**：`${DOCS_DIR}/prd/GLOSSARY.md` 不存在而 `${DOCS_DIR}/spec/GLOSSARY.md` 存在时，先把旧表整份复制过来（旧表不动），表头说明里的「仅 /spec 维护」改成「仅 /prd 维护」；再按术语变更队列增行、并别名、改定义，删除不再被使用的术语；所有定义冲突必须已经用户裁决，禁静默覆盖。
 
 **7c. AGENTS.md**：
 
@@ -289,7 +289,7 @@ date: <YYYY-MM-DD>
 ## 查功能、查问题的规矩
 1. 先读代码再回答：凡是"系统现在怎么做"的结论，必须来自本次实际读过的代码，并给出 `文件:行号`；还没读到代码就说"还没确认"，不许猜。
 2. 按功能找代码：`grep -l '^features:.*<功能名>' <DOCS_DIR>/prd/*/OVERVIEW.md` 找到相关需求目录，再在每个代码仓库里用 `git log --grep "Requirement: <目录名>" --name-only` 查出改过的文件。
-3. 查为什么：在该文件所在的仓库里执行 `git log -L :<函数名>:<文件> -s --format='%h %s | %(trailers:key=Requirement,valueonly)'` 列出改过这个函数的 commit，最新的在前；按函数名报 "no match"（如缩进的类方法）时，先读文件确认行号，改用 `git log -L <起始行>,<结束行>:<文件>`。读最新那个 `Requirement` 指向的 PRD「决策记录」和 commit 说明正文；更早的 PRD 只在需要追溯时才读。commit 没有 `Requirement` 标记时，用它的短哈希 `grep -rl <短哈希> <DOCS_DIR>/prd/` 找迁移来的 PRD（多仓库时 PRD 里写作 `<仓库>@<短哈希>`，按短哈希搜同样能命中）。
+3. 查为什么：在该文件所在的仓库里执行 `git log -L :<函数名>:<文件> -s --format='%h %s | %(trailers:key=Requirement,valueonly)'` 列出改过这个函数的 commit，最新的在前；按函数名报 "no match"（如缩进的类方法）时，先读文件确认行号，改用 `git log -L <起始行>,<结束行>:<文件>`。读最新那个 `Requirement` 指向的 PRD「决策记录」和 commit 说明正文；更早的 PRD 只在需要追溯时才读。commit 没有 `Requirement` 标记的是接入 bb-spec 之前的老代码，没有对应 PRD，只读 commit 说明；查不到原因就如实说"查不到"。
 4. PRD 和代码不一致时以代码为准，并在回答里指出哪里不一致。
 5. 改代码前按第 3 条查清设计原因，改动不能违背；确实要改设计，新需求走 `/prd`、修正走 `/revise`。
 6. 每个 commit 说明的最后一段带一行 `Requirement: <PRD 目录名>`，和 `Co-Authored-By:` 等尾注同段、中间不空行；和任何需求都无关的改动写 `Requirement: none`，并在正文写一句原因。多仓库时每个仓库的 commit 都要带。

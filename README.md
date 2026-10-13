@@ -54,7 +54,7 @@ The 5 mainline commands:
 | `/review` | Parallel finders + adversarial verify | Before opening PR |
 | `/git-push` | pre-review self-check + push + open PR | Ready to ship |
 
-Four branches, callable anytime: `/git-clone` (pull a remote project locally + write `.bb-spec.yaml`, one-shot onboarding), `/revise` (route any deviation back to the right stage by root cause), `/doc-update` (doc / code consistency sweep; `/exec` and `/revise` also run it automatically over the current change at the end), `/prd-migrate` (one-shot migration for older projects that used specs).
+Three branches, callable anytime: `/git-clone` (pull a remote project locally + write `.bb-spec.yaml`, one-shot onboarding), `/revise` (route any deviation back to the right stage by root cause), `/doc-update` (doc / code consistency sweep; `/exec` and `/revise` also run it automatically over the current change at the end).
 
 ---
 
@@ -143,10 +143,6 @@ Four branches, callable anytime: `/git-clone` (pull a remote project locally + w
   - **Code is the truth; docs are mirrored to it**; code changes always ask first and route to `/revise` for TDD; merged PRDs are never touched in any mode
   - **Tail mode** (`--tail`): auto-invoked when `/exec` or `/revise` finishes; covers only what the current branch touched
 
-- **`/prd-migrate`** — **One-shot migration** for older projects that used specs.
-  - Original PRDs move back into `prd/` unchanged; specs are converted per domain into legacy PRDs; a `commits:` field records the related commit hashes so old code can also be traced back to its PRD through git; in multi-repo workspaces code commits are linked via the plan's file list and time window, and inferred links are confirmed with you
-  - Writes only what has a source — every design rationale is tagged with where it came from, and anything unknown is marked "unknown" for you to confirm, **never invented by the AI**; project-level constraints move into AGENTS.md
-
 **Ships with**
 
 - **8 orchestration subagents** driven by the stages above: `test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `review-defect` / `review-design` / `review-codex` / `pre-reviewer`
@@ -198,7 +194,7 @@ Then install whichever layers you want:
 | Sub-plugin | What it gives you | Command |
 |---|---|---|
 | **bb-spec-core** _(recommended base)_ | TDD / version-policy / git-workflow discipline + 3 passive hooks | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(core)_ | prd → plan → exec → doc-update → review → revise → git-push (+ opt test-webview / test-api e2e), git-clone one-shot init, prd-migrate for older projects + 8 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(core)_ | prd → plan → exec → doc-update → review → revise → git-push (+ opt test-webview / test-api e2e), git-clone one-shot init + 8 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / authN / authZ / observability / service / config constraints | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun stack & engineering conventions (+ bun hook) | `/plugin install bb-spec-frontend@0xbb2b` |
 

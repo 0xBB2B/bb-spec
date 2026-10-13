@@ -58,14 +58,14 @@ git worktree list --porcelain
 ```
 
 - **已在 linked worktree 或非 main/master 功能分支** → cwd 即执行现场，继续
-- **在主仓库且 HEAD 为 main/master** → 逐棵检查非 main 分支的 worktree：其 plan 目录（按该 worktree 内 `.bb-spec.yaml` 解析 `base_dir`，缺省 `.bb-spec`）下存在未全完成 PROGRESS.md 的即候选（指定了主题时须匹配该主题）：
+- **在主仓库且 HEAD 为 main/master** → 逐棵检查非 main 分支的 worktree：其 plan 目录（按该 worktree 内 `.bb-spec.yaml` 解析 `base_dir`，缺省 `.bb-spec`）下存在未全完成 PROGRESS.md、且未登记在根 `plan/INDEX.md` 里的主题即候选（指定了主题时须匹配该主题）：
   - 恰一棵 → 它就是执行现场，**后续所有步骤——读 plan、写测试/实现、跑测试、commit——全部定位到该 worktree 内执行**（`cd` 进去或全程用其绝对路径）
   - 多棵 → AskUserQuestion 列出让用户选
   - 无 → 全新任务，按 git-workflow 先确定开分支方式再继续，**禁止把任何产出落在 main 工作区**
 
 现场确定后，在**该目录**下 `cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`。**多仓库工作区**（`${DOCS_DIR}` 所在的 git 仓库与代码不是同一个，如工作区根不是 git 仓库、`docs/` 与各服务各自独立）：文档仓库 = `git -C ${DOCS_DIR} rev-parse --show-toplevel`，下文 PRD / plan 相关的 git 命令都在文档仓库里执行、路径相对文档仓库根；代码相关的 git 命令（测试、`git log -L`、commit）在各代码仓库里分别执行。
 
-`${DOCS_DIR}/plan/` 下主题目录内 `PROGRESS.md` 含非 `done` 行的才是进行中的 plan（完成后整个目录会被删除）；全部 `done` 的主题目录和根 `plan/INDEX.md` 是旧版本留下的，提示用户 `git rm -r` 清掉、不执行。按参数形式决定行为：
+`${DOCS_DIR}/plan/` 下主题目录内 `PROGRESS.md` 含非 `done` 行的才是进行中的 plan（完成后整个目录会被删除）；根 `plan/INDEX.md` 和其中登记的主题目录（不论 `PROGRESS.md` 状态）、全部 `done` 的主题目录都是旧版本留下的，不执行，提示用户可以 `git rm -r` 清掉。按参数形式决定行为：
 
 | 调用方式 | 行为 |
 |---|---|
