@@ -221,11 +221,29 @@ BB-Spec は**4 つの独立インストール可能なサブ plugin** に分割 
 ## 🔄 バージョンと更新 / Versioning
 
 ```bash
-/plugin update                  # インストール済みすべての plugin をチェックし更新
-/plugin update bb-spec-core     # 特定のサブ plugin のみ更新
+claude plugin update bb-spec-workflow@0xbb2b   # ターミナルから特定のサブ plugin を更新
 ```
 
+まとめて更新するには:セッションで `/plugin` を実行し、**Marketplaces** タブで `0xbb2b` を選び、**Update marketplace** を選択。
+
 4 つのサブ plugin は単一の同期されたバージョンラインを共有。
+
+### 13 以前のバージョンからのアップグレード
+
+移行は不要です。プロジェクトの古い `.bb-spec/` ディレクトリは削除しても残しても構いません。アップグレード後はそのまま `/prd` で次の要件を始められます。
+
+古いディレクトリを残す場合(以下の `.bb-spec/docs/` はデフォルトの場所です。`.bb-spec.yaml` で `base_dir` を変えている場合はその設定に読み替えてください):
+
+- 古い `.bb-spec/docs/spec/`、`.bb-spec/docs/prd/.archive/`、`.bb-spec/docs/plan/INDEX.md` は読み込まれず、変更もされません。
+- `.bb-spec/docs/prd/GLOSSARY.md` がまだない間は、`/prd` が `.bb-spec/docs/spec/GLOSSARY.md` の用語をそのまま使います。初めて用語を登録するときに表ごと新しい場所へコピーし、古い表はそのまま残します。
+- 13 で完了していない plan は続けて実行できないので、`/prd` からやり直してください。不要になったら、`plan/INDEX.md` とそこに登録されたトピックディレクトリを `git rm -r` で削除できます。
+
+導入前に書かれた古いコードは commit に `Requirement:` マーカーがなく、対応する PRD はありません。`/revise` で修正するときは、あなたが説明する期待動作を基準にします。
+
+`.bb-spec/` の外に、手動で対応が必要な点が 2 つあります:
+
+1. `bb-spec-product` をインストールしていた場合は、`/plugin uninstall bb-spec-product@0xbb2b` でアンインストールしてください。`/prd` は `bb-spec-workflow` に移りました。
+2. 古い `CLAUDE.template.md` を CLAUDE.md(グローバルの `~/.claude/CLAUDE.md` またはプロジェクトルート)にコピーしていた場合は、「任务分流」(タスク振り分け)の 4 番目の `/spec → /plan → /exec` を `/prd` に、3 番目の「有现成 spec/plan/代码可对照」を「有现成 PRD 或代码可对照」に変更してください。
 
 ---
 

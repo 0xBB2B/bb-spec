@@ -221,11 +221,29 @@ BB-Spec은 **4개의 독립 설치 가능한 서브 plugin**으로 분할 ——
 ## 🔄 버전 관리 / Versioning
 
 ```bash
-/plugin update                  # 설치된 모든 plugin 확인 및 업데이트
-/plugin update bb-spec-core     # 특정 서브 plugin만 업데이트
+claude plugin update bb-spec-workflow@0xbb2b   # 터미널에서 특정 서브 plugin 업데이트
 ```
 
+한 번에 모두 업데이트하려면: 세션에서 `/plugin`을 실행하고 **Marketplaces** 탭에서 `0xbb2b`를 고른 뒤 **Update marketplace**를 선택.
+
 4개의 서브 plugin은 단일 동기화된 버전 라인을 공유.
+
+### 13 이하 버전에서 업그레이드
+
+마이그레이션은 필요 없습니다. 프로젝트의 기존 `.bb-spec/` 디렉터리는 지워도 되고 남겨 둬도 됩니다. 업그레이드 후 바로 `/prd`로 다음 요구사항을 시작하면 됩니다.
+
+기존 디렉터리를 남겨 두는 경우(아래 `.bb-spec/docs/`는 기본 위치이며, `.bb-spec.yaml`에서 `base_dir`를 바꿨다면 그 설정을 따릅니다):
+
+- 기존 `.bb-spec/docs/spec/`, `.bb-spec/docs/prd/.archive/`, `.bb-spec/docs/plan/INDEX.md`는 읽지도 수정하지도 않습니다.
+- `.bb-spec/docs/prd/GLOSSARY.md`가 아직 없으면 `/prd`가 `.bb-spec/docs/spec/GLOSSARY.md`의 용어를 그대로 씁니다. 처음 용어를 등록할 때 표 전체를 새 위치로 복사하고, 기존 표는 그대로 둡니다.
+- 13에서 끝내지 못한 plan은 이어서 실행할 수 없으니 `/prd`로 다시 시작하세요. 더 필요 없으면 `plan/INDEX.md`와 거기에 등록된 주제 디렉터리를 `git rm -r`로 지울 수 있습니다.
+
+도입 전에 작성된 기존 코드는 commit에 `Requirement:` 표시가 없어 대응하는 PRD가 없습니다. `/revise`로 고칠 때는 사용자가 설명한 기대 동작을 기준으로 합니다.
+
+`.bb-spec/` 밖에서 직접 처리해야 할 것이 두 가지 있습니다:
+
+1. `bb-spec-product`를 설치했다면 `/plugin uninstall bb-spec-product@0xbb2b`로 제거하세요. `/prd`는 `bb-spec-workflow`로 옮겨졌습니다.
+2. 예전 `CLAUDE.template.md`를 CLAUDE.md(전역 `~/.claude/CLAUDE.md` 또는 프로젝트 루트)에 복사했다면, 「任务分流」(작업 분류) 4번 항목의 `/spec → /plan → /exec`를 `/prd`로, 3번 항목의 「有现成 spec/plan/代码可对照」를 「有现成 PRD 或代码可对照」로 바꾸세요.
 
 ---
 

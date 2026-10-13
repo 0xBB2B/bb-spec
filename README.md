@@ -221,11 +221,29 @@ Or add it manually to `~/.claude/settings.json` (enable only what you want):
 ## 🔄 Versioning
 
 ```bash
-/plugin update                  # check and update every installed plugin
-/plugin update bb-spec-core     # update only one sub-plugin
+claude plugin update bb-spec-workflow@0xbb2b   # update one sub-plugin from your terminal
 ```
 
+To update all of them at once: run `/plugin` in a session, open the **Marketplaces** tab, select `0xbb2b`, then choose **Update marketplace**.
+
 The four sub-plugins share a single synchronized version line.
+
+### Upgrading from 13 or earlier
+
+No migration is needed. Delete or keep the old `.bb-spec/` directory in your project — either way, start your next requirement with `/prd` right after upgrading.
+
+If you keep the old directory (`.bb-spec/docs/` below is the default location; if you changed `base_dir` in `.bb-spec.yaml`, use yours):
+
+- The old `.bb-spec/docs/spec/`, `.bb-spec/docs/prd/.archive/` and `.bb-spec/docs/plan/INDEX.md` are never read or modified.
+- Until `.bb-spec/docs/prd/GLOSSARY.md` exists, `/prd` uses the terms in `.bb-spec/docs/spec/GLOSSARY.md`; the first time it records a term, it copies the whole table to the new location and leaves the old one untouched.
+- Plans left unfinished under 13 can't be resumed — start again with `/prd`. Once you no longer need them, remove `plan/INDEX.md` and the topic directories it lists with `git rm -r`.
+
+Code written before you adopted bb-spec has no `Requirement:` marker in its commits, so there is no PRD to look up. When you fix it with `/revise`, the expected behavior you describe is the reference.
+
+Two things outside `.bb-spec/` need manual action:
+
+1. If you installed `bb-spec-product`, uninstall it with `/plugin uninstall bb-spec-product@0xbb2b`. `/prd` now lives in `bb-spec-workflow`.
+2. If you copied the old `CLAUDE.template.md` into a CLAUDE.md (global `~/.claude/CLAUDE.md` or the project root), change item 4 of "任务分流" (task routing) from `/spec → /plan → /exec` to `/prd`, and in item 3 change "有现成 spec/plan/代码可对照" (existing spec/plan/code to compare against) to "有现成 PRD 或代码可对照" (existing PRD or code to compare against).
 
 ---
 

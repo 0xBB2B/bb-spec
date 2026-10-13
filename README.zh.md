@@ -220,11 +220,29 @@ BB-Spec 拆成**四个可独立安装的子 plugin**——只装你需要的约�
 ## 🔄 版本与更新 / Versioning
 
 ```bash
-/plugin update                  # 检查并更新所有已装 plugin
-/plugin update bb-spec-core     # 仅更新某个子 plugin
+claude plugin update bb-spec-workflow@0xbb2b   # 在终端里更新某个子 plugin
 ```
 
+一次更新全部:在会话里运行 `/plugin`,到 **Marketplaces** 页选 `0xbb2b`,再选 **Update marketplace**。
+
 四个子 plugin 共用同一条同步版本线。
+
+### 从 13 及更早版本升级
+
+不需要迁移。项目里旧的 `.bb-spec/` 目录删掉或保留都行,升级后直接用 `/prd` 开始下一个需求。
+
+保留旧目录时(下面的 `.bb-spec/docs/` 是默认位置,在 `.bb-spec.yaml` 里改过 `base_dir` 的按你的配置):
+
+- 旧的 `.bb-spec/docs/spec/`、`.bb-spec/docs/prd/.archive/`、`.bb-spec/docs/plan/INDEX.md` 都不会被读取,也不会被修改。
+- 还没有 `.bb-spec/docs/prd/GLOSSARY.md` 时,`/prd` 沿用 `.bb-spec/docs/spec/GLOSSARY.md` 里的术语;第一次登记术语时会整份复制到新位置,旧表不动。
+- 13 版本没做完的 plan 不能接着执行,请用 `/prd` 重新开始。`plan/INDEX.md` 和其中登记的主题目录不再需要时,可以用 `git rm -r` 删掉。
+
+接入前写的老代码,commit 里没有 `Requirement:` 标记,查不到对应的 PRD。用 `/revise` 修它时,以你描述的期望行为为准。
+
+`.bb-spec/` 以外有两处要手动处理:
+
+1. 装过 `bb-spec-product` 的,运行 `/plugin uninstall bb-spec-product@0xbb2b` 卸载。`/prd` 已经移到 `bb-spec-workflow` 里。
+2. 从旧的 `CLAUDE.template.md` 复制过 CLAUDE.md 的(全局 `~/.claude/CLAUDE.md` 或项目根),把「任务分流」第 4 条的 `/spec → /plan → /exec` 改成 `/prd`,第 3 条的「有现成 spec/plan/代码可对照」改成「有现成 PRD 或代码可对照」。
 
 ---
 
