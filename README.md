@@ -135,7 +135,7 @@ Three branches, callable anytime: `/git-clone` (pull a remote project locally + 
 
 - **`/git-push`** — User-triggered push + PR flow (single or multi-repo).
   - When AGENTS.md or a PRD on this branch exists, or this branch's commits point to a merged PRD, first runs a **branch self-check (pre-review)**: a subagent checks the branch diff against the project constraints, the PRD and the change notes in commit messages, fixes violations in a loop
-  - The PR description carries the `Requirement:` trailer; squash merges must be set to "PR title and description" or "PR title and commit details", otherwise the trailer is lost
+  - The PR description carries the `Requirement:` trailer; the repo must allow only rebase merging (GitHub: only "Allow rebase merging"; GitLab: "Fast-forward merge" with squash set to "Do not allow"), so every commit lands on the main branch with its own `Requirement:` line
   - Drafts a **6-section PR description** (background / requirement / approach / result / tests / conventions, < 50 lines) used directly as the PR body
 
 - **`/doc-update`** — Doc / code **consistency sweep**.

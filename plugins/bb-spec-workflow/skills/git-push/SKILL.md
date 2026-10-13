@@ -136,7 +136,9 @@ Requirement: <本分支 PRD 目录名>
 
 - 标题 ≤ 70 字
 - body：4.5 跑过 → 用 6 段草稿；4.5 跳过 → 简短 bullet + 标注「未跑 pre-review」；两种情况末尾都带一行 `Requirement: <本分支 PRD 目录名 / none>`
-- PR 创建后提醒用户：仓库 squash 合并的默认提交说明若设为「仅 PR 标题」，`Requirement:` 标记会在合并时丢失、代码无法经 git 反查回 PRD——需在 GitHub Settings → General → Pull Requests 把 squash 提交说明设为「PR 标题和描述」或「PR 标题和 commit 详情」
+- PR 创建后提醒用户核对仓库合并设置，只允许 rebase 合并，这样每个 commit 连同自己的 `Requirement:` 行原样进入主分支，代码才能经 git 精确反查回 PRD：
+  - GitHub：Settings → General → Pull Requests 只勾「Allow rebase merging」，取消「Allow merge commits」和「Allow squash merging」
+  - GitLab：Settings → Merge requests 的 Merge method 选「Fast-forward merge」，「Squash commits when merging」选「Do not allow」
 
 ## 7. 处理 PR
 
@@ -144,11 +146,11 @@ Requirement: <本分支 PRD 目录名>
 
 创建后用 AskUserQuestion 让用户选（除非已显式声明）：
 
-1. **自动合并**：`gh pr merge <n> --squash --auto --delete-branch`（GitLab：`--auto-merge --remove-source-branch`；worktree 模式去掉删分支 flag）
+1. **自动合并**：`gh pr merge <n> --rebase --auto --delete-branch`（GitLab：`glab mr merge <n> --rebase --auto-merge --remove-source-branch`；worktree 模式去掉删分支 flag）
 2. **已合并**：直接进入「合并结果核验」
 3. **关闭 PR**：`gh pr close --delete-branch` → 清理（worktree 模式同样去 `--delete-branch`）
 
-**`--auto` 被拒**（仓库未开启 auto-merge，报 `Auto merge is not allowed` / `enablePullRequestAutoMerge`）→ 降级为不带 `--auto` 的 `gh pr merge <n> --squash --delete-branch` 重试（worktree 模式同样去 `--delete-branch`）。
+**`--auto` 被拒**（仓库未开启 auto-merge，报 `Auto merge is not allowed` / `enablePullRequestAutoMerge`）→ 降级为不带 `--auto` 的 `gh pr merge <n> --rebase --delete-branch` 重试（worktree 模式同样去 `--delete-branch`）。
 
 ### 合并结果核验（唯一完成判据，所有合并路径必经）
 
@@ -173,7 +175,7 @@ Requirement: <本分支 PRD 目录名>
 ```bash
 git checkout main && git pull origin main
 git rev-parse --abbrev-ref HEAD   # 确认在 main
-git branch -D <branch>            # 用 -D，squash 后 -d 会拒绝
+git branch -D <branch>            # 用 -D：GitHub 的 rebase 合并会重新生成提交哈希，-d 会拒绝
 # 探测远程分支是否存在再删
 git ls-remote --exit-code --heads origin <branch> && git push origin --delete <branch>
 git fetch -p                      # 裁剪远程引用
@@ -200,4 +202,4 @@ git fetch -p && git worktree prune               # 裁剪远程引用 + worktree
 
 ## 禁止操作
 
-`git push --force` / `git reset --hard` / `git checkout -- .` / 未授权合并 PR / 非 squash 策略 / 提交敏感文件
+`git push --force` / `git reset --hard` / `git checkout -- .` / 未授权合并 PR / 非 rebase 策略（squash 或 merge commit）/ 提交敏感文件
