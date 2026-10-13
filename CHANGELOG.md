@@ -1,5 +1,19 @@
 # Changelog
 
+## [14.2.0](https://github.com/0xBB2B/bb-spec/compare/v14.1.0...v14.2.0) (2026-10-13)
+
+
+### Features
+
+* **workflow:** git-push 改为只用 rebase 合并，每个 commit 的 Requirement 原样进主分支 ([1829655](https://github.com/0xBB2B/bb-spec/commit/1829655a9002cba688b996a6f3a1620e186fb895))
+* **workflow:** pre-review 逐条检查 PRD 是否已实现，改已合并功能的分支按 commit 正文核对 ([4f1193f](https://github.com/0xBB2B/bb-spec/commit/4f1193f057bbbba0318e4723b4681f892ba5a2c5))
+
+
+### Bug Fixes
+
+* **git-push:** 合并设置提醒补上 GitHub 规则集，合并方式被拒时知道去查哪里 ([4586e38](https://github.com/0xBB2B/bb-spec/commit/4586e38bfc99c869fefd99ab669549ccaac5823c))
+* **prd:** 删除 /prd-migrate 遗留的「按短哈希记录 commit」规矩 ([3c7266d](https://github.com/0xBB2B/bb-spec/commit/3c7266dd87f4be69cd386539371ddaf91756c24a))
+
 ## [14.1.0](https://github.com/0xBB2B/bb-spec/compare/v14.0.0...v14.1.0) (2026-10-13)
 
 
