@@ -134,7 +134,7 @@
 
 - **`/git-push`** — 使用者觸發的推送 + PR 流程(單 / 多儲存庫)。
   - 存在 AGENTS.md、本分支 PRD 或本分支 commit 指向已合併 PRD 時先跑**分支規範自查(pre-review)**:subagent 比對專案約束、PRD 與 commit 正文的改動說明 vs 分支 diff,違規循環修復
-  - PR 描述帶 `Requirement:` 標記;squash 合併需設為「PR 標題和描述」或「PR 標題和 commit 詳情」,否則標記會遺失
+  - PR 描述帶 `Requirement:` 標記;倉庫需只允許 rebase 合併(GitHub 只勾「Allow rebase merging」;GitLab 選「Fast-forward merge」並把 squash 設為「Do not allow」),每個 commit 連同自己的 `Requirement:` 行原樣進入主分支
   - 起草 **6 段 PR 描述**(背景 / 需求 / 方案 / 結果 / 測試 / 規範,< 50 行)直接用作 PR body
 
 - **`/doc-update`** — 文件與程式碼**一致性體檢**。
