@@ -99,7 +99,7 @@ git worktree list --porcelain
 
 ### 步骤 7：本地 commit
 
-先 `git branch --show-current` 确认分支（**在 main 上则跳过自动 commit**，提示按 git-workflow 先建分支）；只提交本次涉及文件（主题目录内的 plan 文档 + 主题 INDEX + PROGRESS）；message 遵循仓库历史风格（先 `git log --oneline -10`），不硬编码类型前缀，带 `Requirement: <本次 PRD 目录名>`（`Requirement:` 写在 commit 说明最后一段，与 `Co-Authored-By:` 等尾注同段、中间不空行，否则 git 认不出）；多仓库时 plan 提交在文档仓库；**仅本地不自动 push**。
+先 `git branch --show-current` 确认分支（**在 main 上则跳过自动 commit**，提示按 git-workflow 先建分支）；只提交本次涉及文件（主题目录内的 plan 文档 + 主题 INDEX + PROGRESS）；message 遵循仓库历史风格（先 `git log --oneline -10`），不硬编码类型前缀，带 `Requirement: <本次 PRD 目录名>`（单独一行写在 commit 说明末尾）；多仓库时 plan 提交在文档仓库；**仅本地不自动 push**。
 
 ### 步骤 8：简报 + 自动执行
 
