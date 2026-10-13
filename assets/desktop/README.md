@@ -8,5 +8,5 @@ README 中「在 Claude Code 桌面版安装」一节引用了以下 6 张截图
 | `02-add-marketplace.png` | Plugins 面板右上角 Add → Add marketplace |
 | `03-from-repository.png` | 弹窗选 "Add from a repository" |
 | `04-sync-url.png` | 填入 `https://github.com/0xBB2B/bb-spec` 后点 Sync |
-| `05-enable-plugins.png` | Directory 中点击核心三件套(core / workflow / product)的齿轮启用 |
-| `06-verify-prd.png` | 输入 `/prd`(或 `/spec`)看到命令出现即安装成功 |
+| `05-enable-plugins.png` | Directory 中点击核心两件套(core / workflow)的齿轮启用 |
+| `06-verify-prd.png` | 输入 `/prd` 看到命令出现即安装成功 |

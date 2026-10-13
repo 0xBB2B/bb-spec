@@ -1,35 +1,36 @@
 ---
 name: revise
-description: 产出修订（诊断→定向修正→回归验证）——对 spec→plan→exec 偏差做根因归类：spec-defect / impl-defect / requirement-change；先诊断再修正、改代码必先 Red 测试、最小影响只改必须改的层；已完成 plan 是历史审计快照禁止回改；启动先 worktree 感知定位修复现场（主仓库停在 main 时自动定位到进行中的 worktree）。触发：/revise、有 bug、结果不对、和预期不符、产出需要优化、review 发现违规需修复。跳过：纯新增需求（→/spec→/plan）、还没有 spec/plan/代码可对照。
+description: 产出修订（诊断→定向修正→回归验证）——对 PRD→plan→exec 偏差做根因归类：prd-defect / impl-defect / requirement-change；先读代码确认现状、经 git 标记查回相关 PRD 再归因；改代码必先 Red 测试、最小影响只改必须改的层；本分支 PRD 可改、已合并 PRD 不改，修订原因写进 commit 正文；完成后自动 /doc-update 收尾模式；启动先 worktree 感知定位修复现场（主仓库停在 main 时自动定位到进行中的 worktree）。触发：/revise、有 bug、结果不对、和预期不符、产出需要优化、review 发现违规需修复。跳过：纯新增需求（→/prd）、还没有 PRD/代码可对照。
 argument-hint: <问题或优化诉求描述>
 ---
 
 # 产出修订（Revise）：诊断 → 定向修正 → 回归验证
 
-对 spec→plan→exec 流水线产出与预期的偏差做**根因归类 → 定向修正 → 回归验证**，覆盖修 bug、产出优化、需求变更三类场景。所有 review 发现问题需修正时，统一走此流程。
+对 PRD→plan→exec 流水线产出与预期的偏差做**根因归类 → 定向修正 → 回归验证**，覆盖修 bug、产出优化、需求变更三类场景。所有 review 发现问题需修正时，统一走此流程。
 
-> 仅处理"对既有产出的修正"。与对错无关的**纯新增需求**走 `/spec` → `/plan`，不进本流程。
+> 仅处理"对既有产出的修正"。与对错无关的**纯新增需求**走 `/prd`，不进本流程。
 
 ## 核心原则（兼硬约束）
 
-1. **先诊断再修正**：禁止跳过归因直接改代码；诊断结果必须向用户通报（不阻断——通报后直接进入步骤 3），仅当代码/spec 存在方向分歧、需附「冲突分析简报」时停下等用户裁决方向
-2. **三类归因**：每个问题必须归入 spec-defect / impl-defect / requirement-change 之一
-3. **TDD 修正**：涉及代码修改时必须先有失败测试（Red）再改实现（Green），测试须能暴露 bug
-4. **分层修复起点**：spec-defect 必先改 spec 再改代码（禁只改代码不改 spec）；requirement-change 必先用户确认新需求再动手
-5. **修正闭环**：修正后必须验证——全量测试通过 + spec 合规 + 索引同步
-6. **最小影响**：只改必须改的层，不借修正之名扩展功能或重构（额外需求走 `/spec` → `/plan`）
-7. **已完成 plan 禁止回改**：PROGRESS.md 全部完成的 plan 是带日期的历史审计快照，回改即篡改记录（目录日期与内容脱节、"完成的是哪个版本"不可追溯）；仅进行中（PROGRESS.md 未全完成）的 plan 允许原地修正以保证断点续接。修复本身由本流程直接驱动，git commit 即修订记录
-8. **三 Agent 串行强制派发**：涉及代码修改时必须按 Test → Impl → Review 顺序派 `bb-spec-workflow:test-engineer` / `bb-spec-workflow:impl-engineer` / `bb-spec-workflow:spec-reviewer` 三个 subagent，**禁止主 agent 自己写测试、写实现、做 spec 合规检查**；唯一例外是「轻量修复判断」（见步骤 3）通过且用户同意后允许主 agent 直接 TDD 修复
-9. **Agent 隔离同 exec**：Test 不看实现，Impl 不看 spec，Review 只读不写
-10. **输出中文**
+1. **先读代码再诊断**：现状以代码为准；诊断前必须读出问题相关的实现与测试，给出 `文件:行号`，禁止凭 PRD 或函数名推断现状
+2. **先诊断再修正**：禁止跳过归因直接改代码；诊断结果必须向用户通报（不阻断——通报后直接进入步骤 3），仅当期望行为本身有分歧、需附「冲突分析简报」时停下等用户裁决
+3. **三类归因**：每个问题必须归入 prd-defect / impl-defect / requirement-change 之一
+4. **TDD 修正**：涉及代码修改时必须先有失败测试（Red）再改实现（Green），测试须能暴露 bug
+5. **PRD 改不改看是否合并**：本分支新增的 PRD 可改（判定：`git -C <文档仓库> cat-file -e <基线分支>:<PRD 根>/<目录>/OVERVIEW.md` 失败；单仓库时文档仓库就是当前仓库、`<PRD 根>` 为 `${DOCS_DIR}/prd`，多仓库工作区时文档仓库是 `${DOCS_DIR}` 所在的独立仓库、`<PRD 根>` 相对它的根）；已合并的 PRD 冻结不改——此时期望行为以用户确认为准，修订原因写进 commit 正文，`git log -L` 会把它和代码一起找出来
+6. **修正闭环**：修正后必须验证——全量测试通过 + 期望行为合规 + 文档同步
+7. **最小影响**：只改必须改的层，不借修正之名扩展功能或重构（额外需求走 `/prd`）
+8. **plan 只在执行期间存在**：`/exec` 完成后会删除整个 plan 主题目录，`${DOCS_DIR}/plan/` 下 `PROGRESS.md` 含非 `done` 行的才是进行中的 plan，允许原地修正以保证断点续接；找不到对应 plan 说明已完成，修复由本流程直接驱动、不新建 plan
+9. **三 Agent 串行强制派发**：涉及代码修改时必须按 Test → Impl → Review 顺序派 `bb-spec-workflow:test-engineer` / `bb-spec-workflow:impl-engineer` / `bb-spec-workflow:prd-reviewer` 三个 subagent，**禁止主 agent 自己写测试、写实现、做合规检查**；唯一例外是「轻量修复判断」（见步骤 3）通过且用户同意后允许主 agent 直接 TDD 修复
+10. **Agent 隔离同 exec**：Test 不看实现，Impl 不看 PRD，Review 只读不写
+11. **输出中文**
 
 ## 三类归因
 
-| 类型 | 含义 | 根因在哪层 | 修复起点 |
-|---|---|---|---|
-| **spec-defect** | spec/plan 没有正确描述预期行为 | 定义层 | 改 spec → 级联 plan → TDD 重新实现 |
-| **impl-defect** | spec 正确，实现不符合 | 实现层 | 补测试(Red) → 改实现(Green) → 验证 |
-| **requirement-change** | 用户实际需要与现有 spec 不同 | 需求层 | 确认新需求 → 改 spec → 级联 |
+| 类型 | 含义 | 修复起点 |
+|---|---|---|
+| **prd-defect** | PRD 或 plan 没有正确描述用户要的行为（写错、写漏、互相矛盾） | 本分支 PRD → 改 PRD → 级联 plan → TDD；已合并 PRD → 以用户确认的正确行为 TDD 修复，原因写进 commit 正文 |
+| **impl-defect** | 期望行为描述正确，实现不符合 | 补测试(Red) → 改实现(Green) → 验证 |
+| **requirement-change** | 用户现在要的行为与当初的需求不同 | 小改：确认新行为后 TDD 修复，原因写进 commit 正文（本分支 PRD 同步改）；大改：退出转 `/prd` |
 
 ---
 
@@ -50,39 +51,37 @@ argument-hint: <问题或优化诉求描述>
 - **在主仓库且 HEAD 为 main/master**，且问题指向某棵 worktree 上进行中的工作（其 plan PROGRESS.md 未全完成，或分支领先 main）→ 后续读资产、修代码、跑测试、commit **全部定位到该 worktree 内执行**（`cd` 进去或全程用其绝对路径）；多棵候选 → AskUserQuestion 让用户选
 - **问题针对 main 上已合入的代码** → 属新修复任务，按 git-workflow 先确定开分支方式再动手，**禁止直接在 main 工作区改代码**
 
-现场确定后，在**该目录**下 `cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`，后续所有路径基于此值。读 `${DOCS_DIR}/spec/INDEX.md` 与 `${DOCS_DIR}/plan/INDEX.md`，据问题描述定位四层资产并全部读取：
+现场确定后，在**该目录**下 `cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`。读项目根 `AGENTS.md`，按下表定位四层资产并全部读取：
 
 | 资产 | 定位方式 | 目的 |
 |---|---|---|
-| spec 文件 | INDEX.md + 关键词匹配 | 确认"期望行为"的定义 |
-| plan 文件 | INDEX.md + spec 溯源 | 确认"怎么做"的设计 |
-| 实现代码 | plan 中的文件路径 / codegraph | 确认"实际做了什么" |
+| 实现代码 | 按问题描述的功能名搜 `${DOCS_DIR}/prd/*/OVERVIEW.md` 的 `features:` → 在各代码仓库里 `git log --grep "Requirement: <目录名>" --name-only`；或 codegraph / grep | 确认"实际做了什么"（附 `文件:行号`） |
 | 测试文件 | 测试目录 + 命名惯例 | 确认"验了什么" |
+| 相关 PRD | 在函数所在仓库里对出问题的函数跑 `git log -L :<函数>:<文件> -s --format='%h %s \| %(trailers:key=Requirement,valueonly)'`（按函数名 no match 时改用行号范围），读最新 `Requirement` 指向的 PRD 与 commit 正文；无标记的 commit 用短哈希 grep `${DOCS_DIR}/prd/` 找迁移来的 PRD（多仓库时写作 `<仓库>@<短哈希>`，按短哈希搜同样命中） | 确认"当初要的行为与为什么" |
+| plan 文件 | 进行中主题的 INDEX.md（无进行中 plan 则跳过） | 确认"怎么做"的设计 |
 
-建立完整链路：**spec 说什么 → plan 怎么做 → 代码做了什么 → 测试验了什么**。
+建立完整链路：**PRD 要什么 → plan 怎么做 → 代码做了什么 → 测试验了什么**。
 
-**流程归属判定**（不论单 repo 还是多 repo，进步骤 2 前必做）：确认本次问题真属于 revise（"对既有产出做已知偏差的定向修正"）。**满足以下任一条件应退出 revise，转 `/spec` → `/plan` → `/exec`**：
+**流程归属判定**（进步骤 2 前必做）：**满足以下任一条件应退出 revise，转 `/prd`**：
 
 - 需要先拆解、协商或定义新协议才能落地（如"做快 auth 流程"、"打通 X 服务可观测性"、跨服务通信契约调整）
-- 单 repo 但变更面横跨多个 spec/plan 域且涉及新设计决策
+- 新增或删除子需求、改目标或非目标，或变更面横跨多个功能且涉及新设计决策
 - 跨 ≥ 2 个 repo 且**不止是被动跟随的机械级联**（proto 字段改名后 consumer 跟着改属机械级联，反之属协调式）
 
-判定退出时必须停下，提示用户改走 `/spec`，禁继续 revise 流程。
+判定退出时必须停下，提示用户改走 `/prd`，禁继续 revise 流程。
 
 ### 步骤 2：诊断归因
 
-按决策树逐层判定：
-
 ```
-1. spec 是否正确描述了预期行为？
-   ├─ 否 → spec 规则本身有错误/遗漏/歧义？
-   │   ├─ 是（spec 翻译需求时出错）→ spec-defect
-   │   └─ 否（用户的实际需求变了）→ requirement-change
+1. 相关 PRD 是否正确描述了用户要的行为？
+   ├─ 否 → PRD 当初就写错 / 写漏 / 互相矛盾？
+   │   ├─ 是 → prd-defect
+   │   └─ 否（用户现在要的变了）→ requirement-change
    └─ 是 →
-2. plan 是否正确翻译了 spec？
-   ├─ 否（plan 误读 spec）→ spec-defect
+2. plan 是否正确翻译了 PRD？（plan 已删除则跳过）
+   ├─ 否 → prd-defect
    └─ 是 →
-3. 实现是否符合 plan + spec？
+3. 实现是否符合 PRD？
    ├─ 否 → impl-defect
    └─ 是 →
 4. 测试是否覆盖了出问题的场景？
@@ -90,29 +89,29 @@ argument-hint: <问题或优化诉求描述>
    └─ 是（测试断言有误）→ impl-defect
 ```
 
-**向用户通报诊断结果**（诊断本身不阻断——展示后直接进入步骤 3；仅当代码/spec 存在方向分歧、附下方「冲突分析简报」时才停下等用户裁决方向。用户对归因有异议可随时打断，无异议即默认继续）：
+**向用户通报诊断结果**（不阻断——展示后直接进入步骤 3；仅当附「冲突分析简报」时停下等用户裁决方向）：
 
 ```
 ## 诊断结果
-- 归因：<spec-defect / impl-defect / requirement-change>
+- 归因：<prd-defect / impl-defect / requirement-change>
 - 证据：
-  - spec 说：<原文>
-  - plan 说：<原文>
-  - 代码做了：<实际行为>
+  - PRD 要求：<原文 + 目录名，标明本分支 / 已合并>
+  - plan 说：<原文 / 已删除>
+  - 代码做了：<实际行为 + 文件:行号>
   - 测试验了：<覆盖情况>
 - 结论：<一句话说明哪层出了什么问题>
 - 影响范围：<受影响的文件/功能列表>
 ```
 
-**冲突分析简报**（代码行为与 spec 定义存在可争议分歧时，附在诊断后辅助用户判断方向；明确的实现 bug 无需此简报）：
+**冲突分析简报**（代码行为与 PRD 存在可争议分歧时附上；明确的实现 bug 无需此简报）：
 
 ```
 ## 冲突分析：<一句话描述>
-| | 代码现状 | Spec 定义 |
+| | 代码现状 | PRD 要求 |
 |---|---|---|
-| 行为 | <代码实际做了什么> | <spec 要求做什么> |
-- 保留代码（改 Spec）：<理由——如代码已上线验证、覆盖了 spec 遗漏的边界、性能更优>
-- 遵循 Spec（改代码）：<理由——如更贴合业务意图、更安全、当前代码是历史妥协>
+| 行为 | <代码实际做了什么> | <PRD 要求做什么> |
+- 保留代码：<理由——如已上线验证、覆盖了 PRD 遗漏的边界>
+- 遵循 PRD：<理由——如更贴合业务意图、更安全、当前代码是历史妥协>
 - **建议**：<推荐方向> — <一句话理由>
 - **代价**：<选该方向的改动范围与风险>
 确认修复方向后开始修复？
@@ -120,58 +119,55 @@ argument-hint: <问题或优化诉求描述>
 
 ### 步骤 3：按类型修复
 
-> **强制派发**：所有涉及代码修改的修复路径（除下方「轻量修复判断」通过外）**必须**通过 `Agent` 工具派 `bb-spec-workflow:test-engineer` → `bb-spec-workflow:impl-engineer` → `bb-spec-workflow:spec-reviewer` 三个 subagent 串行完成，**禁止主 agent 直接动手写测试或实现代码**。主 agent 仅做：拆分输入、按隔离矩阵传 prompt、验证每步产物、衔接下一步。
+> **强制派发**：所有涉及代码修改的修复路径（除下方「轻量修复判断」通过外）**必须**通过 `Agent` 工具派 `bb-spec-workflow:test-engineer` → `bb-spec-workflow:impl-engineer` → `bb-spec-workflow:prd-reviewer` 三个 subagent 串行完成，**禁止主 agent 直接动手写测试或实现代码**。主 agent 仅做：拆分输入、按隔离矩阵传 prompt、验证每步产物、衔接下一步。
 
-> **多 repo 派发节律**（修复涉及 ≥ 2 个 repo 时适用）：以「单 repo 的 spec/code/test 链路」为最小派发单元，按 repo 顺序逐个走完整 Test→Impl→Review 循环，**禁止把多 repo 路径塞进一个 subagent**——测试惯例、spec 目录、项目约束在 repo 维度才一致，跨 repo 混传会破坏隔离矩阵。每个 repo 完成后再进入下一个，全部完成后才进入步骤 4 回归验证。
+> **多 repo 派发节律**（修复涉及 ≥ 2 个 repo 时适用）：以「单 repo 的 PRD/code/test 链路」为最小派发单元，按 repo 顺序逐个走完整 Test→Impl→Review 循环，**禁止把多 repo 路径塞进一个 subagent**。全部完成后才进入步骤 4 回归验证。
 
-**轻量修复判断**：进入修复前评估改动规模，**同时满足全部条件**时可向用户提议跳过 3-Agent 隔离直接修——归因为 impl-defect（spec/plan 无需变动）+ 改动 ≤ 1 个文件 ≤ 10 行 + 修复逻辑显而易见（拼写错误、off-by-one、条件取反）。
+**轻量修复判断**：**同时满足全部条件**时可向用户提议跳过 3-Agent 隔离直接修——归因为 impl-defect + 改动 ≤ 1 个文件 ≤ 10 行 + 修复逻辑显而易见（拼写错误、off-by-one、条件取反）。
 
 提议话术：`"这个修复只改 <文件>，约 <N> 行，是否跳过 3-Agent 隔离直接修？"`
-- 同意 → 主 agent 直接 TDD 修复（仍须先补失败测试再改实现），跳过 3a/3b/3c 的 Agent 派发；**修代码前必须调用 `Skill code-constraints` 加载代码纪律约束并严格遵守**（注释 WHY 不写 WHAT、禁 spec 溯源注释、禁未要求的功能/抽象/防御、外科手术式改动、反历史包袱）
+- 同意 → 主 agent 直接 TDD 修复（仍须先补失败测试再改实现），跳过 Agent 派发；**修代码前必须调用 `Skill code-constraints` 加载代码纪律约束并严格遵守**
 - 拒绝或未回应 → 走标准流程
 
 不满足上述条件时，**禁止提议跳过，直接走标准流程**。
 
-#### 3a. spec-defect — 定义层出错，从 spec 起向下级联
+下文「期望行为」指：本分支 PRD 的约束与验收；PRD 已合并时，指用户在步骤 2 确认的正确行为。
 
-1. **改 spec**：编辑 spec 文件修正规则（遵守 spec skill 变更判定：修改=编辑原文件，废弃=删文件 + 移除索引条目）
-2. **检查 plan 影响**（先看 plan 状态再动手）：
-   - **进行中**（PROGRESS.md 未全完成）→ 原地修正对应 plan 的业务规则/验证方式，保证断点续接正确
-   - **已完成**（PROGRESS.md 全部完成）→ **不改 plan**，spec 层修正照常、修复由本流程三 Agent 直接驱动；若偏差大到需要一份新实施计划，按步骤 1 流程归属判定退出转 `/spec` → `/plan`
-   - 无影响则跳过
+#### 3a. prd-defect
+
+1. **本分支 PRD** → 编辑 PRD 修正约束 / 验收 / 用例，保持约束与验收一一对应；**已合并 PRD** → 不改，把用户确认的正确行为写成期望行为
+2. **检查 plan 影响**：有进行中的 plan 用到这条约束 → 原地修正其业务规则 / 验证方式，`done` 的步骤改回 `pending`；没有 → 跳过
 3. **TDD 修复实现（强制三 Agent 派发）**：
-   - 派 `bb-spec-workflow:test-engineer`，prompt 传「修正后的 spec 业务规则 + 验证预期 + 项目测试惯例」→ 主 agent 验证 Red
+   - 派 `bb-spec-workflow:test-engineer`，prompt 传「期望行为 + 验证预期 + 项目测试惯例」→ 主 agent 验证 Red
    - 派 `bb-spec-workflow:impl-engineer`，prompt 传「函数清单 + 文件路径 + 测试文件路径 + 项目约束」→ 主 agent 验证 Green
-   - 派 `bb-spec-workflow:spec-reviewer`，prompt 传「业务规则 + 验证预期 + 所有变更文件路径」→ 主 agent 处理 review 结果
-4. **同步索引**：spec/plan 的 INDEX.md 如有变动则更新
+   - 派 `bb-spec-workflow:prd-reviewer`，prompt 传「期望行为 + 验证预期 + AGENTS.md 项目级约束（如有）+ 所有变更文件路径」→ 主 agent 处理 review 结果
 
-#### 3b. impl-defect — spec 正确，只修实现层（强制三 Agent 派发）
+#### 3b. impl-defect（强制三 Agent 派发）
 
-1. 派 `bb-spec-workflow:test-engineer`，prompt 传「被违反的 spec 规则 + 验证预期 + 项目测试惯例」→ 主 agent 验证测试能暴露 bug（Red）
+1. 派 `bb-spec-workflow:test-engineer`，prompt 传「被违反的期望行为 + 验证预期 + 项目测试惯例」→ 主 agent 验证测试能暴露 bug（Red）
 2. 派 `bb-spec-workflow:impl-engineer`，prompt 传「函数清单 + 文件路径 + 测试文件 + 项目约束」→ 主 agent 验证 Green
-3. 派 `bb-spec-workflow:spec-reviewer`，prompt 传「spec 规则 + 验证预期 + 所有变更文件路径」→ 主 agent 处理 review 结果
+3. 派 `bb-spec-workflow:prd-reviewer`，prompt 传「期望行为 + 验证预期 + AGENTS.md 项目级约束（如有）+ 所有变更文件路径」→ 主 agent 处理 review 结果
 
-#### 3c. requirement-change — 需求层变化，先确认再级联
+#### 3c. requirement-change
 
-1. **确认新需求**：与用户对话明确新预期行为（一次 2-3 个关键问题）
-2. **更新 spec**：走 spec 变更流程（编辑/新增/删除 spec 文件 + 同步 INDEX.md）
-3. **评估级联影响**：检查哪些 plan 和实现受影响，向用户展示范围
-4. **级联修复**：按 3a 步骤 2-4 执行（改 plan → 三 Agent 派发 TDD 修实现 → Review 验证）
+1. **确认新行为**：与用户对话明确新的期望行为（一次 2-3 个关键问题）；超出流程归属判定的范围 → 退出转 `/prd`
+2. **本分支 PRD** → 同步改 PRD；**已合并 PRD** → 不改，新行为与改动原因写进 commit 正文
+3. **级联修复**：按 3a 步骤 2-3 执行
 
 ### 步骤 4：回归验证
 
 1. **全量测试**：运行项目全量测试，确认无回归
-2. **spec 合规**：检查修复是否引入新的 spec 违规；并对照 spec 复核修复后的行为——修复改变了 spec 描述的任一行为（如把「写失败中止」改成「写失败继续」）而 spec 未同步，说明归因漏判，回到 3a 补改 spec 后才允许 commit，禁止只改代码让 spec 与实现分叉
-3. **索引同步**：确认 spec/plan INDEX.md 与文件实际状态一致
-4. **本地 commit**：上述通过后做一次**本地** commit——先 `git branch --show-current` 确认分支（**在 main 上则跳过**并提示按 git-workflow 先建分支），只提交本次涉及文件（spec/plan/实现/测试），message 遵循仓库历史风格（先 `git log --oneline -10`）、不硬编码类型前缀，**仅本地、不自动 push**
+2. **期望行为合规**：检查修复是否引入新的违规；修复改变了本分支 PRD 描述的任一行为而 PRD 未同步，说明归因漏判，回到 3a 补改 PRD 后才允许 commit
+3. **文档同步**：调用 `Skill bb-spec-workflow:doc-update`，参数 `--tail`，让本分支 PRD 与 README、AGENTS.md 等文档追平代码；已合并的 PRD 不碰
+4. **本地 commit**：先 `git branch --show-current` 确认分支（**在 main 上则跳过**并提示按 git-workflow 先建分支），只提交本次涉及文件（PRD / plan / 实现 / 测试 + doc-update 收尾改动；多仓库时各仓库分别提交，每个 commit 都带标记），message 遵循仓库历史风格（先 `git log --oneline -10`）、不硬编码类型前缀；**正文写清修订原因（改前什么行为、改后什么行为、为什么改）**，最后一段尾注带 `Requirement: <相关 PRD 目录名>`（与 `Co-Authored-By:` 等同段、不空行）（修已合并功能写原需求目录；找不到相关 PRD 写 `none`）；**仅本地、不自动 push**
 
 ### 步骤 5：完成简报
 
 ```
 ## 修订完成简报
-- 归因：<spec-defect / impl-defect / requirement-change>
+- 归因：<prd-defect / impl-defect / requirement-change>
 - 根因：<一句话>
-- 修改文件：spec / plan / 实现 / 测试（各列路径，无则省略）
+- 修改文件：PRD / plan / 实现 / 测试（各列路径，无则省略）
 - 测试结果：✅ 全部通过 / ❌ 仍有失败（列出）
 - 回归检查：✅ 无回归 / ⚠️ <说明>
 - 待解决：<残留问题列表，无则"无">
@@ -186,6 +182,6 @@ argument-hint: <问题或优化诉求描述>
 
 | Agent | 可见 | 不可见 |
 |---|---|---|
-| Test Agent | 修正后的 spec 规则 + 验证预期 + 项目测试惯例 | 函数清单、实现路径、现有实现代码 |
-| Impl Agent | 函数清单 + 文件路径 + 成品定义（如有）+ 测试文件 + 项目约束 | spec 原文 |
-| Review Agent | spec 规则 + 验证预期 + 所有变更文件 | 不修改任何文件 |
+| Test Agent | 期望行为 + 验证预期 + 项目测试惯例 | 函数清单、实现路径、现有实现代码 |
+| Impl Agent | 函数清单 + 文件路径 + 成品定义（如有）+ 测试文件 + 项目约束 | PRD 原文 |
+| Review Agent | 期望行为 + 验证预期 + AGENTS.md 项目级约束（如有）+ 所有变更文件 | 不修改任何文件 |

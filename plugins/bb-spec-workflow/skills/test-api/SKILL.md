@@ -58,7 +58,7 @@ disable-model-invocation: true
 
 API e2e 用例的生成与覆盖完整性都由本 skill 独占负责。
 
-**覆盖对齐**（仅全量模式执行；`/test-api <scope>` 定向跑某类时跳过本环节）：读 `${DOCS_DIR}/spec/`、`${DOCS_DIR}/plan/`、PRD（都没有则项目其他文档），把其中的 API 行为验收点 + 时间敏感规则归纳为「应有场景集」，与 `${DOCS_DIR}/test/api/` 现有用例比对，算缺口：
+**覆盖对齐**（仅全量模式执行；`/test-api <scope>` 定向跑某类时跳过本环节）：读本分支新增 PRD（`git diff <基线分支>...HEAD --diff-filter=A --name-only -- '${DOCS_DIR}/prd/'`）的验收与验证路径（没有则读项目其他文档）；**不读已合并的历史 PRD**——其中的用例可能已被后续需求改掉，混进来会生成过时用例；把其中的 API 行为验收点 + 时间敏感规则归纳为「应有场景集」，与 `${DOCS_DIR}/test/api/` 现有用例（已有用例目录即历史需求的回归集）比对，算缺口：
 
 - **现有用例为空** → 缺口即全部，按 `references/api-testcase-format.md` 生成全部用例。
 - **有缺口** → `AskUserQuestion` 展示清单，二选一：①补全后再跑 ②先跑现有、缺口记入报告（步骤 5 显式列出，**禁静默漏测**）。

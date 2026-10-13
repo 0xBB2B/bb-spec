@@ -5,7 +5,7 @@
 <h1 align="center">📐 BB-Spec</h1>
 
 <p align="center">
-  <strong>一條 spec 驅動的 Claude Code 流水線,把模糊需求一路帶到可交付的程式碼。</strong>
+  <strong>一條 PRD 驅動的 Claude Code 流水線,把模糊需求一路帶到可交付的程式碼。</strong>
 </p>
 
 <p align="center">
@@ -26,7 +26,7 @@
 
 <p align="center">
   <a href="#-30-秒上手">快速開始</a> ·
-  <a href="#-核心流水線-spec--ship">流水線</a> ·
+  <a href="#-核心流水線-prd--ship">流水線</a> ·
   <a href="#-階段一覽">階段一覽</a> ·
   <a href="#-配套約束-skills">約束 Skills</a> ·
   <a href="#-claude-code-安裝--install">安裝</a> ·
@@ -48,35 +48,33 @@
 
 | 命令 | 做什麼 | 何時用 |
 |---|---|---|
-| `/spec` | 把需求拆成一規則一文件 | 新需求開工 |
-| `/plan` | spec → 函式級實施計畫 | spec 就緒 |
-| `/exec` | 三 Agent 隔離跑 Test→Impl→Review | plan 就緒 |
+| `/prd` | 質疑→釐清→拆解,核可一次後落盤 PRD + AGENTS.md,並自動跑 plan → exec | 新需求開工 |
+| `/plan` | PRD → 函式級實施計畫,做完自動跑 exec | 由 `/prd` 自動呼叫 |
+| `/exec` | 三 Agent 隔離跑 Test→Impl→Review,收尾自動 doc-update | 由 `/plan` 自動呼叫;中斷後手動續接 |
 | `/review` | 多 finder 並行 + 對抗驗證 | 提 PR 前 |
 | `/git-push` | pre-review 自查 + 推送 + 開 PR | 準備發版 |
 
-三條支線隨時可介入:`/git-clone`(拉遠端專案到本地 + 落 `.bb-spec.yaml` 一次性 onboarding)、`/revise`(任何偏差按根因回到正確階段)、`/doc-update`(全儲存庫 spec/文件/程式碼一致性體檢)。
-
-可選上游:`/prd`(PM / 需求方頭腦風暴 PRD,由 bb-spec-product 單獨提供)。
+四條支線隨時可介入:`/git-clone`(拉遠端專案到本地 + 落 `.bb-spec.yaml` 一次性 onboarding)、`/revise`(任何偏差按根因回到正確階段)、`/doc-update`(文件與程式碼一致性體檢;`/exec` 與 `/revise` 收尾時會自動跑一遍本次改動的範圍)、`/prd-migrate`(用過 spec 的舊專案一次性遷移)。
 
 ---
 
-## 🔁 核心流水線 `spec → ship`
+## 🔁 核心流水線 `prd → ship`
 
 ```
  (可選) /git-clone ──► 拉遠端 + 落 .bb-spec.yaml
    │
- (可選) /prd ──► PRD 文件
-   │
- /spec ──► /plan ──► /exec ──► /review ──► /git-push
- 做什麼     怎麼做    Red→Green→Review  並發+對抗  pre-review+開 PR
+ /prd ══► /plan ══► /exec ══► /doc-update ──► /review ──► /git-push
+ 做什麼    怎麼做    Red→Green  文件追平程式碼   並發+對抗    pre-review+開 PR
+ (唯一一次核可)        →Review
+ ══► 自動銜接,不再詢問(僅新增第三方相依套件或需設計裁決時停下)
                                                           │
         ┌─────────────────────────────────────────────────┘
         │
         ▼ /revise(隨時介入,按根因路由)
-          spec 缺陷 → /spec   ·   實作偏離 → /exec   ·   review 問題 → 定向修復
+          PRD 缺陷 → 改本分支 PRD   ·   實作偏離 → TDD 修復   ·   大的需求變更 → /prd
 
  (可選) /test-webview · /test-api — 前端 / 後端 e2e,掛在 /exec 與 /review 之間
- /doc-update(定期 / 按需)— 掃全儲存庫漂移 → 預設改 spec/文件,程式碼明顯不合理才停下問 → 掛 /revise
+ /doc-update(定期 / 按需)— 掃文件與程式碼的漂移 → 預設改文件,程式碼違反專案約束才停下問 → 掛 /revise
 ```
 
 **為什麼這條流水線靠得住**——每次交接物都是**磁碟上的檔案**、不是會話裡的暫時記憶,這是它能斷點續、能換 AI 接手、能逐級追溯的根本。
@@ -88,24 +86,30 @@
   - **多 repo 工作區**建立統一父目錄 + 各成員儲存庫獨立 clone(復原建構工具期待的相對佈局),禁巢狀、禁覆寫
   - 職責嚴格收斂:**只**拿程式碼 + 寫 `base_dir`,不讀程式碼、不裝相依套件
 
-- **`/spec`** — 透過對話做需求拆解,回答**「做什麼」**。
-  - 一檔一規則、≤100 行、只說一件事 + 一個範例,互不重疊
-  - 輕量 `INDEX.md` 統領,讀者先掃索引再按需載入
+- **`/prd`** — 新需求的唯一入口,回答**「做什麼、為什麼」**。
+  - 質疑前置(允許結論是「不值得做」)→ 遞進釐清 → 拆解,全程在 **plan 模式唯讀對齊**;使用者**只核可這一次**,之後自動跑完 `/plan` → `/exec` → `/doc-update`
+  - 落盤 **PRD**(`docs/prd/<日期>.<主題>/`:背景、目標、非目標、使用者故事、可測的約束與驗收、決策紀錄)和 **AGENTS.md**(對整個專案生效的約束,如「禁止泛型」)
+  - PRD 在本分支內可改(實施中發現方案問題直接改它),合併後凍結;**程式碼是「現在做什麼」的唯一來源**,PRD 只回答「為什麼」
+  - 之後每個 commit 帶 `Requirement: <PRD 目錄名>` 標記:`git log -L :函式:檔案` 就能列出改過這個函式的需求,讀對應 PRD 的決策紀錄就知道當時為什麼這樣設計
+  - 支援多儲存庫工作區(如 `docs/` 與各服務是獨立儲存庫):PRD 與 AGENTS.md 放在文件儲存庫,每個儲存庫的 commit 都帶標記
 
-- **`/plan`** — spec → 自包含、**函式級**實施計畫,回答**「怎麼做」**。
-  - 每個檔案一獨立問題,詳細到函式名與職責;宣告式產物(DDL / API 契約 / 設定)**直接內聯最終成品**,exec 原樣落盤
-  - 呼叫即進入 **plan 模式唯讀對齊**,核可後才落盤;**新增第三方相依套件單獨成節**,核可即視為 version-policy 要求的使用者同意
+- **`/plan`** — PRD → 自包含、**函式級**實施計畫,回答**「怎麼做」**。
+  - 每檔案一獨立問題,詳細到函式名與職責;宣告式產物(DDL / API 契約 / 設定)**直接內聯最終成品**,exec 原樣落盤
+  - 由 `/prd` 自動呼叫,不再單獨核可;只有需要**新增第三方相依套件**時才停下請使用者同意,同意即視為 version-policy 要求的授權
+  - plan 只在執行期間存在,全部完成後由 `/exec` 刪除,避免和 PRD 重複
 
 - **`/exec`** — **三 Agent 隔離執行**,核心反作弊設計。
-  - *Test* Agent 只讀 spec 規則寫失敗測試(Red)
-  - *Impl* Agent **看不到 spec**,只看測試 + 函式清單寫實作(Green),無法「照著意圖作弊」;新增第三方函式庫受 plan 已核可相依清單約束
-  - *Review* Agent 對照 spec 檢查並過一遍強健性/安全視角,唯讀不寫
+  - *Test* Agent 只讀 PRD 約束寫失敗測試(Red)
+  - *Impl* Agent **看不到 PRD**,只看測試 + 函式清單寫實作(Green),無法「照著意圖作弊」;新增第三方函式庫受 plan 已核可相依清單約束
+  - *Review* Agent 對照 PRD 驗收與 AGENTS.md 檢查並過一遍強健性/安全視角,唯讀不寫
   - 每步進度寫 `PROGRESS.md`,token 耗盡也能**無損續接**
+  - 實施中發現方案有問題,停下讓你選:改程式碼 / 改本次 PRD / 暫停;小改就地改,大改回到 `/prd` 重新核可
+  - 全部完成後自動跑 `/doc-update` 收尾模式,讓本次 PRD 和 README 等文件追平實際交付
 
 - **`/test-webview`** — 前端 / 網頁專案的**互動驗收**。
   - Docker 整棧拉起(首次確認後記住,跑完 `down -v` 清理),瀏覽器 MCP 驅動真實瀏覽器
   - **每個用例派隔離串列 subagent**,幾百用例也不爆主上下文;全程串列(瀏覽器單一實例)
-  - 用例自動從 spec / plan / PRD 歸納生成;跑前**覆蓋對齊**,缺口不靜默漏測;失敗轉 `/revise`
+  - 用例自動從本分支 PRD 的驗收與驗證路徑歸納生成(不讀已合併的歷史 PRD);跑前**覆蓋對齊**,缺口不靜默漏測;失敗轉 `/revise`
   - 需瀏覽器 MCP(playwright / chrome-devtools)
 
 - **`/test-api`** — 後端**介面 e2e**。
@@ -123,21 +127,28 @@
   - 唯讀、絕不自動改程式碼;要求 Claude Code ≥ 2.1.154
 
 - **`/revise`** — 隨時介入的例外處理。
-  - 把偏差**歸因**為三類:*spec 缺陷*(→ `/spec`)、*實作偏離*(→ `/exec`)、*需求變更*
+  - 先讀程式碼確認現狀、經 `git log -L` 查回相關 PRD,再把偏差**歸因**為三類:*PRD 缺陷*、*實作偏離*、*需求變更*
+  - 本分支 PRD 可改;已合併 PRD 不改,修訂原因寫進 commit 正文
   - 所有需修復的 review 發現都匯入此處
+  - 修完自動跑 `/doc-update` 收尾模式
 
 - **`/git-push`** — 使用者觸發的推送 + PR 流程(單 / 多儲存庫)。
-  - 存在 spec `INDEX.md` 時先跑**分支規範自查(pre-review)**:subagent 比對 spec vs 分支 diff,違規循環修復
+  - 存在 AGENTS.md 或本分支 PRD 時先跑**分支規範自查(pre-review)**:subagent 比對專案約束與 PRD vs 分支 diff,違規循環修復
+  - PR 描述帶 `Requirement:` 標記;squash 合併需設為「PR 標題和描述」或「PR 標題和 commit 詳情」,否則標記會遺失
   - 起草 **6 段 PR 描述**(背景 / 需求 / 方案 / 結果 / 測試 / 規範,< 50 行)直接用作 PR body
 
-- **`/doc-update`** — 全儲存庫 spec / 文件 / 程式碼**一致性體檢**。
-  - 六類漂移定位:spec-stale / doc-stale / code-violation / spec-conflict / orphan-index / uncovered-rule
-  - **程式碼是事實、spec/文件追平程式碼**;程式碼明顯違背硬約束才停下問、掛回 `/revise` 走 TDD
-  - 與 `/revise`(單點)、`/review` 的 `review-design`(文件同步視角)(PR diff)劃清邊界
+- **`/doc-update`** — 文件與程式碼**一致性體檢**。
+  - 四類發現:doc-stale(根文件過期)/ prd-stale(本分支 PRD 與交付不符)/ code-violation(程式碼違反 AGENTS.md)/ agents-conflict(專案約束互相矛盾)
+  - **程式碼是事實、文件追平程式碼**;改程式碼一律先問、掛回 `/revise` 走 TDD;已合併的 PRD 任何模式都不碰
+  - **收尾模式**(`--tail`):`/exec`、`/revise` 結束時自動呼叫,只處理本分支改動涉及的範圍
+
+- **`/prd-migrate`** — 用過 spec 的舊專案**一次性遷移**。
+  - 原始 PRD 原樣移回 `prd/`,spec 按領域轉成 legacy PRD;用 `commits:` 記下相關 commit 雜湊,舊程式碼也能經 git 反查回 PRD;多儲存庫時按 plan 的檔案清單和時間窗關聯程式碼 commit,推斷出的關聯請你確認
+  - 只寫有出處的內容,每條設計原因標來源,查不到寫「未知」請你確認,**不讓 AI 編**;專案級約束移入 AGENTS.md
 
 **附帶產物**
 
-- **8 個編排 subagent**(被上述環節驅動):`test-engineer` / `impl-engineer` / `spec-reviewer` / `webview-test-runner` / `review-defect` / `review-design` / `review-codex` / `pre-reviewer`
+- **8 個編排 subagent**(被上述環節驅動):`test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `review-defect` / `review-design` / `review-codex` / `pre-reviewer`
 - **4 個被動 hook**(自動生效):攔截 npm/yarn、攔截 main commit、相依版本自檢、Stop 四項自檢
 
 ---
@@ -146,16 +157,10 @@
 
 向流水線灌入規則——只裝你需要的層。
 
-### bb-spec-product — 產品需求(流水線上游)
-
-- **`prd`** — PM / 需求方與 AI 頭腦風暴:質疑前置(允許否決)→ 發散 → 收斂,產出自包含 PRD——目標 / 非目標、帶優先級的使用者故事(每條 P0 掛具體用例與驗收標準)、留給工程師的開放問題;不依賴 git 儲存庫與程式碼上下文,`/spec` 直接消費
-
-> **PM 不用裝 Claude Code**:每次發版自動打包 [`bb-spec-prd-skill.zip`](https://github.com/0xBB2B/bb-spec/releases/latest/download/bb-spec-prd-skill.zip),下載後在 claude.ai 網頁版 / 桌面版的 **Settings → Customize → Skills** 上傳即可單獨使用(需付費方案並啟用程式碼執行),產出的 PRD 以可下載檔案交付給工程師。
-
 ### bb-spec-core — 通用紀律
 
 - **`tdd-workflow`** — Red-Green-Refactor 紀律,涵蓋增 / 改 / 刪三場景標準流程
-- **`version-policy`** — 官方函式庫 / 標準函式庫優先,新增第三方函式庫須經使用者明確同意(plan 核可的相依清單視為已同意);釘版本前先查相依套件官方最新版,禁憑訓練記憶
+- **`version-policy`** — 官方函式庫 / 標準函式庫優先,新增第三方函式庫須經使用者明確同意(`/plan` 階段使用者同意的相依清單視為已同意);釘版本前先查相依套件官方最新版,禁憑訓練記憶
 - **`git-workflow`** — 分支決策、階段性 commit、六段式 PR 描述、合併後清理
 
 ### bb-spec-backend — 後端技術框架約束
@@ -179,7 +184,7 @@
 
 ## 📦 Claude Code 安裝 / Install
 
-BB-Spec 拆成**五個可獨立安裝的子 plugin**——只裝你需要的約束層。
+BB-Spec 拆成**四個可獨立安裝的子 plugin**——只裝你需要的約束層。
 
 先加入一次 marketplace(在 Claude Code 裡執行):
 
@@ -192,12 +197,11 @@ BB-Spec 拆成**五個可獨立安裝的子 plugin**——只裝你需要的約�
 | 子 plugin | 裝了得到什麼 | 安裝命令 |
 |---|---|---|
 | **bb-spec-core** _(推薦基座)_ | TDD / 版本策略 / Git 紀律 + 3 個被動 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(核心功能)_ | spec → plan → exec → review → revise → git-push(+ 可選 test-webview / test-api e2e)、git-clone 一次性初始化、init 反向 spec、doc-update 全儲存庫一致性維護 + 11 個 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
-| **bb-spec-product** | /prd 需求頭腦風暴 → 含具體用例的 PRD 文件(PM / 需求方使用) | `/plugin install bb-spec-product@0xbb2b` |
+| **bb-spec-workflow** _(核心功能)_ | prd → plan → exec → doc-update → review → revise → git-push(+ 可選 test-webview / test-api e2e)、git-clone 一次性初始化、prd-migrate 舊專案遷移 + 8 個 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / 資料庫 / 認證 / 授權 / 可觀測性 / 服務治理 / 設定約束 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun 技術棧與工程約定(含 bun hook) | `/plugin install bb-spec-frontend@0xbb2b` |
 
-按需取用——例如只要紀律與工作流、不要技術棧意見:裝 `bb-spec-core` + `bb-spec-workflow`;PM / 需求方的機器上只裝 `bb-spec-product`;想要全套:五個全裝。
+按需取用——例如只要紀律與工作流、不要技術棧意見:裝 `bb-spec-core` + `bb-spec-workflow`;想要全套:四個全裝。
 
 或手動加入到 `~/.claude/settings.json`(只 enable 你想要的):
 
@@ -211,7 +215,6 @@ BB-Spec 拆成**五個可獨立安裝的子 plugin**——只裝你需要的約�
   "enabledPlugins": {
     "bb-spec-core@0xbb2b": true,
     "bb-spec-workflow@0xbb2b": true,
-    "bb-spec-product@0xbb2b": false,
     "bb-spec-backend@0xbb2b": false,
     "bb-spec-frontend@0xbb2b": false
   }
@@ -254,9 +257,9 @@ URL 填 `https://github.com/0xBB2B/bb-spec`,點 `Sync`:
   <img src="./assets/desktop/04-sync-url.png" alt="同步 marketplace" width="100%" />
 </p>
 
-**5. 啟用核心三件套**
+**5. 啟用核心兩件套**
 
-Directory 中會看到 bb-spec 的 5 個子插件。點擊 `Bb spec core` / `Bb spec workflow` / `Bb spec product` 三張卡片右上角的齒輪按鈕分別啟用(後端 / 前端按需啟用):
+Directory 中會看到 bb-spec 的 4 個子插件。點擊 `Bb spec core` / `Bb spec workflow` 兩張卡片右上角的齒輪按鈕分別啟用(後端 / 前端按需啟用):
 
 <p align="center">
   <img src="./assets/desktop/05-enable-plugins.png" alt="啟用插件" width="100%" />
@@ -277,7 +280,7 @@ Directory 中會看到 bb-spec 的 5 個子插件。點擊 `Bb spec core` / `Bb 
 /plugin update bb-spec-core     # 僅更新某個子 plugin
 ```
 
-五個子 plugin 共用同一條同步版本線。
+四個子 plugin 共用同一條同步版本線。
 
 ---
 
@@ -306,16 +309,16 @@ CI 在 PR 和 push 到 main 時自動執行(`.github/workflows/ci.yml`)。
 
 ## 🛠️ 推薦配套
 
-### CLAUDE.md 範本
+### AGENTS.md:專案約束與查詢規矩
 
-儲存庫根目錄的 [`CLAUDE.template.md`](./CLAUDE.template.md) 是配套的「鐵律索引」參考。**不會自動安裝**——按需複製到你的 `~/.claude/CLAUDE.md` 或專案根 `CLAUDE.md`,按需裁剪。
+`/prd` 把對整個專案生效的約束(如「禁止泛型」「SQL join 不超過 3 張表」)寫進專案根的 `AGENTS.md`,只屬於某個功能的約束寫進 PRD,同一條約束不會寫兩處。`AGENTS.md` 裡還有一節「查功能、查問題的規矩」:回答「系統現在怎麼做」必須先讀程式碼並給出 `檔案:行號`;查「為什麼」用 `git log -L` 找到改過該函式的需求再讀 PRD;PRD 和程式碼不一致時以程式碼為準。Claude Code 只讀 `CLAUDE.md`、不直接讀 `AGENTS.md`,所以 `/prd` 會確保專案根 `CLAUDE.md` 含一行 `@AGENTS.md` 把它匯入。
 
 ### .bb-spec.yaml 專案設定
 
-`/prd`、`/spec` 和 `/plan` 預設輸出至 `.bb-spec/docs/` 下(`.bb-spec/docs/prd/`、`…/spec/`、`…/plan/`);執行時瞬態產物(如 webview 截圖)落在與之平級的 `.bb-spec/.cache/`(自動 gitignore)。在專案根建立 `.bb-spec.yaml` 可覆寫 bb-spec 根目錄:
+`/prd` 和 `/plan` 預設輸出至 `.bb-spec/docs/` 下(`.bb-spec/docs/prd/`、`…/plan/`);執行時瞬態產物(如 webview 截圖)落在與之平級的 `.bb-spec/.cache/`(自動 gitignore)。在專案根建立 `.bb-spec.yaml` 可覆寫 bb-spec 根目錄:
 
 ```yaml
-base_dir: my/bb  # → my/bb/docs/{prd,spec,plan,test}/ 與 my/bb/.cache/;填 ./ 則直接落專案根
+base_dir: my/bb  # → my/bb/docs/{prd,plan,test}/ 與 my/bb/.cache/;填 ./ 則直接落專案根
 ```
 
 參考範本:[`.bb-spec.template.yaml`](./.bb-spec.template.yaml)。
@@ -338,15 +341,15 @@ BB-Spec 站在三個優秀專案的肩上。它們各自塑造了 BB-Spec 設計
 
 | 專案 | 它最擅長 | BB-Spec 借鑒並強化的點 |
 |---|---|---|
-| [**Superpowers**](https://github.com/obra/Superpowers)(obra)—— 一套完整的編碼代理方法論 | 端到端分階段工作流、子代理驅動開發 + 分階段審查、TDD 紅-綠-重構、git worktree 隔離、蘇格拉底式頭腦風暴、可組合技能庫 | 整條 `spec → ship` 流水線骨架、按角色拆分子 Agent 協作、強制 TDD、多階段 / 對抗式審查、對話先行的需求澄清 |
+| [**Superpowers**](https://github.com/obra/Superpowers)(obra)—— 一套完整的編碼代理方法論 | 端到端分階段工作流、子代理驅動開發 + 分階段審查、TDD 紅-綠-重構、git worktree 隔離、蘇格拉底式頭腦風暴、可組合技能庫 | 整條 `prd → ship` 流水線骨架、按角色拆分子 Agent 協作、強制 TDD、多階段 / 對抗式審查、對話先行的需求澄清 |
 | [**ECC**](https://github.com/affaan-m/ECC)(affaan-m)—— 一個 agent harness「作業系統」 | agents / skills / hooks / rules 的大規模分層體系、被動 hook 自動強制、規則即基礎設施、跨會話記憶持久化 | 分層、可獨立安裝的子插件套件、用被動 hook 強制紀律、把工程規範沉澱為可載入的約束 skill |
-| [**skills**](https://github.com/mattpocock/skills)(mattpocock)——「Skills For Real Engineers」 | 直擊真實失敗模式(需求不對齊 / 冗長 / 品質 / 架構)、深度提問對齊意圖、共享域語言、使用者呼叫 vs 模型呼叫雙形態 skill、垂直切片 | 質疑前置、動手前先對話鎖定需求、雙觸發 skill(slash 命令 + 模型自動觸發)、一檔一規則的極簡組織 |
+| [**skills**](https://github.com/mattpocock/skills)(mattpocock)——「Skills For Real Engineers」 | 直擊真實失敗模式(需求不對齊 / 冗長 / 品質 / 架構)、深度提問對齊意圖、共享域語言、使用者呼叫 vs 模型呼叫雙形態 skill、垂直切片 | 質疑前置、動手前先對話鎖定需求、雙觸發 skill(slash 命令 + 模型自動觸發)、只留一份事實來源的極簡組織 |
 
 **BB-Spec 自己的取捨**——三者都未同時具備的差異化:
 
-- **三 Agent 隔離執行**——Impl Agent *物理上看不到 spec*,只看測試,無法「照著意圖矇混」;測試、實作、審查由互相看不見的三方分別完成。
+- **三 Agent 隔離執行**——Impl Agent *物理上看不到 PRD*,只看測試,無法「照著意圖矇混」;測試、實作、審查由互相看不見的三方分別完成。
 - **磁碟檔案作為唯一交接物**——每階段交接的是檔案而非會話記憶,因此跨會話、`/clear` 乃至換一個模型接手都能無損續接。
-- **spec ⇄ code 雙向閉環**——不止 spec → code:`/doc-update` 全儲存庫掃描漂移,持續把 spec 追平程式碼現態。
+- **程式碼 ⇄ PRD 經 git 雙向可查**——程式碼是唯一事實來源,PRD 只寫為什麼;每個 commit 帶需求標記,從功能能找到程式碼,從函式能查回當時的需求與取捨,中間沒有需要人工同步、會過時的規則文件。
 
 ---
 

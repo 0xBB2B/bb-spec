@@ -13,12 +13,7 @@
     {
       "name": "bb-spec-workflow",
       "source": "./plugins/bb-spec-workflow",
-      "description": "BB-Spec 工作流：spec → plan → exec（三 Agent 隔离）→ test-webview（网页交互验证）/ test-api（后端 API e2e、Bun TS runner）→ review（多代理对抗）→ revise → git-push，含 git-clone 一次性初始化、init 反向 spec 化、doc-update 全仓一致性维护与 8 个编排 subagent。"
-    },
-    {
-      "name": "bb-spec-product",
-      "source": "./plugins/bb-spec-product",
-      "description": "BB-Spec 产品需求：/prd 与 AI 头脑风暴，质疑前置、发散收敛，产出含具体用例的自包含 PRD 文档，供工程师在 /spec 中直接消费。"
+      "description": "BB-Spec 工作流：prd（质疑→澄清→拆解，一次批准落盘 PRD + AGENTS.md 项目约束）→ 自动 plan → exec（三 Agent 隔离）→ 收尾 doc-update；commit 带 Requirement 需求标记，代码经 git 反查回 PRD；prd-migrate 一次性迁移旧 spec 项目；另含 test-webview（网页交互验证）/ test-api（后端 API e2e、Bun TS runner）、review（多代理对抗）、revise、git-push、git-clone 一次性初始化与 8 个编排 subagent。"
     },
     {
       "name": "bb-spec-backend",

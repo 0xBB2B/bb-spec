@@ -1,35 +1,55 @@
 ---
 name: doc-update
-description: 全仓 spec/文档/代码一致性维护——扫描仓库内 spec、README、CLAUDE.md、plan 与代码，找出描述与实现的漂移；默认改 spec/文档让其追平代码现态，代码明显违背硬约束或存在不合理设计时停下用 AskUserQuestion 请用户裁决再改代码；落盘前汇总展示、过程中 INDEX 同步维护。触发：/doc-update、文档和代码不一致、spec 跟代码对不上、批量同步 spec 与现状、维护一下文档。跳过：还没有 spec 可对照（→/spec）、单点 bug 或定向修复（→/revise）、纯新增需求（→/spec→/plan）。
-argument-hint: [可选：限定范围，如某分区名 / 某目录 / 某 spec 文件]
+description: 文档与代码一致性维护——代码是事实，让 README、CLAUDE.md、AGENTS.md 等根文档追平代码现状，并检查代码是否违反 AGENTS.md 项目约束；/exec 与 /revise 收尾时以 --tail 收尾模式自动调用，额外核对本分支 PRD 与实际交付是否一致；已合并的 PRD 任何模式都不碰；改代码一律先问用户、转 /revise。触发：/doc-update、文档和代码不一致、README 过期、维护一下文档。跳过：单点 bug 或定向修复（→/revise）、新需求（→/prd）、老项目从 spec 迁移（→/prd-migrate）。
+argument-hint: [--tail | 可选：限定范围，如某目录 / 某文档]
 ---
 
-# Doc-Update 全仓文档一致性维护
+# Doc-Update 文档与代码一致性维护
 
-把仓库内 **spec、README、CLAUDE.md、plan、代码内说明性文字** 跟代码现态对齐：默认认为「代码是事实」，spec/文档追平代码；**仅当代码明显违背硬约束或存在不合理设计**时停下来用 `AskUserQuestion` 请用户裁决，确认后才改代码。
+默认认为「代码是事实」，文档追平代码；**仅当代码明显违反 AGENTS.md 项目约束**时停下用 `AskUserQuestion` 请用户裁决，确认后转 `/revise` 改代码。
 
 > 与相邻 skill 的边界
-> - `/revise`：单点 bug 或定向修复（用户带具体偏差描述）；本 skill 做全仓批量同步
-> - `/review` 内的 `review-design` 子代理（文档同步视角）：PR diff 范围的只读发现器；本 skill 是全仓 + 落盘修改
-> - `/spec`：新增需求规则；本 skill 不引入新规则、只追平既有规则与现态的漂移（**例外**：发现代码已稳定执行但 spec 未覆盖的硬约束级行为，可补一条新 spec，但仍走"先展示再批准"流程）
+> - `/revise`：单点 bug 或定向修复；本 skill 只改文档、不改代码
+> - `/review` 内的 `review-design`（文档同步视角）：只读、只看 PR diff；本 skill 会落盘修改
+> - `/prd`：新需求；本 skill 不新增需求、不改已合并的 PRD
 
 ## 核心原则（兼硬约束）
 
-1. **代码是事实，文档追平代码**：默认方向是 spec/文档/INDEX 跟代码现态对齐；禁止凭文档单方面"想当然"反推代码该怎么写
-2. **改码必须用户裁决**：本 skill 默认 **不动代码**；发现代码"明显不合理"才停下用 `AskUserQuestion` 请用户拍板，用户同意后转 `/revise` 走 TDD 流程，本 skill 不直接改实现
-3. **批改前先汇总**：所有漂移分类列表 + 默认动作 + 待裁决项必须一次性展示，用户批准后才落盘，禁逐条边问边改打断节奏
-4. **冲突不自决**：spec 内部互斥（两份 spec 互相打架）或同一 README 段落与多份 spec 冲突时，一律抛 `AskUserQuestion`，禁主 agent 私自选边
-5. **最小影响**：只改"确实漂移"的那几行/几条，不借维护之名整理排版、调整标题层级、清理无关 TODO
-6. **INDEX 同步**：任何 spec 文件的新增/删除/重命名/description 变更，必须同步更新 `${DOCS_DIR}/spec/INDEX.md`
-7. **不碰 plan 业务规则**：plan 是点状产物，若发现 plan 与实现偏离，挂回 `/revise`，本 skill 仅可修 plan 中的 INDEX / 文件清单类元数据
-8. **纯净现态**：spec/文档只写当前代码已在执行的行为；禁加"原来是 X、现在改为 Y"或"已废弃保留兼容"类过渡式表达——废弃直接删
-9. **语言跟随用户**：正文用用户工作语言（默认中文），标识符/API 名/错误码保持英文
+1. **代码是事实，文档追平代码**：禁止凭文档反推代码该怎么写
+2. **不改代码**：发现代码违反项目约束，停下用 `AskUserQuestion` 请用户拍板，同意后产出挂单交给 `/revise`，本 skill 不直接改实现
+3. **已合并的 PRD 只读**：PRD 是需求记录，合并后冻结，任何模式下都不改、不删。唯一能改的是收尾模式下的**本分支 PRD**——判定：`git -C <文档仓库> cat-file -e <基线分支>:<PRD 根>/<目录>/OVERVIEW.md` 失败（基线分支 main 或 master 上还没有它；单仓库时文档仓库就是当前仓库、`<PRD 根>` 为 `${DOCS_DIR}/prd`，多仓库工作区时文档仓库是 `${DOCS_DIR}` 所在的独立仓库、`<PRD 根>` 相对它的根）
+4. **批改前先汇总**（收尾模式下 A 类除外）：所有发现分类列出 + 默认动作 + 待裁决项一次性展示，用户批准后才落盘
+5. **冲突不自决**：AGENTS.md 内部互相矛盾、或与已激活的技术栈 skill 冲突时，一律 `AskUserQuestion`
+6. **最小影响**：只改确实过期的那几行，不借机整理排版、调整标题层级
+7. **只写最新结果**：文档只写当前代码的行为；禁加"原来是 X、现在改为 Y""已废弃保留兼容"类过渡表述，废弃直接删
+8. **语言跟随用户**：正文用用户工作语言，标识符/API 名/错误码保持英文
+
+## 两种模式
+
+| | 全仓模式（手动 `/doc-update`） | 收尾模式（`--tail`，由 `/exec`、`/revise` 调用） |
+|---|---|---|
+| 范围 | 全部根文档 + 全部代码对照 AGENTS.md | 根文档中引用了本分支改动的段落 + 本分支改动的代码对照 AGENTS.md + 本分支 PRD |
+| 本分支 PRD | 不处理 | 核对约束、验收与实际交付是否一致 |
+| A 类 | 汇总后经用户批准再改 | 直接改，在简报中逐条列出 |
+| B / C / D 类 | 逐条 AskUserQuestion | 逐条 AskUserQuestion |
+| commit | 不 commit，改动留在工作区 | 不 commit，由调用方连同其他收尾改动一起提交 |
+
+## 四类发现
+
+| 编号 | 类别 | 含义 | 默认动作 |
+|---|---|---|---|
+| A | **doc-stale** | README / CLAUDE.md / AGENTS.md 等根文档引用了已改名、删除或行为变了的函数、路径、命令、配置项 | 改文档追平代码 |
+| B | **prd-stale**（仅收尾模式） | 本分支 PRD 的约束或验收与实际交付不一致，且没有经用户同意的修改记录 | AskUserQuestion：改 PRD 认可代码 / 转 `/revise` 改代码 |
+| C | **code-violation** | 代码明显违反 AGENTS.md 的项目约束 | AskUserQuestion：改代码（转 `/revise`）/ 改项目约束 / 跳过 |
+| D | **agents-conflict** | AGENTS.md 的约束之间互相矛盾，或与已激活的技术栈 skill 冲突 | AskUserQuestion：选保留哪条 |
+
+每条发现必须落到具体 `文件:行号` + 一句话说明哪里不一致；说不出位置的丢弃。性能、可读性、口味偏好不算 C 类。
 
 ---
 
 ## 工作流
 
-### 步骤 0：读取配置 + 前置检查
+### 步骤 0：读取配置 + 确定范围
 
 ```bash
 cat .bb-spec.yaml 2>/dev/null
@@ -37,166 +57,86 @@ cat .bb-spec.yaml 2>/dev/null
 
 取 `base_dir`（缺省 `.bb-spec`），`${DOCS_DIR}` = `<base_dir>/docs`。
 
-前置存在性检查：
+- `$ARGUMENTS` 是 `--tail` → 收尾模式。本分支改动文件：在本次改动的每个仓库里 `git diff <基线分支>...HEAD --name-only`；本分支 PRD：文档仓库里 `git diff <基线分支>...HEAD --name-only -- <PRD 根>` 列出的目录中，按上面的判定属于本分支新增的那些
+- `$ARGUMENTS` 是其他非空内容 → 全仓模式，只处理参数指定的目录或文档
+- 为空 → 全仓模式
 
-```bash
-ls ${DOCS_DIR}/spec/INDEX.md 2>/dev/null
-```
+### 步骤 1：盘点
 
-- **INDEX.md 不存在或为空** → 提示"项目尚未生成 spec，请先用 `/spec` 沉淀规则后再来 `/doc-update`"并退出
-- **存在** → 进入步骤 1
+主 agent 自做，**禁派子代理**：
 
-若 `$ARGUMENTS` 非空（用户限定了范围），把它作为 **本次扫描的过滤器**——只处理参数指定的分区/目录/文件相关的漂移。
+1. **读根文档**：`README*.md` / `CLAUDE.md` / `AGENTS.md` / `CONTRIBUTING.md` / `ARCHITECTURE.md` 等存在者；收尾模式只看引用了本分支改动文件、命令、配置项的段落
+2. **抽取可核对的引用**：文档里出现的函数名、文件路径、命令、env var、CLI flag、配置 key、默认值、超时阈值
+3. **对照代码**：codegraph 可用则 `codegraph_explore`，否则 `grep -rnE` + 读相关文件，确认每个引用在代码里是否还成立
+4. **项目约束核对**：逐条读 AGENTS.md「项目约束」，在范围内的代码里找违反项
+5. **收尾模式额外**：读本分支 PRD 的每条约束与验收，对照本分支的实现和测试确认是否都已交付、行为是否一致
 
-### 步骤 1：盘点资产 + 建立"代码侧索引"
+### 步骤 2：分类
 
-主 agent 自做，**禁派子代理**（避免来回传上下文）：
+把发现按 A / B / C / D 归类，每条带 `文件:行号` 与一句话说明。
 
-1. **读全部 spec**：递归 `${DOCS_DIR}/spec/` 下所有 `.md`，记录每条规则的 `name / 分区 / description / 约束 / 例子（含 file:line）`
-2. **读项目根文档**：`README.md` / `README.zh.md` / `CLAUDE.md` / `CONTRIBUTING.md` / `ARCHITECTURE.md` 等存在者
-3. **读 plan INDEX**：`${DOCS_DIR}/plan/INDEX.md`（如存在），仅取文件清单，不下钻 plan 内容
-4. **建立代码侧索引**：按 spec 例子里的 `file:line` 反查当前代码 → 对比该位置/相邻函数当前的行为；codegraph 可用则 `codegraph_explore <规则相关 symbol>` 拉真实调用与源码，否则 `grep -rnE` + 读相关文件
-5. **采集横切信号**：错误码格式、命名约定、版本号、env var、CLI flag、配置 key、超时阈值、默认行为等"易飘移"的硬约束逐一抽查
-
-输出回显：spec 数量 / 分区清单 / 已读根文档 / 涉及代码文件数（仅数字与文件列表，不展开内容）。
-
-### 步骤 2：漂移检测 + 分类
-
-逐条 spec 比对代码与文档，把发现挂入下列六类。**每条发现必须落到具体 `file:line` + 一句话"漂移点"**，无定位的"感觉不一致"丢弃。
-
-| 编号 | 类别 | 含义 | 默认动作 |
-|---|---|---|---|
-| A | **spec-stale** | spec 描述与代码现态不符，但代码看起来合理 | 改 spec 追平代码 |
-| B | **doc-stale** | README/CLAUDE.md/根文档引用了被改名、删除、行为变更的函数/路径/命令/配置项 | 改文档追平代码 |
-| C | **code-violation** | 代码**明显**违背 spec 的硬约束（如错误码格式、命名约定、安全 invariant），且无合理理由 | **AskUserQuestion** → 用户同意改码 → 挂 `/revise` |
-| D | **spec-conflict** | 两份及以上 spec 内部互斥 / 同一文档段落同时与多条 spec 冲突 | **AskUserQuestion** 让用户选保留哪份 |
-| E | **orphan-index** | INDEX.md 条目与实际 spec 文件不一致（缺条目 / 残留条目 / description 不同步） | 改 INDEX 追平实际文件 |
-| F | **uncovered-rule** | 代码已稳定执行一条 spec 未覆盖的硬约束级行为，且非框架自带保证 | 默认补一条新 spec；用户在步骤 3 可选"跳过"或"调整为 C 类" |
-
-**何为"明显不合理"（C 类高线）**：仅当满足以下任一项才升级 C，否则一律降为 A，让 spec 追平：
-
-- 代码违反硬安全 invariant（如硬编码密钥、SQL 拼接、明文存密码）
-- 代码违反单一来源约束（如时间戳精度、错误码格式跨模块不一致）
-- 代码存在明显死路（不可达分支、永远 false 的判定、显然 off-by-one）
-- 代码与同仓库其余实现风格严重背离且无注释解释（如其它 9 处都用 `errors.Is`，此处独用字符串比对）
-
-**降级守则**：
-- 性能/可读性/口味偏好 → 不算"明显不合理"，归 A
-- 注释数量/风格 → 归 `/review` 的 code-quality 域，本 skill 不管
-- "看起来可以更优雅" → 归 A 或丢弃
-
-### 步骤 3：汇总展示 + 批准
-
-把检测结果一次性输出，分类汇总，每条带"漂移点 + 提议动作"：
+### 步骤 3：汇总 + 裁决
 
 ```
-## /doc-update 漂移清单（共 N 条）
+## /doc-update 发现清单（共 N 条）
 
-### A. spec-stale（X 条，默认改 spec）
-- [分区/name] spec 第 Y 行说"超时 5s" → 代码 path/to/file.go:42 实际为 10s
-  → 改 spec："超时 10s"
-- ...
-
-### B. doc-stale（X 条，默认改文档）
-- README.md 第 Z 行引用 `oldFunc()` → 已重命名为 `newFunc()`（commit abc1234）
+### A. doc-stale（X 条）
+- README.md:42 引用 `oldFunc()` → 已改名为 `newFunc()`（internal/order/export.go:15）
   → 改 README
-- ...
 
-### C. code-violation（X 条，需用户裁决）
-- [分区/name] 硬约束「错误码 A-BBB-CCCC」→ path/to/file.go:88 返回 `"bad request"`
-  → 提议：改代码遵循 spec（走 /revise）
+### B. prd-stale（X 条，仅收尾模式）
+- prd/2026-10-08.order-export/01-csv.md:20 约束「最多导出 1 万行」→ 实现为 5 万行（internal/order/export.go:88）
+  → 需裁决：改 PRD / 转 /revise 改代码
 
-### D. spec-conflict（X 条，需用户裁决）
-- spec/auth.md（超时 5s）vs spec/service.md（超时 10s）→ 同一信号
-  → 需用户选保留哪份
+### C. code-violation（X 条）
+- AGENTS.md「禁止泛型」→ internal/util/map.go:12 定义了泛型函数
+  → 需裁决：转 /revise 改代码 / 改项目约束 / 跳过
 
-### E. orphan-index（X 条，默认改 INDEX）
-- INDEX.md 仍引用已删除的 spec/old-rule.md
-  → 移除条目
-
-### F. uncovered-rule（X 条，默认补 spec）
-- 代码已稳定执行：所有 handler 必经 ctx.WithTimeout（grep 命中 14 处）
-  → 提议补 spec/observability/handler-timeout.md
-
-—— 待裁决类别（C/D）逐条用 AskUserQuestion；A/B/E/F 默认动作请确认整体批准。
+### D. agents-conflict（X 条）
+- AGENTS.md 第 8 行与第 15 行对同一件事要求相反
+  → 需裁决：保留哪条
 ```
 
-之后：
+- B / C / D 类逐条 `AskUserQuestion`
+- A 类：全仓模式用一次 `AskUserQuestion` 请用户选「全部批准 / 逐条裁决 / 取消」；收尾模式直接进入步骤 4
 
-1. **C/D 类逐条 `AskUserQuestion`**：把"漂移点 / 候选方向 / 各方向代价"做成选项让用户选；C 类选项至少含「改代码（走 /revise）」「改 spec（认可代码现态）」「跳过本条」；D 类至少含「保留 spec X」「保留 spec Y」「合并为一条」「跳过」
-2. **A/B/E/F 整体批准**：一次 `AskUserQuestion` 让用户选「全部批准 / 逐条裁决 / 取消」；"逐条裁决"模式下退化为对每条单独问
+未获批准的条目**一律不动**。
 
-未获明确批准的条目 **一律不动**。
+### 步骤 4：落盘
 
-### 步骤 4：应用修改
-
-按批准结果落盘，遵守：
-
-1. **改 spec 文件**：用 `Edit` 精准替换段落；保留 frontmatter；不动无关行；超 100 行的 spec 不在本 skill 内拆，提示用户后续走 `/spec` 拆解
-2. **改 INDEX.md**：新增/删除条目按分区字母序插入/移除；description 同步对应文件 frontmatter
-3. **改 README/CLAUDE.md**：精准替换被引用的旧 symbol / 路径 / 命令；语言保留与原文一致
-4. **新增 spec（F 类）**：用与 `/spec` 一致的模板（`目的 / 逻辑 / 约束 / 例子 / 验收`），落 `${DOCS_DIR}/spec/<分区>/<name>.md`，例子末尾标注 `来源：file:line`，同步 INDEX
-5. **C 类已批准改码项**：本 skill **不直接改实现**，而是产出一份"挂单清单"让用户复制给 `/revise`，每条按下方格式分行写：
+1. **改根文档**：用 `Edit` 精准替换过期的 symbol / 路径 / 命令 / 配置，语言与原文一致
+2. **改本分支 PRD**（B 类选「改 PRD」）：只改不一致的约束、验收或用例，保证约束与验收仍一一对应
+3. **改 AGENTS.md**（C 类选「改项目约束」、D 类裁决结果）：只动「项目约束」节的相关条目
+4. **C / B 类选「改代码」**：不改实现，产出挂单交给 `/revise`：
 
    ```
-   - [<分区>/<规则>] <涉及文件>
-     期望行为：<spec 要求什么>
+   - <涉及文件:行号>
+     期望行为：<项目约束或 PRD 要求什么>
      不符点：<代码实际怎样>
      建议测试切入：<从哪个测试入口先写 Red>
    ```
-6. **不允许的动作**：改 plan 文件正文、改测试、改 commit 历史、动 git、改任何 .bb-spec 之外的代码（C 类挂回 `/revise`）
 
-每改一处先回显简短行：`✏️ ${file}: <一句话变更>`，便于用户中途叫停。
+5. **不允许**：改已合并的 PRD、改 plan 正文、改测试、改代码、改 commit 历史
+
+每改一处先回显一行：`✏️ <文件>: <一句话变更>`，便于用户中途叫停。
 
 ### 步骤 5：回归校验
 
-落盘后主 agent 自查：
+1. 被改过的文档里引用的相对路径真实存在
+2. 被改过的本分支 PRD 约束与验收仍一一对应
+3. `git diff --stat` 里没有代码文件、没有已合并的 PRD
 
-1. **INDEX 闭环**：`ls ${DOCS_DIR}/spec/**/*.md` 全部出现在 INDEX；INDEX 无残留条目
-2. **frontmatter 一致**：被改过的 spec 的 `description` 与 INDEX 一行简介保持一致
-3. **链接可达**：被改过的 README/CLAUDE.md 里引用的相对路径真实存在
-4. **未引入跨文档引用**：被改过的 spec 不出现"详见 X.md / 参考 Y.md"
-5. **代码未被本 skill 改动**：`git diff --stat -- <非 spec/非文档路径>` 期望为空（C 类挂回 /revise 由用户后续触发）
-
-任何一项不通过 → 当场修，无法当场修 → 列入完成简报"待处理"。
+任何一项不通过 → 当场修，修不了列入简报「待处理」。
 
 ### 步骤 6：完成简报
 
 ```
 ## /doc-update 完成简报
-
-- 范围：<全仓 / 限定参数 $ARGUMENTS>
-- 检测漂移：A/B/C/D/E/F 各 N 条
-- 已落盘：
-  - spec 编辑 X 处（<分区/name> ×N）
-  - INDEX 同步 Y 条
-  - 根文档编辑 Z 处（README/CLAUDE.md/…）
-  - 新增 spec K 条（F 类）
-- 待用户后续处理：
-  - C 类 → 走 /revise（清单见上方挂单）
-  - D 类未裁决 J 条（如有）
-- 回归校验：✅ 全部通过 / ⚠️ 待处理 <说明>
-- 下一步建议：
-  - C 类挂单 → `/revise` 逐条修
-  - 若新增/调整规则 → `/plan` 重生成相关实施计划
-  - 落地 commit → `/git-push` 走推送 PR 流程
+- 模式：<全仓 / 限定范围 $ARGUMENTS / 收尾>
+- 发现：A/B/C/D 各 N 条
+- 已落盘：根文档 X 处 / 本分支 PRD Y 处 / AGENTS.md Z 处（逐条列出）
+- 待用户后续处理：<转 /revise 的挂单 / 未裁决项 / 无>
+- 回归校验：✅ 全部通过 / ⚠️ <说明>
 ```
 
-> 本 skill 不自动 commit、不自动 push。所有改动停在工作区，由用户决定何时提交。
-
----
-
-## 与其它 skill 的串联
-
-- **上游**：`/spec`（沉淀规则）→ `/plan` + `/exec` 实施 → 长期演进后跑 `/doc-update` 做一致性体检
-- **下游**：`/doc-update` 产出的 C 类挂单 → `/revise` 逐条 TDD 修码；落地后 → `/git-push` 推送
-
-```
-[实施已落地的项目]
-  ↓
-/doc-update（扫漂移、改 spec/文档，挂出改码清单）
-  ↓
-/revise（逐条修码、跑 TDD）
-  ↓
-/git-push（推送 PR）
-```
+> 本 skill 不自动 commit、不自动 push。全仓模式的改动留在工作区由用户决定何时提交；收尾模式由调用方一起 commit。

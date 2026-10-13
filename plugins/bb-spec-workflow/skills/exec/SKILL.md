@@ -1,6 +1,6 @@
 ---
 name: exec
-description: 三 Agent 隔离执行 plan——Test→Impl→Review 串行，三方各只看各的输入互不可见；互不依赖且文件目录不重叠的 plan 编为并行组、经用户确认后并发推进；每步立即持久化 PROGRESS.md，跨会话/`/clear` 后从断点续接；启动先 worktree 感知定位执行现场（主仓库停在 main 时自动定位到进行中的 worktree）；commit 不自动 push、main 分支禁自动 commit。触发：/exec、开始实施 plan、继续执行 plan、从断点继续、按 plan 把代码做出来。跳过：还没 /plan 产出实施计划、纯调研/方案讨论、要改 spec 或 plan 本身（→/revise）。
+description: 三 Agent 隔离执行 plan——由 /plan 自动调用或手动 /exec 续接；Test→Impl→Review 串行，三方各只看各的输入互不可见；互不依赖且文件目录不重叠的 plan 编为并行组、经用户确认后并发推进；每步立即持久化 PROGRESS.md，跨会话/`/clear` 后从断点续接；启动先 worktree 感知定位执行现场（主仓库停在 main 时自动定位到进行中的 worktree）；全部完成后自动运行 /doc-update 收尾模式让本次 PRD 与 README 等文档追平代码、删除本次 plan 目录；每个 commit 带 `Requirement: <PRD 目录名>`；commit 不自动 push、main 分支禁自动 commit。触发：/exec、开始实施 plan、继续执行 plan、从断点继续、按 plan 把代码做出来。跳过：还没 /plan 产出实施计划、纯调研/方案讨论、要改已合并的行为（→/revise）。
 argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 ---
 
@@ -11,10 +11,10 @@ argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 ## 核心原则（兼硬约束）
 
 1. **逐组执行**：一次只推进一个执行组，验证通过再进入下一组；跳组会破坏依赖关系。默认一组一个 plan，满足并行条件且用户同意时一组多个 plan 并发，组内每个 plan 的 Test→Impl→Review 仍严格串行
-2. **角色隔离**：三个 Agent 各看各的输入互不可见——Test **禁看**函数清单和实现路径，Impl **禁看** spec 原文，Review **禁止**修改文件
+2. **角色隔离**：三个 Agent 各看各的输入互不可见——Test **禁看**函数清单和实现路径，Impl **禁看** PRD 原文，Review **禁止**修改文件
 3. **三 Agent 串行**：必须 Test → Impl → Review 顺序；每个 Agent prompt 自包含，不依赖对话上下文
 4. **进度即时持久化**：每步完成后立即更新 PROGRESS.md（不攒批），它是唯一进度事实源，重启后仅凭此文件恢复
-5. **Plan 即合同**：严格按 plan 的函数清单和业务规则实现，不自行扩展（额外需求走 `/spec` → `/plan`）；新增第三方库以 plan「新增第三方依赖」清单为上限——该清单已在 plan 批准时获用户授权，清单外需要新库时必须停下询问用户，**禁自行 import**
+5. **Plan 即合同**：严格按 plan 的函数清单和业务规则实现，不自行扩展（额外需求走 `/prd`）；新增第三方库以 plan「新增第三方依赖」清单为上限——该清单已在 `/plan` 阶段经用户同意，清单外需要新库时必须停下询问用户，**禁自行 import**
 6. **如实上报**：验证失败禁标 done；阻塞禁静默跳过——必须记录并告知用户
 7. **commit 守卫**：每步本地 commit 后**禁止自动 push**；在 main 分支上**禁止自动 commit**
 8. **遵守已激活 skill 约束**：exec 不重复其他 skill 的规则，但执行时必须遵守已激活约束（如 golang-testing 测试惯用法、golang-constraints 架构约束）
@@ -26,21 +26,22 @@ argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 
 | Agent | subagent_type | 角色 |
 |---|---|---|
-| Test Agent | `bb-spec-workflow:test-engineer` | 测试工程师：只读 spec 写测试 |
+| Test Agent | `bb-spec-workflow:test-engineer` | 测试工程师：只读 PRD 约束写测试 |
 | Impl Agent | `bb-spec-workflow:impl-engineer` | 实现工程师：只看测试写实现 |
-| Review Agent | `bb-spec-workflow:spec-reviewer` | 合规审查者：对照 spec 检查产出 |
+| Review Agent | `bb-spec-workflow:prd-reviewer` | 合规审查者：对照 PRD 约束与验收检查产出 |
 
 **信息隔离矩阵**：
 
 | 输入 | Test | Impl | Review |
 |---|---|---|---|
-| spec 规则（plan「业务规则」区） | ✅ | ❌ | ✅ |
+| PRD 约束（plan「业务规则」区） | ✅ | ❌ | ✅ |
 | 行为预期（plan「验证方式」区） | ✅ | ❌ | ✅ |
 | 函数清单 + 文件路径 | ❌ | ✅ | ❌ |
 | 成品定义（plan「成品定义」区，如有） | ❌ | ✅ | ❌ |
 | 新增第三方依赖清单（plan「新增第三方依赖」区，如有） | ❌ | ✅ | ❌ |
 | 协作关系 | ❌ | ✅ | ❌ |
 | 项目约束（语言/框架/架构） | ✅ | ✅ | ❌ |
+| 项目级约束（项目根 `AGENTS.md`「项目约束」节，如有） | ✅ | ✅ | ✅ |
 | 项目测试惯例 | ✅ | ❌ | ❌ |
 | Test Agent 写的测试文件 | — | ✅ | ✅ |
 | Impl Agent 写的代码 | — | — | ✅ |
@@ -62,7 +63,9 @@ git worktree list --porcelain
   - 多棵 → AskUserQuestion 列出让用户选
   - 无 → 全新任务，按 git-workflow 先确定开分支方式再继续，**禁止把任何产出落在 main 工作区**
 
-现场确定后，在**该目录**下 `cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`。读 `${DOCS_DIR}/plan/INDEX.md`，按参数形式决定行为：
+现场确定后，在**该目录**下 `cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`。**多仓库工作区**（`${DOCS_DIR}` 所在的 git 仓库与代码不是同一个，如工作区根不是 git 仓库、`docs/` 与各服务各自独立）：文档仓库 = `git -C ${DOCS_DIR} rev-parse --show-toplevel`，下文 PRD / plan 相关的 git 命令都在文档仓库里执行、路径相对文档仓库根；代码相关的 git 命令（测试、`git log -L`、commit）在各代码仓库里分别执行。
+
+`${DOCS_DIR}/plan/` 下主题目录内 `PROGRESS.md` 含非 `done` 行的才是进行中的 plan（完成后整个目录会被删除）；全部 `done` 的主题目录和根 `plan/INDEX.md` 是旧版本留下的，提示用户 `git rm -r` 清掉、不执行。按参数形式决定行为：
 
 | 调用方式 | 行为 |
 |---|---|
@@ -70,7 +73,7 @@ git worktree list --porcelain
 | `/exec <YYYY-MM-DD>.<主题>` | 指定主题 → 从第一个非 `done` 步骤起依次执行到最后 |
 | `/exec <YYYY-MM-DD>.<主题>/<plan名>` | 指定主题 + 单个 plan，只执行该 plan |
 
-**主题定位**（无参数或仅指定主题时）：INDEX.md 不存在 → 告知"建议先运行 `/plan`"终止；无 `进行中` 主题 → 告知"所有主题已完成"终止；仅一个 `进行中` → 自动选中；多个 → 列出让用户选。
+**主题定位**（无参数时）：没有进行中的主题 → 告知"没有待执行的 plan，新需求请先运行 `/prd`"终止；仅一个 → 自动选中；多个 → 列出让用户选。
 
 ### 步骤 1：确定执行范围
 
@@ -92,32 +95,34 @@ git worktree list --porcelain
 
 组内每个 plan 各自完整走一遍 2a→2b→2c，多 plan 时组内各 plan 并发推进。**并行期间跑测试只跑本 plan 涉及的包 / 目录**（如 `go test ./internal/xxx`），不跑全量——同组其他 plan 此刻可能仍在 Red，全量结果无法判定本 plan 是否通过。
 
-**2a. Test Agent — Red**：派 `bb-spec-workflow:test-engineer`，prompt 传「业务规则」+「验证方式」+ 项目测试惯例。主 Agent 验证：编译通过 + 断言失败 → ✅ Red 进 2b；编译失败 → 主 Agent 修 import/类型后重跑；意外全 PASS → 行为已存在则跳过，测试错误则修正。
+**2a. Test Agent — Red**：派 `bb-spec-workflow:test-engineer`，prompt 传「业务规则」+「验证方式」+ 项目测试惯例。主 Agent 验证：编译通过 + 断言失败 → ✅ Red 进 2b；编译失败 → 主 Agent 修 import/类型后重跑；意外全 PASS → 行为已存在则跳过，测试错误则修正；Test Agent 报告「方案问题」（约束互相矛盾、无法写成可判定的测试）→ 带它给的证据进下方「归因」。
 
-**2b. Impl Agent — Green**：派 `bb-spec-workflow:impl-engineer`，prompt 传「函数清单 + 文件路径 + 协作关系 + 成品定义（如有）+ 新增第三方依赖清单（如有）」+ 测试文件路径。主 Agent 验证：全部通过 → **依赖守卫**（diff `go.mod` / `package.json` 等依赖文件，新增第三方库不得超出 plan「新增第三方依赖」清单；超出则令 Impl Agent 改用标准库 / 已有依赖重跑，确属必需时停下询问用户、同意后先补录 plan 清单再继续）+ 简洁性审视（是否用最少实现解决问题、有无 plan 未要求的抽象/防御/功能），发现过度设计则反馈 Impl Agent 简化后重跑、通过则 ✅ Green 进 2c；有失败 → 反馈错误给 Impl Agent 重试（最多 1 次）→ 仍失败报告用户。
+**2b. Impl Agent — Green**：派 `bb-spec-workflow:impl-engineer`，prompt 传「函数清单 + 文件路径 + 协作关系 + 成品定义（如有）+ 新增第三方依赖清单（如有）」+ 测试文件路径。主 Agent 验证：全部通过 → **依赖守卫**（diff `go.mod` / `package.json` 等依赖文件，新增第三方库不得超出 plan「新增第三方依赖」清单；超出则令 Impl Agent 改用标准库 / 已有依赖重跑，确属必需时停下询问用户、同意后先补录 plan 清单再继续）+ 简洁性审视（是否用最少实现解决问题、有无 plan 未要求的抽象/防御/功能），发现过度设计则反馈 Impl Agent 简化后重跑、通过则 ✅ Green 进 2c；有失败 → 反馈错误给 Impl Agent 重试（最多 1 次）；Impl Agent 报告「方案问题」（按函数清单或成品定义无法让测试通过，附证据）→ 不重试，直接进下方「归因」；仍失败 → 仍失败报告用户。
 
-**2c. Review Agent — Spec 合规**：派 `bb-spec-workflow:spec-reviewer`，prompt 传「业务规则」+「验证方式」+ 所有变更文件路径。主 Agent 处理：全 ✅ → 进步骤 3；有 ❌ 或 ⚠️ → **先归因，再按根因决定自决还是问用户**——非设计判断自行解决，不打断用户。
+**2c. Review Agent — PRD 合规**：派 `bb-spec-workflow:prd-reviewer`，prompt 传「业务规则」+「验证方式」+ AGENTS.md 项目级约束（如有）+ 所有变更文件路径。主 Agent 处理：全 ✅ → 进步骤 3；有 ❌ 或 ⚠️ → **先归因，再按根因决定自决还是问用户**——非设计判断自行解决，不打断用户。
 
-**归因**：对照 spec → plan → 实现 → 测试链路，判定根因——spec-defect（定义层出错）/ impl-defect（spec 正确但实现不符）/ requirement-change（用户实际需要与 spec 不同）。
+**归因**：对照 PRD → plan → 实现 → 测试链路，判定根因——prd-defect（本次 PRD 或 plan 写错、写漏、互相矛盾）/ impl-defect（PRD 正确但实现不符）/ requirement-change（用户实际需要与本次 PRD 不同）。
 
 **按根因分流**：
 
-- **impl-defect 且根因确凿**（纯实现偏差、不触碰 spec）→ 执行层问题，**自行闭环不打断用户**：补测试(Red) → 改实现(Green) → 重新 Review；自修**最多 1 次**仍不过 → 标 blocked 上报用户。无论自修成败都在 PROGRESS.md「当前」区如实记一笔并计入完成简报。
-- **spec-defect / requirement-change，或归因存疑、证据不足以定性** → 触及定义层 / 需求层，属设计判断，**必须停下** AskUserQuestion 让用户选 **修复** / **接受例外**（记录到 PROGRESS.md）/ **暂停**（标 blocked）。「接受例外」等于默许偏离 spec，**只能由用户点头，主 Agent 禁自决接受**。选"修复"时先向用户展示归因 + 证据，确认后再按类型修：spec-defect → 改 spec → 级联 plan → TDD 重新实现（Test→Impl→Review）；requirement-change → 用户确认新需求 → 更新 spec → 级联 plan + 实现。
+- **impl-defect 且根因确凿**（纯实现偏差、不触碰 PRD）→ 执行层问题，**自行闭环不打断用户**：补测试(Red) → 改实现(Green) → 重新 Review；自修**最多 1 次**仍不过 → 标 blocked 上报用户。无论自修成败都在 PROGRESS.md「当前」区如实记一笔并计入完成简报。
+- **prd-defect / requirement-change，或归因存疑、证据不足以定性** → 触及需求层，属设计判断，**必须停下** AskUserQuestion 让用户选 **改代码**（保持 PRD）/ **改本次 PRD**（认可新的行为）/ **暂停**（标 blocked）。改 PRD 等于改需求，**只能由用户点头，主 Agent 禁自决**。先向用户展示归因 + 证据，确认后按改动大小分两路：
+  - **小改**（只改已有约束、验收、用例或决策记录）→ 就地改本次 PRD（本分支新增的 PRD 可改）→ 同步改用到这条约束的 plan：`pending` 的直接改，`done` 的改回 `pending` 重新走 Test→Impl→Review
+  - **大改**（新增或删除子需求、改目标或非目标）→ 暂停 exec，回到 `/prd` 在 plan 模式里重新对齐并批准，再重新生成剩下的 plan
 
-**回归验证**：修复后跑测试（并行期间仍只跑本 plan 涉及范围）+ spec 合规检查。
+**回归验证**：修复后跑测试（并行期间仍只跑本 plan 涉及范围）+ PRD 合规检查。
 
 ### 步骤 3：持久化进度
 
 验证通过后**立即**更新 PROGRESS.md：当前步骤标 `done` + 填完成时间、"当前"区更新为下一步骤、清除已解决阻塞项。
 
-随后把本步骤产出做一次**本地** commit：先 `git branch --show-current` 确认分支（**在 main 上则跳过自动 commit**并提示按 git-workflow 先建分支）；按文件路径逐一 `git add`，只提交本步骤涉及文件（实现 + 测试 + `PROGRESS.md`）——并行期间工作区含同组其他 plan 的半成品，**禁 `git add .` / `git add -A`**；message 遵循仓库历史风格（先 `git log --oneline -10`）、不硬编码类型前缀；**仅本地不自动 push**；blocked / 未通过的步骤不 commit。
+随后把本步骤产出做一次**本地** commit：先 `git branch --show-current` 确认分支（**在 main 上则跳过自动 commit**并提示按 git-workflow 先建分支）；按文件路径逐一 `git add`，只提交本步骤涉及文件（实现 + 测试 + `PROGRESS.md`；多仓库时实现与测试在各自代码仓库提交、`PROGRESS.md` 在文档仓库提交，每个 commit 都带标记）——并行期间工作区含同组其他 plan 的半成品，**禁 `git add .` / `git add -A`**；message 遵循仓库历史风格（先 `git log --oneline -10`）、不硬编码类型前缀，带 `Requirement: <本次 PRD 目录名>`（`Requirement:` 写在 commit 说明最后一段，与 `Co-Authored-By:` 等尾注同段、中间不空行，否则 git 认不出）；**仅本地不自动 push**；blocked / 未通过的步骤不 commit。
 
 ### 步骤 4：循环或收尾
 
-- **单个 plan 模式**：当前 plan 完成即停，输出完成简报
+- **单个 plan 模式**：当前 plan 完成即停，输出完成简报；若它是本主题最后一个未完成的 plan，按下方「全部完成」收尾
 - **全部执行 + 还有后续组**：并行组须**整组结束**（含阻塞项）后跑一次全量测试确认组内产出无交叉破坏，再回步骤 2 推进下一组——下一组可能依赖本组产出
-- **全部执行 + 全部完成**：① 更新根 `plan/INDEX.md`，该主题状态改 `已完成` 填完成时间 ② 运行全量测试确认无回归 ③ **归档确认**：已删除的 spec 已从 `spec/INDEX.md` 移除、spec 内容与实现一致 ④ 把收尾改动做一次本地 commit（守卫同步骤 3）⑤ 输出完成简报
+- **全部执行 + 全部完成**：① 运行全量测试确认无回归 ② 调用 `Skill bb-spec-workflow:doc-update`，参数 `--tail`（收尾模式：让本次 PRD 与 README、AGENTS.md 等文档追平实际交付，其他 PRD 不碰）③ `git rm -r` 删除本主题 plan 目录（多仓库时在文档仓库执行）——plan 内联复述了 PRD，留着会和 PRD 重复，历史靠 git 追溯 ④ 把 doc-update 改动与 plan 删除做一次本地 commit（守卫同步骤 3）⑤ 输出完成简报
 
 **遇阻塞时**：在 PROGRESS.md 当前步骤标 `blocked`、"阻塞"区记录原因、告知用户等待指示。并行组内单个 plan 阻塞**不中断整组**——其余 plan 照常跑完各自的 Test→Impl→Review 并 commit，阻塞项汇总进完成简报。
 
@@ -131,8 +136,9 @@ git worktree list --porcelain
 - 完成情况：成功 N 步 / 跳过 M 步 / 阻塞 K 步
 - 变更文件：实现<路径> / 测试<路径>
 - 测试结果：✅ 全部通过（N 个测试） / ❌ 失败列表
-- Review 结论：✅ 全部合规 / ⚠️ 已接受的例外列表
-- 待解决：<阻塞项 / 已接受的例外 / 无>
+- Review 结论：✅ 全部合规 / ⚠️ 经用户同意改了本次 PRD 的条目
+- 待解决：<阻塞项 / 无>
+- 文档同步：<doc-update 收尾改了哪些文档 / 无>
 - 下一步：<如"运行 /review 做最终审查" / "继续执行剩余步骤" / 前端主题："**运行 `/test-webview` 跑一遍网页交互验收**" / "无">
 ```
 

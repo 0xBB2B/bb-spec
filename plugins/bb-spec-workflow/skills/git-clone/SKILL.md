@@ -5,7 +5,7 @@ description: 把一个或多个远程仓库 clone 到本地并落 .bb-spec.yaml�
 
 # Git Clone 与项目初始化
 
-把远程仓库拉到本地，并按「单 repo / 多 repo 工作区」摆好目录结构，写入 `.bb-spec.yaml`，让后续所有 bb-spec skill（`/spec` / `/plan` / `/exec` / `/git-push` …）能直接使用。
+把远程仓库拉到本地，并按「单 repo / 多 repo 工作区」摆好目录结构，写入 `.bb-spec.yaml`，让后续所有 bb-spec skill（`/prd` / `/plan` / `/exec` / `/git-push` …）能直接使用。
 
 **职责边界**：只解决「拿代码 + 写 base_dir」。技术栈识别交给各 constraints skill；本 skill 不触发它们、不读代码、不装依赖。
 
@@ -35,7 +35,7 @@ URL 只 1 个时只展示「单 repo」选项 + 提示「如果这是多 repo �
 
 用 **AskUserQuestion** 让用户选 `.bb-spec.yaml` 的 `base_dir`：
 
-- **`.bb-spec`（默认）**：交付物落 `.bb-spec/docs/{prd,spec,plan,test}/`，瞬态产物落 `.bb-spec/.cache/`。绝大多数项目用这个。
+- **`.bb-spec`（默认）**：交付物落 `.bb-spec/docs/{prd,plan,test}/`，瞬态产物落 `.bb-spec/.cache/`。绝大多数项目用这个。
 - **`./`（项目根）**：交付物直接落项目根的 `docs/` 与 `.cache/`，适合已有 `docs/` 习惯的项目。
 - **自定义路径**：让用户输入一个相对路径（如 `my/bb`），落 `<base_dir>/docs/` 与 `<base_dir>/.cache/`。
 
@@ -76,7 +76,7 @@ git -C <project-parent> clone <url-2>  # → <project-parent>/<repo-2>/
 
 ```yaml
 # bb-spec 工作根目录
-# {base_dir}/docs/   —— spec / plan / prd / test 交付物（随仓库提交）
+# {base_dir}/docs/   —— prd / plan / test 交付物（随仓库提交）
 # {base_dir}/.cache/ —— 运行时瞬态产物（自动 gitignore）
 base_dir: <用户在步骤 2 选的值>
 ```
@@ -98,7 +98,7 @@ base_dir: <用户在步骤 2 选的值>
 - workspace 根文件：已拷 <file> / 跳过 / 不适用
 - 下一步建议：
   - cd <落点> 开始工作
-  - 新需求开工 → /spec（存量项目同样从下一个需求接入）
+  - 新需求开工 → /prd（存量项目同样从下一个需求接入；用过 spec 的老项目先跑 /prd-migrate）
 ```
 
 ---
