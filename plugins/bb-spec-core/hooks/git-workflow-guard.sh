@@ -230,7 +230,7 @@ if [ -n "$COMMIT_DIR" ]; then
     MSG_VISIBLE=0
     [[ "$CMD" =~ [[:space:]](-[a-zA-Z]*m|--message)([[:space:]=]|$) || "$CMD" == *"<<"* || -n "$COMMIT_FILE_MSG" ]] && MSG_VISIBLE=1
     if [ "$MSG_VISIBLE" = "1" ] && [[ "$CMD" != *"Requirement:"* && "$COMMIT_FILE_MSG" != *"Requirement:"* ]]; then
-      REQ_LINE=$'\n\n提醒：bb-spec 项目的 commit 说明最后一段应带 `Requirement: <PRD 目录名>`（与 Co-Authored-By 等尾注同段、不空行）；和任何需求无关写 `Requirement: none` 并在正文写原因。'
+      REQ_LINE=$'\n\n提醒：bb-spec 项目的 commit 说明末尾应单独一行带 `Requirement: <PRD 目录名>`；和任何需求无关写 `Requirement: none` 并在正文写原因。'
     fi
   fi
 fi

@@ -116,7 +116,7 @@ git worktree list --porcelain
 
 验证通过后**立即**更新 PROGRESS.md：当前步骤标 `done` + 填完成时间、"当前"区更新为下一步骤、清除已解决阻塞项。
 
-随后把本步骤产出做一次**本地** commit：先 `git branch --show-current` 确认分支（**在 main 上则跳过自动 commit**并提示按 git-workflow 先建分支）；按文件路径逐一 `git add`，只提交本步骤涉及文件（实现 + 测试 + `PROGRESS.md`；多仓库时实现与测试在各自代码仓库提交、`PROGRESS.md` 在文档仓库提交，每个 commit 都带标记）——并行期间工作区含同组其他 plan 的半成品，**禁 `git add .` / `git add -A`**；message 遵循仓库历史风格（先 `git log --oneline -10`）、不硬编码类型前缀，带 `Requirement: <本次 PRD 目录名>`（`Requirement:` 写在 commit 说明最后一段，与 `Co-Authored-By:` 等尾注同段、中间不空行，否则 git 认不出）；**仅本地不自动 push**；blocked / 未通过的步骤不 commit。
+随后把本步骤产出做一次**本地** commit：先 `git branch --show-current` 确认分支（**在 main 上则跳过自动 commit**并提示按 git-workflow 先建分支）；按文件路径逐一 `git add`，只提交本步骤涉及文件（实现 + 测试 + `PROGRESS.md`；多仓库时实现与测试在各自代码仓库提交、`PROGRESS.md` 在文档仓库提交，每个 commit 都带标记）——并行期间工作区含同组其他 plan 的半成品，**禁 `git add .` / `git add -A`**；message 遵循仓库历史风格（先 `git log --oneline -10`）、不硬编码类型前缀，带 `Requirement: <本次 PRD 目录名>`（单独一行写在 commit 说明末尾）；**仅本地不自动 push**；blocked / 未通过的步骤不 commit。
 
 ### 步骤 4：循环或收尾
 

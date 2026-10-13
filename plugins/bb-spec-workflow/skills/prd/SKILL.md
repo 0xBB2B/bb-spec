@@ -17,7 +17,7 @@ description: 新需求的唯一入口——质疑→澄清→拆解，启动即 
 
 代码和 PRD 用 git 连起来：每个 commit 说明带一行 `Requirement: <PRD 目录名>`（如 `Requirement: 2026-10-08.order-export`，只写目录名、不带路径前缀）。想知道某段代码为什么这样写，`git log -L` 查改过它的 commit，读标记指向的 PRD。
 
-**标记的位置**：`Requirement:` 是 git 尾注（trailer），必须写在 commit 说明的**最后一段**，和 `Co-Authored-By:` 等其他尾注放在同一段、中间不留空行——git 只把最后一段当尾注，隔了空行 `%(trailers:key=Requirement)` 就读不到。
+**标记的位置**：`Requirement:` 单独占一行，写在 commit 说明末尾。查标记一律在说明全文里找以 `Requirement:` 开头的行，不用 git 的尾注（trailer）解析——GitHub squash 合并会把 `Co-authored-by` 挪到最后单独成段，`Requirement:` 就不在最后一段了，`%(trailers:key=Requirement)` 读不到。
 
 **仓库布局**（所有 skill 共用这一节的定义）：
 
@@ -168,7 +168,7 @@ git branch --show-current
 
 - 位置：单仓库放项目根；多仓库工作区放文档仓库根（随文档一起提交——工作区根目录不受 git 管）
 - 不存在 → 按模板新建，路径写成实际的 `${DOCS_DIR}`
-- 已存在 → 只在「项目约束」节增删改；缺「查功能、查问题的规矩」节时按模板补上；其他内容不动
+- 已存在 → 「查功能、查问题的规矩」节整节按模板覆盖（这一节由插件维护，旧版本写进去的查法要随插件更新）；「项目约束」节只做本次的增删改；其他内容不动
 - 确保会话启动目录（单仓库为项目根，多仓库为工作区根）的 `CLAUDE.md` 含导入行 `@<AGENTS.md 相对它的路径>`（单仓库为 `@AGENTS.md`，多仓库如 `@docs/AGENTS.md`；Claude Code 只读 CLAUDE.md，靠这一行把 AGENTS.md 一起加载）：没有 CLAUDE.md → 新建只含这一行的文件；有但缺这一行 → 加在文件最前面
 
 ### 步骤 8：自检
@@ -181,7 +181,7 @@ git branch --show-current
 
 ### 步骤 9：本地 commit
 
-只提交本次涉及的文件（PRD 目录 + GLOSSARY + AGENTS.md + 受 git 管的 CLAUDE.md；多仓库时在文档仓库提交），message 遵循仓库历史风格（先 `git log --oneline -10`），**最后一段尾注带 `Requirement: <本次 PRD 目录名>`**（与其他尾注同段、不空行），**仅本地、不 push**。`/plan` 靠 `git diff <基线分支>...HEAD` 发现本次 PRD，不提交就检测不到。
+只提交本次涉及的文件（PRD 目录 + GLOSSARY + AGENTS.md + 受 git 管的 CLAUDE.md；多仓库时在文档仓库提交），message 遵循仓库历史风格（先 `git log --oneline -10`），**末尾单独一行带 `Requirement: <本次 PRD 目录名>`**，**仅本地、不 push**。`/plan` 靠 `git diff <基线分支>...HEAD` 发现本次 PRD，不提交就检测不到。
 
 ### 步骤 10：简报 + 自动实施
 
@@ -287,12 +287,14 @@ date: <YYYY-MM-DD>
 # AGENTS.md
 
 ## 查功能、查问题的规矩
+> 本节由 /prd 按 bb-spec 插件模板整节维护，手改会被覆盖；项目自己的规矩写进「项目约束」。
+
 1. 先读代码再回答：凡是"系统现在怎么做"的结论，必须来自本次实际读过的代码，并给出 `文件:行号`；还没读到代码就说"还没确认"，不许猜。
 2. 按功能找代码：`grep -l '^features:.*<功能名>' <DOCS_DIR>/prd/*/OVERVIEW.md` 找到相关需求目录，再在每个代码仓库里用 `git log --grep "Requirement: <目录名>" --name-only` 查出改过的文件。
-3. 查为什么：在该文件所在的仓库里执行 `git log -L :<函数名>:<文件> -s --format='%h %s | %(trailers:key=Requirement,valueonly)'` 列出改过这个函数的 commit，最新的在前；按函数名报 "no match"（如缩进的类方法）时，先读文件确认行号，改用 `git log -L <起始行>,<结束行>:<文件>`。读最新那个 `Requirement` 指向的 PRD「决策记录」和 commit 说明正文；更早的 PRD 只在需要追溯时才读。commit 没有 `Requirement` 标记的是接入 bb-spec 之前的老代码，没有对应 PRD，只读 commit 说明；查不到原因就如实说"查不到"。
+3. 查为什么：在该文件所在的仓库里执行 `git log -L :<函数名>:<文件> -s --format='%h %s%n%b' | grep -e '^[0-9a-f]\{7,40\} ' -e '^Requirement:'` 列出改过这个函数的 commit 和各自的 `Requirement` 行，最新的在前；按函数名报 "no match"（如缩进的类方法）时，先读文件确认行号，改用 `git log -L <起始行>,<结束行>:<文件>`。读最新那个 commit 的 `Requirement` 指向的 PRD「决策记录」和 commit 说明正文（squash 合并的 commit 可能有多行 `Requirement`，逐个读）；更早的 PRD 只在需要追溯时才读。commit 没有 `Requirement` 标记的是接入 bb-spec 之前的老代码，没有对应 PRD，只读 commit 说明；查不到原因就如实说"查不到"。
 4. PRD 和代码不一致时以代码为准，并在回答里指出哪里不一致。
 5. 改代码前按第 3 条查清设计原因，改动不能违背；确实要改设计，新需求走 `/prd`、修正走 `/revise`。
-6. 每个 commit 说明的最后一段带一行 `Requirement: <PRD 目录名>`，和 `Co-Authored-By:` 等尾注同段、中间不空行；和任何需求都无关的改动写 `Requirement: none`，并在正文写一句原因。多仓库时每个仓库的 commit 都要带。
+6. 每个 commit 说明末尾单独一行带 `Requirement: <PRD 目录名>`；和任何需求都无关的改动写 `Requirement: none`，并在正文写一句原因。多仓库时每个仓库的 commit 都要带。
 
 ## 项目约束
 - <约束>（原因：<一句话>）

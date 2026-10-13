@@ -57,8 +57,14 @@ argument-hint: <问题或优化诉求描述>
 |---|---|---|
 | 实现代码 | 按问题描述的功能名搜 `${DOCS_DIR}/prd/*/OVERVIEW.md` 的 `features:` → 在各代码仓库里 `git log --grep "Requirement: <目录名>" --name-only`；或 codegraph / grep | 确认"实际做了什么"（附 `文件:行号`） |
 | 测试文件 | 测试目录 + 命名惯例 | 确认"验了什么" |
-| 相关 PRD | 在函数所在仓库里对出问题的函数跑 `git log -L :<函数>:<文件> -s --format='%h %s \| %(trailers:key=Requirement,valueonly)'`（按函数名 no match 时改用行号范围），读最新 `Requirement` 指向的 PRD 与 commit 正文；无标记的 commit 是接入 bb-spec 之前的老代码，没有对应 PRD | 确认"当初要的行为与为什么" |
+| 相关 PRD | 在函数所在仓库里对出问题的函数跑表格下方的命令（按函数名 no match 时改用行号范围 `-L <起始行>,<结束行>:<文件>`），读最新那个 commit 的 `Requirement` 行指向的 PRD 与 commit 正文（squash 合并的 commit 可能有多行，逐个读）；无标记的 commit 是接入 bb-spec 之前的老代码，没有对应 PRD | 确认"当初要的行为与为什么" |
 | plan 文件 | 进行中主题的 INDEX.md（无进行中 plan 则跳过） | 确认"怎么做"的设计 |
+
+查相关 PRD 的命令（列出改过该函数的 commit 和各自的 `Requirement` 行，最新的在前）：
+
+```bash
+git log -L :<函数>:<文件> -s --format='%h %s%n%b' | grep -e '^[0-9a-f]\{7,40\} ' -e '^Requirement:'
+```
 
 建立完整链路：**PRD 要什么 → plan 怎么做 → 代码做了什么 → 测试验了什么**。
 
@@ -161,7 +167,7 @@ argument-hint: <问题或优化诉求描述>
 1. **全量测试**：运行项目全量测试，确认无回归
 2. **期望行为合规**：检查修复是否引入新的违规；修复改变了本分支 PRD 描述的任一行为而 PRD 未同步，说明归因漏判，回到 3a 补改 PRD 后才允许 commit
 3. **文档同步**：调用 `Skill bb-spec-workflow:doc-update`，参数 `--tail`，让本分支 PRD 与 README、AGENTS.md 等文档追平代码；已合并的 PRD 不碰
-4. **本地 commit**：先 `git branch --show-current` 确认分支（**在 main 上则跳过**并提示按 git-workflow 先建分支），只提交本次涉及文件（PRD / plan / 实现 / 测试 + doc-update 收尾改动；多仓库时各仓库分别提交，每个 commit 都带标记），message 遵循仓库历史风格（先 `git log --oneline -10`）、不硬编码类型前缀；**正文写清修订原因（改前什么行为、改后什么行为、为什么改）**，最后一段尾注带 `Requirement: <相关 PRD 目录名>`（与 `Co-Authored-By:` 等同段、不空行）（修已合并功能写原需求目录；找不到相关 PRD 写 `none`）；**仅本地、不自动 push**
+4. **本地 commit**：先 `git branch --show-current` 确认分支（**在 main 上则跳过**并提示按 git-workflow 先建分支），只提交本次涉及文件（PRD / plan / 实现 / 测试 + doc-update 收尾改动；多仓库时各仓库分别提交，每个 commit 都带标记），message 遵循仓库历史风格（先 `git log --oneline -10`）、不硬编码类型前缀；**正文写清修订原因（改前什么行为、改后什么行为、为什么改）**，末尾单独一行带 `Requirement: <相关 PRD 目录名>`（修已合并功能写原需求目录；找不到相关 PRD 写 `none`）；**仅本地、不自动 push**
 
 ### 步骤 5：完成简报
 
