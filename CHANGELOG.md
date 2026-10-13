@@ -1,5 +1,17 @@
 # Changelog
 
+## [14.1.0](https://github.com/0xBB2B/bb-spec/compare/v14.0.0...v14.1.0) (2026-10-13)
+
+
+### Features
+
+* **workflow:** 旧版本项目无需迁移即可使用，删除 /prd-migrate ([#268](https://github.com/0xBB2B/bb-spec/issues/268)) ([44c1a79](https://github.com/0xBB2B/bb-spec/commit/44c1a793a01e714c78e569a30a965698349f3897))
+
+
+### Bug Fixes
+
+* **workflow:** Requirement 标记改为按正文行读取，squash 合并后也能查到 ([#270](https://github.com/0xBB2B/bb-spec/issues/270)) ([08dd88e](https://github.com/0xBB2B/bb-spec/commit/08dd88e21775f52a887de1405d221139f40956b8))
+
 ## [14.0.0](https://github.com/0xBB2B/bb-spec/compare/v13.0.0...v14.0.0) (2026-10-13)
 
 
