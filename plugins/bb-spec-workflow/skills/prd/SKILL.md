@@ -27,7 +27,6 @@ description: 新需求的唯一入口——质疑→澄清→拆解，启动即 
   - 涉及 PRD 的 git 命令都在文档仓库里执行（`git -C <文档仓库>`），路径用相对文档仓库根的写法，下文记作 `<PRD 根>`（单仓库时就是 `${DOCS_DIR}/prd`）
   - 查代码历史的 git 命令（`git log -L`、`git log --grep "Requirement: …"`）在每个相关代码仓库里分别执行
   - 本次需求涉及的每个仓库（文档仓库 + 改动的代码仓库）都按 git-workflow 开同名功能分支，各自的 commit 都带 `Requirement:` 标记
-  - 跨仓库记录 commit 时写成 `<仓库目录名>@<短哈希>`（如 `trade@9153a78`），单仓库直接写短哈希
 
 **本分支 PRD 的判定**（所有 skill 共用这一条）：`git -C <文档仓库> cat-file -e <基线分支>:<PRD 根>/<目录>/OVERVIEW.md` 失败（基线分支 main 或 master 上还没有它）= 本分支新增 = 可改；成功 = 已合并 = 冻结。单仓库时 `<文档仓库>` 就是当前仓库。
 
