@@ -135,7 +135,7 @@
 
 - **`/git-push`** — ユーザートリガーの push + PR フロー(単一 / マルチリポジトリ)。
   - AGENTS.md または本ブランチの PRD がある場合、または本ブランチの commit がマージ済み PRD を指す場合、まず**ブランチ規範セルフチェック(pre-review)**を実行:サブエージェントがプロジェクト制約、PRD、commit 本文の変更説明 vs ブランチ diff を比較、違反を反復修正
-  - PR 説明に `Requirement:` マーカーを付与;リポジトリは rebase マージのみ許可する必要あり(GitHub は「Allow rebase merging」のみ、GitLab は「Fast-forward merge」かつ squash を「Do not allow」)、各 commit が自身の `Requirement:` 行ごとそのままメインブランチに入る
+  - PR 説明に `Requirement:` マーカーを付与;リポジトリは rebase マージのみ許可する必要あり(GitHub は「Allow rebase merging」のみかつメインブランチのルールセットの「Allowed merge methods」も Rebase のみ、GitLab は「Fast-forward merge」かつ squash を「Do not allow」)、各 commit が自身の `Requirement:` 行ごとそのままメインブランチに入る
   - **6 セクションの PR 説明**(背景 / 要件 / アプローチ / 結果 / テスト / 規範、< 50 行)を起草、そのまま PR body として使用
 
 - **`/doc-update`** — ドキュメントとコードの**一貫性チェック**。

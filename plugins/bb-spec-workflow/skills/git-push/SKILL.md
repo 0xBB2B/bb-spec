@@ -137,7 +137,7 @@ Requirement: <本分支 PRD 目录名>
 - 标题 ≤ 70 字
 - body：4.5 跑过 → 用 6 段草稿；4.5 跳过 → 简短 bullet + 标注「未跑 pre-review」；两种情况末尾都带一行 `Requirement: <本分支 PRD 目录名 / none>`
 - PR 创建后提醒用户核对仓库合并设置，只允许 rebase 合并，这样每个 commit 连同自己的 `Requirement:` 行原样进入主分支，代码才能经 git 精确反查回 PRD：
-  - GitHub：Settings → General → Pull Requests 只勾「Allow rebase merging」，取消「Allow merge commits」和「Allow squash merging」
+  - GitHub：Settings → General → Pull Requests 只勾「Allow rebase merging」，取消「Allow merge commits」和「Allow squash merging」；Settings → Rules → Rulesets 里作用于主分支的规则集，「Require a pull request before merging」的「Allowed merge methods」也只留 Rebase——两处都放行 rebase 才能合并
   - GitLab：Settings → Merge requests 的 Merge method 选「Fast-forward merge」，「Squash commits when merging」选「Do not allow」
 
 ## 7. 处理 PR
@@ -167,6 +167,7 @@ Requirement: <本分支 PRD 目录名>
 - **冲突**（`mergeable == CONFLICTING` / `mergeStateStatus == DIRTY`）→ `git rebase <基线>`（4.3 选定）：机械性冲突自行解决 + `--force-with-lease` 重推；业务性冲突停下报告。重推后 GitHub 异步重算 mergeability，需等其不再是 `UNKNOWN`/`CONFLICTING` 再重试合并
 - **`mergeable == UNKNOWN`**（GitHub 仍在计算，常见于刚 push / rebase 后）→ 短暂轮询后重查，勿据此误判为冲突
 - **必需检查未过**：CI 进行中 → 告知用户挂起、跳过清理；**CI 失败** → 取消自动合并 → 拉失败日志 → 机械性失败（lint/format/lockfile）自行修复后重设；业务性失败停下报告
+- **合并方式被拒**（`gh pr merge` 报 `Rebase merges are not allowed on this repository`）→ 仓库常规设置和主分支规则集都限制合并方式，任一处不放行 rebase 都会被拒。分别查 `gh api repos/<owner>/<repo> --jq .allow_rebase_merge` 与 `gh api repos/<owner>/<repo>/rules/branches/<基线分支名> --jq '.[] | select(.type=="pull_request") | .parameters.allowed_merge_methods'`，把不放行的那处报给用户；改仓库设置须经用户同意，改完重试合并
 
 ## 8. 合并后清理（按步骤 2 的模式分流）
 
