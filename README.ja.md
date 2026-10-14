@@ -44,17 +44,17 @@
 /plugin install bb-spec-workflow@0xbb2b
 ```
 
-メインパイプラインの 5 コマンド:
+日常的に手動で打つ 5 コマンド:
 
 | コマンド | 何をするか | いつ使うか |
 |---|---|---|
-| `/prd` | 質疑→明確化→分解、1 回の承認で PRD + AGENTS.md を書き出し、plan → exec を自動実行 | 新規要件の着手時 |
-| `/plan` | PRD → 関数レベルの実装計画、完了後に exec を自動実行 | `/prd` から自動呼び出し |
-| `/exec` | 3 エージェント隔離で Test→Impl→Review を実行、仕上げに doc-update を自動実行 | `/plan` から自動呼び出し;中断時は手動で再開 |
-| `/review` | 並列 finder + 敵対的検証 | PR 提出前 |
-| `/git-push` | pre-review セルフチェック + push + PR 作成 | リリース準備時 |
+| `/prd` | 質疑→明確化→分解、1 回の承認で PRD + AGENTS.md を書き出し、plan → exec → doc-update を自動実行 | 新規要件の着手時 |
+| `/revise` | 根本原因で診断→的を絞った修正→回帰検証、完了後に doc-update を自動実行 | バグや期待と異なる結果が出た時 |
+| `/git-push` | pre-review セルフチェック + push + PR 作成 | PR を出す時 |
+| `/exec` | 中断箇所から plan の実行を再開 | 中断や `/clear` の後 |
+| `/doc-update` | リポジトリ全体のドキュメントとコードの一貫性をチェック | リポジトリ全体を点検したい時(`/exec`・`/revise` の終了時に本ブランチの範囲は自動チェック済み) |
 
-いつでも介入可能な 3 つの支線:`/git-clone`(リモートプロジェクトをローカルに取得 + `.bb-spec.yaml` を生成するワンショット onboarding)、`/revise`(あらゆる逸脱を根本原因に基づき正しいステージに戻す)、`/doc-update`(ドキュメントとコードの一貫性チェック;`/exec` と `/revise` の終了時には今回の変更範囲を自動で一度実行)。
+初回セットアップは `/git-clone`(リモートプロジェクトをローカルに取得 + `.bb-spec.yaml` を生成);任意コマンド:`/review`(並列 finder + 敵対的検証)、`/test-webview` / `/test-api`(フロント / バックエンド e2e)。
 
 ---
 
@@ -63,19 +63,21 @@
 ```
  (任意) /git-clone ──► リモート取得 + .bb-spec.yaml 生成
    │
- /prd ══► /plan ══► /exec ══► /doc-update ──► /review ──► /git-push
- 何を作るか どう作るか Red→Green  ドキュメントをコードに追従  並列+敵対  pre-review+PR 作成
- (唯一の承認)          →Review
- ══► 自動で接続、再確認なし(新規第三者依存の追加や設計判断が必要な時のみ停止)
-                                                          │
-        ┌─────────────────────────────────────────────────┘
-        │
-        ▼ /revise(いつでも介入、根本原因でルーティング)
-          PRD 欠陥 → 本ブランチの PRD を修正   ·   実装ドリフト → TDD で修正   ·   大きな要件変更 → /prd
+ /prd ══► /plan ══► /exec ══► /doc-update ──► /git-push
+ 何を作るか どう作るか Red→Green ドキュメント同期 pre-review+PR 作成
+ (唯一の承認)       →Review
 
- (任意) /test-webview · /test-api — フロント / バックエンド e2e、/exec と /review の間に挿入
- /doc-update(定期 / 必要時) — ドキュメントとコードのドリフト走査 → デフォルトはドキュメントを更新、
-                                  コードがプロジェクト制約に違反する場合のみ止まって確認 → /revise へルーティング
+ ══► 自動で接続、再確認なし(新規第三者依存の追加や設計判断が必要な時のみ停止)
+ ──► ユーザーが手動で実行
+
+ (任意) /review · /test-webview · /test-api — PR 前の追加チェック:
+        敵対的レビュー / フロント e2e / バックエンド e2e、/doc-update と /git-push の間に挿入
+
+ /revise(いつでも介入、根本原因でルーティング、完了後に /doc-update を自動実行)
+   PRD 欠陥 → 本ブランチの PRD を修正   ·   実装ドリフト → TDD で修正   ·   大きな要件変更 → /prd
+
+ /doc-update(手動) — リポジトリ全体のドキュメントとコードのドリフト走査 → デフォルトはドキュメントを更新、
+                      コードがプロジェクト制約に違反する場合のみ止まって確認 → /revise へルーティング
 ```
 
 **このパイプラインが信頼できる理由** —— すべての受け渡しが**ディスク上のファイル**であり、チャット内の一時記憶ではない。これが再開可能・AI 交代可能・端から端までトレース可能な根本である。
@@ -107,25 +109,15 @@
   - 実装中に方針の問題が見つかったら止まって選択を求める:コードを直す / 今回の PRD を直す / 一時停止;小さな変更はその場で修正、大きな変更は `/prd` に戻って再承認
   - 全完了後に `/doc-update` の仕上げモードを自動実行、今回の PRD と README などのドキュメントを実際の成果物に追従させる
 
-- **`/test-webview`** — フロントエンド / ウェブプロジェクトの**インタラクション受け入れ**。
-  - Docker フルスタック起動(初回確認後に記憶、終了後 `down -v` でクリーンアップ)、ブラウザ MCP で実ブラウザを駆動
-  - **各ケースに隔離されたシリアルサブエージェントを割り当て**、数百ケースでもメインコンテキストを溢れさせない;全工程シリアル(ブラウザ単一インスタンス)
-  - ケースは本ブランチの PRD の受け入れ基準と検証パスから自動生成(マージ済みの過去 PRD は読まない);実行前に**カバレッジ整合**、ギャップを暗黙に見逃さない;失敗は `/revise` へ
-  - ブラウザ MCP(playwright / chrome-devtools)が必要
+- **`/doc-update`** — ドキュメントとコードの**一貫性チェック**。
+  - 4 種類の検出:doc-stale(ルートドキュメントの陳腐化)/ prd-stale(本ブランチの PRD と成果物の不一致)/ code-violation(コードが AGENTS.md に違反)/ agents-conflict(プロジェクト制約同士の矛盾)
+  - **コードが真実、ドキュメントはコードに合わせる**;コード変更は必ず先に確認し、`/revise` 経由で TDD へ;マージ済みの PRD はどのモードでも触らない
+  - **仕上げモード**(`--tail`):`/exec`・`/revise` の終了時に自動呼び出し、本ブランチの変更範囲だけを扱う
 
-- **`/test-api`** — バックエンド**API e2e**。
-  - `compose.e2e.yaml` でフルスタック起動、md ケースを**機械的に単一ファイルの Bun TS runner にレンダリング**、`bun run` で一発実行
-  - **サブエージェントゼロ、並列ゼロ** —— HTTP は決定的スクリプト、時計状態は共有のため並列禁止
-  - **時間依存ルール**(token 期限切れ、注文タイムアウト、ポイント期限)は `/test/advance-time`、`/test/backdate`、`/test/trigger-job` プロトコルでテスト
-  - アプリ側は**2 つのイメージを出力**:test イメージは `/test/*` ルート + `ENV TESTAPI=1` 搭載;本番イメージは `/test/*` ソースを**物理的に除外**;`/test/healthz` プローブが失敗したら中断、フォールバック禁止
-
-- **`/review`** — Workflow オーケストレーション、**敵対的検証**付きのローカル PR review。
-  - フェーズ 1 で diff を ≤1500 行ごとに分割し、各スライスの diff を一度だけディスクに書き出して全 agent で共有、各スライスに **3 つの finder** を並列実行:欠陥(セキュリティ / 堅牢性 / 正確性)/ 設計(品質 / 簡潔性 / ドキュメント同期)/ **Codex クロスモデル独立** review、schema 強制で構造化
-  - フェーズ 2 で各スライスに **1 つの懐疑的仲裁者**を割り当て、そのスライス内の全 🔴/🟡 を三視点(重要性 / 根本原因性 / 未修正リスク)で判定、多数決で残否を決定
-  - フェーズ 3 で各スライスに **1 つの走査者**を割り当て、確認済み全項目の**同種の兄弟箇所**をそのスライス内で走査、`/revise` で一クラスまとめて修正;NIT は一括処理可能
-  - 全フェーズがスライス単位で agent を派遣するため、コストは diff 1 行あたり約 300 tokens(15k 行の diff ≈ 50 agent / 5M tokens)
-  - 修正が入った後、修正 diff を**自動で 1 回再レビュー**;レポートは `.bb-spec/.cache/review/` に保存され、次回実行時に再発の検出と却下済み項目のスキップに使われる
-  - 読み取り専用、絶対に自動編集しない;Claude Code ≥ 2.1.154 が必要
+- **`/git-push`** — ユーザートリガーの push + PR フロー(単一 / マルチリポジトリ)。
+  - AGENTS.md または本ブランチの PRD がある場合、または本ブランチの commit がマージ済み PRD を指す場合、まず**ブランチ規範セルフチェック(pre-review)**を実行:サブエージェントがプロジェクト制約、PRD、commit 本文の変更説明 vs ブランチ diff を比較、違反を反復修正
+  - PR 説明に `Requirement:` マーカーを付与;リポジトリは rebase マージのみ許可する必要あり(GitHub は「Allow rebase merging」のみかつメインブランチのルールセットの「Allowed merge methods」も Rebase のみ、GitLab は「Fast-forward merge」かつ squash を「Do not allow」)、各 commit が自身の `Requirement:` 行ごとそのままメインブランチに入る
+  - **6 セクションの PR 説明**(背景 / 要件 / アプローチ / 結果 / テスト / 規範、< 50 行)を起草、そのまま PR body として使用
 
 - **`/revise`** — いつでも介入可能な例外処理。
   - まずコードを読んで現状を確認し、`git log -L` で関連 PRD を辿ってから、逸脱を**根本原因で 3 分類**:*PRD 欠陥*、*実装ドリフト*、*要件変更*
@@ -133,15 +125,25 @@
   - 修正が必要なすべての review 指摘はここに集約
   - 修正後に `/doc-update` の仕上げモードを自動実行
 
-- **`/git-push`** — ユーザートリガーの push + PR フロー(単一 / マルチリポジトリ)。
-  - AGENTS.md または本ブランチの PRD がある場合、または本ブランチの commit がマージ済み PRD を指す場合、まず**ブランチ規範セルフチェック(pre-review)**を実行:サブエージェントがプロジェクト制約、PRD、commit 本文の変更説明 vs ブランチ diff を比較、違反を反復修正
-  - PR 説明に `Requirement:` マーカーを付与;リポジトリは rebase マージのみ許可する必要あり(GitHub は「Allow rebase merging」のみかつメインブランチのルールセットの「Allowed merge methods」も Rebase のみ、GitLab は「Fast-forward merge」かつ squash を「Do not allow」)、各 commit が自身の `Requirement:` 行ごとそのままメインブランチに入る
-  - **6 セクションの PR 説明**(背景 / 要件 / アプローチ / 結果 / テスト / 規範、< 50 行)を起草、そのまま PR body として使用
+- **`/review`** — (任意) Workflow オーケストレーション、**敵対的検証**付きのローカル PR review。
+  - フェーズ 1 で diff を ≤1500 行ごとに分割し、各スライスの diff を一度だけディスクに書き出して全 agent で共有、各スライスに **3 つの finder** を並列実行:欠陥(セキュリティ / 堅牢性 / 正確性)/ 設計(品質 / 簡潔性 / ドキュメント同期)/ **Codex クロスモデル独立** review、schema 強制で構造化
+  - フェーズ 2 で各スライスに **1 つの懐疑的仲裁者**を割り当て、そのスライス内の全 🔴/🟡 を三視点(重要性 / 根本原因性 / 未修正リスク)で判定、多数決で残否を決定
+  - フェーズ 3 で各スライスに **1 つの走査者**を割り当て、確認済み全項目の**同種の兄弟箇所**をそのスライス内で走査、`/revise` で一クラスまとめて修正;NIT は一括処理可能
+  - 全フェーズがスライス単位で agent を派遣するため、コストは diff 1 行あたり約 300 tokens(15k 行の diff ≈ 50 agent / 5M tokens)
+  - 修正が入った後、修正 diff を**自動で 1 回再レビュー**;レポートは `.bb-spec/.cache/review/` に保存され、次回実行時に再発の検出と却下済み項目のスキップに使われる
+  - 読み取り専用、絶対に自動編集しない;Claude Code ≥ 2.1.154 が必要
 
-- **`/doc-update`** — ドキュメントとコードの**一貫性チェック**。
-  - 4 種類の検出:doc-stale(ルートドキュメントの陳腐化)/ prd-stale(本ブランチの PRD と成果物の不一致)/ code-violation(コードが AGENTS.md に違反)/ agents-conflict(プロジェクト制約同士の矛盾)
-  - **コードが真実、ドキュメントはコードに合わせる**;コード変更は必ず先に確認し、`/revise` 経由で TDD へ;マージ済みの PRD はどのモードでも触らない
-  - **仕上げモード**(`--tail`):`/exec`・`/revise` の終了時に自動呼び出し、本ブランチの変更範囲だけを扱う
+- **`/test-webview`** — (任意) フロントエンド / ウェブプロジェクトの**インタラクション受け入れ**。
+  - Docker フルスタック起動(初回確認後に記憶、終了後 `down -v` でクリーンアップ)、ブラウザ MCP で実ブラウザを駆動
+  - **各ケースに隔離されたシリアルサブエージェントを割り当て**、数百ケースでもメインコンテキストを溢れさせない;全工程シリアル(ブラウザ単一インスタンス)
+  - ケースは本ブランチの PRD の受け入れ基準と検証パスから自動生成(マージ済みの過去 PRD は読まない);実行前に**カバレッジ整合**、ギャップを暗黙に見逃さない;失敗は `/revise` へ
+  - ブラウザ MCP(playwright / chrome-devtools)が必要
+
+- **`/test-api`** — (任意) バックエンド**API e2e**。
+  - `compose.e2e.yaml` でフルスタック起動、md ケースを**機械的に単一ファイルの Bun TS runner にレンダリング**、`bun run` で一発実行
+  - **サブエージェントゼロ、並列ゼロ** —— HTTP は決定的スクリプト、時計状態は共有のため並列禁止
+  - **時間依存ルール**(token 期限切れ、注文タイムアウト、ポイント期限)は `/test/advance-time`、`/test/backdate`、`/test/trigger-job` プロトコルでテスト
+  - アプリ側は**2 つのイメージを出力**:test イメージは `/test/*` ルート + `ENV TESTAPI=1` 搭載;本番イメージは `/test/*` ソースを**物理的に除外**;`/test/healthz` プローブが失敗したら中断、フォールバック禁止
 
 **同梱されるもの**
 
@@ -194,7 +196,7 @@ BB-Spec は**4 つの独立インストール可能なサブ plugin** に分割 
 | サブ plugin | 何が手に入るか | インストールコマンド |
 |---|---|---|
 | **bb-spec-core** _(推奨ベース)_ | TDD / バージョンポリシー / Git 規律 + 3 つの受動 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(コア機能)_ | prd → plan → exec → doc-update → review → revise → git-push(+ 任意 test-webview / test-api e2e)、git-clone ワンショット初期化 + 8 サブエージェント | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(コア機能)_ | prd → plan → exec → doc-update → revise → git-push(+ 任意 review / test-webview / test-api e2e)、git-clone ワンショット初期化 + 8 サブエージェント | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / 認証 / 認可 / 可観測性 / サービスガバナンス / 設定制約 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun スタック & エンジニアリング規約(bun hook 付き) | `/plugin install bb-spec-frontend@0xbb2b` |
 

@@ -44,17 +44,17 @@
 /plugin install bb-spec-workflow@0xbb2b
 ```
 
-The 5 mainline commands:
+The 5 commands you type day to day:
 
 | Command | What it does | When |
 |---|---|---|
-| `/prd` | Challenge → clarify → break down; after one approval, writes the PRD + AGENTS.md, then auto-runs plan → exec | New requirement |
-| `/plan` | PRD → function-level implementation plan, then auto-runs exec | Auto-invoked by `/prd` |
-| `/exec` | Three-agent isolated Test→Impl→Review, auto-runs doc-update at the end | Auto-invoked by `/plan`; resume manually after an interruption |
-| `/review` | Parallel finders + adversarial verify | Before opening PR |
-| `/git-push` | pre-review self-check + push + open PR | Ready to ship |
+| `/prd` | Challenge → clarify → break down; after one approval, writes the PRD + AGENTS.md, then auto-runs plan → exec → doc-update | New requirement |
+| `/revise` | Diagnose by root cause → targeted fix → regression check, then auto-runs doc-update | A bug, or results that don't match expectations |
+| `/git-push` | pre-review self-check + push + open PR | Ready to open a PR |
+| `/exec` | Resume the plan from where it stopped | After an interruption or `/clear` |
+| `/doc-update` | Check the whole repo for doc / code drift | When you want a full-repo check (`/exec` and `/revise` already check this branch's changes at the end) |
 
-Three branches, callable anytime: `/git-clone` (pull a remote project locally + write `.bb-spec.yaml`, one-shot onboarding), `/revise` (route any deviation back to the right stage by root cause), `/doc-update` (doc / code consistency sweep; `/exec` and `/revise` also run it automatically over the current change at the end).
+First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.yaml`). Optional: `/review` (parallel finders + adversarial verify), `/test-webview` / `/test-api` (frontend / backend e2e).
 
 ---
 
@@ -63,19 +63,21 @@ Three branches, callable anytime: `/git-clone` (pull a remote project locally + 
 ```
  (opt) /git-clone ──► clone remote + write .bb-spec.yaml
    │
- /prd ══► /plan ══► /exec ══► /doc-update ──► /review ──► /git-push
-  what      how      Red→Green  docs mirror code   finders+adv  pre-review+open PR
- (the only approval)    →Review
- ══► chained automatically, no more prompts (stops only for new third-party deps or design calls)
-                                                          │
-        ┌─────────────────────────────────────────────────┘
-        │
-        ▼ /revise (anytime, routed by root cause)
-          PRD defect → edit this branch's PRD   ·   impl drift → TDD fix   ·   big requirement change → /prd
+ /prd ══► /plan ══► /exec ══► /doc-update ──► /git-push
+ what     how       Red→Green docs sync       pre-review+open PR
+ (the only approval) →Review
 
- (opt) /test-webview · /test-api — frontend / backend e2e between /exec and /review
- /doc-update (periodic / on-demand) — sweep doc / code drift → default updates docs;
-                                        code violating project constraints stops to ask → routes to /revise
+ ══► chained automatically, no more prompts (stops only for new third-party deps or design calls)
+ ──► triggered by you
+
+ (opt) /review · /test-webview · /test-api — an extra check before the PR:
+       adversarial review / frontend e2e / backend e2e, between /doc-update and /git-push
+
+ /revise (anytime, routed by root cause; auto-runs /doc-update when done)
+   PRD defect → edit this branch's PRD   ·   impl drift → TDD fix   ·   big requirement change → /prd
+
+ /doc-update (manual) — sweep the whole repo for doc / code drift → default updates docs;
+                        code violating project constraints stops to ask → routes to /revise
 ```
 
 **Why this pipeline is reliable** — every handoff is a *file on disk*, not a memory in the chat. That's what makes it resumable, AI-swappable, and auditable end to end.
@@ -107,25 +109,15 @@ Three branches, callable anytime: `/git-clone` (pull a remote project locally + 
   - If the plan turns out to be wrong mid-implementation, it stops and lets you pick: change the code / change this PRD / pause; small changes are made in place, big ones go back to `/prd` for re-approval
   - When everything is done, auto-runs `/doc-update` in tail mode so this PRD and docs like README mirror what was actually delivered
 
-- **`/test-webview`** — **Web-interaction acceptance** for frontend / web projects.
-  - Brings the app up via the project's Docker stack (confirmed once, then remembered; `down -v` cleans up afterward), drives a real browser via the browser MCP
-  - **Each case runs in an isolated serial subagent** — hundreds of cases never blow the main context; fully serial (shared single browser)
-  - Cases auto-generated from the acceptance criteria and verification paths of this branch's PRD (merged, historical PRDs are not read); **coverage alignment** before a full run, gaps never silently dropped; failures route to `/revise`
-  - Requires a browser MCP (playwright / chrome-devtools)
+- **`/doc-update`** — Doc / code **consistency sweep**.
+  - Four finding classes: doc-stale (root docs out of date) / prd-stale (this branch's PRD doesn't match what was delivered) / code-violation (code breaks AGENTS.md) / agents-conflict (project constraints contradict each other)
+  - **Code is the truth; docs are mirrored to it**; code changes always ask first and route to `/revise` for TDD; merged PRDs are never touched in any mode
+  - **Tail mode** (`--tail`): auto-invoked when `/exec` or `/revise` finishes; covers only what the current branch touched
 
-- **`/test-api`** — **API e2e** for any backend.
-  - `compose.e2e.yaml` brings the stack up; md cases **mechanically render to a single-file Bun TS runner** that runs in one shot via `bun run`
-  - **Zero subagents, zero concurrency** — HTTP is deterministic, clock state is shared
-  - **Time-sensitive rules** (token expiry, order timeout, points expiry) tested through `/test/advance-time`, `/test/backdate`, `/test/trigger-job`
-  - App side ships **two images**: test image carries `/test/*` routes + `ENV TESTAPI=1`; production image **physically excludes** `/test/*` source; `/test/healthz` probe gates the run, no fallback
-
-- **`/review`** — Workflow-orchestrated, **adversarially verified** local PR review.
-  - Phase 1 slices the diff (≤1500 lines per slice), writes each slice's diff to disk once, and fans out **3 finders per slice in parallel**: defect (security / robustness / correctness) / design (quality / simplicity / doc-sync) / **Codex cross-model independent** review, schema-enforced
-  - Phase 2 **one skeptic verifier per slice** judges every 🔴/🟡 in that slice on three lenses (importance / root-cause / risk-if-unfixed), majority vote
-  - Phase 3 **one sweeper per slice** hunts sibling sites of every confirmed defect class inside that slice; each class is handed to `/revise` as one fix; NITs can be cleared in one batch
-  - Every phase dispatches per slice, so cost scales at ~300 tokens per diff line (a 15k-line diff ≈ 50 agents / 5M tokens)
-  - Once fixes land, the fix diff gets **one automatic re-review**; the report is persisted under `.bb-spec/.cache/review/` so the next run flags recurrences and skips already-rejected items
-  - Read-only — never auto-edits; requires Claude Code ≥ 2.1.154
+- **`/git-push`** — User-triggered push + PR flow (single or multi-repo).
+  - When AGENTS.md or a PRD on this branch exists, or this branch's commits point to a merged PRD, first runs a **branch self-check (pre-review)**: a subagent checks the branch diff against the project constraints, the PRD and the change notes in commit messages, fixes violations in a loop
+  - The PR description carries the `Requirement:` trailer; the repo must allow only rebase merging (GitHub: only "Allow rebase merging", and the main-branch ruleset's "Allowed merge methods" set to Rebase only; GitLab: "Fast-forward merge" with squash set to "Do not allow"), so every commit lands on the main branch with its own `Requirement:` line
+  - Drafts a **6-section PR description** (background / requirement / approach / result / tests / conventions, < 50 lines) used directly as the PR body
 
 - **`/revise`** — The exception handler, callable anytime.
   - First reads the code to confirm current behavior and traces back to the relevant PRD via `git log -L`, then classifies the deviation's **root cause** into one of three: *PRD defect*, *impl drift*, *requirement change*
@@ -133,15 +125,25 @@ Three branches, callable anytime: `/git-clone` (pull a remote project locally + 
   - Every review finding that needs fixing funnels through here
   - Auto-runs `/doc-update` in tail mode after the fix
 
-- **`/git-push`** — User-triggered push + PR flow (single or multi-repo).
-  - When AGENTS.md or a PRD on this branch exists, or this branch's commits point to a merged PRD, first runs a **branch self-check (pre-review)**: a subagent checks the branch diff against the project constraints, the PRD and the change notes in commit messages, fixes violations in a loop
-  - The PR description carries the `Requirement:` trailer; the repo must allow only rebase merging (GitHub: only "Allow rebase merging", and the main-branch ruleset's "Allowed merge methods" set to Rebase only; GitLab: "Fast-forward merge" with squash set to "Do not allow"), so every commit lands on the main branch with its own `Requirement:` line
-  - Drafts a **6-section PR description** (background / requirement / approach / result / tests / conventions, < 50 lines) used directly as the PR body
+- **`/review`** — *(optional)* Workflow-orchestrated, **adversarially verified** local PR review.
+  - Phase 1 slices the diff (≤1500 lines per slice), writes each slice's diff to disk once, and fans out **3 finders per slice in parallel**: defect (security / robustness / correctness) / design (quality / simplicity / doc-sync) / **Codex cross-model independent** review, schema-enforced
+  - Phase 2 **one skeptic verifier per slice** judges every 🔴/🟡 in that slice on three lenses (importance / root-cause / risk-if-unfixed), majority vote
+  - Phase 3 **one sweeper per slice** hunts sibling sites of every confirmed defect class inside that slice; each class is handed to `/revise` as one fix; NITs can be cleared in one batch
+  - Every phase dispatches per slice, so cost scales at ~300 tokens per diff line (a 15k-line diff ≈ 50 agents / 5M tokens)
+  - Once fixes land, the fix diff gets **one automatic re-review**; the report is persisted under `.bb-spec/.cache/review/` so the next run flags recurrences and skips already-rejected items
+  - Read-only — never auto-edits; requires Claude Code ≥ 2.1.154
 
-- **`/doc-update`** — Doc / code **consistency sweep**.
-  - Four finding classes: doc-stale (root docs out of date) / prd-stale (this branch's PRD doesn't match what was delivered) / code-violation (code breaks AGENTS.md) / agents-conflict (project constraints contradict each other)
-  - **Code is the truth; docs are mirrored to it**; code changes always ask first and route to `/revise` for TDD; merged PRDs are never touched in any mode
-  - **Tail mode** (`--tail`): auto-invoked when `/exec` or `/revise` finishes; covers only what the current branch touched
+- **`/test-webview`** — *(optional)* **Web-interaction acceptance** for frontend / web projects.
+  - Brings the app up via the project's Docker stack (confirmed once, then remembered; `down -v` cleans up afterward), drives a real browser via the browser MCP
+  - **Each case runs in an isolated serial subagent** — hundreds of cases never blow the main context; fully serial (shared single browser)
+  - Cases auto-generated from the acceptance criteria and verification paths of this branch's PRD (merged, historical PRDs are not read); **coverage alignment** before a full run, gaps never silently dropped; failures route to `/revise`
+  - Requires a browser MCP (playwright / chrome-devtools)
+
+- **`/test-api`** — *(optional)* **API e2e** for any backend.
+  - `compose.e2e.yaml` brings the stack up; md cases **mechanically render to a single-file Bun TS runner** that runs in one shot via `bun run`
+  - **Zero subagents, zero concurrency** — HTTP is deterministic, clock state is shared
+  - **Time-sensitive rules** (token expiry, order timeout, points expiry) tested through `/test/advance-time`, `/test/backdate`, `/test/trigger-job`
+  - App side ships **two images**: test image carries `/test/*` routes + `ENV TESTAPI=1`; production image **physically excludes** `/test/*` source; `/test/healthz` probe gates the run, no fallback
 
 **Ships with**
 
@@ -194,7 +196,7 @@ Then install whichever layers you want:
 | Sub-plugin | What it gives you | Command |
 |---|---|---|
 | **bb-spec-core** _(recommended base)_ | TDD / version-policy / git-workflow discipline + 3 passive hooks | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(core)_ | prd → plan → exec → doc-update → review → revise → git-push (+ opt test-webview / test-api e2e), git-clone one-shot init + 8 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(core)_ | prd → plan → exec → doc-update → revise → git-push (+ opt review / test-webview / test-api e2e), git-clone one-shot init + 8 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / authN / authZ / observability / service / config constraints | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun stack & engineering conventions (+ bun hook) | `/plugin install bb-spec-frontend@0xbb2b` |
 

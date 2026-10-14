@@ -44,17 +44,17 @@
 /plugin install bb-spec-workflow@0xbb2b
 ```
 
-主流水线 5 条命令:
+日常要手动敲的 5 条命令:
 
 | 命令 | 做什么 | 何时用 |
 |---|---|---|
-| `/prd` | 质疑→澄清→拆解,批准一次后落盘 PRD + AGENTS.md,并自动跑 plan → exec | 新需求开工 |
-| `/plan` | PRD → 函数级实施计划,做完自动跑 exec | 由 `/prd` 自动调用 |
-| `/exec` | 三 Agent 隔离跑 Test→Impl→Review,收尾自动 doc-update | 由 `/plan` 自动调用;中断后手动续接 |
-| `/review` | 多 finder 并行 + 对抗验证 | 提 PR 前 |
-| `/git-push` | pre-review 自查 + 推 + 开 PR | 准备发版 |
+| `/prd` | 质疑→澄清→拆解,批准一次后落盘 PRD + AGENTS.md,并自动跑 plan → exec → doc-update | 新需求开工 |
+| `/revise` | 按根因诊断→定向修正→回归验证,修完自动跑 doc-update | 有 bug、结果和预期不符 |
+| `/git-push` | pre-review 自查 + 推 + 开 PR | 准备提 PR |
+| `/exec` | 从断点接着执行 plan | 中断或 `/clear` 之后 |
+| `/doc-update` | 检查整个仓库的文档与代码是否一致 | 想把整个仓库查一遍时(`/exec`、`/revise` 收尾已自动查本分支范围) |
 
-三条支线随时可介入:`/git-clone`（拉远程项目到本地 + 落 `.bb-spec.yaml` 一次性 onboarding）、`/revise`（任何偏差按根因回到正确阶段）、`/doc-update`（文档与代码一致性体检;`/exec` 与 `/revise` 收尾时会自动跑一遍本次改动的范围）。
+首次接入用 `/git-clone`(拉远程项目到本地 + 落 `.bb-spec.yaml`);可选命令:`/review`(多 finder 并行 + 对抗验证)、`/test-webview` / `/test-api`(前端 / 后端 e2e)。
 
 ---
 
@@ -63,18 +63,20 @@
 ```
  (可选) /git-clone ──► 拉远程 + 落 .bb-spec.yaml
    │
- /prd ══► /plan ══► /exec ══► /doc-update ──► /review ──► /git-push
- 做什么    怎么做    Red→Green  文档追平代码    并发+对抗    pre-review+开 PR
- (唯一一次批准)        →Review
- ══► 自动衔接,不再询问(仅新增第三方依赖或需设计裁决时停下)
-                                                          │
-        ┌─────────────────────────────────────────────────┘
-        │
-        ▼ /revise(随时介入,按根因路由)
-          PRD 缺陷 → 改本分支 PRD   ·   实现偏离 → TDD 修复   ·   大的需求变更 → /prd
+ /prd ══► /plan ══► /exec ══► /doc-update ──► /git-push
+ 做什么   怎么做    Red→Green 文档追平代码    pre-review+开 PR
+ (唯一一次批准)     →Review
 
- (可选) /test-webview · /test-api — 前端 / 后端 e2e,挂在 /exec 与 /review 之间
- /doc-update(定期 / 按需)— 扫文档与代码的漂移 → 默认改文档,代码违反项目约束才停下问 → 挂 /revise
+ ══► 自动衔接,不再询问(仅新增第三方依赖或需设计裁决时停下)
+ ──► 由你手动触发
+
+ (可选) /review · /test-webview · /test-api — 提 PR 前多加一道检查:
+        对抗审查 / 前端 e2e / 后端 e2e,挂在 /doc-update 与 /git-push 之间
+
+ /revise(随时介入,按根因路由,修完自动跑 /doc-update)
+   PRD 缺陷 → 改本分支 PRD   ·   实现偏离 → TDD 修复   ·   大的需求变更 → /prd
+
+ /doc-update(手动)— 扫整个仓库的文档与代码漂移 → 默认改文档,代码违反项目约束才停下问 → 挂 /revise
 ```
 
 **为什么这条流水线靠得住**——每次交接物都是**磁盘上的文档**、不是会话里的临时记忆,这是它能断点续、能换 AI 接手、能逐级追溯的根本。
@@ -106,25 +108,15 @@
   - 实施中发现方案有问题,停下让你选:改代码 / 改本次 PRD / 暂停;小改就地改,大改回到 `/prd` 重新批准
   - 全部完成后自动跑 `/doc-update` 收尾模式,让本次 PRD 和 README 等文档追平实际交付
 
-- **`/test-webview`** — 前端 / 网页项目的**交互验收**。
-  - Docker 整栈拉起(首次确认后记住,跑完 `down -v` 清理),浏览器 MCP 驱动真实浏览器
-  - **每个用例派隔离串行 subagent**,几百用例也不爆主上下文;全程串行(浏览器单实例)
-  - 用例自动从本分支 PRD 的验收与验证路径归纳生成(不读已合并的历史 PRD);跑前**覆盖对齐**,缺口不静默漏测;失败转 `/revise`
-  - 需浏览器 MCP(playwright / chrome-devtools)
+- **`/doc-update`** — 文档与代码**一致性体检**。
+  - 四类发现:doc-stale(根文档过期)/ prd-stale(本分支 PRD 与交付不符)/ code-violation(代码违反 AGENTS.md)/ agents-conflict(项目约束互相矛盾)
+  - **代码是事实、文档追平代码**;改代码一律先问、挂回 `/revise` 走 TDD;已合并的 PRD 任何模式都不碰
+  - **收尾模式**(`--tail`):`/exec`、`/revise` 结束时自动调用,只处理本分支改动涉及的范围
 
-- **`/test-api`** — 后端**接口 e2e**。
-  - `compose.e2e.yaml` 拉起整栈,md 用例**机械渲染为单文件 Bun TS runner**,`bun run` 一次跑完
-  - **零 subagent、零并发**——HTTP 是确定性脚本,时钟共享禁并发
-  - **时间敏感规则**(token 过期、订单超时、积分过期)经 `/test/advance-time`、`/test/backdate`、`/test/trigger-job` 协议测
-  - 应用侧**产双 image**:test image 带 `/test/*` 路由 + `ENV TESTAPI=1`;生产 image **物理排除** `/test/*` 源码;`/test/healthz` 探测失败即中止、禁降级
-
-- **`/review`** — Workflow 编排、**对抗验证**的本地 PR review。
-  - Phase 1 diff 按 ≤1500 行分片,每片 diff 落盘一次供所有 agent 共读,每片并发 **3 个 finder**:缺陷(安全 / 鲁棒性 / 正确性)/ 设计(质量 / 简洁性 / 文档同步)/ **Codex 跨模型独立** review,schema 强制结构化
-  - Phase 2 每片 **1 个仲裁者**对本片全部 🔴/🟡 做三视角裁决(重要性 / 根源性 / 不修风险),多数决去留
-  - Phase 3 每片 **1 个扫描者**为全部确认项在本片内**同类扫描**兄弟位点,交 `/revise` 一次修一类;NIT 可一键批量清
-  - 三个阶段都按片派 agent,成本约 300 tokens / diff 行(15k 行 diff ≈ 50 agent / 5M tokens)
-  - 修复落地后对修复 diff **自动复审一轮**;报告落盘 `.bb-spec/.cache/review/`,下一轮据此标记复发、跳过已否决项
-  - 只读、绝不自动改码;要求 Claude Code ≥ 2.1.154
+- **`/git-push`** — 用户触发的推送 + PR 流程(单 / 多仓库)。
+  - 存在 AGENTS.md、本分支 PRD 或本分支 commit 指向已合并 PRD 时先跑**分支规范自查(pre-review)**:subagent 比对项目约束、PRD 与 commit 正文的改动说明 vs 分支 diff,违规循环修复
+  - PR 描述带 `Requirement:` 标记;仓库需只允许 rebase 合并(GitHub 只勾「Allow rebase merging」,主分支规则集的「Allowed merge methods」也只留 Rebase;GitLab 选「Fast-forward merge」并把 squash 设为「Do not allow」),每个 commit 连同自己的 `Requirement:` 行原样进入主分支
+  - 起草 **6 段 PR 描述**(背景 / 需求 / 方案 / 结果 / 测试 / 规范,< 50 行)直接用作 PR body
 
 - **`/revise`** — 随时介入的异常处理。
   - 先读代码确认现状、经 `git log -L` 查回相关 PRD,再把偏差**归因**为三类:*PRD 缺陷*、*实现偏离*、*需求变更*
@@ -132,15 +124,25 @@
   - 所有需修复的 review 发现都汇入此处
   - 修完自动跑 `/doc-update` 收尾模式
 
-- **`/git-push`** — 用户触发的推送 + PR 流程(单 / 多仓库)。
-  - 存在 AGENTS.md、本分支 PRD 或本分支 commit 指向已合并 PRD 时先跑**分支规范自查(pre-review)**:subagent 比对项目约束、PRD 与 commit 正文的改动说明 vs 分支 diff,违规循环修复
-  - PR 描述带 `Requirement:` 标记;仓库需只允许 rebase 合并(GitHub 只勾「Allow rebase merging」,主分支规则集的「Allowed merge methods」也只留 Rebase;GitLab 选「Fast-forward merge」并把 squash 设为「Do not allow」),每个 commit 连同自己的 `Requirement:` 行原样进入主分支
-  - 起草 **6 段 PR 描述**(背景 / 需求 / 方案 / 结果 / 测试 / 规范,< 50 行)直接用作 PR body
+- **`/review`** — (可选) Workflow 编排、**对抗验证**的本地 PR review。
+  - Phase 1 diff 按 ≤1500 行分片,每片 diff 落盘一次供所有 agent 共读,每片并发 **3 个 finder**:缺陷(安全 / 鲁棒性 / 正确性)/ 设计(质量 / 简洁性 / 文档同步)/ **Codex 跨模型独立** review,schema 强制结构化
+  - Phase 2 每片 **1 个仲裁者**对本片全部 🔴/🟡 做三视角裁决(重要性 / 根源性 / 不修风险),多数决去留
+  - Phase 3 每片 **1 个扫描者**为全部确认项在本片内**同类扫描**兄弟位点,交 `/revise` 一次修一类;NIT 可一键批量清
+  - 三个阶段都按片派 agent,成本约 300 tokens / diff 行(15k 行 diff ≈ 50 agent / 5M tokens)
+  - 修复落地后对修复 diff **自动复审一轮**;报告落盘 `.bb-spec/.cache/review/`,下一轮据此标记复发、跳过已否决项
+  - 只读、绝不自动改码;要求 Claude Code ≥ 2.1.154
 
-- **`/doc-update`** — 文档与代码**一致性体检**。
-  - 四类发现:doc-stale(根文档过期)/ prd-stale(本分支 PRD 与交付不符)/ code-violation(代码违反 AGENTS.md)/ agents-conflict(项目约束互相矛盾)
-  - **代码是事实、文档追平代码**;改代码一律先问、挂回 `/revise` 走 TDD;已合并的 PRD 任何模式都不碰
-  - **收尾模式**(`--tail`):`/exec`、`/revise` 结束时自动调用,只处理本分支改动涉及的范围
+- **`/test-webview`** — (可选) 前端 / 网页项目的**交互验收**。
+  - Docker 整栈拉起(首次确认后记住,跑完 `down -v` 清理),浏览器 MCP 驱动真实浏览器
+  - **每个用例派隔离串行 subagent**,几百用例也不爆主上下文;全程串行(浏览器单实例)
+  - 用例自动从本分支 PRD 的验收与验证路径归纳生成(不读已合并的历史 PRD);跑前**覆盖对齐**,缺口不静默漏测;失败转 `/revise`
+  - 需浏览器 MCP(playwright / chrome-devtools)
+
+- **`/test-api`** — (可选) 后端**接口 e2e**。
+  - `compose.e2e.yaml` 拉起整栈,md 用例**机械渲染为单文件 Bun TS runner**,`bun run` 一次跑完
+  - **零 subagent、零并发**——HTTP 是确定性脚本,时钟共享禁并发
+  - **时间敏感规则**(token 过期、订单超时、积分过期)经 `/test/advance-time`、`/test/backdate`、`/test/trigger-job` 协议测
+  - 应用侧**产双 image**:test image 带 `/test/*` 路由 + `ENV TESTAPI=1`;生产 image **物理排除** `/test/*` 源码;`/test/healthz` 探测失败即中止、禁降级
 
 **附带产物**
 
@@ -193,7 +195,7 @@ BB-Spec 拆成**四个可独立安装的子 plugin**——只装你需要的约�
 | 子 plugin | 装了得到什么 | 安装命令 |
 |---|---|---|
 | **bb-spec-core** _(推荐基座)_ | TDD / 版本策略 / Git 纪律 + 3 个被动 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(核心功能)_ | prd → plan → exec → doc-update → review → revise → git-push(+ 可选 test-webview / test-api e2e)、git-clone 一次性初始化 + 8 个 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(核心功能)_ | prd → plan → exec → doc-update → revise → git-push(+ 可选 review / test-webview / test-api e2e)、git-clone 一次性初始化 + 8 个 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / 数据库 / 认证 / 授权 / 可观测性 / 服务治理 / 配置约束 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun 技术栈与工程约定(含 bun hook) | `/plugin install bb-spec-frontend@0xbb2b` |
 
