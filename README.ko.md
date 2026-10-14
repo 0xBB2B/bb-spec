@@ -44,17 +44,17 @@
 /plugin install bb-spec-workflow@0xbb2b
 ```
 
-메인 파이프라인 5개 명령:
+일상적으로 직접 입력하는 5개 명령:
 
 | 명령 | 무엇을 하는가 | 언제 사용 |
 |---|---|---|
-| `/prd` | 질의→명확화→분해, 한 번 승인하면 PRD + AGENTS.md를 작성하고 plan → exec를 자동 실행 | 새 요구사항 착수 시 |
-| `/plan` | PRD → 함수 수준 구현 계획, 완료 후 exec 자동 실행 | `/prd`가 자동 호출 |
-| `/exec` | 3개 에이전트 격리로 Test→Impl→Review 실행, 마무리 시 doc-update 자동 실행 | `/plan`이 자동 호출; 중단 시 수동 재개 |
-| `/review` | 병렬 finder + 적대적 검증 | PR 제출 전 |
-| `/git-push` | pre-review 자가 점검 + push + PR 생성 | 출시 준비 |
+| `/prd` | 질의→명확화→분해, 한 번 승인하면 PRD + AGENTS.md를 작성하고 plan → exec → doc-update를 자동 실행 | 새 요구사항 착수 시 |
+| `/revise` | 근본 원인 진단→표적 수정→회귀 검증, 완료 후 doc-update 자동 실행 | 버그나 기대와 다른 결과가 나왔을 때 |
+| `/git-push` | pre-review 자가 점검 + push + PR 생성 | PR을 올릴 때 |
+| `/exec` | 중단된 지점부터 plan 실행 재개 | 중단이나 `/clear` 이후 |
+| `/doc-update` | 저장소 전체의 문서와 코드 일관성 점검 | 저장소 전체를 점검하고 싶을 때(`/exec`·`/revise` 마무리 시 이번 브랜치 범위는 자동 점검) |
 
-언제든 개입 가능한 3개 보조 라인: `/git-clone`(원격 프로젝트를 로컬로 가져오기 + `.bb-spec.yaml` 생성 일회성 onboarding), `/revise`(모든 편차를 근본 원인에 따라 올바른 단계로 라우팅), `/doc-update`(문서와 코드의 일관성 점검; `/exec`와 `/revise` 마무리 시 이번 변경 범위에 대해 자동 실행).
+최초 설정은 `/git-clone`(원격 프로젝트를 로컬로 가져오기 + `.bb-spec.yaml` 생성); 선택 명령: `/review`(병렬 finder + 적대적 검증), `/test-webview` / `/test-api`(프론트 / 백엔드 e2e).
 
 ---
 
@@ -63,19 +63,21 @@
 ```
  (선택) /git-clone ──► 원격 가져오기 + .bb-spec.yaml 생성
    │
- /prd ══► /plan ══► /exec ══► /doc-update ──► /review ──► /git-push
-  무엇을    어떻게    Red→Green  문서를 코드에   병렬+적대    pre-review+PR 생성
- (유일한 승인)         →Review   맞춤
- ══► 자동 연결, 다시 묻지 않음(신규 제3자 의존성이나 설계 판단이 필요할 때만 멈춤)
-                                                          │
-        ┌─────────────────────────────────────────────────┘
-        │
-        ▼ /revise (언제든 개입, 근본 원인으로 라우팅)
-          PRD 결함 → 이 브랜치의 PRD 수정   ·   구현 드리프트 → TDD 수정   ·   큰 요구사항 변경 → /prd
+ /prd ══► /plan ══► /exec ══► /doc-update ──► /git-push
+ 무엇을   어떻게    Red→Green 문서 동기화     pre-review+PR 생성
+ (유일한 승인)      →Review
 
- (선택) /test-webview · /test-api — 프론트 / 백엔드 e2e, /exec 와 /review 사이에 삽입
- /doc-update (정기 / 필요 시) — 문서와 코드의 드리프트 스캔 → 기본은 문서 갱신,
-                                  프로젝트 제약을 위반한 코드는 멈추고 확인 → /revise로 라우팅
+ ══► 자동 연결, 다시 묻지 않음(신규 제3자 의존성이나 설계 판단이 필요할 때만 멈춤)
+ ──► 사용자가 수동으로 실행
+
+ (선택) /review · /test-webview · /test-api — PR 전 추가 점검:
+        적대적 리뷰 / 프론트 e2e / 백엔드 e2e, /doc-update 와 /git-push 사이에 삽입
+
+ /revise (언제든 개입, 근본 원인으로 라우팅, 완료 후 /doc-update 자동 실행)
+   PRD 결함 → 이 브랜치의 PRD 수정   ·   구현 드리프트 → TDD 수정   ·   큰 요구사항 변경 → /prd
+
+ /doc-update (수동) — 저장소 전체의 문서와 코드 드리프트 스캔 → 기본은 문서 갱신,
+                      프로젝트 제약을 위반한 코드는 멈추고 확인 → /revise로 라우팅
 ```
 
 **이 파이프라인이 신뢰할 만한 이유** —— 모든 인계물은 **디스크 상의 파일**이며 채팅 내 일시 기억이 아니다. 이것이 재개 가능, AI 교체 가능, 종단 간 추적 가능의 근본이다.
@@ -107,25 +109,15 @@
   - 구현 중 설계 문제를 발견하면 멈추고 선택을 요청: 코드 수정 / 이번 PRD 수정 / 일시 중지; 작은 수정은 그 자리에서, 큰 수정은 `/prd`로 돌아가 재승인
   - 전부 완료되면 `/doc-update` 마무리 모드를 자동 실행해 이번 PRD와 README 등 문서를 실제 결과물에 맞춤
 
-- **`/test-webview`** — 프론트엔드 / 웹 프로젝트의 **상호작용 인수**.
-  - Docker 전체 스택 기동(최초 확인 후 기억, 완료 시 `down -v`로 정리), 브라우저 MCP로 실제 브라우저 구동
-  - **각 케이스마다 격리된 직렬 subagent 할당**, 수백 케이스에도 메인 컨텍스트를 폭발시키지 않음; 전 과정 직렬(브라우저 단일 인스턴스)
-  - 케이스는 이 브랜치 PRD의 인수 조건과 검증 경로에서 자동 생성(머지된 과거 PRD는 읽지 않음); 실행 전 **커버리지 정렬**, 갭을 침묵으로 누락시키지 않음; 실패는 `/revise`로 전환
-  - 브라우저 MCP(playwright / chrome-devtools) 필요
+- **`/doc-update`** — 문서와 코드의 **일관성 점검**.
+  - 4종 발견 분류: doc-stale(루트 문서 만료) / prd-stale(이 브랜치 PRD와 결과물 불일치) / code-violation(코드가 AGENTS.md 위반) / agents-conflict(프로젝트 제약 간 모순)
+  - **코드가 진실, 문서는 코드에 맞춤**; 코드 수정은 항상 먼저 확인하고 `/revise`를 통해 TDD로 진행; 머지된 PRD는 어떤 모드에서도 건드리지 않음
+  - **마무리 모드**(`--tail`): `/exec`, `/revise` 종료 시 자동 호출, 이번 브랜치 변경과 관련된 범위만 처리
 
-- **`/test-api`** — 백엔드 **API e2e**.
-  - `compose.e2e.yaml`로 전체 스택 기동, md 케이스를 **기계적으로 단일 파일 Bun TS runner로 렌더링**, `bun run`으로 한 번에 실행
-  - **subagent 제로, 동시성 제로** —— HTTP는 결정적 스크립트, 시계 상태가 공유되므로 동시성 금지
-  - **시간 민감 규칙**(token 만료, 주문 타임아웃, 포인트 만료)은 `/test/advance-time`, `/test/backdate`, `/test/trigger-job` 프로토콜로 테스트
-  - 앱 측은 **두 개의 이미지 산출**: test 이미지는 `/test/*` 라우트 + `ENV TESTAPI=1` 탑재; 운영 이미지는 `/test/*` 소스를 **물리적으로 제외**; `/test/healthz` 프로브 실패 시 즉시 중단, 폴백 금지
-
-- **`/review`** — Workflow 오케스트레이션, **적대적 검증**을 갖춘 로컬 PR review.
-  - Phase 1에서 diff를 ≤1500줄 단위로 분할하고 각 슬라이스의 diff를 한 번만 디스크에 기록해 모든 agent가 공유, 각 슬라이스마다 **3개 finder** 병렬 실행: 결함(보안 / 견고성 / 정확성) / 설계(품질 / 간결성 / 문서 동기화) / **Codex 크로스 모델 독립** review, schema 강제 구조화
-  - Phase 2에서 슬라이스마다 **1개 회의적 판정자**가 해당 슬라이스의 모든 🔴/🟡을 세 관점(중요도 / 근본 원인성 / 미수정 위험)으로 판정, 다수결로 잔존 결정
-  - Phase 3에서 슬라이스마다 **1개 스위퍼**가 확인된 모든 항목의 **동일 결함 클래스 형제 위치**를 해당 슬라이스 안에서 스윕, `/revise`로 한 클래스씩 수정; NIT는 일괄 정리 가능
-  - 모든 단계가 슬라이스 단위로 agent를 파견하므로 비용은 diff 한 줄당 약 300 tokens(15k줄 diff ≈ 50 agent / 5M tokens)
-  - 수정 반영 후 수정 diff를 **자동으로 1회 재검토**; 리포트는 `.bb-spec/.cache/review/`에 저장되어 다음 실행 시 재발 표시와 기각 항목 건너뛰기에 사용
-  - 읽기 전용, 절대 자동 편집하지 않음; Claude Code ≥ 2.1.154 필요
+- **`/git-push`** — 사용자 트리거 push + PR 흐름(단일 / 다중 저장소).
+  - AGENTS.md 또는 이 브랜치의 PRD가 있거나 이 브랜치의 commit이 병합된 PRD를 가리킬 때 먼저 **브랜치 규범 자가 점검(pre-review)** 실행: subagent가 프로젝트 제약, PRD, commit 본문의 변경 설명 vs 브랜치 diff를 비교, 위반을 반복 수정
+  - PR 설명에 `Requirement:` 태그 포함; 저장소는 rebase 머지만 허용해야 함(GitHub는 "Allow rebase merging"만 + 메인 브랜치 룰셋의 "Allowed merge methods"도 Rebase만, GitLab은 "Fast-forward merge" + squash "Do not allow"), 각 commit이 자신의 `Requirement:` 줄과 함께 그대로 메인 브랜치에 들어감
+  - **6개 섹션 PR 설명**(배경 / 요구사항 / 접근법 / 결과 / 테스트 / 규범, < 50줄)을 기초하여 그대로 PR body로 사용
 
 - **`/revise`** — 언제든 개입 가능한 예외 처리.
   - 먼저 코드를 읽어 현황을 확인하고 `git log -L`로 관련 PRD를 찾은 뒤, 편차를 **근본 원인으로 3분류**: *PRD 결함*, *구현 드리프트*, *요구사항 변경*
@@ -133,15 +125,25 @@
   - 수정이 필요한 모든 review 지적은 여기로 집결
   - 수정 후 `/doc-update` 마무리 모드를 자동 실행
 
-- **`/git-push`** — 사용자 트리거 push + PR 흐름(단일 / 다중 저장소).
-  - AGENTS.md 또는 이 브랜치의 PRD가 있거나 이 브랜치의 commit이 병합된 PRD를 가리킬 때 먼저 **브랜치 규범 자가 점검(pre-review)** 실행: subagent가 프로젝트 제약, PRD, commit 본문의 변경 설명 vs 브랜치 diff를 비교, 위반을 반복 수정
-  - PR 설명에 `Requirement:` 태그 포함; 저장소는 rebase 머지만 허용해야 함(GitHub는 "Allow rebase merging"만 + 메인 브랜치 룰셋의 "Allowed merge methods"도 Rebase만, GitLab은 "Fast-forward merge" + squash "Do not allow"), 각 commit이 자신의 `Requirement:` 줄과 함께 그대로 메인 브랜치에 들어감
-  - **6개 섹션 PR 설명**(배경 / 요구사항 / 접근법 / 결과 / 테스트 / 규범, < 50줄)을 기초하여 그대로 PR body로 사용
+- **`/review`** — (선택) Workflow 오케스트레이션, **적대적 검증**을 갖춘 로컬 PR review.
+  - Phase 1에서 diff를 ≤1500줄 단위로 분할하고 각 슬라이스의 diff를 한 번만 디스크에 기록해 모든 agent가 공유, 각 슬라이스마다 **3개 finder** 병렬 실행: 결함(보안 / 견고성 / 정확성) / 설계(품질 / 간결성 / 문서 동기화) / **Codex 크로스 모델 독립** review, schema 강제 구조화
+  - Phase 2에서 슬라이스마다 **1개 회의적 판정자**가 해당 슬라이스의 모든 🔴/🟡을 세 관점(중요도 / 근본 원인성 / 미수정 위험)으로 판정, 다수결로 잔존 결정
+  - Phase 3에서 슬라이스마다 **1개 스위퍼**가 확인된 모든 항목의 **동일 결함 클래스 형제 위치**를 해당 슬라이스 안에서 스윕, `/revise`로 한 클래스씩 수정; NIT는 일괄 정리 가능
+  - 모든 단계가 슬라이스 단위로 agent를 파견하므로 비용은 diff 한 줄당 약 300 tokens(15k줄 diff ≈ 50 agent / 5M tokens)
+  - 수정 반영 후 수정 diff를 **자동으로 1회 재검토**; 리포트는 `.bb-spec/.cache/review/`에 저장되어 다음 실행 시 재발 표시와 기각 항목 건너뛰기에 사용
+  - 읽기 전용, 절대 자동 편집하지 않음; Claude Code ≥ 2.1.154 필요
 
-- **`/doc-update`** — 문서와 코드의 **일관성 점검**.
-  - 4종 발견 분류: doc-stale(루트 문서 만료) / prd-stale(이 브랜치 PRD와 결과물 불일치) / code-violation(코드가 AGENTS.md 위반) / agents-conflict(프로젝트 제약 간 모순)
-  - **코드가 진실, 문서는 코드에 맞춤**; 코드 수정은 항상 먼저 확인하고 `/revise`를 통해 TDD로 진행; 머지된 PRD는 어떤 모드에서도 건드리지 않음
-  - **마무리 모드**(`--tail`): `/exec`, `/revise` 종료 시 자동 호출, 이번 브랜치 변경과 관련된 범위만 처리
+- **`/test-webview`** — (선택) 프론트엔드 / 웹 프로젝트의 **상호작용 인수**.
+  - Docker 전체 스택 기동(최초 확인 후 기억, 완료 시 `down -v`로 정리), 브라우저 MCP로 실제 브라우저 구동
+  - **각 케이스마다 격리된 직렬 subagent 할당**, 수백 케이스에도 메인 컨텍스트를 폭발시키지 않음; 전 과정 직렬(브라우저 단일 인스턴스)
+  - 케이스는 이 브랜치 PRD의 인수 조건과 검증 경로에서 자동 생성(머지된 과거 PRD는 읽지 않음); 실행 전 **커버리지 정렬**, 갭을 침묵으로 누락시키지 않음; 실패는 `/revise`로 전환
+  - 브라우저 MCP(playwright / chrome-devtools) 필요
+
+- **`/test-api`** — (선택) 백엔드 **API e2e**.
+  - `compose.e2e.yaml`로 전체 스택 기동, md 케이스를 **기계적으로 단일 파일 Bun TS runner로 렌더링**, `bun run`으로 한 번에 실행
+  - **subagent 제로, 동시성 제로** —— HTTP는 결정적 스크립트, 시계 상태가 공유되므로 동시성 금지
+  - **시간 민감 규칙**(token 만료, 주문 타임아웃, 포인트 만료)은 `/test/advance-time`, `/test/backdate`, `/test/trigger-job` 프로토콜로 테스트
+  - 앱 측은 **두 개의 이미지 산출**: test 이미지는 `/test/*` 라우트 + `ENV TESTAPI=1` 탑재; 운영 이미지는 `/test/*` 소스를 **물리적으로 제외**; `/test/healthz` 프로브 실패 시 즉시 중단, 폴백 금지
 
 **동봉되는 것**
 
@@ -194,7 +196,7 @@ BB-Spec은 **4개의 독립 설치 가능한 서브 plugin**으로 분할 ——
 | 서브 plugin | 무엇을 얻는가 | 설치 명령 |
 |---|---|---|
 | **bb-spec-core** _(권장 베이스)_ | TDD / 버전 정책 / Git 규율 + 3개 수동 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(핵심 기능)_ | prd → plan → exec → doc-update → review → revise → git-push(+ 선택 test-webview / test-api e2e), git-clone 일회성 초기화 + 8개 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(핵심 기능)_ | prd → plan → exec → doc-update → revise → git-push(+ 선택 review / test-webview / test-api e2e), git-clone 일회성 초기화 + 8개 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / 인증 / 인가 / 가관측성 / 서비스 거버넌스 / 설정 제약 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun 스택 & 엔지니어링 규약(bun hook 포함) | `/plugin install bb-spec-frontend@0xbb2b` |
 
