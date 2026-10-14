@@ -1,5 +1,17 @@
 # Changelog
 
+## [14.3.0](https://github.com/0xBB2B/bb-spec/compare/v14.2.1...v14.3.0) (2026-10-14)
+
+
+### Features
+
+* **git-push:** 先同步基线再跑全量测试，测试只跑一次 ([702bcbc](https://github.com/0xBB2B/bb-spec/commit/702bcbc5f5875e400364a01177b97ef8e96de982))
+
+
+### Bug Fixes
+
+* **git-push:** 合并核验后的清理指向不存在的步骤 9，改为步骤 8 ([4428489](https://github.com/0xBB2B/bb-spec/commit/44284897590d23905761d19bebbfdbbf9a1e09ee))
+
 ## [14.2.1](https://github.com/0xBB2B/bb-spec/compare/v14.2.0...v14.2.1) (2026-10-14)
 
 
