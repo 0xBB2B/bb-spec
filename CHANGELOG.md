@@ -1,5 +1,13 @@
 # Changelog
 
+## [14.2.1](https://github.com/0xBB2B/bb-spec/compare/v14.2.0...v14.2.1) (2026-10-14)
+
+
+### Bug Fixes
+
+* **exec:** 完成简报的下一步示例改为 /git-push，不再默认引导 /review ([d301844](https://github.com/0xBB2B/bb-spec/commit/d3018446b34ef8c2480e70da4f2e8525c0d1f9db))
+* **revise:** 修订完成简报的下一步示例改为 /git-push，不再默认引导 /review ([493d9d4](https://github.com/0xBB2B/bb-spec/commit/493d9d4b8d820cc8daf44405bf312f0a8d13513b))
+
 ## [14.2.0](https://github.com/0xBB2B/bb-spec/compare/v14.1.0...v14.2.0) (2026-10-13)
 
 
