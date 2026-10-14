@@ -139,7 +139,7 @@ git worktree list --porcelain
 - Review 结论：✅ 全部合规 / ⚠️ 经用户同意改了本次 PRD 的条目
 - 待解决：<阻塞项 / 无>
 - 文档同步：<doc-update 收尾改了哪些文档 / 无>
-- 下一步：<如"运行 /review 做最终审查" / "继续执行剩余步骤" / 前端主题："**运行 `/test-webview` 跑一遍网页交互验收**" / "无">
+- 下一步：<如"运行 /git-push 开 PR" / "继续执行剩余步骤" / 前端主题："**运行 `/test-webview` 跑一遍网页交互验收**" / "无">
 ```
 
 ## PROGRESS.md 操作规范
