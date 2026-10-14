@@ -158,7 +158,7 @@ Requirement: <本分支 PRD 目录名>
 
 **铁律：合并是否完成，只认 `gh pr view <n> --json state,mergedAt` 的 `state == "MERGED"`。`gh pr merge` 的 stdout 与退出码一律不作数**——它可能只表示「已加入自动合并队列」，也可能在 auto 不可用时报错而根本没合并。执行任何合并动作后，**必须**查询此状态再下结论：
 
-- `state == "MERGED"`（`mergedAt` 非空）→ 进入步骤 8、9 清理
+- `state == "MERGED"`（`mergedAt` 非空）→ 进入步骤 8 清理
 - `state == "OPEN"` → **尚未合并：禁止进入清理、禁止宣告完成**，按下方「未合并排查」处理后重试合并并重新核验
 - `state == "CLOSED"`（未合并）→ 提醒用户选择
 
