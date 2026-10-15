@@ -1,5 +1,12 @@
 # Changelog
 
+## [14.4.0](https://github.com/0xBB2B/bb-spec/compare/v14.3.0...v14.4.0) (2026-10-15)
+
+
+### Features
+
+* **exec:** 每个 plan 只跑本 plan 的测试，全量测试只在全部完成时跑一次 ([3dfd6a6](https://github.com/0xBB2B/bb-spec/commit/3dfd6a69ae699eb93d1f36d8cc177801e7f81a41))
+
 ## [14.3.0](https://github.com/0xBB2B/bb-spec/compare/v14.2.1...v14.3.0) (2026-10-14)
 
 
