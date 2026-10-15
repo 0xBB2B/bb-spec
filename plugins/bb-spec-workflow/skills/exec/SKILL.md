@@ -93,7 +93,7 @@ git worktree list --porcelain
 
 读当前组每个 plan 的 `.md`，按隔离矩阵各拆为三份 Agent 输入。同时扫描项目已有测试文件，提取测试惯例（框架、目录、命名风格）。
 
-组内每个 plan 各自完整走一遍 2a→2b→2c，多 plan 时组内各 plan 并发推进。**并行期间跑测试只跑本 plan 涉及的包 / 目录**（如 `go test ./internal/xxx`），不跑全量——同组其他 plan 此刻可能仍在 Red，全量结果无法判定本 plan 是否通过。
+组内每个 plan 各自完整走一遍 2a→2b→2c，多 plan 时组内各 plan 并发推进。**串行、并行都一样：Red / Green / Review 和修复后回归，跑测试只跑本 plan 的测试文件**（如 `go test ./internal/xxx`、`vitest run tests/xxx.test.ts`），不跑全量，派工 prompt 也不得要求子代理跑全量——全量测试一次可能要十几分钟，每个 plan 都跑会把整个 exec 拖慢；并行时同组其他 plan 还可能停在 Red，全量结果也判断不了本 plan 是否通过。plan 之间互相改坏的情况，留给步骤 4「全部完成」时的那一次全量测试发现。
 
 **2a. Test Agent — Red**：派 `bb-spec-workflow:test-engineer`，prompt 传「业务规则」+「验证方式」+ 项目测试惯例。主 Agent 验证：编译通过 + 断言失败 → ✅ Red 进 2b；编译失败 → 主 Agent 修 import/类型后重跑；意外全 PASS → 行为已存在则跳过，测试错误则修正；Test Agent 报告「方案问题」（约束互相矛盾、无法写成可判定的测试）→ 带它给的证据进下方「归因」。
 
@@ -110,7 +110,7 @@ git worktree list --porcelain
   - **小改**（只改已有约束、验收、用例或决策记录）→ 就地改本次 PRD（本分支新增的 PRD 可改）→ 同步改用到这条约束的 plan：`pending` 的直接改，`done` 的改回 `pending` 重新走 Test→Impl→Review
   - **大改**（新增或删除子需求、改目标或非目标）→ 暂停 exec，回到 `/prd` 在 plan 模式里重新对齐并批准，再重新生成剩下的 plan
 
-**回归验证**：修复后跑测试（并行期间仍只跑本 plan 涉及范围）+ PRD 合规检查。
+**回归验证**：修复后只跑本 plan 的测试文件 + PRD 合规检查。
 
 ### 步骤 3：持久化进度
 
@@ -121,7 +121,7 @@ git worktree list --porcelain
 ### 步骤 4：循环或收尾
 
 - **单个 plan 模式**：当前 plan 完成即停，输出完成简报；若它是本主题最后一个未完成的 plan，按下方「全部完成」收尾
-- **全部执行 + 还有后续组**：并行组须**整组结束**（含阻塞项）后跑一次全量测试确认组内产出无交叉破坏，再回步骤 2 推进下一组——下一组可能依赖本组产出
+- **全部执行 + 还有后续组**：并行组须**整组结束**（含阻塞项）后再回步骤 2 推进下一组——下一组可能依赖本组产出
 - **全部执行 + 全部完成**：① 运行全量测试确认无回归 ② 调用 `Skill bb-spec-workflow:doc-update`，参数 `--tail`（收尾模式：让本次 PRD 与 README、AGENTS.md 等文档追平实际交付，其他 PRD 不碰）③ `git rm -r` 删除本主题 plan 目录（多仓库时在文档仓库执行）——plan 内联复述了 PRD，留着会和 PRD 重复，历史靠 git 追溯 ④ 把 doc-update 改动与 plan 删除做一次本地 commit（守卫同步骤 3）⑤ 输出完成简报
 
 **遇阻塞时**：在 PROGRESS.md 当前步骤标 `blocked`、"阻塞"区记录原因、告知用户等待指示。并行组内单个 plan 阻塞**不中断整组**——其余 plan 照常跑完各自的 Test→Impl→Review 并 commit，阻塞项汇总进完成简报。
