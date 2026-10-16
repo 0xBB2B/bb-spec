@@ -1,5 +1,12 @@
 # Changelog
 
+## [14.8.0](https://github.com/0xBB2B/bb-spec/compare/v14.7.0...v14.8.0) (2026-10-16)
+
+
+### Features
+
+* **doc-update:** 根文档范围改成固定名单，名单外的文档不碰 ([9effc59](https://github.com/0xBB2B/bb-spec/commit/9effc5925e25438fc7ac5cf08bffe3ae3d529acb))
+
 ## [14.7.0](https://github.com/0xBB2B/bb-spec/compare/v14.6.0...v14.7.0) (2026-10-16)
 
 
