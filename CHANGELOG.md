@@ -1,5 +1,12 @@
 # Changelog
 
+## [14.5.0](https://github.com/0xBB2B/bb-spec/compare/v14.4.0...v14.5.0) (2026-10-16)
+
+
+### Features
+
+* **git-push:** 装了 ocr 时在 rebase 后跑一次 ocr 审查，Claude 核实后由用户勾选修复 ([3f9d6bb](https://github.com/0xBB2B/bb-spec/commit/3f9d6bbc31e448e745d4213affbaeab1012668f0))
+
 ## [14.4.0](https://github.com/0xBB2B/bb-spec/compare/v14.3.0...v14.4.0) (2026-10-15)
 
 
