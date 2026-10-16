@@ -1,6 +1,6 @@
 ---
 name: doc-update
-description: 文档与代码一致性维护——代码是事实，让 README、CLAUDE.md、AGENTS.md、ARCHITECTURE.md 等根文档追平代码现状（项目根没有 ARCHITECTURE.md 大纲时，全仓模式读代码起草），并检查代码是否违反 AGENTS.md 项目约束；/exec 与 /revise 收尾时以 --tail 收尾模式自动调用，额外核对本分支 PRD 与实际交付是否一致；已合并的 PRD 任何模式都不碰；改代码一律先问用户、转 /revise。触发：/doc-update、文档和代码不一致、README 过期、维护一下文档。跳过：单点 bug 或定向修复（→/revise）、新需求（→/prd）。
+description: 文档与代码一致性维护——代码是事实，让仓库根目录下名单固定的根文档（README*.md、CLAUDE.md、AGENTS.md、CONTRIBUTING.md、ARCHITECTURE.md，名单外的文档不碰）追平代码现状（项目根没有 ARCHITECTURE.md 大纲时，全仓模式读代码起草），并检查代码是否违反 AGENTS.md 项目约束；/exec 与 /revise 收尾时以 --tail 收尾模式自动调用，额外核对本分支 PRD 与实际交付是否一致；已合并的 PRD 任何模式都不碰；改代码一律先问用户、转 /revise。触发：/doc-update、文档和代码不一致、README 过期、维护一下文档。跳过：单点 bug 或定向修复（→/revise）、新需求（→/prd）。
 argument-hint: [--tail | 可选：限定范围，如某目录 / 某文档]
 ---
 
@@ -28,7 +28,7 @@ argument-hint: [--tail | 可选：限定范围，如某目录 / 某文档]
 
 | | 全仓模式（手动 `/doc-update`） | 收尾模式（`--tail`，由 `/exec`、`/revise` 调用） |
 |---|---|---|
-| 范围 | 全部根文档 + 全部代码对照 AGENTS.md | 根文档中引用了本分支改动的段落 + 本分支改动的代码对照 AGENTS.md + 本分支 PRD |
+| 范围 | 名单内的全部根文档 + 全部代码对照 AGENTS.md | 根文档中引用了本分支改动的段落 + 本分支改动的代码对照 AGENTS.md + 本分支 PRD |
 | 本分支 PRD | 不处理 | 核对约束、验收与实际交付是否一致 |
 | A 类 | 汇总后经用户批准再改 | 直接改，在简报中逐条列出 |
 | B / C / D 类 | 逐条 AskUserQuestion | 逐条 AskUserQuestion |
@@ -38,7 +38,7 @@ argument-hint: [--tail | 可选：限定范围，如某目录 / 某文档]
 
 | 编号 | 类别 | 含义 | 默认动作 |
 |---|---|---|---|
-| A | **doc-stale** | README / CLAUDE.md / AGENTS.md 等根文档引用了已改名、删除或行为变了的函数、路径、命令、配置项；或 ARCHITECTURE.md 没写到新增的模块、目录、数据表、API 分组，仍写着已删除、已搬走的，关键流程经过的模块变了 | 改文档追平代码 |
+| A | **doc-stale** | 名单内的 README*.md / CLAUDE.md / AGENTS.md / CONTRIBUTING.md 引用了已改名、删除或行为变了的函数、路径、命令、配置项；或 ARCHITECTURE.md 没写到新增的模块、目录、数据表、API 分组，仍写着已删除、已搬走的，关键流程经过的模块变了 | 改文档追平代码 |
 | B | **prd-stale**（仅收尾模式） | 本分支 PRD 的约束或验收与实际交付不一致，且没有经用户同意的修改记录 | AskUserQuestion：改 PRD 认可代码 / 转 `/revise` 改代码 |
 | C | **code-violation** | 代码明显违反 AGENTS.md 的项目约束 | AskUserQuestion：改代码（转 `/revise`）/ 改项目约束 / 跳过 |
 | D | **agents-conflict** | AGENTS.md 的约束之间互相矛盾，或与已激活的技术栈 skill 冲突 | AskUserQuestion：选保留哪条 |
@@ -65,7 +65,11 @@ cat .bb-spec.yaml 2>/dev/null
 
 主 agent 自做，**禁派子代理**：
 
-1. **读根文档**：`README*.md` / `CLAUDE.md` / `AGENTS.md` / `CONTRIBUTING.md` / `ARCHITECTURE.md` 等存在者；收尾模式只看引用了本分支改动文件、命令、配置项的段落
+1. **读根文档**：只认下面这份名单，名单外的文档不读、不改
+   - 名单：每个仓库根目录下的 `README*.md`（含各语言版本）、`CLAUDE.md`、`AGENTS.md`、`CONTRIBUTING.md`、`ARCHITECTURE.md`，不存在的跳过。单仓库就是项目根；多仓库工作区包括每个成员仓库的根和文档仓库的根
+   - 名单外的例子：`CHANGELOG.md`（发版工具生成）、`docs/` 等子目录里的文档、子目录里的 `README.md`
+   - 例外：全仓模式下用户在参数里点名的文档照样处理
+   - 收尾模式只看引用了本分支改动文件、命令、配置项的段落
 2. **抽取可核对的引用**：文档里出现的函数名、文件路径、命令、env var、CLI flag、配置 key、默认值、超时阈值
 3. **对照代码**：codegraph 可用则 `codegraph_explore`，否则 `grep -rnE` + 读相关文件，确认每个引用在代码里是否还成立
 4. **项目约束核对**：逐条读 AGENTS.md「项目约束」，在范围内的代码里找违反项
