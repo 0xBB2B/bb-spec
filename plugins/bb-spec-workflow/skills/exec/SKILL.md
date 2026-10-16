@@ -1,6 +1,6 @@
 ---
 name: exec
-description: 三 Agent 隔离执行 plan——由 /plan 自动调用或手动 /exec 续接；Test→Impl→Review 串行，三方各只看各的输入互不可见；互不依赖且文件目录不重叠的 plan 编为并行组、经用户确认后并发推进；每步立即持久化 PROGRESS.md，跨会话/`/clear` 后从断点续接；启动先 worktree 感知定位执行现场（主仓库停在 main 时自动定位到进行中的 worktree）；全部完成后自动运行 /doc-update 收尾模式让本次 PRD 与 README 等文档追平代码、删除本次 plan 目录；每个 commit 带 `Requirement: <PRD 目录名>`；commit 不自动 push、main 分支禁自动 commit。触发：/exec、开始实施 plan、继续执行 plan、从断点继续、按 plan 把代码做出来。跳过：还没 /plan 产出实施计划、纯调研/方案讨论、要改已合并的行为（需求变了 →/prd，bug →/revise）。
+description: 三 Agent 隔离执行 plan——由 /plan 自动调用或手动 /exec 续接；Test→Impl→Review 串行，三方各只看各的输入互不可见；互不依赖且文件目录不重叠的 plan 编为并行组并发推进；每步立即持久化 PROGRESS.md，跨会话/`/clear` 后从断点续接；启动先 worktree 感知定位执行现场（主仓库停在 main 时自动定位到进行中的 worktree）；全部完成后自动运行 /doc-update 收尾模式让本次 PRD 与 README 等文档追平代码、删除本次 plan 目录；每个 commit 带 `Requirement: <PRD 目录名>`；commit 不自动 push、main 分支禁自动 commit。触发：/exec、开始实施 plan、继续执行 plan、从断点继续、按 plan 把代码做出来。跳过：还没 /plan 产出实施计划、纯调研/方案讨论、要改已合并的行为（需求变了 →/prd，bug →/revise）。
 argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 ---
 
@@ -10,7 +10,7 @@ argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 
 ## 核心原则（兼硬约束）
 
-1. **逐组执行**：一次只推进一个执行组，验证通过再进入下一组；跳组会破坏依赖关系。默认一组一个 plan，满足并行条件且用户同意时一组多个 plan 并发，组内每个 plan 的 Test→Impl→Review 仍严格串行
+1. **逐组执行**：一次只推进一个执行组，验证通过再进入下一组；跳组会破坏依赖关系。默认一组一个 plan，满足并行条件的 plan 全部编进同一组并发，组内每个 plan 的 Test→Impl→Review 仍严格串行
 2. **角色隔离**：三个 Agent 各看各的输入互不可见——Test **禁看**函数清单和实现路径，Impl **禁看** PRD 原文，Review **禁止**修改文件
 3. **三 Agent 串行**：必须 Test → Impl → Review 顺序；每个 Agent prompt 自包含，不依赖对话上下文
 4. **进度即时持久化**：每步完成后立即更新 PROGRESS.md（不攒批），它是唯一进度事实源，重启后仅凭此文件恢复
@@ -80,14 +80,14 @@ git worktree list --porcelain
 读 `PROGRESS.md`（不存在则初始化，所有步骤标 `pending`）。
 
 - **指定了单个 plan**：直接跳到该 plan 执行，不影响其他步骤状态
-- **未指定**：展示进度概况（已完成 N/M 步），**直接全部执行**——从第一个非 `done` 步骤依次到最后，不询问用户（用户若想只跑某一步，应在调用时显式带 `/<plan名>`）
+- **未指定**：展示进度概况（已完成 N/M 步），**直接全部执行**——从第一个非 `done` 步骤依次到最后；用户只想跑某一步时，在调用时显式带 `/<plan名>`
 
 **并行编组**（仅未指定单个 plan 时）：读主题 `INDEX.md` 的 `## <阶段>` 分组与 `[依赖: <name>]` 标注，把待执行步骤切成执行组。多个 plan 编入同一组须**同时**满足两条：
 
 - **互不依赖**：彼此不在对方依赖链上，且各自依赖的 plan 均已 `done`
 - **文件目录不重叠**：各自「函数清单」的文件路径落在不同目录——同目录即同编译单元，一个 plan 的半成品会让同组其他 plan 一起编译失败
 
-存在可编组的多个 plan 时，AskUserQuestion 询问用户：首选项「并行执行这 N 个：<plan 列表>」，另一选项「逐个串行」。选串行则整个主题按序号逐个执行。无可编组时不询问，直接逐个执行。
+能编进同一组的 plan 一律并行执行；没有可编组的就逐个执行。
 
 ### 步骤 2：执行当前组
 
@@ -108,7 +108,7 @@ git worktree list --porcelain
 - **impl-defect 且根因确凿**（纯实现偏差、不触碰 PRD）→ 执行层问题，**自行闭环不打断用户**：补测试(Red) → 改实现(Green) → 重新 Review；自修**最多 1 次**仍不过 → 标 blocked 上报用户。无论自修成败都在 PROGRESS.md「当前」区如实记一笔并计入完成简报。
 - **prd-defect / requirement-change，或归因存疑、证据不足以定性** → 触及需求层，属设计判断，**必须停下** AskUserQuestion 让用户选 **改代码**（保持 PRD）/ **改本次 PRD**（认可新的行为）/ **暂停**（标 blocked）。改 PRD 等于改需求，**只能由用户点头，主 Agent 禁自决**。先向用户展示归因 + 证据，确认后按改动大小分两路：
   - **小改**（只改已有约束、验收、用例或决策记录）→ 就地改本次 PRD（本分支新增的 PRD 可改）→ 同步改用到这条约束的 plan：`pending` 的直接改，`done` 的改回 `pending` 重新走 Test→Impl→Review
-  - **大改**（新增或删除子需求、改目标或非目标）→ 暂停 exec，回到 `/prd` 在 plan 模式里重新对齐并批准，再重新生成剩下的 plan
+  - **大改**（新增或删除子需求、改目标或非目标）→ 暂停 exec，回到 `/prd` 重新对齐，改完 PRD 后请用户在弹窗里重新确认，再重新生成剩下的 plan
 
 **回归验证**：修复后只跑本 plan 的测试文件 + PRD 合规检查。
 
