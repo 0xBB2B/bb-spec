@@ -7,13 +7,14 @@ description: 新需求的唯一入口——质疑→澄清→拆解，启动即 
 
 一次对话把一个需求从想法推进到落地：对话阶段只读对齐，用户批准一次后落盘 PRD，接着自动跑 `/plan` → `/exec`，`/exec` 收尾时自动跑 `/doc-update`。
 
-## 三样东西各管什么
+## 四样东西各管什么
 
 | 来源 | 回答什么 | 谁改 |
 |---|---|---|
 | **代码（含测试）** | 系统**现在**做什么。唯一事实来源 | `/exec`、`/revise` |
 | **PRD** `${DOCS_DIR}/prd/<YYYY-MM-DD>.<主题>/` | 这个需求**为什么**做、要什么、取舍了什么 | 本分支新增的 PRD 可改；合并到基线分支后冻结，谁都不改 |
 | **AGENTS.md**（项目根；多仓库工作区为文档仓库根） | 对整个项目都生效的约束，如"禁止泛型""SQL join 不超过 3 张表"；以及查功能、查问题的规矩 | `/prd`（经用户确认） |
+| **ARCHITECTURE.md**（项目根；多仓库工作区为文档仓库根） | 项目大纲：有哪些模块、各在哪、怎么协作；只写不常变的内容 | `/doc-update`（全仓模式起草，收尾模式追平代码） |
 
 代码和 PRD 用 git 连起来：每个 commit 说明带一行 `Requirement: <PRD 目录名>`（如 `Requirement: 2026-10-08.order-export`，只写目录名、不带路径前缀）。想知道某段代码为什么这样写，`git log -L` 查改过它的 commit，读标记指向的 PRD。
 
@@ -68,7 +69,7 @@ cat ${DOCS_DIR}/prd/GLOSSARY.md 2>/dev/null || cat ${DOCS_DIR}/spec/GLOSSARY.md 
 grep -h '^features:' ${DOCS_DIR}/prd/*/OVERVIEW.md 2>/dev/null  # 已有功能名
 ```
 
-**了解相关功能的现状**：按本次涉及的功能名搜 `features:` 找到相关 PRD 目录，在各代码仓库里用 `git log --grep "Requirement: <目录名>" --name-only` 查出改过的文件，**读这些代码**确认现在的行为（搜不到 PRD 的是接入 bb-spec 之前的老代码，直接在代码里搜）；需要了解当时为什么这样设计时，只读最新那份相关 PRD 的「决策记录」。
+**了解相关功能的现状**：有 `ARCHITECTURE.md` 时先读它，按模块地图定位相关模块和目录；再按本次涉及的功能名搜 `features:` 找到相关 PRD 目录，在各代码仓库里用 `git log --grep "Requirement: <目录名>" --name-only` 查出改过的文件，**读这些代码**确认现在的行为（搜不到 PRD 的是接入 bb-spec 之前的老代码，直接在代码里搜）；需要了解当时为什么这样设计时，只读最新那份相关 PRD 的「决策记录」；需求涉及"以前为什么没做 / 为什么不这样做"时，用关键词 `grep -rln '<关键词>' ${DOCS_DIR}/prd/` 找到提到它的 PRD，读命中的「非目标」和「决策记录」。
 
 **重叠判定**：
 
@@ -289,11 +290,12 @@ date: <YYYY-MM-DD>
 > 本节由 /prd 按 bb-spec 插件模板整节维护，手改会被覆盖；项目自己的规矩写进「项目约束」。
 
 1. 先读代码再回答：凡是"系统现在怎么做"的结论，必须来自本次实际读过的代码，并给出 `文件:行号`；还没读到代码就说"还没确认"，不许猜。
-2. 按功能找代码：`grep -l '^features:.*<功能名>' <DOCS_DIR>/prd/*/OVERVIEW.md` 找到相关需求目录，再在每个代码仓库里用 `git log --grep "Requirement: <目录名>" --name-only` 查出改过的文件。
+2. 按功能找代码：有 `ARCHITECTURE.md` 先读它，按模块地图找到相关模块和目录；再用 `grep -l '^features:.*<功能名>' <DOCS_DIR>/prd/*/OVERVIEW.md` 找到相关需求目录，再在每个代码仓库里用 `git log --grep "Requirement: <目录名>" --name-only` 查出改过的文件。
 3. 查为什么：在该文件所在的仓库里执行 `git log -L :<函数名>:<文件> -s --format='%h %s%n%b' | grep -e '^[0-9a-f]\{7,40\} ' -e '^Requirement:'` 列出改过这个函数的 commit 和各自的 `Requirement` 行，最新的在前；按函数名报 "no match"（如缩进的类方法）时，先读文件确认行号，改用 `git log -L <起始行>,<结束行>:<文件>`。读最新那个 commit 的 `Requirement` 指向的 PRD「决策记录」和 commit 说明正文（squash 合并的 commit 可能有多行 `Requirement`，逐个读）；更早的 PRD 只在需要追溯时才读。commit 没有 `Requirement` 标记的是接入 bb-spec 之前的老代码，没有对应 PRD，只读 commit 说明；查不到原因就如实说"查不到"。
-4. PRD 和代码不一致时以代码为准，并在回答里指出哪里不一致。
-5. 改代码前按第 3 条查清设计原因，改动不能违背；确实要改设计，新需求走 `/prd`、修正走 `/revise`。
-6. 每个 commit 说明末尾单独一行带 `Requirement: <PRD 目录名>`；和任何需求都无关的改动写 `Requirement: none`，并在正文写一句原因。多仓库时每个仓库的 commit 都要带。
+4. 查为什么没做：问"以前为什么没做 X、为什么不这样设计"时，执行 `grep -rln '<关键词>' <DOCS_DIR>/prd/` 找到提到它的 PRD，读「非目标」和「决策记录」；搜不到就如实说"没有记录"。
+5. PRD 和代码不一致时以代码为准，并在回答里指出哪里不一致。
+6. 改代码前按第 3 条查清设计原因，改动不能违背；确实要改设计，新需求走 `/prd`、修正走 `/revise`。
+7. 每个 commit 说明末尾单独一行带 `Requirement: <PRD 目录名>`；和任何需求都无关的改动写 `Requirement: none`，并在正文写一句原因。多仓库时每个仓库的 commit 都要带。
 
 ## 项目约束
 - <约束>（原因：<一句话>）
