@@ -116,7 +116,7 @@
   - **仕上げモード**(`--tail`):`/exec`・`/revise` の終了時に自動呼び出し、本ブランチの変更範囲だけを扱う
 
 - **`/git-push`** — ユーザートリガーの push + PR フロー(単一 / マルチリポジトリ)。
-  - `ocr`([open-code-review](https://github.com/alibaba/open-code-review))がインストールされている場合、rebase 直後に `ocr review` を 1 回実行:Claude が指摘を 1 件ずつコードで検証し、修正を推奨する項目を 🔴/🟡/🟢 の優先度順に一覧化、選んだ項目を `/revise` で修正
+  - `ocr`([open-code-review](https://github.com/alibaba/open-code-review))がインストールされている場合、rebase 直後に `ocr review` を 1 回実行:Claude が指摘を 1 件ずつコードで検証し、修正を推奨する項目を 🔴/🔶/🔷 の優先度順に一覧化、選んだ項目を `/revise` で修正
   - AGENTS.md または本ブランチの PRD がある場合、または本ブランチの commit がマージ済み PRD を指す場合、まず**ブランチ規範セルフチェック(pre-review)**を実行:サブエージェントがプロジェクト制約、PRD、commit 本文の変更説明 vs ブランチ diff を比較、違反を反復修正
   - PR 説明に `Requirement:` マーカーを付与;リポジトリは rebase マージのみ許可する必要あり(GitHub は「Allow rebase merging」のみかつメインブランチのルールセットの「Allowed merge methods」も Rebase のみ、GitLab は「Fast-forward merge」かつ squash を「Do not allow」)、各 commit が自身の `Requirement:` 行ごとそのままメインブランチに入る
   - **6 セクションの PR 説明**(背景 / 要件 / アプローチ / 結果 / テスト / 規範、< 50 行)を起草、そのまま PR body として使用
@@ -130,7 +130,7 @@
 
 - **`/review`** — (任意) Workflow オーケストレーション、**敵対的検証**付きのローカル PR review。
   - フェーズ 1 で diff を ≤1500 行ごとに分割し、各スライスの diff を一度だけディスクに書き出して全 agent で共有、各スライスに **3 つの finder** を並列実行:欠陥(セキュリティ / 堅牢性 / 正確性)/ 設計(品質 / 簡潔性 / ドキュメント同期)/ **Codex クロスモデル独立** review、schema 強制で構造化
-  - フェーズ 2 で各スライスに **1 つの懐疑的仲裁者**を割り当て、そのスライス内の全 🔴/🟡 を三視点(重要性 / 根本原因性 / 未修正リスク)で判定、多数決で残否を決定
+  - フェーズ 2 で各スライスに **1 つの懐疑的仲裁者**を割り当て、そのスライス内の全 🔴/🔶 を三視点(重要性 / 根本原因性 / 未修正リスク)で判定、多数決で残否を決定
   - フェーズ 3 で各スライスに **1 つの走査者**を割り当て、確認済み全項目の**同種の兄弟箇所**をそのスライス内で走査、`/revise` で一クラスまとめて修正;NIT は一括処理可能
   - 全フェーズがスライス単位で agent を派遣するため、コストは diff 1 行あたり約 300 tokens(15k 行の diff ≈ 50 agent / 5M tokens)
   - 修正が入った後、修正 diff を**自動で 1 回再レビュー**;レポートは `.bb-spec/.cache/review/` に保存され、次回実行時に再発の検出と却下済み項目のスキップに使われる

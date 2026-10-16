@@ -116,7 +116,7 @@
   - **마무리 모드**(`--tail`): `/exec`, `/revise` 종료 시 자동 호출, 이번 브랜치 변경과 관련된 범위만 처리
 
 - **`/git-push`** — 사용자 트리거 push + PR 흐름(단일 / 다중 저장소).
-  - `ocr`([open-code-review](https://github.com/alibaba/open-code-review))이 설치되어 있으면 rebase 직후 `ocr review`를 한 번 실행: Claude가 지적 사항을 코드로 하나씩 검증하고 수정 권장 항목을 🔴/🟡/🟢 우선순위로 나열, 선택한 항목을 `/revise`로 수정
+  - `ocr`([open-code-review](https://github.com/alibaba/open-code-review))이 설치되어 있으면 rebase 직후 `ocr review`를 한 번 실행: Claude가 지적 사항을 코드로 하나씩 검증하고 수정 권장 항목을 🔴/🔶/🔷 우선순위로 나열, 선택한 항목을 `/revise`로 수정
   - AGENTS.md 또는 이 브랜치의 PRD가 있거나 이 브랜치의 commit이 병합된 PRD를 가리킬 때 먼저 **브랜치 규범 자가 점검(pre-review)** 실행: subagent가 프로젝트 제약, PRD, commit 본문의 변경 설명 vs 브랜치 diff를 비교, 위반을 반복 수정
   - PR 설명에 `Requirement:` 태그 포함; 저장소는 rebase 머지만 허용해야 함(GitHub는 "Allow rebase merging"만 + 메인 브랜치 룰셋의 "Allowed merge methods"도 Rebase만, GitLab은 "Fast-forward merge" + squash "Do not allow"), 각 commit이 자신의 `Requirement:` 줄과 함께 그대로 메인 브랜치에 들어감
   - **6개 섹션 PR 설명**(배경 / 요구사항 / 접근법 / 결과 / 테스트 / 규범, < 50줄)을 기초하여 그대로 PR body로 사용
@@ -130,7 +130,7 @@
 
 - **`/review`** — (선택) Workflow 오케스트레이션, **적대적 검증**을 갖춘 로컬 PR review.
   - Phase 1에서 diff를 ≤1500줄 단위로 분할하고 각 슬라이스의 diff를 한 번만 디스크에 기록해 모든 agent가 공유, 각 슬라이스마다 **3개 finder** 병렬 실행: 결함(보안 / 견고성 / 정확성) / 설계(품질 / 간결성 / 문서 동기화) / **Codex 크로스 모델 독립** review, schema 강제 구조화
-  - Phase 2에서 슬라이스마다 **1개 회의적 판정자**가 해당 슬라이스의 모든 🔴/🟡을 세 관점(중요도 / 근본 원인성 / 미수정 위험)으로 판정, 다수결로 잔존 결정
+  - Phase 2에서 슬라이스마다 **1개 회의적 판정자**가 해당 슬라이스의 모든 🔴/🔶을 세 관점(중요도 / 근본 원인성 / 미수정 위험)으로 판정, 다수결로 잔존 결정
   - Phase 3에서 슬라이스마다 **1개 스위퍼**가 확인된 모든 항목의 **동일 결함 클래스 형제 위치**를 해당 슬라이스 안에서 스윕, `/revise`로 한 클래스씩 수정; NIT는 일괄 정리 가능
   - 모든 단계가 슬라이스 단위로 agent를 파견하므로 비용은 diff 한 줄당 약 300 tokens(15k줄 diff ≈ 50 agent / 5M tokens)
   - 수정 반영 후 수정 diff를 **자동으로 1회 재검토**; 리포트는 `.bb-spec/.cache/review/`에 저장되어 다음 실행 시 재발 표시와 기각 항목 건너뛰기에 사용

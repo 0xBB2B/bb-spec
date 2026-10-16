@@ -116,7 +116,7 @@ First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.
   - **Tail mode** (`--tail`): auto-invoked when `/exec` or `/revise` finishes; covers only what the current branch touched
 
 - **`/git-push`** — User-triggered push + PR flow (single or multi-repo).
-  - If `ocr` ([open-code-review](https://github.com/alibaba/open-code-review)) is installed, runs one `ocr review` right after the rebase: Claude checks each finding against the code, lists the ones worth fixing by priority (🔴/🟡/🟢), and you pick which ones `/revise` fixes
+  - If `ocr` ([open-code-review](https://github.com/alibaba/open-code-review)) is installed, runs one `ocr review` right after the rebase: Claude checks each finding against the code, lists the ones worth fixing by priority (🔴/🔶/🔷), and you pick which ones `/revise` fixes
   - When AGENTS.md or a PRD on this branch exists, or this branch's commits point to a merged PRD, first runs a **branch self-check (pre-review)**: a subagent checks the branch diff against the project constraints, the PRD and the change notes in commit messages, fixes violations in a loop
   - The PR description carries the `Requirement:` trailer; the repo must allow only rebase merging (GitHub: only "Allow rebase merging", and the main-branch ruleset's "Allowed merge methods" set to Rebase only; GitLab: "Fast-forward merge" with squash set to "Do not allow"), so every commit lands on the main branch with its own `Requirement:` line
   - Drafts a **6-section PR description** (background / requirement / approach / result / tests / conventions, < 50 lines) used directly as the PR body
@@ -130,7 +130,7 @@ First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.
 
 - **`/review`** — *(optional)* Workflow-orchestrated, **adversarially verified** local PR review.
   - Phase 1 slices the diff (≤1500 lines per slice), writes each slice's diff to disk once, and fans out **3 finders per slice in parallel**: defect (security / robustness / correctness) / design (quality / simplicity / doc-sync) / **Codex cross-model independent** review, schema-enforced
-  - Phase 2 **one skeptic verifier per slice** judges every 🔴/🟡 in that slice on three lenses (importance / root-cause / risk-if-unfixed), majority vote
+  - Phase 2 **one skeptic verifier per slice** judges every 🔴/🔶 in that slice on three lenses (importance / root-cause / risk-if-unfixed), majority vote
   - Phase 3 **one sweeper per slice** hunts sibling sites of every confirmed defect class inside that slice; each class is handed to `/revise` as one fix; NITs can be cleared in one batch
   - Every phase dispatches per slice, so cost scales at ~300 tokens per diff line (a 15k-line diff ≈ 50 agents / 5M tokens)
   - Once fixes land, the fix diff gets **one automatic re-review**; the report is persisted under `.bb-spec/.cache/review/` so the next run flags recurrences and skips already-rejected items
