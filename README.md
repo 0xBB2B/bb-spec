@@ -89,7 +89,7 @@ First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.
   - **Multi-repo workspace**: creates a shared parent dir and clones each member repo into it (restoring the relative layout the build tool expects); refuses to nest or overwrite
   - Tightly scoped: **only** pulls code + writes `base_dir` — does not read code or install deps
 
-- **`/prd`** — The single entry point for new requirements. Answers **"what to build, and why."** Changing how a merged feature or pre-bb-spec code behaves also starts here, however small (e.g. raising a timeout from 120 to 600 seconds): a new PRD records the trade-offs.
+- **`/prd`** — The single entry point for new requirements. Answers **"what to build, and why."** Changing how a merged feature or pre-bb-spec code behaves also starts here, however small (e.g. raising a timeout from 120 to 600 seconds, or changing a button label from "Submit" to "Save"): a new PRD records the trade-offs.
   - Challenge first ("not worth building" is a valid outcome) → progressive clarification → breakdown, all in **plan mode for read-only alignment**; you **approve once**, then `/plan` → `/exec` → `/doc-update` run on their own
   - Writes the **PRD** (`docs/prd/<date>.<topic>/`: background, goals, non-goals, user stories, testable constraints and acceptance criteria, decision log) and **AGENTS.md** (constraints that apply to the whole project, e.g. "no generics")
   - The PRD stays editable within its branch (fix the plan mid-implementation by editing it) and freezes once merged; **code is the single source of truth for "what it does now"** — the PRD only answers "why"
@@ -242,7 +242,7 @@ If you keep the old directory (`.bb-spec/docs/` below is the default location; i
 - Until `.bb-spec/docs/prd/GLOSSARY.md` exists, `/prd` uses the terms in `.bb-spec/docs/spec/GLOSSARY.md`; the first time it records a term, it copies the whole table to the new location and leaves the old one untouched.
 - Plans left unfinished under 13 can't be resumed — start again with `/prd`. Once you no longer need them, remove `plan/INDEX.md` and the topic directories it lists with `git rm -r`.
 
-Code written before you adopted bb-spec has no `Requirement:` marker in its commits, so there is no PRD to look up. When you fix it with `/revise`, the expected behavior you describe is the reference.
+Code written before you adopted bb-spec has no `Requirement:` marker in its commits, so there is no PRD to look up. Fix its bugs with `/revise`, using the expected behavior you describe as the reference; to change its design or behavior, start a new PRD with `/prd`.
 
 Two things outside `.bb-spec/` need manual action:
 
