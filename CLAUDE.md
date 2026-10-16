@@ -6,7 +6,7 @@
 
 - **feat**：任何新增 / 增强 / 约束硬化（使用者视角可感知的正向变化）
 - **fix**：修复 bug、纠正错误信息、回滚不当行为
-- **docs**：仓库自身的说明文档与开发约定（根 `README.md` / `README.zh.md` / `LICENSE` / `CLAUDE.md` / 贡献指南等），前提是改动**不改变任何插件交付给使用者的行为或约束**
+- **docs**：仓库自身的说明文档与开发约定（根 `README.md` / `README.en.md` / `LICENSE` / `CLAUDE.md` / 贡献指南等），前提是改动**不改变任何插件交付给使用者的行为或约束**
 
 禁用 `chore:` / `refactor:` / `style:` / `test:` / `perf:` / `ci:` / `build:` 等其它类型。
 
