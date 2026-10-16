@@ -114,6 +114,7 @@
   - **收尾模式**(`--tail`):`/exec`、`/revise` 結束時自動呼叫,只處理本分支改動涉及的範圍
 
 - **`/git-push`** — 使用者觸發的推送 + PR 流程(單 / 多儲存庫)。
+  - 本機裝了 `ocr`([open-code-review](https://github.com/alibaba/open-code-review))時,rebase 後先跑一次 `ocr review`:Claude 逐條讀程式碼核實,按 🔴/🟡/🟢 列出建議修復項,你勾選後交給 `/revise` 修
   - 存在 AGENTS.md、本分支 PRD 或本分支 commit 指向已合併 PRD 時先跑**分支規範自查(pre-review)**:subagent 比對專案約束、PRD 與 commit 正文的改動說明 vs 分支 diff,違規循環修復
   - PR 描述帶 `Requirement:` 標記;倉庫需只允許 rebase 合併(GitHub 只勾「Allow rebase merging」,主分支規則集的「Allowed merge methods」也只留 Rebase;GitLab 選「Fast-forward merge」並把 squash 設為「Do not allow」),每個 commit 連同自己的 `Requirement:` 行原樣進入主分支
   - 起草 **6 段 PR 描述**(背景 / 需求 / 方案 / 結果 / 測試 / 規範,< 50 行)直接用作 PR body
