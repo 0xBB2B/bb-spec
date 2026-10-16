@@ -1,5 +1,13 @@
 # Changelog
 
+## [14.6.0](https://github.com/0xBB2B/bb-spec/compare/v14.5.0...v14.6.0) (2026-10-16)
+
+
+### Features
+
+* **revise:** 需求变了且 PRD 已合并时转 /prd 新开 PRD，修订过程的取舍必须落盘 ([1bb8f32](https://github.com/0xBB2B/bb-spec/commit/1bb8f32277531b2fc61cd64a0ae89b08a8164fa6))
+* **revise:** 需求变更的例子补上换按钮文字 ([787fd75](https://github.com/0xBB2B/bb-spec/commit/787fd75d85a5c2dbc1d612ab547a777f5c4045a8))
+
 ## [14.5.0](https://github.com/0xBB2B/bb-spec/compare/v14.4.0...v14.5.0) (2026-10-16)
 
 
