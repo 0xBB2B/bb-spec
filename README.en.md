@@ -48,7 +48,7 @@ The 5 commands you type day to day:
 
 | Command | What it does | When |
 |---|---|---|
-| `/prd` | Challenge → clarify → break down; after one approval, writes the PRD + AGENTS.md, then auto-runs plan → exec → doc-update | New requirement, or changing how a merged feature behaves |
+| `/prd` | Challenge → clarify → break down; writes the PRD + AGENTS.md, you read and approve once, then it auto-runs plan → exec → doc-update | New requirement, or changing how a merged feature behaves |
 | `/revise` | Diagnose by root cause → targeted fix → regression check, then auto-runs doc-update | A bug, or results that don't match expectations |
 | `/git-push` | pre-review self-check + push + open PR | Ready to open a PR |
 | `/exec` | Resume the plan from where it stopped | After an interruption or `/clear` |
@@ -67,7 +67,7 @@ First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.
  what     how       Red→Green docs sync       pre-review+open PR
  (the only approval) →Review
 
- ══► chained automatically, no more prompts (stops only for new third-party deps or design calls)
+ ══► chained automatically (stops only for new third-party deps or design calls)
  ──► triggered by you
 
  (opt) /review · /test-webview · /test-api — an extra check before the PR:
@@ -90,7 +90,7 @@ First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.
   - Tightly scoped: **only** pulls code + writes `base_dir` — does not read code or install deps
 
 - **`/prd`** — The single entry point for new requirements. Answers **"what to build, and why."** Changing how a merged feature or pre-bb-spec code behaves also starts here, however small (e.g. raising a timeout from 120 to 600 seconds, or changing a button label from "Submit" to "Save"): a new PRD records the trade-offs.
-  - Challenge first ("not worth building" is a valid outcome) → progressive clarification → breakdown, all in **plan mode for read-only alignment**; you **approve once**, then `/plan` → `/exec` → `/doc-update` run on their own
+  - Challenge first ("not worth building" is a valid outcome) → progressive clarification → breakdown, alignment is **read-only, no files written**; once the PRD is written a prompt asks you to read and confirm it, you **approve once**, then `/plan` → `/exec` → `/doc-update` run on their own
   - Writes the **PRD** (`docs/prd/<date>.<topic>/`: background, goals, non-goals, user stories, testable constraints and acceptance criteria, decision log) and **AGENTS.md** (constraints that apply to the whole project, e.g. "no generics")
   - The PRD stays editable within its branch (fix the plan mid-implementation by editing it) and freezes once merged; **code is the single source of truth for "what it does now"** — the PRD only answers "why"
   - Every later commit carries a `Requirement: <PRD dir name>` trailer: `git log -L :function:file` lists the requirements that touched a function, and the matching PRD's decision log tells you why it was built that way
@@ -98,7 +98,7 @@ First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.
 
 - **`/plan`** — PRD → self-contained, **function-level** plan. Answers **"how to build it."**
   - One independent problem per file, down to function names and responsibilities; declarative artifacts (DDL / API contracts / config) are **inlined in final form** for exec to write verbatim
-  - Auto-invoked by `/prd` with no separate approval; it stops only when a **new third-party dependency** is needed, and your consent there counts as the authorization version-policy requires
+  - Auto-invoked by `/prd` and hands off straight to `/exec`; it stops only when a **new third-party dependency** is needed, and your consent there counts as the authorization version-policy requires
   - Plans exist only while executing — `/exec` deletes them once everything is done, so they never duplicate the PRD
 
 - **`/exec`** — **Three-agent isolated execution**, the core anti-cheat design.
