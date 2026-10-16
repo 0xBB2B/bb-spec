@@ -60,7 +60,7 @@ argument-hint: <问题或优化诉求描述>
 
 | 资产 | 定位方式 | 目的 |
 |---|---|---|
-| 实现代码 | 按问题描述的功能名搜 `${DOCS_DIR}/prd/*/OVERVIEW.md` 的 `features:` → 在各代码仓库里 `git log --grep "Requirement: <目录名>" --name-only`；或 codegraph / grep | 确认"实际做了什么"（附 `文件:行号`） |
+| 实现代码 | 有 `ARCHITECTURE.md` 先按模块地图定位；再按问题描述的功能名搜 `${DOCS_DIR}/prd/*/OVERVIEW.md` 的 `features:` → 在各代码仓库里 `git log --grep "Requirement: <目录名>" --name-only`；或 codegraph / grep | 确认"实际做了什么"（附 `文件:行号`） |
 | 测试文件 | 测试目录 + 命名惯例 | 确认"验了什么" |
 | 相关 PRD | 在函数所在仓库里对出问题的函数跑表格下方的命令（按函数名 no match 时改用行号范围 `-L <起始行>,<结束行>:<文件>`），读最新那个 commit 的 `Requirement` 行指向的 PRD 与 commit 正文（squash 合并的 commit 可能有多行，逐个读）；无标记的 commit 是接入 bb-spec 之前的老代码，没有对应 PRD | 确认"当初要的行为与为什么" |
 | plan 文件 | 进行中主题的 INDEX.md（无进行中 plan 则跳过） | 确认"怎么做"的设计 |

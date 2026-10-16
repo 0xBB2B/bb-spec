@@ -1,6 +1,6 @@
 ---
 name: doc-update
-description: 文档与代码一致性维护——代码是事实，让 README、CLAUDE.md、AGENTS.md 等根文档追平代码现状，并检查代码是否违反 AGENTS.md 项目约束；/exec 与 /revise 收尾时以 --tail 收尾模式自动调用，额外核对本分支 PRD 与实际交付是否一致；已合并的 PRD 任何模式都不碰；改代码一律先问用户、转 /revise。触发：/doc-update、文档和代码不一致、README 过期、维护一下文档。跳过：单点 bug 或定向修复（→/revise）、新需求（→/prd）。
+description: 文档与代码一致性维护——代码是事实，让 README、CLAUDE.md、AGENTS.md、ARCHITECTURE.md 等根文档追平代码现状（项目根没有 ARCHITECTURE.md 大纲时，全仓模式读代码起草），并检查代码是否违反 AGENTS.md 项目约束；/exec 与 /revise 收尾时以 --tail 收尾模式自动调用，额外核对本分支 PRD 与实际交付是否一致；已合并的 PRD 任何模式都不碰；改代码一律先问用户、转 /revise。触发：/doc-update、文档和代码不一致、README 过期、维护一下文档。跳过：单点 bug 或定向修复（→/revise）、新需求（→/prd）。
 argument-hint: [--tail | 可选：限定范围，如某目录 / 某文档]
 ---
 
@@ -38,7 +38,7 @@ argument-hint: [--tail | 可选：限定范围，如某目录 / 某文档]
 
 | 编号 | 类别 | 含义 | 默认动作 |
 |---|---|---|---|
-| A | **doc-stale** | README / CLAUDE.md / AGENTS.md 等根文档引用了已改名、删除或行为变了的函数、路径、命令、配置项 | 改文档追平代码 |
+| A | **doc-stale** | README / CLAUDE.md / AGENTS.md 等根文档引用了已改名、删除或行为变了的函数、路径、命令、配置项；或 ARCHITECTURE.md 没写到新增的模块、目录、数据表、API 分组，仍写着已删除、已搬走的，关键流程经过的模块变了 | 改文档追平代码 |
 | B | **prd-stale**（仅收尾模式） | 本分支 PRD 的约束或验收与实际交付不一致，且没有经用户同意的修改记录 | AskUserQuestion：改 PRD 认可代码 / 转 `/revise` 改代码 |
 | C | **code-violation** | 代码明显违反 AGENTS.md 的项目约束 | AskUserQuestion：改代码（转 `/revise`）/ 改项目约束 / 跳过 |
 | D | **agents-conflict** | AGENTS.md 的约束之间互相矛盾，或与已激活的技术栈 skill 冲突 | AskUserQuestion：选保留哪条 |
@@ -69,7 +69,11 @@ cat .bb-spec.yaml 2>/dev/null
 2. **抽取可核对的引用**：文档里出现的函数名、文件路径、命令、env var、CLI flag、配置 key、默认值、超时阈值
 3. **对照代码**：codegraph 可用则 `codegraph_explore`，否则 `grep -rnE` + 读相关文件，确认每个引用在代码里是否还成立
 4. **项目约束核对**：逐条读 AGENTS.md「项目约束」，在范围内的代码里找违反项
-5. **收尾模式额外**：读本分支 PRD 的每条约束与验收，对照本分支的实现和测试确认是否都已交付、行为是否一致
+5. **对照 ARCHITECTURE.md**：
+   - 收尾模式：看本分支是否新增、删除、搬迁了模块目录，增删了数据表（migration / DDL），增删了 API 分组（路由定义），或改变了关键流程经过的模块；有则记为 A 类
+   - 全仓模式：整份核对模块地图、关键流程、数据表、API 与代码现状
+   - 没有 ARCHITECTURE.md：全仓模式读代码按「ARCHITECTURE.md 模板」起草，记为 A 类的一条（附完整草稿），随 A 类一起批准后落盘；收尾模式跳过，在简报「待用户后续处理」写"可运行 /doc-update 起草 ARCHITECTURE.md"
+6. **收尾模式额外**：读本分支 PRD 的每条约束与验收，对照本分支的实现和测试确认是否都已交付、行为是否一致
 
 ### 步骤 2：分类
 
@@ -83,6 +87,8 @@ cat .bb-spec.yaml 2>/dev/null
 ### A. doc-stale（X 条）
 - README.md:42 引用 `oldFunc()` → 已改名为 `newFunc()`（internal/order/export.go:15）
   → 改 README
+- 项目根没有 ARCHITECTURE.md → 按模板起草 N 行（草稿附后）
+  → 新建 ARCHITECTURE.md
 
 ### B. prd-stale（X 条，仅收尾模式）
 - prd/2026-10-08.order-export/01-csv.md:20 约束「最多导出 1 万行」→ 实现为 5 万行（internal/order/export.go:88）
@@ -122,7 +128,7 @@ cat .bb-spec.yaml 2>/dev/null
 
 ### 步骤 5：回归校验
 
-1. 被改过的文档里引用的相对路径真实存在
+1. 被改过的文档里引用的相对路径真实存在；ARCHITECTURE.md 里写的目录、文件、类型、函数名在代码里都找得到
 2. 被改过的本分支 PRD 约束与验收仍一一对应
 3. `git diff --stat` 里没有代码文件、没有已合并的 PRD
 
@@ -140,3 +146,51 @@ cat .bb-spec.yaml 2>/dev/null
 ```
 
 > 本 skill 不自动 commit、不自动 push。全仓模式的改动留在工作区由用户决定何时提交；收尾模式由调用方一起 commit。
+
+---
+
+## ARCHITECTURE.md 模板
+
+项目大纲：有哪些模块、各在哪、怎么协作。单仓库放项目根，多仓库工作区放文档仓库根（与 AGENTS.md 同处）。全仓模式没有它时按下面的模板起草，收尾模式随本分支的结构变化追平。
+
+```markdown
+# ARCHITECTURE.md
+
+> 项目大纲：有哪些模块、各在哪、怎么协作。只写不常变的内容，代码细节以代码为准。由 /doc-update 维护。
+
+## 项目做什么
+<两三句：解决什么问题、给谁用>
+
+## 整体设计
+<分几层或几块、数据怎么流动；每个关键选择一句话说为什么>
+
+## 模块地图
+| 模块 | 职责 | 目录 | 关键文件 / 类型 |
+|---|---|---|---|
+
+## 关键流程
+### <流程名>
+<入口> → <模块：做什么（关键函数名）> → <模块：做什么> → <结果>
+
+## 数据表
+字段以 `<migration 目录或 DDL 文件>` 为准。
+| 表 | 用途 | 关键关系 |
+|---|---|---|
+
+## API
+参数以 `<路由定义文件>` 为准。
+| 路径前缀 | 所属模块 | 用途 |
+|---|---|---|
+
+## 公共机制
+- <鉴权 / 日志 / 错误处理 / 配置等跨模块机制：在哪、怎么接入>
+```
+
+写作规矩：
+
+- 只写不常变的：模块、目录、流程经过哪些模块、表和 API 分组；函数内部逻辑、字段、参数、配置值不写——细节一变就要改的文档很快会过时
+- 目录、文件、类型、函数用反引号写名字，不写超链接
+- 项目没有的节整节省略（如没有数据库就不写「数据表」）
+- "必须 / 禁止"类规则不写这里，进 AGENTS.md「项目约束」
+- 整份超过 300 行时先检查是否写进了细节
+- 多仓库工作区：模块地图加「仓库」列，关键流程跨仓库时写明经过哪个仓库

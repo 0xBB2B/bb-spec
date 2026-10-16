@@ -112,6 +112,7 @@ First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.
 - **`/doc-update`** — Doc / code **consistency sweep**.
   - Four finding classes: doc-stale (root docs out of date) / prd-stale (this branch's PRD doesn't match what was delivered) / code-violation (code breaks AGENTS.md) / agents-conflict (project constraints contradict each other)
   - **Code is the truth; docs are mirrored to it**; code changes always ask first and route to `/revise` for TDD; merged PRDs are never touched in any mode
+  - Maintains the **ARCHITECTURE.md** outline at the project root (which modules exist, where they live, how they work together; tables and APIs as an overview only): full-repo mode drafts it from the code when missing and writes it after your approval; tail mode keeps it current as the branch adds, removes or moves modules or changes tables and API groups. When learning the current state, the AI reads it first to locate modules, then reads the code
   - **Tail mode** (`--tail`): auto-invoked when `/exec` or `/revise` finishes; covers only what the current branch touched
 
 - **`/git-push`** — User-triggered push + PR flow (single or multi-repo).

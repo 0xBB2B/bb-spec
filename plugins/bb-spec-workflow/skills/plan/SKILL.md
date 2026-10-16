@@ -57,7 +57,7 @@ git worktree list --porcelain
 
 ### 步骤 1：摸清项目现状
 
-技术栈（`go.mod` / `package.json` / `Cargo.toml`）→ 目录结构（`find` 或 codegraph）→ 可复用基础设施 → 命名风格。新项目跳过已有代码分析，按 AGENTS.md 与已激活的技术栈约束推断结构。
+有 `ARCHITECTURE.md` 先读它（模块地图、关键流程）→ 技术栈（`go.mod` / `package.json` / `Cargo.toml`）→ 目录结构（`find` 或 codegraph）→ 可复用基础设施 → 命名风格。新项目跳过已有代码分析，按 AGENTS.md 与已激活的技术栈约束推断结构。
 
 **冲突检测**：PRD 的约束无法在不违背 AGENTS.md 项目约束或现有关键设计（读相关函数的 `git log -L` 与对应 PRD「决策记录」确认）的前提下实现时，停下列出冲突请用户裁决：
 
