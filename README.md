@@ -115,6 +115,7 @@ First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.
   - **Tail mode** (`--tail`): auto-invoked when `/exec` or `/revise` finishes; covers only what the current branch touched
 
 - **`/git-push`** — User-triggered push + PR flow (single or multi-repo).
+  - If `ocr` ([open-code-review](https://github.com/alibaba/open-code-review)) is installed, runs one `ocr review` right after the rebase: Claude checks each finding against the code, lists the ones worth fixing by priority (🔴/🟡/🟢), and you pick which ones `/revise` fixes
   - When AGENTS.md or a PRD on this branch exists, or this branch's commits point to a merged PRD, first runs a **branch self-check (pre-review)**: a subagent checks the branch diff against the project constraints, the PRD and the change notes in commit messages, fixes violations in a loop
   - The PR description carries the `Requirement:` trailer; the repo must allow only rebase merging (GitHub: only "Allow rebase merging", and the main-branch ruleset's "Allowed merge methods" set to Rebase only; GitLab: "Fast-forward merge" with squash set to "Do not allow"), so every commit lands on the main branch with its own `Requirement:` line
   - Drafts a **6-section PR description** (background / requirement / approach / result / tests / conventions, < 50 lines) used directly as the PR body
