@@ -1,5 +1,12 @@
 # Changelog
 
+## [14.7.0](https://github.com/0xBB2B/bb-spec/compare/v14.6.0...v14.7.0) (2026-10-16)
+
+
+### Features
+
+* **doc-update:** 维护项目大纲 ARCHITECTURE.md，AI 先看大纲再读代码 ([16d3d41](https://github.com/0xBB2B/bb-spec/commit/16d3d410db81cbe6c134ce746549157fb5673b0d))
+
 ## [14.6.0](https://github.com/0xBB2B/bb-spec/compare/v14.5.0...v14.6.0) (2026-10-16)
 
 
