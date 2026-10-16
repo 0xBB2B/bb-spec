@@ -48,7 +48,7 @@ The 5 commands you type day to day:
 
 | Command | What it does | When |
 |---|---|---|
-| `/prd` | Challenge → clarify → break down; after one approval, writes the PRD + AGENTS.md, then auto-runs plan → exec → doc-update | New requirement |
+| `/prd` | Challenge → clarify → break down; after one approval, writes the PRD + AGENTS.md, then auto-runs plan → exec → doc-update | New requirement, or changing how a merged feature behaves |
 | `/revise` | Diagnose by root cause → targeted fix → regression check, then auto-runs doc-update | A bug, or results that don't match expectations |
 | `/git-push` | pre-review self-check + push + open PR | Ready to open a PR |
 | `/exec` | Resume the plan from where it stopped | After an interruption or `/clear` |
@@ -89,7 +89,7 @@ First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.
   - **Multi-repo workspace**: creates a shared parent dir and clones each member repo into it (restoring the relative layout the build tool expects); refuses to nest or overwrite
   - Tightly scoped: **only** pulls code + writes `base_dir` — does not read code or install deps
 
-- **`/prd`** — The single entry point for new requirements. Answers **"what to build, and why."**
+- **`/prd`** — The single entry point for new requirements. Answers **"what to build, and why."** Changing how a merged feature or pre-bb-spec code behaves also starts here, however small (e.g. raising a timeout from 120 to 600 seconds): a new PRD records the trade-offs.
   - Challenge first ("not worth building" is a valid outcome) → progressive clarification → breakdown, all in **plan mode for read-only alignment**; you **approve once**, then `/plan` → `/exec` → `/doc-update` run on their own
   - Writes the **PRD** (`docs/prd/<date>.<topic>/`: background, goals, non-goals, user stories, testable constraints and acceptance criteria, decision log) and **AGENTS.md** (constraints that apply to the whole project, e.g. "no generics")
   - The PRD stays editable within its branch (fix the plan mid-implementation by editing it) and freezes once merged; **code is the single source of truth for "what it does now"** — the PRD only answers "why"
@@ -122,7 +122,8 @@ First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.
 
 - **`/revise`** — The exception handler, callable anytime.
   - First reads the code to confirm current behavior and traces back to the relevant PRD via `git log -L`, then classifies the deviation's **root cause** into one of three: *PRD defect*, *impl drift*, *requirement change*
-  - This branch's PRD may be edited; merged PRDs are not — the reason for the fix goes into the commit body
+  - When the requirement changed (*PRD defect*, *requirement change*): only this branch's PRD is edited, with an entry in its decision log; if the PRD is merged or there is none, it stops and hands off to `/prd` for a new PRD
+  - Bugs, security and robustness issues (*impl drift*) are fixed here even when the PRD is merged; the reason and the trade-offs (what was chosen, what was rejected, and why) go into the commit body
   - Every review finding that needs fixing funnels through here
   - Auto-runs `/doc-update` in tail mode after the fix
 

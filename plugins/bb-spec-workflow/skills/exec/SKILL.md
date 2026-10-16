@@ -1,6 +1,6 @@
 ---
 name: exec
-description: 三 Agent 隔离执行 plan——由 /plan 自动调用或手动 /exec 续接；Test→Impl→Review 串行，三方各只看各的输入互不可见；互不依赖且文件目录不重叠的 plan 编为并行组、经用户确认后并发推进；每步立即持久化 PROGRESS.md，跨会话/`/clear` 后从断点续接；启动先 worktree 感知定位执行现场（主仓库停在 main 时自动定位到进行中的 worktree）；全部完成后自动运行 /doc-update 收尾模式让本次 PRD 与 README 等文档追平代码、删除本次 plan 目录；每个 commit 带 `Requirement: <PRD 目录名>`；commit 不自动 push、main 分支禁自动 commit。触发：/exec、开始实施 plan、继续执行 plan、从断点继续、按 plan 把代码做出来。跳过：还没 /plan 产出实施计划、纯调研/方案讨论、要改已合并的行为（→/revise）。
+description: 三 Agent 隔离执行 plan——由 /plan 自动调用或手动 /exec 续接；Test→Impl→Review 串行，三方各只看各的输入互不可见；互不依赖且文件目录不重叠的 plan 编为并行组、经用户确认后并发推进；每步立即持久化 PROGRESS.md，跨会话/`/clear` 后从断点续接；启动先 worktree 感知定位执行现场（主仓库停在 main 时自动定位到进行中的 worktree）；全部完成后自动运行 /doc-update 收尾模式让本次 PRD 与 README 等文档追平代码、删除本次 plan 目录；每个 commit 带 `Requirement: <PRD 目录名>`；commit 不自动 push、main 分支禁自动 commit。触发：/exec、开始实施 plan、继续执行 plan、从断点继续、按 plan 把代码做出来。跳过：还没 /plan 产出实施计划、纯调研/方案讨论、要改已合并的行为（需求变了 →/prd，bug →/revise）。
 argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
 ---
 
