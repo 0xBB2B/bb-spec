@@ -1,5 +1,12 @@
 # Changelog
 
+## [14.9.0](https://github.com/0xBB2B/bb-spec/compare/v14.8.0...v14.9.0) (2026-10-16)
+
+
+### Features
+
+* **prd:** 去掉 plan 模式，PRD 落盘后弹窗请用户读完确认；exec 能并行就直接并行 ([f7b7aaa](https://github.com/0xBB2B/bb-spec/commit/f7b7aaa34458bfee2f37c2eedba250194b22d12e))
+
 ## [14.8.0](https://github.com/0xBB2B/bb-spec/compare/v14.7.0...v14.8.0) (2026-10-16)
 
 
