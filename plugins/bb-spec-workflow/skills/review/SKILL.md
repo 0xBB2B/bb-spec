@@ -1,6 +1,6 @@
 ---
 name: review
-description: 本地 ultrareview——跨模型、多代理、对抗验证、只读的 PR 级 review（依赖 Workflow 工具，Claude Code ≥2.1.154）；第一参数指定待审分支（默认当前分支），对比基线固定 main（无则 master）；diff 按 ≤1500 行分片，三个阶段都按片派 agent：每片 3 个 finder（缺陷=安全+鲁棒+正确性 / 设计=质量+简洁+文档同步 / Codex 跨模型）并行审查，每片 1 个仲裁者对本片全部 🔴/🟡 做三视角裁决、多数决去留，每片 1 个扫描者为全部确认项找兄弟位点并入一项、一次修一类；成本约 300 tokens/diff 行（15k 行 ≈ 50 agents / 5M）；修复闭环后对修复 diff 自动复审一轮；报告落盘 .cache/review 并注入下一轮识别复发/已否决；可选追加本次 review 重点。触发：/review、给当前或指定分支做深度审查、PR 前 ultrareview。跳过：无 Workflow 工具、不在 git 仓库、待审分支=基线分支。
+description: 本地 ultrareview——跨模型、多代理、对抗验证、只读的 PR 级 review（依赖 Workflow 工具，Claude Code ≥2.1.154）；第一参数指定待审分支（默认当前分支），对比基线固定 main（无则 master）；diff 按 ≤1500 行分片，三个阶段都按片派 agent：每片 3 个 finder（缺陷=安全+鲁棒+正确性 / 设计=质量+简洁+文档同步 / Codex 跨模型）并行审查，每片 1 个仲裁者对本片全部 🔴/🔶 做三视角裁决、多数决去留，每片 1 个扫描者为全部确认项找兄弟位点并入一项、一次修一类；成本约 300 tokens/diff 行（15k 行 ≈ 50 agents / 5M）；修复闭环后对修复 diff 自动复审一轮；报告落盘 .cache/review 并注入下一轮识别复发/已否决；可选追加本次 review 重点。触发：/review、给当前或指定分支做深度审查、PR 前 ultrareview。跳过：无 Workflow 工具、不在 git 仓库、待审分支=基线分支。
 argument-hint: [branch] [本次 review 重点...]
 disable-model-invocation: true
 ---
@@ -83,7 +83,7 @@ finder = **finder 身份 × 分片**：每片派 3 个 finder（Codex 不可用�
 | design | 📐 | `agents/review-design.md` | （默认） | 质量 + 简洁 + 文档同步 |
 | codex | 🤖 | `agents/review-codex.md` | `codex:codex-rescue` | 跨模型独立视角 |
 
-图标是 finder 在最终报告中的身份标识（报告表格 by 列写图标 + 文字名，如 `🛠️缺陷`，多个 finder 空格分隔）；刻意用物体类 emoji，与严重度的 🔴🟡🟢 圆点在视觉上分属两类，避免混淆。
+图标是 finder 在最终报告中的身份标识（报告表格 by 列写图标 + 文字名，如 `🛠️缺陷`，多个 finder 空格分隔）；刻意用物体类 emoji，与严重度的 🔴🔶🔷 几何图形在视觉上分属两类，避免混淆。
 
 构造 `FINDERS` 数组：`[{key, slice, prompt, agentType?}, ...]`（Codex 不可用则不含 codex 项）；`SLICES` 数组：`[{slice: 'i/K', files: ['path', ...], diffPath}, ...]`。
 
@@ -101,7 +101,7 @@ export const meta = {
   description: '按片派 finder 并行审查 + 按片批量对抗验证 + 按片同类扫描的本地 review',
   phases: [
     { title: 'Find', detail: '每片 3 个 finder 并行审查' },
-    { title: 'Verify', detail: '每片 1 个仲裁者对本片全部 🔴/🟡 做三视角裁决' },
+    { title: 'Verify', detail: '每片 1 个仲裁者对本片全部 🔴/🔶 做三视角裁决' },
     { title: 'Sweep', detail: '每片 1 个扫描者为全部确认项找本片内的兄弟位点' },
   ],
 }
@@ -220,13 +220,13 @@ for (const f of raw) {
   }
 }
 
-// NIT 不值得验证成本，直接带回报告；🔴/🟡 进对抗验证
+// NIT 不值得验证成本，直接带回报告；🔴/🔶 进对抗验证
 const nits = merged.filter(f => f.severity === 'NIT')
 const toVerify = merged.filter(f => f.severity !== 'NIT').map((f, i) => ({ ...f, index: i + 1 }))
-log(`原始 ${raw.length} 条，去重后 ${merged.length} 条：🔴/🟡 ${toVerify.length} 条进入对抗验证，🟢 ${nits.length} 条直接列出`)
+log(`原始 ${raw.length} 条，去重后 ${merged.length} 条：🔴/🔶 ${toVerify.length} 条进入对抗验证，🔷 ${nits.length} 条直接列出`)
 
 phase('Verify')
-// 每片一个仲裁者，拿到本片全部 🔴/🟡，逐条给出三视角裁决；多数决（≥2/3）定去留。
+// 每片一个仲裁者，拿到本片全部 🔴/🔶，逐条给出三视角裁决；多数决（≥2/3）定去留。
 // 三个视角由同一个 agent 在读过一次代码后一并回答——分三个 agent 只是把同一段代码读三遍
 const verdictBySlice = await parallel(SLICES.map(s => () => {
   const mine = toVerify.filter(f => f.slice === s.slice)
@@ -333,16 +333,16 @@ return { confirmed, rejected, nits, stats }
 本地 ultrareview 完成 · <base>..<branch>（N commits / M 文件 / +L1 -L2 / K 片）
 重点：<focus 一句话；未指定时写「未指定，全面审视」>
 finder：🛠️缺陷 📐设计 🤖Codex（3/3 就绪 × K 片）
-原始 R 条 → 去重 D 条 → 验证 V 条：✅ P 通过 → 同类合并 C 项（含兄弟位点 S 处）/ ❌ B 否决 / 🟢 N 未验证 ｜ 🔴 a（⭐a'）· 🟡 b（⭐b'）· ♻️ 复发 r
+原始 R 条 → 去重 D 条 → 验证 V 条：✅ P 通过 → 同类合并 C 项（含兄弟位点 S 处）/ ❌ B 否决 / 🔷 N 未验证 ｜ 🔴 a（⭐a'）· 🔶 b（⭐b'）· ♻️ 复发 r
 上轮对照：<report 文件名 或「无」>
 消耗：X agents · ~Y tokens · Z 分钟
 ```
 
-**计数一律取自 workflow 返回值**：R/D/V/P/C/S/B/N 分别对应 `stats.rawCount / mergedCount / verifiedCount / passedCount / confirmedCount / siblingCount / rejectedCount / nitCount`，🔴/🟡/⭐/♻️ 由 `confirmed` 数组统计，消耗行取自 Workflow 完成通知里的 agents / tokens / 时长；禁止主 agent 手写或心算任何一个数字。finder 行必须完整列出（Codex 不可用时该行写 `（2/3 就绪，🤖Codex 不可用）`）；后续表格 by 列写图标 + 文字名（与 finder 行一致，如 `🛠️缺陷`）。⭐ = 被 ≥ 2 个 finder 命中的交叉验证强信号，由表格里的 ⭐ 标记与 by 列多 finder 直接呈现，不设独立汇总行。♻️ = 命中上轮已修复项的复发。
+**计数一律取自 workflow 返回值**：R/D/V/P/C/S/B/N 分别对应 `stats.rawCount / mergedCount / verifiedCount / passedCount / confirmedCount / siblingCount / rejectedCount / nitCount`，🔴/🔶/⭐/♻️ 由 `confirmed` 数组统计，消耗行取自 Workflow 完成通知里的 agents / tokens / 时长；禁止主 agent 手写或心算任何一个数字。finder 行必须完整列出（Codex 不可用时该行写 `（2/3 就绪，🤖Codex 不可用）`）；后续表格 by 列写图标 + 文字名（与 finder 行一致，如 `🛠️缺陷`）。⭐ = 被 ≥ 2 个 finder 命中的交叉验证强信号，由表格里的 ⭐ 标记与 by 列多 finder 直接呈现，不设独立汇总行。♻️ = 命中上轮已修复项的复发。
 
 ### ✅ 确认问题表（质量/安全优先排序）
 
-排序键依次为：①by 含 🛠️缺陷 的优先；②其中"风险"仲裁视角 ✓（不修会出真实问题）的优先；③严重度 🔴 → 🟡；④⭐ 交叉验证优先。逐个解决模式按此表顺序处理。
+排序键依次为：①by 含 🛠️缺陷 的优先；②其中"风险"仲裁视角 ✓（不修会出真实问题）的优先；③严重度 🔴 → 🔶；④⭐ 交叉验证优先。逐个解决模式按此表顺序处理。
 
 ```
 **✅ 确认问题**（回复编号即从该项开始讲解）
@@ -350,16 +350,16 @@ finder：🛠️缺陷 📐设计 🤖Codex（3/3 就绪 × K 片）
 | # | 级 | 问题 | 位置 | by |
 |---|----|------|------|----|
 | 1 | 🔴⭐ | 标题 | file:lines（+2 同类） | 🛠️缺陷 📐设计 |
-| 2 | 🟡 | ♻️ 标题 | file:lines | 🤖Codex |
+| 2 | 🔶 | ♻️ 标题 | file:lines | 🤖Codex |
 ```
 
 - 标题 ≤ 20 字（`[测试缺陷]` 标签与 ♻️ 不计入）——详细分析本就留给逐个解决模式，压短无信息损失，且防止表格在窄终端折行
 - 位置列写主位点完整相对路径 `file:lines`（保持可点击），不得截断；有兄弟位点时追加 `（+N 同类）`，全部位点在展开时列出
 
-### 🟢 NIT 表（未对抗验证）
+### 🔷 NIT 表（未对抗验证）
 
 ```
-**🟢 NIT**（未对抗验证；回复"批量清 NIT"可一次处理）
+**🔷 NIT**（未对抗验证；回复"批量清 NIT"可一次处理）
 
 | # | 问题 | 位置 | by |
 |---|------|------|----|
@@ -407,7 +407,7 @@ finder：🛠️缺陷 📐设计 🤖Codex（3/3 就绪 × K 片）
 简表之后立即用 AskUserQuestion 询问（不预先展开任何一项），选项：
   · **修复全部**（推荐）→ 对整张确认表一次性授权，按表顺序逐项展开并修复，中途不停等
   · **一个个开始修** → 从第 1 个问题起，逐个讲解、逐项确认后修
-  · **批量清 NIT** → 一次处理 🟢 NIT 表
+  · **批量清 NIT** → 一次处理 🔷 NIT 表
   （要从指定项开始讲解，用 Other 填项目编号，如 "3"；要看被否决的项回复「展开否决项」；不修回复「结束」）
 
 确认队列清空后再问一次：**批量清 NIT** / **跳过 NIT，进入修复复审**；用户回复「结束」或队列与 NIT 都清空时进入修复复审。
@@ -426,7 +426,7 @@ finder：🛠️缺陷 📐设计 🤖Codex（3/3 就绪 × K 片）
 1. **展开当前问题**（仅此一条），按下方骨架输出——每个字段独立成段、空行分隔，段内用子弹或表格分点，禁止把任何字段写成连排长段：
 
    ```
-   ### [🔴/🟡] 项N · 标题 [⭐ 交叉验证] [♻️ 复发]（第 i / 共 K 个）
+   ### [🔴/🔶] 项N · 标题 [⭐ 交叉验证] [♻️ 复发]（第 i / 共 K 个）
 
    位置：file:lines
    同类位点：file:lines — <为何同类>（一行一个；无则省略本行）

@@ -115,7 +115,7 @@
   - **收尾模式**(`--tail`):`/exec`、`/revise` 结束时自动调用,只处理本分支改动涉及的范围
 
 - **`/git-push`** — 用户触发的推送 + PR 流程(单 / 多仓库)。
-  - 本机装了 `ocr`([open-code-review](https://github.com/alibaba/open-code-review))时,rebase 后先跑一次 `ocr review`:Claude 逐条读代码核实,按 🔴/🟡/🟢 列出建议修复项,你勾选后交给 `/revise` 修
+  - 本机装了 `ocr`([open-code-review](https://github.com/alibaba/open-code-review))时,rebase 后先跑一次 `ocr review`:Claude 逐条读代码核实,按 🔴/🔶/🔷 列出建议修复项,你勾选后交给 `/revise` 修
   - 存在 AGENTS.md、本分支 PRD 或本分支 commit 指向已合并 PRD 时先跑**分支规范自查(pre-review)**:subagent 比对项目约束、PRD 与 commit 正文的改动说明 vs 分支 diff,违规循环修复
   - PR 描述带 `Requirement:` 标记;仓库需只允许 rebase 合并(GitHub 只勾「Allow rebase merging」,主分支规则集的「Allowed merge methods」也只留 Rebase;GitLab 选「Fast-forward merge」并把 squash 设为「Do not allow」),每个 commit 连同自己的 `Requirement:` 行原样进入主分支
   - 起草 **6 段 PR 描述**(背景 / 需求 / 方案 / 结果 / 测试 / 规范,< 50 行)直接用作 PR body
@@ -129,7 +129,7 @@
 
 - **`/review`** — (可选) Workflow 编排、**对抗验证**的本地 PR review。
   - Phase 1 diff 按 ≤1500 行分片,每片 diff 落盘一次供所有 agent 共读,每片并发 **3 个 finder**:缺陷(安全 / 鲁棒性 / 正确性)/ 设计(质量 / 简洁性 / 文档同步)/ **Codex 跨模型独立** review,schema 强制结构化
-  - Phase 2 每片 **1 个仲裁者**对本片全部 🔴/🟡 做三视角裁决(重要性 / 根源性 / 不修风险),多数决去留
+  - Phase 2 每片 **1 个仲裁者**对本片全部 🔴/🔶 做三视角裁决(重要性 / 根源性 / 不修风险),多数决去留
   - Phase 3 每片 **1 个扫描者**为全部确认项在本片内**同类扫描**兄弟位点,交 `/revise` 一次修一类;NIT 可一键批量清
   - 三个阶段都按片派 agent,成本约 300 tokens / diff 行(15k 行 diff ≈ 50 agent / 5M tokens)
   - 修复落地后对修复 diff **自动复审一轮**;报告落盘 `.bb-spec/.cache/review/`,下一轮据此标记复发、跳过已否决项
