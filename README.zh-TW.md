@@ -54,7 +54,7 @@
 | `/exec` | 從斷點接著執行 plan | 中斷或 `/clear` 之後 |
 | `/doc-update` | 檢查整個儲存庫的文件與程式碼是否一致 | 想把整個儲存庫查一遍時(`/exec`、`/revise` 收尾已自動查本分支範圍) |
 
-首次接入用 `/git-clone`(拉遠端專案到本地 + 落 `.bb-spec.yaml`);可選命令:`/review`(多 finder 並行 + 對抗驗證)、`/test-webview` / `/test-api`(前端 / 後端 e2e)。
+首次接入用 `/git-clone`(拉遠端專案到本地 + 落 `.bb-spec.yaml`);可選命令:`/test-webview` / `/test-api`(前端 / 後端 e2e)。
 
 ---
 
@@ -70,8 +70,8 @@
  ══► 自動銜接(僅新增第三方相依套件或需設計裁決時停下)
  ──► 由你手動觸發
 
- (可選) /review · /test-webview · /test-api — 提 PR 前多加一道檢查:
-        對抗審查 / 前端 e2e / 後端 e2e,掛在 /doc-update 與 /git-push 之間
+ (可選) /test-webview · /test-api — 提 PR 前多加一道檢查:
+        前端 e2e / 後端 e2e,掛在 /doc-update 與 /git-push 之間
 
  /revise(隨時介入,按根因路由,修完自動跑 /doc-update)
    PRD 缺陷 → 改本分支 PRD   ·   實作偏離 → TDD 修復   ·   大的需求變更 → /prd
@@ -127,14 +127,6 @@
   - 所有需修復的 review 發現都匯入此處
   - 修完自動跑 `/doc-update` 收尾模式
 
-- **`/review`** — (可選) Workflow 編排、**對抗驗證**的本地 PR review。
-  - Phase 1 diff 按 ≤1500 行分片,每片 diff 落盤一次供所有 agent 共讀,每片並發 **3 個 finder**:缺陷(安全 / 強健性 / 正確性)/ 設計(品質 / 簡潔性 / 文件同步)/ **Codex 跨模型獨立** review,schema 強制結構化
-  - Phase 2 每片 **1 個仲裁者**對本片全部 🔴/🔶 做三視角裁決(重要性 / 根源性 / 不修風險),多數決去留
-  - Phase 3 每片 **1 個掃描者**為全部確認項在本片內**同類掃描**兄弟位點,交 `/revise` 一次修一類;NIT 可一鍵批次清理
-  - 三個階段都按片派 agent,成本約 300 tokens / diff 行(15k 行 diff ≈ 50 agent / 5M tokens)
-  - 修復落地後對修復 diff **自動複審一輪**;報告落盤 `.bb-spec/.cache/review/`,下一輪據此標記復發、跳過已否決項
-  - 唯讀、絕不自動改程式碼;要求 Claude Code ≥ 2.1.154
-
 - **`/test-webview`** — (可選) 前端 / 網頁專案的**互動驗收**。
   - Docker 整棧拉起(首次確認後記住,跑完 `down -v` 清理),瀏覽器 MCP 驅動真實瀏覽器
   - **每個用例派隔離串列 subagent**,幾百用例也不爆主上下文;全程串列(瀏覽器單一實例)
@@ -149,7 +141,7 @@
 
 **附帶產物**
 
-- **8 個編排 subagent**(被上述環節驅動):`test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `review-defect` / `review-design` / `review-codex` / `pre-reviewer`
+- **5 個編排 subagent**(被上述環節驅動):`test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer`
 - **4 個被動 hook**(自動生效):攔截 npm/yarn、攔截 main commit、相依版本自檢、Stop 四項自檢
 
 ---
@@ -198,7 +190,7 @@ BB-Spec 拆成**四個可獨立安裝的子 plugin**——只裝你需要的約�
 | 子 plugin | 裝了得到什麼 | 安裝命令 |
 |---|---|---|
 | **bb-spec-core** _(推薦基座)_ | TDD / 版本策略 / Git 紀律 + 3 個被動 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(核心功能)_ | prd → plan → exec → doc-update → revise → git-push(+ 可選 review / test-webview / test-api e2e)、git-clone 一次性初始化 + 8 個 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(核心功能)_ | prd → plan → exec → doc-update → revise → git-push(+ 可選 test-webview / test-api e2e)、git-clone 一次性初始化 + 5 個 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / 資料庫 / 認證 / 授權 / 可觀測性 / 服務治理 / 設定約束 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun 技術棧與工程約定(含 bun hook) | `/plugin install bb-spec-frontend@0xbb2b` |
 

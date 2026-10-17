@@ -54,7 +54,7 @@
 | `/exec` | 中断箇所から plan の実行を再開 | 中断や `/clear` の後 |
 | `/doc-update` | リポジトリ全体のドキュメントとコードの一貫性をチェック | リポジトリ全体を点検したい時(`/exec`・`/revise` の終了時に本ブランチの範囲は自動チェック済み) |
 
-初回セットアップは `/git-clone`(リモートプロジェクトをローカルに取得 + `.bb-spec.yaml` を生成);任意コマンド:`/review`(並列 finder + 敵対的検証)、`/test-webview` / `/test-api`(フロント / バックエンド e2e)。
+初回セットアップは `/git-clone`(リモートプロジェクトをローカルに取得 + `.bb-spec.yaml` を生成);任意コマンド:`/test-webview` / `/test-api`(フロント / バックエンド e2e)。
 
 ---
 
@@ -70,8 +70,8 @@
  ══► 自動で接続(新規第三者依存の追加や設計判断が必要な時のみ停止)
  ──► ユーザーが手動で実行
 
- (任意) /review · /test-webview · /test-api — PR 前の追加チェック:
-        敵対的レビュー / フロント e2e / バックエンド e2e、/doc-update と /git-push の間に挿入
+ (任意) /test-webview · /test-api — PR 前の追加チェック:
+        フロント e2e / バックエンド e2e、/doc-update と /git-push の間に挿入
 
  /revise(いつでも介入、根本原因でルーティング、完了後に /doc-update を自動実行)
    PRD 欠陥 → 本ブランチの PRD を修正   ·   実装ドリフト → TDD で修正   ·   大きな要件変更 → /prd
@@ -128,14 +128,6 @@
   - 修正が必要なすべての review 指摘はここに集約
   - 修正後に `/doc-update` の仕上げモードを自動実行
 
-- **`/review`** — (任意) Workflow オーケストレーション、**敵対的検証**付きのローカル PR review。
-  - フェーズ 1 で diff を ≤1500 行ごとに分割し、各スライスの diff を一度だけディスクに書き出して全 agent で共有、各スライスに **3 つの finder** を並列実行:欠陥(セキュリティ / 堅牢性 / 正確性)/ 設計(品質 / 簡潔性 / ドキュメント同期)/ **Codex クロスモデル独立** review、schema 強制で構造化
-  - フェーズ 2 で各スライスに **1 つの懐疑的仲裁者**を割り当て、そのスライス内の全 🔴/🔶 を三視点(重要性 / 根本原因性 / 未修正リスク)で判定、多数決で残否を決定
-  - フェーズ 3 で各スライスに **1 つの走査者**を割り当て、確認済み全項目の**同種の兄弟箇所**をそのスライス内で走査、`/revise` で一クラスまとめて修正;NIT は一括処理可能
-  - 全フェーズがスライス単位で agent を派遣するため、コストは diff 1 行あたり約 300 tokens(15k 行の diff ≈ 50 agent / 5M tokens)
-  - 修正が入った後、修正 diff を**自動で 1 回再レビュー**;レポートは `.bb-spec/.cache/review/` に保存され、次回実行時に再発の検出と却下済み項目のスキップに使われる
-  - 読み取り専用、絶対に自動編集しない;Claude Code ≥ 2.1.154 が必要
-
 - **`/test-webview`** — (任意) フロントエンド / ウェブプロジェクトの**インタラクション受け入れ**。
   - Docker フルスタック起動(初回確認後に記憶、終了後 `down -v` でクリーンアップ)、ブラウザ MCP で実ブラウザを駆動
   - **各ケースに隔離されたシリアルサブエージェントを割り当て**、数百ケースでもメインコンテキストを溢れさせない;全工程シリアル(ブラウザ単一インスタンス)
@@ -150,7 +142,7 @@
 
 **同梱されるもの**
 
-- **8 個のオーケストレーションサブエージェント**(上記ステージに駆動される):`test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `review-defect` / `review-design` / `review-codex` / `pre-reviewer`
+- **5 個のオーケストレーションサブエージェント**(上記ステージに駆動される):`test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer`
 - **4 つの受動 hook**(自動発動):npm/yarn ブロック、main コミットブロック、依存バージョンセルフチェック、Stop 時の 4 項目セルフチェック
 
 ---
@@ -199,7 +191,7 @@ BB-Spec は**4 つの独立インストール可能なサブ plugin** に分割 
 | サブ plugin | 何が手に入るか | インストールコマンド |
 |---|---|---|
 | **bb-spec-core** _(推奨ベース)_ | TDD / バージョンポリシー / Git 規律 + 3 つの受動 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(コア機能)_ | prd → plan → exec → doc-update → revise → git-push(+ 任意 review / test-webview / test-api e2e)、git-clone ワンショット初期化 + 8 サブエージェント | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(コア機能)_ | prd → plan → exec → doc-update → revise → git-push(+ 任意 test-webview / test-api e2e)、git-clone ワンショット初期化 + 5 サブエージェント | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / 認証 / 認可 / 可観測性 / サービスガバナンス / 設定制約 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun スタック & エンジニアリング規約(bun hook 付き) | `/plugin install bb-spec-frontend@0xbb2b` |
 
