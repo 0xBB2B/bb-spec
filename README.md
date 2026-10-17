@@ -54,7 +54,7 @@
 | `/exec` | 从断点接着执行 plan | 中断或 `/clear` 之后 |
 | `/doc-update` | 检查整个仓库的文档与代码是否一致 | 想把整个仓库查一遍时(`/exec`、`/revise` 收尾已自动查本分支范围) |
 
-首次接入用 `/git-clone`(拉远程项目到本地 + 落 `.bb-spec.yaml`);可选命令:`/review`(多 finder 并行 + 对抗验证)、`/test-webview` / `/test-api`(前端 / 后端 e2e)。
+首次接入用 `/git-clone`(拉远程项目到本地 + 落 `.bb-spec.yaml`);可选命令:`/test-webview` / `/test-api`(前端 / 后端 e2e)。
 
 ---
 
@@ -70,8 +70,8 @@
  ══► 自动衔接(仅新增第三方依赖或需设计裁决时停下)
  ──► 由你手动触发
 
- (可选) /review · /test-webview · /test-api — 提 PR 前多加一道检查:
-        对抗审查 / 前端 e2e / 后端 e2e,挂在 /doc-update 与 /git-push 之间
+ (可选) /test-webview · /test-api — 提 PR 前多加一道检查:
+        前端 e2e / 后端 e2e,挂在 /doc-update 与 /git-push 之间
 
  /revise(随时介入,按根因路由,修完自动跑 /doc-update)
    PRD 缺陷 → 改本分支 PRD   ·   实现偏离 → TDD 修复   ·   大的需求变更 → /prd
@@ -127,14 +127,6 @@
   - 所有需修复的 review 发现都汇入此处
   - 修完自动跑 `/doc-update` 收尾模式
 
-- **`/review`** — (可选) Workflow 编排、**对抗验证**的本地 PR review。
-  - Phase 1 diff 按 ≤1500 行分片,每片 diff 落盘一次供所有 agent 共读,每片并发 **3 个 finder**:缺陷(安全 / 鲁棒性 / 正确性)/ 设计(质量 / 简洁性 / 文档同步)/ **Codex 跨模型独立** review,schema 强制结构化
-  - Phase 2 每片 **1 个仲裁者**对本片全部 🔴/🔶 做三视角裁决(重要性 / 根源性 / 不修风险),多数决去留
-  - Phase 3 每片 **1 个扫描者**为全部确认项在本片内**同类扫描**兄弟位点,交 `/revise` 一次修一类;NIT 可一键批量清
-  - 三个阶段都按片派 agent,成本约 300 tokens / diff 行(15k 行 diff ≈ 50 agent / 5M tokens)
-  - 修复落地后对修复 diff **自动复审一轮**;报告落盘 `.bb-spec/.cache/review/`,下一轮据此标记复发、跳过已否决项
-  - 只读、绝不自动改码;要求 Claude Code ≥ 2.1.154
-
 - **`/test-webview`** — (可选) 前端 / 网页项目的**交互验收**。
   - Docker 整栈拉起(首次确认后记住,跑完 `down -v` 清理),浏览器 MCP 驱动真实浏览器
   - **每个用例派隔离串行 subagent**,几百用例也不爆主上下文;全程串行(浏览器单实例)
@@ -149,7 +141,7 @@
 
 **附带产物**
 
-- **8 个编排 subagent**(被上述环节驱动):`test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `review-defect` / `review-design` / `review-codex` / `pre-reviewer`
+- **5 个编排 subagent**(被上述环节驱动):`test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer`
 - **4 个被动 hook**(自动生效):拦截 npm/yarn、拦截 main commit、依赖版本自检、Stop 四项自检
 
 ---
@@ -198,7 +190,7 @@ BB-Spec 拆成**四个可独立安装的子 plugin**——只装你需要的约�
 | 子 plugin | 装了得到什么 | 安装命令 |
 |---|---|---|
 | **bb-spec-core** _(推荐基座)_ | TDD / 版本策略 / Git 纪律 + 3 个被动 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(核心功能)_ | prd → plan → exec → doc-update → revise → git-push(+ 可选 review / test-webview / test-api e2e)、git-clone 一次性初始化 + 8 个 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(核心功能)_ | prd → plan → exec → doc-update → revise → git-push(+ 可选 test-webview / test-api e2e)、git-clone 一次性初始化 + 5 个 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / 数据库 / 认证 / 授权 / 可观测性 / 服务治理 / 配置约束 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun 技术栈与工程约定(含 bun hook) | `/plugin install bb-spec-frontend@0xbb2b` |
 

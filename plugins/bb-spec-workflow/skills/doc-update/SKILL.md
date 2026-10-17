@@ -10,7 +10,6 @@ argument-hint: [--tail | 可选：限定范围，如某目录 / 某文档]
 
 > 与相邻 skill 的边界
 > - `/revise`：单点 bug 或定向修复；本 skill 只改文档、不改代码
-> - `/review` 内的 `review-design`（文档同步视角）：只读、只看 PR diff；本 skill 会落盘修改
 > - `/prd`：新需求；本 skill 不新增需求、不改已合并的 PRD
 
 ## 核心原则（兼硬约束）

@@ -196,4 +196,3 @@ user-invocable: false
 |---|---|---|
 | [[tdd-workflow]] | Red-Green-Refactor 循环本身 | 互补：TDD 管"怎么写"，本 skill 管"写成什么样" |
 | [[golang-constraints]] / [[vue-constraints]] 等 | 语言/栈绑定的特定约束 | 不重叠：本 skill 跨栈，栈特异约束归各自 |
-| `/review` 多 finder（code-quality / simplicity / robustness） | 评审「预先未声明的代码问题」 | 不重叠：本 skill 是「预先声明的输入约束」（写之前 / 审之中），`/review` 在功能完成后 |

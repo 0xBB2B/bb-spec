@@ -13,7 +13,7 @@
     {
       "name": "bb-spec-workflow",
       "source": "./plugins/bb-spec-workflow",
-      "description": "BB-Spec 工作流：prd（质疑→澄清→拆解，一次批准落盘 PRD + AGENTS.md 项目约束）→ 自动 plan → exec（三 Agent 隔离）→ 收尾 doc-update；commit 带 Requirement 需求标记，代码经 git 反查回 PRD；另含 test-webview（网页交互验证）/ test-api（后端 API e2e、Bun TS runner）、review（多代理对抗）、revise、git-push、git-clone 一次性初始化与 8 个编排 subagent。"
+      "description": "BB-Spec 工作流：prd（质疑→澄清→拆解，一次批准落盘 PRD + AGENTS.md 项目约束）→ 自动 plan → exec（三 Agent 隔离）→ 收尾 doc-update；commit 带 Requirement 需求标记，代码经 git 反查回 PRD；另含 test-webview（网页交互验证）/ test-api（后端 API e2e、Bun TS runner）、revise、git-push、git-clone 一次性初始化与 5 个编排 subagent。"
     },
     {
       "name": "bb-spec-backend",

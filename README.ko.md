@@ -54,7 +54,7 @@
 | `/exec` | 중단된 지점부터 plan 실행 재개 | 중단이나 `/clear` 이후 |
 | `/doc-update` | 저장소 전체의 문서와 코드 일관성 점검 | 저장소 전체를 점검하고 싶을 때(`/exec`·`/revise` 마무리 시 이번 브랜치 범위는 자동 점검) |
 
-최초 설정은 `/git-clone`(원격 프로젝트를 로컬로 가져오기 + `.bb-spec.yaml` 생성); 선택 명령: `/review`(병렬 finder + 적대적 검증), `/test-webview` / `/test-api`(프론트 / 백엔드 e2e).
+최초 설정은 `/git-clone`(원격 프로젝트를 로컬로 가져오기 + `.bb-spec.yaml` 생성); 선택 명령: `/test-webview` / `/test-api`(프론트 / 백엔드 e2e).
 
 ---
 
@@ -70,8 +70,8 @@
  ══► 자동 연결(신규 제3자 의존성이나 설계 판단이 필요할 때만 멈춤)
  ──► 사용자가 수동으로 실행
 
- (선택) /review · /test-webview · /test-api — PR 전 추가 점검:
-        적대적 리뷰 / 프론트 e2e / 백엔드 e2e, /doc-update 와 /git-push 사이에 삽입
+ (선택) /test-webview · /test-api — PR 전 추가 점검:
+        프론트 e2e / 백엔드 e2e, /doc-update 와 /git-push 사이에 삽입
 
  /revise (언제든 개입, 근본 원인으로 라우팅, 완료 후 /doc-update 자동 실행)
    PRD 결함 → 이 브랜치의 PRD 수정   ·   구현 드리프트 → TDD 수정   ·   큰 요구사항 변경 → /prd
@@ -128,14 +128,6 @@
   - 수정이 필요한 모든 review 지적은 여기로 집결
   - 수정 후 `/doc-update` 마무리 모드를 자동 실행
 
-- **`/review`** — (선택) Workflow 오케스트레이션, **적대적 검증**을 갖춘 로컬 PR review.
-  - Phase 1에서 diff를 ≤1500줄 단위로 분할하고 각 슬라이스의 diff를 한 번만 디스크에 기록해 모든 agent가 공유, 각 슬라이스마다 **3개 finder** 병렬 실행: 결함(보안 / 견고성 / 정확성) / 설계(품질 / 간결성 / 문서 동기화) / **Codex 크로스 모델 독립** review, schema 강제 구조화
-  - Phase 2에서 슬라이스마다 **1개 회의적 판정자**가 해당 슬라이스의 모든 🔴/🔶을 세 관점(중요도 / 근본 원인성 / 미수정 위험)으로 판정, 다수결로 잔존 결정
-  - Phase 3에서 슬라이스마다 **1개 스위퍼**가 확인된 모든 항목의 **동일 결함 클래스 형제 위치**를 해당 슬라이스 안에서 스윕, `/revise`로 한 클래스씩 수정; NIT는 일괄 정리 가능
-  - 모든 단계가 슬라이스 단위로 agent를 파견하므로 비용은 diff 한 줄당 약 300 tokens(15k줄 diff ≈ 50 agent / 5M tokens)
-  - 수정 반영 후 수정 diff를 **자동으로 1회 재검토**; 리포트는 `.bb-spec/.cache/review/`에 저장되어 다음 실행 시 재발 표시와 기각 항목 건너뛰기에 사용
-  - 읽기 전용, 절대 자동 편집하지 않음; Claude Code ≥ 2.1.154 필요
-
 - **`/test-webview`** — (선택) 프론트엔드 / 웹 프로젝트의 **상호작용 인수**.
   - Docker 전체 스택 기동(최초 확인 후 기억, 완료 시 `down -v`로 정리), 브라우저 MCP로 실제 브라우저 구동
   - **각 케이스마다 격리된 직렬 subagent 할당**, 수백 케이스에도 메인 컨텍스트를 폭발시키지 않음; 전 과정 직렬(브라우저 단일 인스턴스)
@@ -150,7 +142,7 @@
 
 **동봉되는 것**
 
-- **8개 오케스트레이션 subagent**(위 단계에 의해 구동): `test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `review-defect` / `review-design` / `review-codex` / `pre-reviewer`
+- **5개 오케스트레이션 subagent**(위 단계에 의해 구동): `test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer`
 - **4개 수동 hook**(자동 발동): npm/yarn 차단, main 커밋 차단, 의존성 버전 자가 점검, Stop 시 4항목 자가 점검
 
 ---
@@ -199,7 +191,7 @@ BB-Spec은 **4개의 독립 설치 가능한 서브 plugin**으로 분할 ——
 | 서브 plugin | 무엇을 얻는가 | 설치 명령 |
 |---|---|---|
 | **bb-spec-core** _(권장 베이스)_ | TDD / 버전 정책 / Git 규율 + 3개 수동 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(핵심 기능)_ | prd → plan → exec → doc-update → revise → git-push(+ 선택 review / test-webview / test-api e2e), git-clone 일회성 초기화 + 8개 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(핵심 기능)_ | prd → plan → exec → doc-update → revise → git-push(+ 선택 test-webview / test-api e2e), git-clone 일회성 초기화 + 5개 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / 인증 / 인가 / 가관측성 / 서비스 거버넌스 / 설정 제약 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun 스택 & 엔지니어링 규약(bun hook 포함) | `/plugin install bb-spec-frontend@0xbb2b` |
 

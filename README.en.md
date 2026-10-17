@@ -54,7 +54,7 @@ The 5 commands you type day to day:
 | `/exec` | Resume the plan from where it stopped | After an interruption or `/clear` |
 | `/doc-update` | Check the whole repo for doc / code drift | When you want a full-repo check (`/exec` and `/revise` already check this branch's changes at the end) |
 
-First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.yaml`). Optional: `/review` (parallel finders + adversarial verify), `/test-webview` / `/test-api` (frontend / backend e2e).
+First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.yaml`). Optional: `/test-webview` / `/test-api` (frontend / backend e2e).
 
 ---
 
@@ -70,8 +70,8 @@ First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.
  ══► chained automatically (stops only for new third-party deps or design calls)
  ──► triggered by you
 
- (opt) /review · /test-webview · /test-api — an extra check before the PR:
-       adversarial review / frontend e2e / backend e2e, between /doc-update and /git-push
+ (opt) /test-webview · /test-api — an extra check before the PR:
+       frontend e2e / backend e2e, between /doc-update and /git-push
 
  /revise (anytime, routed by root cause; auto-runs /doc-update when done)
    PRD defect → edit this branch's PRD   ·   impl drift → TDD fix   ·   big requirement change → /prd
@@ -128,14 +128,6 @@ First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.
   - Every review finding that needs fixing funnels through here
   - Auto-runs `/doc-update` in tail mode after the fix
 
-- **`/review`** — *(optional)* Workflow-orchestrated, **adversarially verified** local PR review.
-  - Phase 1 slices the diff (≤1500 lines per slice), writes each slice's diff to disk once, and fans out **3 finders per slice in parallel**: defect (security / robustness / correctness) / design (quality / simplicity / doc-sync) / **Codex cross-model independent** review, schema-enforced
-  - Phase 2 **one skeptic verifier per slice** judges every 🔴/🔶 in that slice on three lenses (importance / root-cause / risk-if-unfixed), majority vote
-  - Phase 3 **one sweeper per slice** hunts sibling sites of every confirmed defect class inside that slice; each class is handed to `/revise` as one fix; NITs can be cleared in one batch
-  - Every phase dispatches per slice, so cost scales at ~300 tokens per diff line (a 15k-line diff ≈ 50 agents / 5M tokens)
-  - Once fixes land, the fix diff gets **one automatic re-review**; the report is persisted under `.bb-spec/.cache/review/` so the next run flags recurrences and skips already-rejected items
-  - Read-only — never auto-edits; requires Claude Code ≥ 2.1.154
-
 - **`/test-webview`** — *(optional)* **Web-interaction acceptance** for frontend / web projects.
   - Brings the app up via the project's Docker stack (confirmed once, then remembered; `down -v` cleans up afterward), drives a real browser via the browser MCP
   - **Each case runs in an isolated serial subagent** — hundreds of cases never blow the main context; fully serial (shared single browser)
@@ -150,7 +142,7 @@ First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.
 
 **Ships with**
 
-- **8 orchestration subagents** driven by the stages above: `test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `review-defect` / `review-design` / `review-codex` / `pre-reviewer`
+- **5 orchestration subagents** driven by the stages above: `test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer`
 - **4 passive hooks** (automatic): block npm/yarn, block main commit, dependency version self-check, Stop four-point self-check
 
 ---
@@ -199,7 +191,7 @@ Then install whichever layers you want:
 | Sub-plugin | What it gives you | Command |
 |---|---|---|
 | **bb-spec-core** _(recommended base)_ | TDD / version-policy / git-workflow discipline + 3 passive hooks | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(core)_ | prd → plan → exec → doc-update → revise → git-push (+ opt review / test-webview / test-api e2e), git-clone one-shot init + 8 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(core)_ | prd → plan → exec → doc-update → revise → git-push (+ opt test-webview / test-api e2e), git-clone one-shot init + 5 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / authN / authZ / observability / service / config constraints | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun stack & engineering conventions (+ bun hook) | `/plugin install bb-spec-frontend@0xbb2b` |
 
