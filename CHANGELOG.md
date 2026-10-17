@@ -1,5 +1,18 @@
 # Changelog
 
+## [14.10.0](https://github.com/0xBB2B/bb-spec/compare/v14.9.0...v14.10.0) (2026-10-17)
+
+
+### Features
+
+* **workflow:** 严重度图标换成 🔴🔶🔷，各终端都显示彩色 ([9d70581](https://github.com/0xBB2B/bb-spec/commit/9d7058163d0541004f1e4bb4e4a528906830322a))
+* **workflow:** 删除 /review 多代理审查，审查交给 /git-push 里的 ocr ([fdba648](https://github.com/0xBB2B/bb-spec/commit/fdba648dec35f7fb38ddef4d1ec622c385861933))
+
+
+### Bug Fixes
+
+* **exec:** prd-reviewer 的鲁棒性问题图标换成 🔩，Vibe42 里显示彩色 ([c44c5e6](https://github.com/0xBB2B/bb-spec/commit/c44c5e6a22c190ea79b68366d9015b3fe660f163))
+
 ## [14.9.0](https://github.com/0xBB2B/bb-spec/compare/v14.8.0...v14.9.0) (2026-10-16)
 
 
