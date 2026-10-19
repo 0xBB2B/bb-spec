@@ -246,30 +246,31 @@ Requirement: <目录名，多个用逗号分隔；没有写 none>
 
 1. **自动合并**：`gh pr merge <n> --squash --subject "<PR 标题> (#<n>)" --body-file <描述文件> --auto --delete-branch`（GitLab：`glab mr merge <n> --squash --squash-message "$(cat <squash 说明文件>)" --auto-merge --remove-source-branch`；worktree 模式去掉删分支 flag）
 2. **已合并**：直接进入「合并结果核验」
-3. **关闭 PR**：`gh pr close --delete-branch` → 清理（worktree 模式同样去 `--delete-branch`）
+3. **关闭 PR**：`gh pr close --delete-branch` → 清理（worktree 模式同样去 `--delete-branch`；GitLab：`glab mr close <n>`，它没有删分支的参数，分支由步骤 8 删）
 
 **`--auto` 被拒**（仓库未开启 auto-merge，报 `Auto merge is not allowed` / `enablePullRequestAutoMerge`）→ 降级为不带 `--auto` 的 `gh pr merge <n> --squash --subject "<PR 标题> (#<n>)" --body-file <描述文件> --delete-branch` 重试（worktree 模式同样去 `--delete-branch`）。
 
 ### 合并结果核验（唯一完成判据，所有合并路径必经）
 
-**铁律：合并是否完成，只认 `gh pr view <n> --json state,mergedAt` 的 `state == "MERGED"`。`gh pr merge` 的 stdout 与退出码一律不作数**——它可能只表示「已加入自动合并队列」，也可能在 auto 不可用时报错而根本没合并。执行任何合并动作后，**必须**查询此状态再下结论：
+**铁律：合并是否完成，只认 `gh pr view <n> --json state,mergedAt` 的 `state == "MERGED"`（GitLab：`glab mr view <n> -F json --jq '{state, merged_at}'` 的 `state == "merged"`）。`gh pr merge` / `glab mr merge` 的 stdout 与退出码一律不作数**——它可能只表示「已加入自动合并队列」，也可能在 auto 不可用时报错而根本没合并。执行任何合并动作后，**必须**查询此状态再下结论：
 
-- `state == "MERGED"`（`mergedAt` 非空）→ 进入「核对 squash 说明」
-- `state == "OPEN"` → **尚未合并：禁止进入清理、禁止宣告完成**，按下方「未合并排查」处理后重试合并并重新核验
-- `state == "CLOSED"`（未合并）→ 提醒用户选择
+- `state == "MERGED"`（GitLab `merged`；`mergedAt` / `merged_at` 非空）→ 进入「核对 squash 说明」
+- `state == "OPEN"`（GitLab `opened`）→ **尚未合并：禁止进入清理、禁止宣告完成**，按下方「未合并排查」处理后重试合并并重新核验
+- `state == "CLOSED"`（GitLab `closed`；未合并）→ 提醒用户选择
 
 ### 未合并排查（state 仍为 OPEN）
 
-查 `gh pr view <n> --json mergeable,mergeStateStatus,statusCheckRollup`：
+查 `gh pr view <n> --json mergeable,mergeStateStatus,statusCheckRollup`（GitLab：`glab mr view <n> -F json --jq '{detailed_merge_status, pipeline: .head_pipeline.status}'`，按各条括号里的取值对应）：
 
-- **冲突**（`mergeable == CONFLICTING` / `mergeStateStatus == DIRTY`）→ `git rebase <基线>`（步骤 4 选定）：机械性冲突自行解决 + `--force-with-lease` 重推；业务性冲突停下报告。重推后 GitHub 异步重算 mergeability，需等其不再是 `UNKNOWN`/`CONFLICTING` 再重试合并
-- **`mergeable == UNKNOWN`**（GitHub 仍在计算，常见于刚 push / rebase 后）→ 短暂轮询后重查，勿据此误判为冲突
-- **必需检查未过**：CI 进行中 → 告知用户挂起、跳过清理；**CI 失败** → 取消自动合并 → 拉失败日志 → 机械性失败（lint/format/lockfile）自行修复后重设；业务性失败停下报告
+- **冲突**（`mergeable == CONFLICTING` / `mergeStateStatus == DIRTY`；GitLab `detailed_merge_status` 为 `conflict` 或 `need_rebase`）→ `git rebase <基线>`（步骤 4 选定）：机械性冲突自行解决 + `--force-with-lease` 重推；业务性冲突停下报告。重推后 GitHub 异步重算 mergeability，需等其不再是 `UNKNOWN`/`CONFLICTING` 再重试合并
+- **`mergeable == UNKNOWN`**（GitHub 仍在计算，常见于刚 push / rebase 后；GitLab `detailed_merge_status` 为 `checking` / `unchecked` / `preparing`）→ 短暂轮询后重查，勿据此误判为冲突
+- **必需检查未过**：CI 进行中（GitLab `ci_still_running`）→ 告知用户挂起、跳过清理；**CI 失败**（GitLab `ci_must_pass` 且 `pipeline == "failed"`）→ 取消自动合并 → 拉失败日志 → 机械性失败（lint/format/lockfile）自行修复后重设；业务性失败停下报告
 - **合并方式被拒**（`gh pr merge` 报不允许 squash 合并）→ 仓库常规设置和主分支规则集都限制合并方式，任一处不放行 squash 都会被拒。分别查 `gh repo view <owner>/<repo> --json squashMergeAllowed` 与 `gh api repos/<owner>/<repo>/rules/branches/<基线分支名> --jq '.[] | select(.type=="pull_request") | .parameters.allowed_merge_methods'`，把不放行的那处报给用户；改仓库设置须经用户同意，改完重试合并
+- **GitLab 其他取值**（如 `not_approved`、`discussions_not_resolved`、`draft_status`）→ 把 `detailed_merge_status` 原样报告给用户，停下等处理
 
 ### 核对 squash 说明
 
-查出合并进基线的 commit：GitHub 用 `gh pr view <n> --json mergeCommit --jq .mergeCommit.oid`，GitLab 用 `glab mr view <n> -F json --jq '.squash_commit_sha // .merge_commit_sha'`。`git fetch <base remote>` 后读 `git log -1 --format=%B <哈希> | grep '^Requirement:'`：
+查出合并进基线的 commit：GitHub 用 `gh pr view <n> --json mergeCommit --jq .mergeCommit.oid`，GitLab 用 `glab mr view <n> -F json --jq 'if .squash_commit_sha != "" then .squash_commit_sha else .merge_commit_sha end'`（没值的哈希是空字符串而不是 null，`//` 不会跳过它）。`git fetch <base remote>` 后读 `git log -1 --format=%B <哈希> | grep '^Requirement:'`：
 
 - 有 → 进步骤 8
 - 没有 → 告诉用户「合并进基线的 commit 说明里没有 `Requirement:` 行，以后查代码历史时这次改动连不回 PRD」，请用户按步骤 6 的设置提醒检查平台设置；不拦清理，进步骤 8
