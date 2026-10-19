@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.0.1](https://github.com/0xBB2B/bb-spec/compare/v15.0.0...v15.0.1) (2026-10-19)
+
+
+### Bug Fixes
+
+* **workflow:** 改了 PRD 的取舍只记在决策记录里，squash 时 PR 描述带上没有 PRD 可记的决策 ([#304](https://github.com/0xBB2B/bb-spec/issues/304)) ([c7c6034](https://github.com/0xBB2B/bb-spec/commit/c7c6034c7a299b26e9f3b2e996bea59722e25489))
+
 ## [15.0.0](https://github.com/0xBB2B/bb-spec/compare/v14.10.0...v15.0.0) (2026-10-19)
 
 
