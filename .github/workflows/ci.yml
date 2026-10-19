@@ -15,17 +15,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Run structural validation
-        run: bash tests/validate.sh
-
-      - name: Run git-workflow-guard behavior tests
-        run: bash tests/git-workflow-guard.test.sh
-
-      - name: Run bbspec-paths behavior tests
-        run: bash tests/bbspec-paths.test.sh
-
-      - name: Run branch-prds behavior tests
-        run: bash tests/branch-prds.test.sh
-
-      - name: Run pr-status behavior tests
-        run: bash tests/pr-status.test.sh
+      # 一个失败不中断，跑完全部再按是否有失败给出结果
+      - name: Run all tests
+        run: |
+          failed=0
+          for t in tests/*.sh; do
+            echo "::group::$t"
+            bash "$t" || { failed=1; echo "::error file=$t::$t 失败"; }
+            echo "::endgroup::"
+          done
+          exit $failed
