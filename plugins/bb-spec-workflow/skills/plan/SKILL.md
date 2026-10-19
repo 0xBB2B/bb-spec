@@ -44,7 +44,7 @@ git worktree list --porcelain
 ```
 
 - **已在 linked worktree 或非 main/master 功能分支** → cwd 即 plan 现场，继续
-- **在主仓库且 HEAD 为 main/master** → 逐棵检查非 main 分支的 worktree：在该 worktree 里运行 `${CLAUDE_PLUGIN_ROOT}/scripts/branch-prds.sh <基线分支>`，输出有 `new=` 行（本分支有新增的 PRD）的即候选：
+- **在主仓库且 HEAD 为 main/master** → 逐棵检查非 main 分支的 worktree：运行 `${CLAUDE_PLUGIN_ROOT}/scripts/branch-prds.sh <基线分支> <worktree 路径>`，输出有 `new=` 行（本分支有新增的 PRD）的即候选：
   - 恰一棵 → 它就是 plan 现场，**后续所有步骤——读 PRD、产出 plan、更新索引、commit——全部定位到该 worktree 内执行**（`cd` 进去或全程用其绝对路径）
   - 多棵 → AskUserQuestion 列出让用户选
   - 无 → 全新任务，按 git-workflow 先确定开分支方式再继续，**禁止把 plan 文档落在 main 工作区**
