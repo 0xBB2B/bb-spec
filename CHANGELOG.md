@@ -1,5 +1,28 @@
 # Changelog
 
+## [15.0.0](https://github.com/0xBB2B/bb-spec/compare/v14.10.0...v15.0.0) (2026-10-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* **git-push:** 使用者的仓库需要改合并设置。GitHub 只勾 Allow squash merging，默认说明选 Default to pull request title and description，主分支规则集的 Allowed merge methods 只留 Squash；GitLab 合并方式选 Fast-forward merge，squash 选 Require，squash 说明模板填 %{title}、空一行、%{description}。不改的话，GitHub 上合并会被拒，GitLab 上不会压缩。
+
+### Features
+
+* **git-push:** 合并方式改为 squash，基线上每个 PR 只留一个 commit ([19eaade](https://github.com/0xBB2B/bb-spec/commit/19eaade88445b89577770f25d84c942389e9162a))
+* **git-push:** 合并状态改为调用 pr-status.sh，GitHub 与 GitLab 归成同一套值 ([73ac8de](https://github.com/0xBB2B/bb-spec/commit/73ac8deb2f30125c583962e630b92cddc0640e90))
+* **workflow:** 公共脚本支持传入目录，worktree 候选检查也能免确认 ([3e3982e](https://github.com/0xBB2B/bb-spec/commit/3e3982e1ebb2907c35f15ba2f0ad9a6e96cd37a6))
+* **workflow:** 找目录与判断本分支 PRD 改为调用插件内的公共脚本 ([89a1620](https://github.com/0xBB2B/bb-spec/commit/89a1620712778a0ca42110c2385a95b3ce805b2f))
+
+
+### Bug Fixes
+
+* **ci:** CI 自动跑 tests/ 下的全部测试脚本 ([60de721](https://github.com/0xBB2B/bb-spec/commit/60de7214f927e55acde6a4dd1361ee0d8bcd58eb))
+* **git-push:** 「--auto 被拒」写清 GitLab 不降级重试及原因 ([f2f9576](https://github.com/0xBB2B/bb-spec/commit/f2f95760dfca6bf8157ac0374623d8383803c6cc))
+* **git-push:** 合并结果核验与未合并排查补上 GitLab 命令 ([eba1a62](https://github.com/0xBB2B/bb-spec/commit/eba1a6264ac3d589e48ed6566e557a0210506594))
+* **git-workflow:** bb-spec 多仓库工作区按多 repo 开 worktree，并提醒拷 .bb-spec.yaml ([505b811](https://github.com/0xBB2B/bb-spec/commit/505b811d02c6e24cf8b084a602578342bd3a80f3))
+* **workflow:** 公共脚本处理带空格的配置、软链接与中文路径，缺基线时报清原因 ([4914858](https://github.com/0xBB2B/bb-spec/commit/49148586ebf792b4ea2a32ba1d8e8fa449b613ea))
+
 ## [14.10.0](https://github.com/0xBB2B/bb-spec/compare/v14.9.0...v14.10.0) (2026-10-17)
 
 

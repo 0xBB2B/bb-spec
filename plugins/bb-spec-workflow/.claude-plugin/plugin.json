@@ -1,6 +1,6 @@
 {
   "name": "bb-spec-workflow",
-  "version": "14.10.0",
+  "version": "15.0.0",
   "description": "BB-Spec 工作流：prd 需求入口（质疑→澄清→拆解，一次批准落盘 PRD + AGENTS.md 项目约束）→ 自动 plan 实施计划 → exec 三 Agent 隔离执行 → 收尾 doc-update 让文档追平代码；commit 带 Requirement 需求标记，代码经 git 可反查回 PRD；test-webview 网页交互验证 / test-api 后端 API e2e（md 用例渲染 Bun TS runner，/test/* 协议契约测时间穿越）→ revise 修订 → git-push，含 git-clone 一次性初始化与 5 个编排 subagent。",
   "author": {
     "name": "0xBB2B",
