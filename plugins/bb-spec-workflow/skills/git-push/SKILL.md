@@ -248,7 +248,7 @@ Requirement: <目录名，多个用逗号分隔；没有写 none>
 2. **已合并**：直接进入「合并结果核验」
 3. **关闭 PR**：`gh pr close --delete-branch` → 清理（worktree 模式同样去 `--delete-branch`；GitLab：`glab mr close <n>`，它没有删分支的参数，分支由步骤 8 删）
 
-**`--auto` 被拒**（仓库未开启 auto-merge，报 `Auto merge is not allowed` / `enablePullRequestAutoMerge`）→ 降级为不带 `--auto` 的 `gh pr merge <n> --squash --subject "<PR 标题> (#<n>)" --body-file <描述文件> --delete-branch` 重试（worktree 模式同样去 `--delete-branch`）。
+**`--auto` 被拒**（仓库未开启 auto-merge，报 `Auto merge is not allowed` / `enablePullRequestAutoMerge`）→ 降级为不带 `--auto` 的 `gh pr merge <n> --squash --subject "<PR 标题> (#<n>)" --body-file <描述文件> --delete-branch` 重试（worktree 模式同样去 `--delete-branch`）。GitLab 不降级重试：MR 没有流水线时 glab 本来就直接合并；glab 报 `Cannot perform merge action` 说明流水线失败或被取消，按「未合并排查」的 CI 失败处理。用 `--auto-merge=false` 重试会在项目没开「Pipelines must succeed」时把 CI 失败的 MR 直接合并。
 
 ### 合并结果核验（唯一完成判据，所有合并路径必经）
 
