@@ -24,7 +24,7 @@ ROOT=$(find_up -f .bb-spec.yaml)
 BASE=".bb-spec"
 if [ -f "$ROOT/.bb-spec.yaml" ]; then
   V=$(sed -n -e '/^base_dir:/{' -e 's/^base_dir:[[:space:]]*//' -e 'p' -e 'q' -e '}' "$ROOT/.bb-spec.yaml" \
-    | sed -E "s/[[:space:]]+#.*$//; s/^[\"']//; s/[\"']$//")
+    | sed -E "s/[[:space:]]+#.*$//; s/[[:space:]]+$//; s/^[\"']//; s/[\"']$//")
   [ -n "$V" ] && BASE="$V"
 fi
 
@@ -35,10 +35,14 @@ case "$BASE" in
   /*) BASE_DIR="$BASE" ;;
   *) BASE_DIR="$ROOT/$BASE" ;;
 esac
+[ -d "$BASE_DIR" ] && BASE_DIR=$(cd "$BASE_DIR" && pwd -P)
 
 DOCS_DIR="$BASE_DIR/docs"
+[ -d "$DOCS_DIR" ] && DOCS_DIR=$(cd "$DOCS_DIR" && pwd -P)
+PRD_DIR="$DOCS_DIR/prd"
+[ -d "$PRD_DIR" ] && PRD_DIR=$(cd "$PRD_DIR" && pwd -P)
 DOCS_REPO=""
 [ -d "$DOCS_DIR" ] && DOCS_REPO=$(git -C "$DOCS_DIR" rev-parse --show-toplevel 2>/dev/null || true)
 
 printf 'root=%s\nbase_dir=%s\ndocs_dir=%s\nprd_dir=%s\ncache_dir=%s\ndocs_repo=%s\n' \
-  "$ROOT" "$BASE_DIR" "$DOCS_DIR" "$DOCS_DIR/prd" "$BASE_DIR/.cache" "$DOCS_REPO"
+  "$ROOT" "$BASE_DIR" "$DOCS_DIR" "$PRD_DIR" "$BASE_DIR/.cache" "$DOCS_REPO"

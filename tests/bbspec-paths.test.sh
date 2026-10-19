@@ -102,6 +102,55 @@ echo "[传入目录参数 → 按该目录解析，不看当前目录]"
 out=$(cd "$FIXROOT" && bash "$SCRIPT" "$WS/trade")
 expect "$out" root "$WS"
 
+echo "[base_dir 带引号且行尾有空格]"
+R="$FIXROOT/quoted-space"
+mkgitrepo "$R"
+printf 'base_dir: "my/bb"  \n' > "$R/.bb-spec.yaml"
+out=$(run "$R")
+expect "$out" base_dir "$R/my/bb"
+expect "$out" docs_dir "$R/my/bb/docs"
+
+echo "[base_dir 含 .. → 输出规范化后的真实路径]"
+R="$FIXROOT/dotdot"
+mkgitrepo "$R"
+printf 'base_dir: sub/../.bb-spec\n' > "$R/.bb-spec.yaml"
+mkdir -p "$R/sub" "$R/.bb-spec/docs"
+out=$(run "$R")
+expect "$out" base_dir "$R/.bb-spec"
+expect "$out" cache_dir "$R/.bb-spec/.cache"
+expect "$out" docs_dir "$R/.bb-spec/docs"
+expect "$out" prd_dir "$R/.bb-spec/docs/prd"
+expect "$out" docs_repo "$R"
+
+echo "[docs 是指向另一个 git 仓库的软链接 → 输出真实路径]"
+R="$FIXROOT/linkdocs"
+D="$FIXROOT/linkdocs-d"
+mkgitrepo "$R"
+mkgitrepo "$D"
+mkdir -p "$R/.bb-spec"
+ln -s "$D" "$R/.bb-spec/docs"
+out=$(run "$R")
+expect "$out" docs_dir "$D"
+expect "$out" prd_dir "$D/prd"
+expect "$out" docs_repo "$D"
+
+echo "[base_dir 本身是软链接 → 输出真实路径]"
+R="$FIXROOT/linkbase"
+mkgitrepo "$R"
+mkdir -p "$R/real-bb"
+ln -s real-bb "$R/bb"
+printf 'base_dir: bb\n' > "$R/.bb-spec.yaml"
+out=$(run "$R")
+expect "$out" base_dir "$R/real-bb"
+expect "$out" cache_dir "$R/real-bb/.cache"
+
+echo "[base_dir 含 .. 且目标不存在 → 原样输出]"
+R="$FIXROOT/dotdot-missing"
+mkgitrepo "$R"
+printf 'base_dir: a/../b\n' > "$R/.bb-spec.yaml"
+out=$(run "$R")
+expect "$out" base_dir "$R/a/../b"
+
 echo ""
 echo "==============================="
 echo "通过: $PASS  |  失败: $FAIL"
