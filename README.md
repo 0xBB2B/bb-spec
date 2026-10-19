@@ -117,7 +117,7 @@
 - **`/git-push`** — 用户触发的推送 + PR 流程(单 / 多仓库)。
   - 本机装了 `ocr`([open-code-review](https://github.com/alibaba/open-code-review))时,rebase 后先跑一次 `ocr review`:Claude 逐条读代码核实,按 🔴/🔶/🔷 列出建议修复项,你勾选后交给 `/revise` 修
   - 存在 AGENTS.md、本分支 PRD 或本分支 commit 指向已合并 PRD 时先跑**分支规范自查(pre-review)**:subagent 比对项目约束、PRD 与 commit 正文的改动说明 vs 分支 diff,违规循环修复
-  - PR 描述带 `Requirement:` 标记;仓库需只允许 rebase 合并(GitHub 只勾「Allow rebase merging」,主分支规则集的「Allowed merge methods」也只留 Rebase;GitLab 选「Fast-forward merge」并把 squash 设为「Do not allow」),每个 commit 连同自己的 `Requirement:` 行原样进入主分支
+  - PR 标题跟随仓库 commit 风格,描述带 `Requirement:` 标记;仓库需只允许 squash 合并(GitHub 只勾「Allow squash merging」并把默认说明设为「Default to pull request title and description」,主分支规则集的「Allowed merge methods」也只留 Squash;GitLab 选「Fast-forward merge」,squash 设为「Require」,squash 说明模板填 `%{title}`、空一行、`%{description}`),每个 PR 在主分支上只留一个 commit,说明就是 PR 标题和描述,开发中途推翻的 commit 不进主分支
   - 起草 **6 段 PR 描述**(背景 / 需求 / 方案 / 结果 / 测试 / 规范,< 50 行)直接用作 PR body
 
 - **`/revise`** — 随时介入的异常处理。
