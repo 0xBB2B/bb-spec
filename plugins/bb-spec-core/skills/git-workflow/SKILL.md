@@ -14,7 +14,7 @@ user-invocable: false
 
 | 检测信号（根目录存在以下任一） | 走哪条 |
 |---|---|
-| `go.work` / `pnpm-workspace.yaml`（或 `package.json` 含 `workspaces` 字段）/ `Cargo.toml` 含 `[workspace]` / `settings.gradle(.kts)` 含 `includeBuild` | → **§1「多 repo 工作区」**：统一父目录 + 各成员 repo 各拉 worktree + 根文件手拷，**禁止只对单个成员 repo 拉 worktree** |
+| `go.work` / `pnpm-workspace.yaml`（或 `package.json` 含 `workspaces` 字段）/ `Cargo.toml` 含 `[workspace]` / `settings.gradle(.kts)` 含 `includeBuild` / 有 `.bb-spec.yaml` 且根目录本身不是 git 仓库 | → **§1「多 repo 工作区」**：统一父目录 + 各成员 repo 各拉 worktree + 根文件手拷，**禁止只对单个成员 repo 拉 worktree** |
 | 其他（普通单仓） | → **§1「开新任务一律询问开分支方式」**：单仓 worktree 或直接切分支，按 AskUserQuestion 走 |
 
 > 判断时机：在执行"开始任务前必查"那两条 `git` 命令**之前**就先扫一眼根目录信号，分流错了后面整个 §1 都会跑偏。
@@ -58,9 +58,9 @@ git status --short               # 工作区是否有未提交改动
 
 **唯一例外（不问）**：本次是**延续当前分支的同一任务**（不是开新活儿）→ 直接在当前分支继续，既不新建 worktree 也不切分支。无法判断是延续还是新任务时，照常 AskUserQuestion 询问。
 
-### 多 repo 工作区（go.work / pnpm-workspace / Cargo / Gradle composite 等）
+### 多 repo 工作区（go.work / pnpm-workspace / Cargo / Gradle composite / bb-spec 多仓库工作区等）
 
-当项目由**多个 repo 组成、且构建靠相对路径跨 repo 引用**（如 `go.work` 的 `./service-a`、`pnpm-workspace.yaml`、Cargo workspace 的 `path = "../lib"`、Gradle composite build）时：
+当项目由**多个 repo 组成、且构建靠相对路径跨 repo 引用**（如 `go.work` 的 `./service-a`、`pnpm-workspace.yaml`、Cargo workspace 的 `path = "../lib"`、Gradle composite build），或是 bb-spec 多仓库工作区（工作区根有 `.bb-spec.yaml`，文档仓库与各代码仓库各自独立，bb-spec 的 skill 从仓库往上找这份配置）时：
 
 - **禁止只对单个成员 repo 拉 worktree**——会打散工作区的相对布局，`./service-b` 这类引用指空，整个 workspace 解析失败。
 - **禁止用整目录复制替代 worktree**——放弃隔离与一键清理、磁盘翻倍、副本易 drift。
@@ -72,7 +72,7 @@ git status --short               # 工作区是否有未提交改动
   git -C <repo-root>/service-b worktree add ~/.bb-spec/worktrees/<project>-<branch>/service-b -b <branch> main
   ```
 
-- **工作区根文件**（`go.work` / `pnpm-workspace.yaml` 等）位于非 repo 的容器层、不被任何 git 跟踪，拉 worktree 时不会自动带过来——**需手动放一份到统一父目录**（相对路径原样可用，无需改）。
+- **工作区根文件**（`go.work` / `pnpm-workspace.yaml` / `.bb-spec.yaml` 等）位于非 repo 的容器层、不被任何 git 跟踪，拉 worktree 时不会自动带过来——**需手动放一份到统一父目录**（相对路径原样可用，无需改）。漏了 `.bb-spec.yaml`，bb-spec 的 skill 会把成员仓库根当成项目根，找不到文档仓库。
 - 清理对称：各成员 repo 各自 `git worktree remove`，统一父目录手动删。
 - **依然要 AskUserQuestion**：多 repo 场景的询问点不是"worktree vs 直接切分支"（工作区根本身不是 repo、无法直接切），而是 **① 本次任务涉及哪些成员 repo**（避免给无关 repo 拉空分支）**② 分支名**。问完再按确认范围执行上面的 `worktree add`。
 
