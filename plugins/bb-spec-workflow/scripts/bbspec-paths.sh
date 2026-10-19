@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# 输出当前目录所属 bb-spec 项目的各目录绝对路径，每行一个 key=value：
+# 用法：bbspec-paths.sh [目录，缺省当前目录]
+# 输出该目录所属 bb-spec 项目的各目录绝对路径，每行一个 key=value：
 #   root / base_dir / docs_dir / prd_dir / cache_dir / docs_repo（文档目录所在 git 仓库根，目录不存在时为空）
 # 从仓库根往上找：先找最近的 .bb-spec.yaml，找不到再找最近的 .bb-spec/ 目录，都找不到用仓库根
 set -euo pipefail
 
+[ $# -gt 0 ] && cd "$1"
 TOP=$(git rev-parse --show-toplevel 2>/dev/null || pwd -P)
 
 # 不查 $HOME 本身：~/.bb-spec/ 是 worktree 存放目录，不代表项目

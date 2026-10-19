@@ -59,7 +59,7 @@ git worktree list --porcelain
 ```
 
 - **已在 linked worktree 或非 main/master 功能分支** → cwd 即执行现场，继续
-- **在主仓库且 HEAD 为 main/master** → 逐棵检查非 main 分支的 worktree：其 plan 目录（在该 worktree 里运行 `${CLAUDE_PLUGIN_ROOT}/scripts/bbspec-paths.sh`，取 `docs_dir` 下的 `plan/`）下存在未全完成 PROGRESS.md、且未登记在根 `plan/INDEX.md` 里的主题即候选（指定了主题时须匹配该主题）：
+- **在主仓库且 HEAD 为 main/master** → 逐棵检查非 main 分支的 worktree：其 plan 目录（运行 `${CLAUDE_PLUGIN_ROOT}/scripts/bbspec-paths.sh <worktree 路径>`，取 `docs_dir` 下的 `plan/`）下存在未全完成 PROGRESS.md、且未登记在根 `plan/INDEX.md` 里的主题即候选（指定了主题时须匹配该主题）：
   - 恰一棵 → 它就是执行现场，**后续所有步骤——读 plan、写测试/实现、跑测试、commit——全部定位到该 worktree 内执行**（`cd` 进去或全程用其绝对路径）
   - 多棵 → AskUserQuestion 列出让用户选
   - 无 → 全新任务，按 git-workflow 先确定开分支方式再继续，**禁止把任何产出落在 main 工作区**

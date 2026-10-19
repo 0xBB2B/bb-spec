@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
-# 用法：branch-prds.sh <基线>
+# 用法：branch-prds.sh <基线> [目录，缺省当前目录]
 # 输出本分支涉及的 PRD 目录名，每行一个：
 #   new=<目录>     文档仓库里本分支改动过、基线上还没有 OVERVIEW.md 的 PRD
 #   merged=<目录>  当前仓库本分支 commit 的 Requirement 行指向、基线上已有的 PRD
 set -euo pipefail
 
-BASE_REF="${1:?用法：branch-prds.sh <基线>}"
+BASE_REF="${1:?用法：branch-prds.sh <基线> [目录]}"
+SELF_DIR=$(cd "$(dirname "$0")" && pwd)
+[ $# -gt 1 ] && cd "$2"
 
-PATHS=$("$(dirname "$0")/bbspec-paths.sh")
+PATHS=$("$SELF_DIR/bbspec-paths.sh")
 DOCS_REPO=$(sed -n 's/^docs_repo=//p' <<<"$PATHS")
 PRD_DIR=$(sed -n 's/^prd_dir=//p' <<<"$PATHS")
 [ -n "$DOCS_REPO" ] || exit 0

@@ -63,6 +63,10 @@ g "$WS/trade" commit -q --allow-empty -m "$(printf 'fix\n\nRequirement: 2026-02-
 out=$(cd "$WS/trade" && bash "$SCRIPT" main)
 expect_out "$out" "$(printf 'new=2026-10-19.ws-new\nmerged=2026-02-02.merged')" "多仓库输出"
 
+echo "[传入目录参数 → 在该目录里判断]"
+out=$(cd "$FIXROOT" && bash "$SCRIPT" main "$WS/trade")
+expect_out "$out" "$(printf 'new=2026-10-19.ws-new\nmerged=2026-02-02.merged')" "目录参数输出"
+
 echo ""
 echo "==============================="
 echo "通过: $PASS  |  失败: $FAIL"

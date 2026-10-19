@@ -98,6 +98,10 @@ mkgitrepo "$R"
 out=$(run "$R" "$H")
 expect "$out" root "$R"
 
+echo "[传入目录参数 → 按该目录解析，不看当前目录]"
+out=$(cd "$FIXROOT" && bash "$SCRIPT" "$WS/trade")
+expect "$out" root "$WS"
+
 echo ""
 echo "==============================="
 echo "通过: $PASS  |  失败: $FAIL"
