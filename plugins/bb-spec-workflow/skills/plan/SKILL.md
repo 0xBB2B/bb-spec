@@ -1,6 +1,7 @@
 ---
 name: plan
 description: 读本分支 PRD + 项目代码结构产出函数级实施计划——由 /prd 在用户读完 PRD 确认通过后自动调用，直接落盘到 .bb-spec/docs/plan/<日期>.<主题>/ 后自动运行 /exec，只在需要新增第三方依赖时停下问用户；启动先 worktree 感知定位 plan 现场（主仓库停在 main 时自动定位到进行中的 worktree）；过程式只到函数级，声明式产物（DDL/API 契约/配置）必须内联完整成品。触发：/plan、生成实施计划、怎么落地这个 PRD。跳过：还没 PRD（→/prd）、本分支没有新 PRD。
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 
 # Plan 实施计划生成
@@ -43,14 +44,14 @@ git worktree list --porcelain
 ```
 
 - **已在 linked worktree 或非 main/master 功能分支** → cwd 即 plan 现场，继续
-- **在主仓库且 HEAD 为 main/master** → 逐棵检查非 main 分支的 worktree（`${DOCS_DIR}` 按该 worktree 内 `.bb-spec.yaml` 解析，缺省 `.bb-spec`）：本分支有新增的 PRD（判定方法见下文）的即候选：
+- **在主仓库且 HEAD 为 main/master** → 逐棵检查非 main 分支的 worktree：在该 worktree 里运行 `${CLAUDE_PLUGIN_ROOT}/scripts/branch-prds.sh <基线分支>`，输出有 `new=` 行（本分支有新增的 PRD）的即候选：
   - 恰一棵 → 它就是 plan 现场，**后续所有步骤——读 PRD、产出 plan、更新索引、commit——全部定位到该 worktree 内执行**（`cd` 进去或全程用其绝对路径）
   - 多棵 → AskUserQuestion 列出让用户选
   - 无 → 全新任务，按 git-workflow 先确定开分支方式再继续，**禁止把 plan 文档落在 main 工作区**
 
-现场确定后，在**该目录**下 `cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`。**多仓库工作区**（`${DOCS_DIR}` 所在的 git 仓库与代码不是同一个，如工作区根不是 git 仓库、`docs/` 与各服务各自独立）：文档仓库 = `git -C ${DOCS_DIR} rev-parse --show-toplevel`，下文 PRD / plan 相关的 git 命令都在文档仓库里执行、路径相对文档仓库根；代码相关的 git 命令（测试、`git log -L`、commit）在各代码仓库里分别执行。
+现场确定后，在**该目录**下运行 `${CLAUDE_PLUGIN_ROOT}/scripts/bbspec-paths.sh`，`${DOCS_DIR}` 取输出的 `docs_dir`。**多仓库工作区**（`${DOCS_DIR}` 所在的 git 仓库与代码不是同一个，如工作区根不是 git 仓库、`docs/` 与各服务各自独立）：文档仓库 = 输出的 `docs_repo`，下文 PRD / plan 相关的 git 命令都在文档仓库里执行、路径相对文档仓库根；代码相关的 git 命令（测试、`git log -L`、commit）在各代码仓库里分别执行。
 
-找本分支新增的 PRD 目录（基线分支是 master 时把 main 换成 master）：`git diff main...HEAD --name-only -- '${DOCS_DIR}/prd/'` 列出有改动的 PRD 目录，再逐个用 `git cat-file -e main:${DOCS_DIR}/prd/<目录>/OVERVIEW.md` 判定——失败的才是本分支新增（成功的是已合并 PRD，不作为本次输入）：
+找本分支新增的 PRD 目录：运行 `${CLAUDE_PLUGIN_ROOT}/scripts/branch-prds.sh <基线分支>`（基线分支为 main 或 master），`new=` 行是本分支新增的 PRD；`merged=` 行是已合并 PRD，不作为本次输入：
 
 - **非 git / 无基线分支 / 无新增 PRD**：告知"建议先运行 `/prd`"后终止
 - **有**：完整读该目录的 OVERVIEW 与全部子文档（约束、验收、验证路径、决策记录）；读项目根 `AGENTS.md` 的项目约束——拆分与函数设计不得违背。PRD 要改已有行为时，按 OVERVIEW `features:` 与各代码仓库里的 `git log --grep "Requirement: <相关目录>"` 找到现有实现，读代码确认现状

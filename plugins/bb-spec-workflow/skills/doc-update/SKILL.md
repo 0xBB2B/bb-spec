@@ -2,6 +2,7 @@
 name: doc-update
 description: 文档与代码一致性维护——代码是事实，让仓库根目录下名单固定的根文档（README*.md、CLAUDE.md、AGENTS.md、CONTRIBUTING.md、ARCHITECTURE.md，名单外的文档不碰）追平代码现状（项目根没有 ARCHITECTURE.md 大纲时，全仓模式读代码起草），并检查代码是否违反 AGENTS.md 项目约束；/exec 与 /revise 收尾时以 --tail 收尾模式自动调用，额外核对本分支 PRD 与实际交付是否一致；已合并的 PRD 任何模式都不碰；改代码一律先问用户、转 /revise。触发：/doc-update、文档和代码不一致、README 过期、维护一下文档。跳过：单点 bug 或定向修复（→/revise）、新需求（→/prd）。
 argument-hint: [--tail | 可选：限定范围，如某目录 / 某文档]
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 
 # Doc-Update 文档与代码一致性维护
@@ -16,7 +17,7 @@ argument-hint: [--tail | 可选：限定范围，如某目录 / 某文档]
 
 1. **代码是事实，文档追平代码**：禁止凭文档反推代码该怎么写
 2. **不改代码**：发现代码违反项目约束，停下用 `AskUserQuestion` 请用户拍板，同意后产出挂单交给 `/revise`，本 skill 不直接改实现
-3. **已合并的 PRD 只读**：PRD 是需求记录，合并后冻结，任何模式下都不改、不删。唯一能改的是收尾模式下的**本分支 PRD**——判定：`git -C <文档仓库> cat-file -e <基线分支>:<PRD 根>/<目录>/OVERVIEW.md` 失败（基线分支 main 或 master 上还没有它；单仓库时文档仓库就是当前仓库、`<PRD 根>` 为 `${DOCS_DIR}/prd`，多仓库工作区时文档仓库是 `${DOCS_DIR}` 所在的独立仓库、`<PRD 根>` 相对它的根）
+3. **已合并的 PRD 只读**：PRD 是需求记录，合并后冻结，任何模式下都不改、不删。唯一能改的是收尾模式下的**本分支 PRD**——判定：`${CLAUDE_PLUGIN_ROOT}/scripts/branch-prds.sh <基线分支>`（基线分支为 main 或 master）输出的 `new=` 行里有它
 4. **批改前先汇总**（收尾模式下 A 类除外）：所有发现分类列出 + 默认动作 + 待裁决项一次性展示，用户批准后才落盘
 5. **冲突不自决**：AGENTS.md 内部互相矛盾、或与已激活的技术栈 skill 冲突时，一律 `AskUserQuestion`
 6. **最小影响**：只改确实过期的那几行，不借机整理排版、调整标题层级
@@ -51,12 +52,12 @@ argument-hint: [--tail | 可选：限定范围，如某目录 / 某文档]
 ### 步骤 0：读取配置 + 确定范围
 
 ```bash
-cat .bb-spec.yaml 2>/dev/null
+${CLAUDE_PLUGIN_ROOT}/scripts/bbspec-paths.sh
 ```
 
-取 `base_dir`（缺省 `.bb-spec`），`${DOCS_DIR}` = `<base_dir>/docs`。
+`${DOCS_DIR}` 取输出的 `docs_dir`，文档仓库取 `docs_repo`。
 
-- `$ARGUMENTS` 是 `--tail` → 收尾模式。本分支改动文件：在本次改动的每个仓库里 `git diff <基线分支>...HEAD --name-only`；本分支 PRD：文档仓库里 `git diff <基线分支>...HEAD --name-only -- <PRD 根>` 列出的目录中，按上面的判定属于本分支新增的那些
+- `$ARGUMENTS` 是 `--tail` → 收尾模式。本分支改动文件：在本次改动的每个仓库里 `git diff <基线分支>...HEAD --name-only`；本分支 PRD：`${CLAUDE_PLUGIN_ROOT}/scripts/branch-prds.sh <基线分支>` 输出的 `new=` 行
 - `$ARGUMENTS` 是其他非空内容 → 全仓模式，只处理参数指定的目录或文档
 - 为空 → 全仓模式
 

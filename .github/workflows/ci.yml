@@ -20,3 +20,9 @@ jobs:
 
       - name: Run git-workflow-guard behavior tests
         run: bash tests/git-workflow-guard.test.sh
+
+      - name: Run bbspec-paths behavior tests
+        run: bash tests/bbspec-paths.test.sh
+
+      - name: Run branch-prds behavior tests
+        run: bash tests/branch-prds.test.sh

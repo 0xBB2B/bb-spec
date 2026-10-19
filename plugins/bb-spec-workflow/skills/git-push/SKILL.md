@@ -1,6 +1,7 @@
 ---
 name: git-push
 description: 推送本地代码到远程并开 PR 全流程——识别仓库→确认分支（worktree 模式自动定位目标分支）→提交未暂存改动（禁 git add .）→同步基线（origin+upstream 双 remote 时先问合并对象、默认 origin/main；分支落后基线则 rebase）→本机装了 ocr 则跑一次 ocr review，Claude 逐条读代码核实后按 🔴/🔶/🔷 列出建议修复项、用户勾选后交 /revise 修→在同步后的代码上跑全量测试→若存在 AGENTS.md、本分支有新增 PRD 或本分支 commit 指向已合并 PRD 则 subagent 比对项目约束、PRD 与 commit 正文的改动说明跑分支规范自查（违规走 /revise 循环复审）→起草 PR 标题（跟随仓库 commit 风格）与 6 段 PR 描述（末尾带 `Requirement:` 标记）→推送→创建 PR→squash 合并并核对基线上的 commit 说明带 `Requirement:`→清理本地与远程。触发：push 一下、提个 PR、代码推上去、准备发 PR、开 PR 前自查、对照规范看分支。跳过：未本地验证完成的功能、main/master 上无新提交。
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 
 # 仓库提交与 PR 流程
@@ -74,11 +75,11 @@ git rev-list --count HEAD..<基线>   # > 0 即基线已领先、分支落后
 
 ```bash
 ocr review --from <基线> --to <当前分支> --format json --audience agent \
-  --output <base_dir>/.cache/ocr/<branch>.json
+  --output <cache_dir>/ocr/<branch>.json
 ```
 
 - `<基线>` 用步骤 4 选定的基线，不写死 `main`：ocr 审的是 `merge-base(from, to)..to`，rebase 之后正好是本分支自己的改动
-- `base_dir` 取 `.bb-spec.yaml` 的 `base_dir`（先找仓库根，找不到再往上级目录找），缺省 `.bb-spec`；`<branch>` 中的 `/` 替换为 `__`。写入前确认 `<base_dir>/.cache/.gitignore` 存在且内容为单行 `*`，不存在则连目录一并创建
+- `<cache_dir>` 取 `${CLAUDE_PLUGIN_ROOT}/scripts/bbspec-paths.sh` 输出的 `cache_dir`；`<branch>` 中的 `/` 替换为 `__`。写入前确认 `<cache_dir>/.gitignore` 存在且内容为单行 `*`，不存在则连目录一并创建
 - 用 Bash 的 `run_in_background` 运行、等完成通知：一次审查可能超过 10 分钟，前台调用会被超时掐断
 
 | 结果 | 处理 |
@@ -147,7 +148,7 @@ ocr 审了 N 个文件，报了 R 条。逐条读代码核实后：成立 C 条�
 
 ### 收尾
 
-删除本次的 `<base_dir>/.cache/ocr/<branch>.json`（存在时），进 4.3。
+删除本次的 `<cache_dir>/ocr/<branch>.json`（存在时），进 4.3。
 
 ## 4.3 跑全量测试
 
@@ -160,11 +161,11 @@ ocr 审了 N 个文件，报了 R 条。逐条读代码核实后：成立 C 条�
 
 ### 前置探测
 
-读取 `.bb-spec.yaml` 的 `base_dir`（默认 `.bb-spec`；先找仓库根，找不到再往上级目录找——多仓库工作区的配置在工作区根），`${DOCS_DIR}` = `<base_dir>/docs`。文档仓库 = `git -C ${DOCS_DIR} rev-parse --show-toplevel`：与当前仓库相同为单仓库，不同为多仓库工作区。探测三类规范来源：
+运行 `${CLAUDE_PLUGIN_ROOT}/scripts/bbspec-paths.sh`，输出的 `docs_repo` 是文档仓库：与当前仓库相同为单仓库，不同为多仓库工作区。再运行 `${CLAUDE_PLUGIN_ROOT}/scripts/branch-prds.sh <基线>`。探测三类规范来源：
 
 1. **项目约束**：文档仓库根（单仓库即仓库根）的 `AGENTS.md`
-2. **本分支 PRD**：在文档仓库里 `git diff <基线>...HEAD --name-only -- <PRD 根>` 列出的目录中，`git cat-file -e <基线>:<PRD 根>/<目录>/OVERVIEW.md` 失败的（基线上还没有 = 本分支新增）；`<PRD 根>` 为 PRD 目录相对文档仓库根的路径
-3. **已合并 PRD**：在当前仓库 `git log <基线>..HEAD --format=%B | grep '^Requirement:'` 取出的目录名（去掉 `none`）中，`git -C <文档仓库> cat-file -e <基线>:<PRD 根>/<目录>/OVERVIEW.md` 成功的——本分支在改已合并的功能，期望行为写在 commit 正文里
+2. **本分支 PRD**：`branch-prds.sh` 输出的 `new=` 行（基线上还没有 = 本分支新增）
+3. **已合并 PRD**：`branch-prds.sh` 输出的 `merged=` 行，即本分支 commit 的 `Requirement:` 指向、基线上已有的 PRD——本分支在改已合并的功能，期望行为写在 commit 正文里
 
 任一存在 → 进入自查；三者都不存在 → 跳过 4.5.1、4.5.2，直接进 4.5.3 写 PR 草稿。
 
@@ -181,9 +182,9 @@ ocr 审了 N 个文件，报了 R 条。逐条读代码核实后：成立 C 条�
 - `repo_path`：仓库绝对路径
 - `base_branch`：比对基线分支
 - `agents_md`：仓库根 AGENTS.md 路径（不存在则为空）
-- `prd_dirs`：本分支新增的 PRD 目录列表（无则为空）
+- `prd_dirs`：`new=` 目录的完整路径（`prd_dir`/<目录名>，无则为空）
 - `change_notes`：`git log <基线>..HEAD --format='%h %s%n%b'` 的输出
-- `merged_prd_dirs`：已合并 PRD 目录列表（无则为空）
+- `merged_prd_dirs`：`merged=` 目录的完整路径（`prd_dir`/<目录名>，无则为空）
 - `diff_summary`：diff 概况（commit 数、规模、审查重点）
 
 审查指令、输出格式（`## 结论 PASS|FAIL` → `## PRD 逐条检查` → `## 违规项` → `## 备注`）、只读约束均由 agent 定义自包含。
@@ -214,7 +215,7 @@ Requirement: <目录名，多个用逗号分隔；没有写 none>
 
 「规范」段写本次涉及的 PRD 目录与相关项目约束（无则写"无"）；跳过了 4.5.1、4.5.2 时注明「未跑分支规范自查」。
 
-最后一行 `Requirement:` 标记必须保留，目录名取两处的并集：本分支新增 PRD 的目录名，加上 `git log <基线>..HEAD --format=%B | grep '^Requirement:'` 里出现的目录名；去重、去掉 `none`，一个都没有写 `none`。分支在改已合并的功能时，commit 里写的是已合并 PRD 的目录名，squash 后基线上只剩这一行，漏写就查不回那份 PRD。多仓库工作区每个仓库的 PR 都带，代码仓库的 PR 写文档仓库里的 PRD 目录名。
+最后一行 `Requirement:` 标记必须保留，目录名取 4.5 前置探测里 `branch-prds.sh` 输出的全部 `new=` 与 `merged=` 目录名，用逗号分隔；一个都没有写 `none`。分支在改已合并的功能时，commit 里写的是已合并 PRD 的目录名，squash 后基线上只剩这一行，漏写就查不回那份 PRD。多仓库工作区每个仓库的 PR 都带，代码仓库的 PR 写文档仓库里的 PRD 目录名。
 
 标题与描述直接作为步骤 6 的 `--title`、`--body`。
 
@@ -240,7 +241,7 @@ Requirement: <目录名，多个用逗号分隔；没有写 none>
 
 **worktree 模式铁律**：步骤 2 标记为 worktree 模式时，本步所有 `gh pr merge` / `gh pr close` **一律去掉 `--delete-branch`**（GitLab：`--remove-source-branch`）。原因：gh 在合并/关闭成功后会立即试图删本地分支，但分支被 worktree 占用必失败（gh 报非零退出码——而服务端合并实际已完成）。本地与远程分支删除统一交给步骤 8 在 `worktree remove` 之后做。
 
-合并时把 4.5.3 的标题和描述显式传给平台：不传时平台用仓库默认的 squash 说明，可能只有标题，`Requirement:` 行就丢了。选自动合并时，先把描述写进 `<base_dir>/.cache/pr/<branch>.md`（`base_dir` 与 `<branch>` 的取法、`.cache/.gitignore` 的检查同 4.2），GitLab 另写一份 `<branch>.squash.md`，内容为标题、空一行、描述。
+合并时把 4.5.3 的标题和描述显式传给平台：不传时平台用仓库默认的 squash 说明，可能只有标题，`Requirement:` 行就丢了。选自动合并时，先把描述写进 `<cache_dir>/pr/<branch>.md`（`<cache_dir>` 与 `<branch>` 的取法、`.gitignore` 的检查同 4.2），GitLab 另写一份 `<branch>.squash.md`，内容为标题、空一行、描述。
 
 创建后用 AskUserQuestion 让用户选（除非已显式声明）：
 
