@@ -41,7 +41,7 @@ GL_JQ='
 
 case "$URL" in
   *github*)
-    SLUG=$(sed -E 's#^[a-z+]+://([^@/]+@)?##; s#^[^@/]+@##; s#:#/#; s#\.git$##' <<<"$URL")
+    SLUG=$(sed -E -e '/^[a-z+]+:\/\//{' -e 's#^[a-z+]+://([^@/]+@)?##' -e 's#^([^/:]+):[0-9]+/#\1/#' -e 'b' -e '}' -e 's#^[^@/]+@##; s#:#/#' <<<"$URL" | sed -E 's#\.git$##')
     gh pr view "$NUM" --repo "$SLUG" --json state,mergeCommit,mergeable,mergeStateStatus,statusCheckRollup --jq "$GH_JQ"
     ;;
   *gitlab*)

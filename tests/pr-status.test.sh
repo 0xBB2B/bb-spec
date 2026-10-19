@@ -43,7 +43,7 @@ case_of() {
   shift 4
   local out
   out=$(run "$repo" "$json" "$@")
-  if [[ "$out" == "$want" ]]; then pass; else fail "$label：预期 [$want]，实际 [$out]"; fi
+  if [[ "$out" == "$want" ]]; then pass; else fail "${label}：预期 [$want]，实际 [$out]"; fi
 }
 
 lines() { printf 'state=%s\nmerge_commit=%s\nblocker=%s' "$1" "$2" "$3"; }
@@ -80,6 +80,12 @@ echo "[认不出平台 → 退出码非 0]"
 OTHER="$FIXROOT/other"
 git init -q "$OTHER" && git -C "$OTHER" remote add origin https://git.example.com/o/r.git
 if (cd "$OTHER" && PATH="$STUBS:$PATH" bash "$SCRIPT" 1) >/dev/null 2>&1; then fail "预期失败，实际成功"; else pass; fi
+
+echo "=== ssh:// 形式的 remote ==="
+SSH_REPO="$FIXROOT/ssh-repo"
+git init -q "$SSH_REPO" && git -C "$SSH_REPO" remote add origin ssh://git@github.com:22/o/r.git
+case_of "ssh 带端口" "$SSH_REPO" '{"state":"MERGED","mergeCommit":{"oid":"abc"},"mergeable":"UNKNOWN","mergeStateStatus":"UNKNOWN","statusCheckRollup":[]}' "$(lines merged abc none)" 5
+if [[ "$(cat "$STUB_ARGS")" == "pr view 5 --repo github.com/o/r "* ]]; then pass; else fail "gh 参数不对：$(cat "$STUB_ARGS")"; fi
 
 echo ""
 echo "==============================="
