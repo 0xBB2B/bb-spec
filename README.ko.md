@@ -118,7 +118,7 @@
 - **`/git-push`** — 사용자 트리거 push + PR 흐름(단일 / 다중 저장소).
   - `ocr`([open-code-review](https://github.com/alibaba/open-code-review))이 설치되어 있으면 rebase 직후 `ocr review`를 한 번 실행: Claude가 지적 사항을 코드로 하나씩 검증하고 수정 권장 항목을 🔴/🔶/🔷 우선순위로 나열, 선택한 항목을 `/revise`로 수정
   - AGENTS.md 또는 이 브랜치의 PRD가 있거나 이 브랜치의 commit이 병합된 PRD를 가리킬 때 먼저 **브랜치 규범 자가 점검(pre-review)** 실행: subagent가 프로젝트 제약, PRD, commit 본문의 변경 설명 vs 브랜치 diff를 비교, 위반을 반복 수정
-  - PR 설명에 `Requirement:` 태그 포함; 저장소는 rebase 머지만 허용해야 함(GitHub는 "Allow rebase merging"만 + 메인 브랜치 룰셋의 "Allowed merge methods"도 Rebase만, GitLab은 "Fast-forward merge" + squash "Do not allow"), 각 commit이 자신의 `Requirement:` 줄과 함께 그대로 메인 브랜치에 들어감
+  - PR 제목은 저장소의 commit 스타일을 따르고 설명에 `Requirement:` 태그 포함; 저장소는 squash 머지만 허용해야 함(GitHub는 "Allow squash merging"만 + 기본 메시지를 "Default to pull request title and description"로, 메인 브랜치 룰셋의 "Allowed merge methods"도 Squash만, GitLab은 "Fast-forward merge" + squash "Require" + squash 메시지 템플릿을 `%{title}`, 빈 줄, `%{description}`로), 각 PR은 메인 브랜치에 commit 하나로 들어가고 메시지는 PR 제목과 설명이며, 개발 중에 뒤집은 commit은 메인 브랜치에 들어가지 않음
   - **6개 섹션 PR 설명**(배경 / 요구사항 / 접근법 / 결과 / 테스트 / 규범, < 50줄)을 기초하여 그대로 PR body로 사용
 
 - **`/revise`** — 언제든 개입 가능한 예외 처리.

@@ -145,7 +145,7 @@ issue 正文包含背景、需求、方案。PR 关联 issue 时顶部写 `Close
 ```bash
 git checkout main && git pull origin main
 git rev-parse --abbrev-ref HEAD           # 确认在 main
-git branch -D <branch>                    # GitHub 的 rebase 合并会重新生成提交哈希，-d 会拒绝
+git branch -D <branch>                    # squash 合并在基线上生成新 commit，分支上的 commit 不在基线里，-d 会拒绝
 # 探测远程分支是否存在再删
 git ls-remote --exit-code --heads origin <branch> && git push origin --delete <branch>
 git fetch -p                              # 裁剪远程引用

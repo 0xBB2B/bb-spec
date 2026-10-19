@@ -1,13 +1,13 @@
 ---
 name: git-push
-description: 推送本地代码到远程并开 PR 全流程——识别仓库→确认分支（worktree 模式自动定位目标分支）→提交未暂存改动（禁 git add .）→同步基线（origin+upstream 双 remote 时先问合并对象、默认 origin/main；分支落后基线则 rebase）→本机装了 ocr 则跑一次 ocr review，Claude 逐条读代码核实后按 🔴/🔶/🔷 列出建议修复项、用户勾选后交 /revise 修→在同步后的代码上跑全量测试→若存在 AGENTS.md、本分支有新增 PRD 或本分支 commit 指向已合并 PRD 则 subagent 比对项目约束、PRD 与 commit 正文的改动说明跑分支规范自查（违规走 /revise 循环复审）+起草 6 段 PR 描述（末尾带 `Requirement:` 标记）→推送→创建 PR→清理本地与远程。触发：push 一下、提个 PR、代码推上去、准备发 PR、开 PR 前自查、对照规范看分支。跳过：未本地验证完成的功能、main/master 上无新提交。
+description: 推送本地代码到远程并开 PR 全流程——识别仓库→确认分支（worktree 模式自动定位目标分支）→提交未暂存改动（禁 git add .）→同步基线（origin+upstream 双 remote 时先问合并对象、默认 origin/main；分支落后基线则 rebase）→本机装了 ocr 则跑一次 ocr review，Claude 逐条读代码核实后按 🔴/🔶/🔷 列出建议修复项、用户勾选后交 /revise 修→在同步后的代码上跑全量测试→若存在 AGENTS.md、本分支有新增 PRD 或本分支 commit 指向已合并 PRD 则 subagent 比对项目约束、PRD 与 commit 正文的改动说明跑分支规范自查（违规走 /revise 循环复审）→起草 PR 标题（跟随仓库 commit 风格）与 6 段 PR 描述（末尾带 `Requirement:` 标记）→推送→创建 PR→squash 合并并核对基线上的 commit 说明带 `Requirement:`→清理本地与远程。触发：push 一下、提个 PR、代码推上去、准备发 PR、开 PR 前自查、对照规范看分支。跳过：未本地验证完成的功能、main/master 上无新提交。
 ---
 
 # 仓库提交与 PR 流程
 
 ## 概览
 
-确认分支（worktree 模式自动定位目标）→ 提交 → **同步基线**（落后则 rebase）→ **ocr 审查**（仅当本机装了 ocr）→ 跑测试 → **分支规范自查 + PR 草稿**（仅当仓库根存在 `AGENTS.md`、本分支有新增 PRD 或本分支 commit 指向已合并 PRD）→ 推送 → 创建 PR → 处理 PR → 清理分支 / worktree。
+确认分支（worktree 模式自动定位目标）→ 提交 → **同步基线**（落后则 rebase）→ **ocr 审查**（仅当本机装了 ocr）→ 跑测试 → **分支规范自查**（仅当仓库根存在 `AGENTS.md`、本分支有新增 PRD 或本分支 commit 指向已合并 PRD）→ **PR 草稿** → 推送 → 创建 PR → 处理 PR（squash 合并）→ 清理分支 / worktree。
 
 ## 参数
 
@@ -166,7 +166,7 @@ ocr 审了 N 个文件，报了 R 条。逐条读代码核实后：成立 C 条�
 2. **本分支 PRD**：在文档仓库里 `git diff <基线>...HEAD --name-only -- <PRD 根>` 列出的目录中，`git cat-file -e <基线>:<PRD 根>/<目录>/OVERVIEW.md` 失败的（基线上还没有 = 本分支新增）；`<PRD 根>` 为 PRD 目录相对文档仓库根的路径
 3. **已合并 PRD**：在当前仓库 `git log <基线>..HEAD --format=%B | grep '^Requirement:'` 取出的目录名（去掉 `none`）中，`git -C <文档仓库> cat-file -e <基线>:<PRD 根>/<目录>/OVERVIEW.md` 成功的——本分支在改已合并的功能，期望行为写在 commit 正文里
 
-任一存在 → 进入自查；三者都不存在 → 跳过整个 4.5。
+任一存在 → 进入自查；三者都不存在 → 跳过 4.5.1、4.5.2，直接进 4.5.3 写 PR 草稿。
 
 ### 核心原则
 
@@ -193,7 +193,12 @@ ocr 审了 N 个文件，报了 R 条。逐条读代码核实后：成立 C 条�
 - PASS → 跳到 4.5.3
 - FAIL → 用 Skill 工具调用 `revise`，把本轮全部违规项（file:line + 违反哪条 + 建议修法）作为参数传入；归因诊断、修复、全量测试、本地 commit 由 revise 闭环，禁止绕过 revise 直接改代码 → revise 完成后重新派 subagent 复审 → ≥ 3 轮仍 FAIL → 停下报告分歧
 
-### 4.5.3 生成 PR 描述草稿（6 段，≤ 50 行）
+### 4.5.3 生成 PR 标题与描述草稿（6 段，≤ 50 行）
+
+squash 合并后，基线上只留一个 commit：标题就是 PR 标题，正文就是 PR 描述，分支上各个 commit 的说明都不进基线。所以：
+
+- **标题**：≤ 70 字，跟随基线上的 commit 风格（先 `git log --oneline -20 <基线>`）。基线用 `feat(scope): …` / `fix(scope): …` 这类格式时，标题必须是这个格式；破坏性变更在冒号前加 `!`，并在描述末尾写 `BREAKING CHANGE:` 行
+- **描述**：写分支最终做成了什么，中途推翻的做法不写。分支 commit 正文里写了改前 / 改后 / 为什么的，按最终结果汇总进「需求」「方案」「结果」
 
 ```markdown
 ## 背景
@@ -203,10 +208,15 @@ ocr 审了 N 个文件，报了 R 条。逐条读代码核实后：成立 C 条�
 ## 测试
 ## 规范
 
-Requirement: <本分支 PRD 目录名>
+BREAKING CHANGE: <影响范围与迁移办法；不是破坏性变更时删掉这一行>
+Requirement: <目录名，多个用逗号分隔；没有写 none>
 ```
 
-「规范」段写本次涉及的 PRD 目录与相关项目约束（无则写"无"）。最后一行 `Requirement:` 标记必须保留：本分支有新增 PRD 写其目录名（多个用逗号分隔），没有写 `none`；多仓库工作区每个仓库的 PR 都带，代码仓库的 PR 写文档仓库里本次 PRD 的目录名。直接作为步骤 6 的 `--body`。
+「规范」段写本次涉及的 PRD 目录与相关项目约束（无则写"无"）；跳过了 4.5.1、4.5.2 时注明「未跑分支规范自查」。
+
+最后一行 `Requirement:` 标记必须保留，目录名取两处的并集：本分支新增 PRD 的目录名，加上 `git log <基线>..HEAD --format=%B | grep '^Requirement:'` 里出现的目录名；去重、去掉 `none`，一个都没有写 `none`。分支在改已合并的功能时，commit 里写的是已合并 PRD 的目录名，squash 后基线上只剩这一行，漏写就查不回那份 PRD。多仓库工作区每个仓库的 PR 都带，代码仓库的 PR 写文档仓库里的 PRD 目录名。
+
+标题与描述直接作为步骤 6 的 `--title`、`--body`。
 
 ## 5. 推送到远程
 
@@ -221,29 +231,30 @@ Requirement: <本分支 PRD 目录名>
 
 ### 创建
 
-- 标题 ≤ 70 字
-- body：4.5 跑过 → 用 6 段草稿；4.5 跳过 → 简短 bullet + 标注「未跑 pre-review」；两种情况末尾都带一行 `Requirement: <本分支 PRD 目录名 / none>`
-- PR 创建后提醒用户核对仓库合并设置，只允许 rebase 合并，这样每个 commit 连同自己的 `Requirement:` 行原样进入主分支，代码才能经 git 精确反查回 PRD：
-  - GitHub：Settings → General → Pull Requests 只勾「Allow rebase merging」，取消「Allow merge commits」和「Allow squash merging」；Settings → Rules → Rulesets 里作用于主分支的规则集，「Require a pull request before merging」的「Allowed merge methods」也只留 Rebase——两处都放行 rebase 才能合并
-  - GitLab：Settings → Merge requests 的 Merge method 选「Fast-forward merge」，「Squash commits when merging」选「Do not allow」
+- 标题、body 用 4.5.3 的草稿
+- PR 创建后提醒用户核对仓库合并设置：只允许 squash 合并，平台默认的 squash 说明用 PR 标题和描述。有人在网页上点合并时用的是这个默认说明，设成别的 `Requirement:` 行会丢：
+  - GitHub：Settings → General → Pull Requests 只勾「Allow squash merging」，取消「Allow merge commits」和「Allow rebase merging」，「Allow squash merging」的默认说明选「Default to pull request title and description」；Settings → Rules → Rulesets 里作用于主分支的规则集，「Require a pull request before merging」的「Allowed merge methods」也只留 Squash——两处都放行 squash 才能合并
+  - GitLab：Settings → Merge requests 的 Merge method 选「Fast-forward merge」（选 Merge commit 会在 squash commit 之外再多一个合并 commit），「Squash commits when merging」选「Require」，「Squash commit message template」填 `%{title}`、空一行、`%{description}`
 
 ## 7. 处理 PR
 
 **worktree 模式铁律**：步骤 2 标记为 worktree 模式时，本步所有 `gh pr merge` / `gh pr close` **一律去掉 `--delete-branch`**（GitLab：`--remove-source-branch`）。原因：gh 在合并/关闭成功后会立即试图删本地分支，但分支被 worktree 占用必失败（gh 报非零退出码——而服务端合并实际已完成）。本地与远程分支删除统一交给步骤 8 在 `worktree remove` 之后做。
 
+合并时把 4.5.3 的标题和描述显式传给平台：不传时平台用仓库默认的 squash 说明，可能只有标题，`Requirement:` 行就丢了。选自动合并时，先把描述写进 `<base_dir>/.cache/pr/<branch>.md`（`base_dir` 与 `<branch>` 的取法、`.cache/.gitignore` 的检查同 4.2），GitLab 另写一份 `<branch>.squash.md`，内容为标题、空一行、描述。
+
 创建后用 AskUserQuestion 让用户选（除非已显式声明）：
 
-1. **自动合并**：`gh pr merge <n> --rebase --auto --delete-branch`（GitLab：`glab mr merge <n> --rebase --auto-merge --remove-source-branch`；worktree 模式去掉删分支 flag）
+1. **自动合并**：`gh pr merge <n> --squash --subject "<PR 标题> (#<n>)" --body-file <描述文件> --auto --delete-branch`（GitLab：`glab mr merge <n> --squash --squash-message "$(cat <squash 说明文件>)" --auto-merge --remove-source-branch`；worktree 模式去掉删分支 flag）
 2. **已合并**：直接进入「合并结果核验」
 3. **关闭 PR**：`gh pr close --delete-branch` → 清理（worktree 模式同样去 `--delete-branch`）
 
-**`--auto` 被拒**（仓库未开启 auto-merge，报 `Auto merge is not allowed` / `enablePullRequestAutoMerge`）→ 降级为不带 `--auto` 的 `gh pr merge <n> --rebase --delete-branch` 重试（worktree 模式同样去 `--delete-branch`）。
+**`--auto` 被拒**（仓库未开启 auto-merge，报 `Auto merge is not allowed` / `enablePullRequestAutoMerge`）→ 降级为不带 `--auto` 的 `gh pr merge <n> --squash --subject "<PR 标题> (#<n>)" --body-file <描述文件> --delete-branch` 重试（worktree 模式同样去 `--delete-branch`）。
 
 ### 合并结果核验（唯一完成判据，所有合并路径必经）
 
 **铁律：合并是否完成，只认 `gh pr view <n> --json state,mergedAt` 的 `state == "MERGED"`。`gh pr merge` 的 stdout 与退出码一律不作数**——它可能只表示「已加入自动合并队列」，也可能在 auto 不可用时报错而根本没合并。执行任何合并动作后，**必须**查询此状态再下结论：
 
-- `state == "MERGED"`（`mergedAt` 非空）→ 进入步骤 8 清理
+- `state == "MERGED"`（`mergedAt` 非空）→ 进入「核对 squash 说明」
 - `state == "OPEN"` → **尚未合并：禁止进入清理、禁止宣告完成**，按下方「未合并排查」处理后重试合并并重新核验
 - `state == "CLOSED"`（未合并）→ 提醒用户选择
 
@@ -254,7 +265,17 @@ Requirement: <本分支 PRD 目录名>
 - **冲突**（`mergeable == CONFLICTING` / `mergeStateStatus == DIRTY`）→ `git rebase <基线>`（步骤 4 选定）：机械性冲突自行解决 + `--force-with-lease` 重推；业务性冲突停下报告。重推后 GitHub 异步重算 mergeability，需等其不再是 `UNKNOWN`/`CONFLICTING` 再重试合并
 - **`mergeable == UNKNOWN`**（GitHub 仍在计算，常见于刚 push / rebase 后）→ 短暂轮询后重查，勿据此误判为冲突
 - **必需检查未过**：CI 进行中 → 告知用户挂起、跳过清理；**CI 失败** → 取消自动合并 → 拉失败日志 → 机械性失败（lint/format/lockfile）自行修复后重设；业务性失败停下报告
-- **合并方式被拒**（`gh pr merge` 报 `Rebase merges are not allowed on this repository`）→ 仓库常规设置和主分支规则集都限制合并方式，任一处不放行 rebase 都会被拒。分别查 `gh api repos/<owner>/<repo> --jq .allow_rebase_merge` 与 `gh api repos/<owner>/<repo>/rules/branches/<基线分支名> --jq '.[] | select(.type=="pull_request") | .parameters.allowed_merge_methods'`，把不放行的那处报给用户；改仓库设置须经用户同意，改完重试合并
+- **合并方式被拒**（`gh pr merge` 报不允许 squash 合并）→ 仓库常规设置和主分支规则集都限制合并方式，任一处不放行 squash 都会被拒。分别查 `gh repo view <owner>/<repo> --json squashMergeAllowed` 与 `gh api repos/<owner>/<repo>/rules/branches/<基线分支名> --jq '.[] | select(.type=="pull_request") | .parameters.allowed_merge_methods'`，把不放行的那处报给用户；改仓库设置须经用户同意，改完重试合并
+
+### 核对 squash 说明
+
+查出合并进基线的 commit：GitHub 用 `gh pr view <n> --json mergeCommit --jq .mergeCommit.oid`，GitLab 用 `glab mr view <n> -F json --jq '.squash_commit_sha // .merge_commit_sha'`。`git fetch <base remote>` 后读 `git log -1 --format=%B <哈希> | grep '^Requirement:'`：
+
+- 有 → 进步骤 8
+- 没有 → 告诉用户「合并进基线的 commit 说明里没有 `Requirement:` 行，以后查代码历史时这次改动连不回 PRD」，请用户按步骤 6 的设置提醒检查平台设置；不拦清理，进步骤 8
+- 取不到哈希 → 报告「没能核对 squash 说明」，进步骤 8
+
+核对完删除步骤 7 写的描述文件（存在时）。
 
 ## 8. 合并后清理（按步骤 2 的模式分流）
 
@@ -263,7 +284,7 @@ Requirement: <本分支 PRD 目录名>
 ```bash
 git checkout main && git pull origin main
 git rev-parse --abbrev-ref HEAD   # 确认在 main
-git branch -D <branch>            # 用 -D：GitHub 的 rebase 合并会重新生成提交哈希，-d 会拒绝
+git branch -D <branch>            # 用 -D：squash 合并在基线上生成新 commit，分支上的 commit 不在基线里，-d 会拒绝
 # 探测远程分支是否存在再删
 git ls-remote --exit-code --heads origin <branch> && git push origin --delete <branch>
 git fetch -p                      # 裁剪远程引用
@@ -290,4 +311,4 @@ git fetch -p && git worktree prune               # 裁剪远程引用 + worktree
 
 ## 禁止操作
 
-`git push --force` / `git reset --hard` / `git checkout -- .` / 未授权合并 PR / 非 rebase 策略（squash 或 merge commit）/ 提交敏感文件
+`git push --force` / `git reset --hard` / `git checkout -- .` / 未授权合并 PR / 非 squash 策略（rebase 或 merge commit）/ 提交敏感文件

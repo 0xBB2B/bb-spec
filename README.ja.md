@@ -118,7 +118,7 @@
 - **`/git-push`** — ユーザートリガーの push + PR フロー(単一 / マルチリポジトリ)。
   - `ocr`([open-code-review](https://github.com/alibaba/open-code-review))がインストールされている場合、rebase 直後に `ocr review` を 1 回実行:Claude が指摘を 1 件ずつコードで検証し、修正を推奨する項目を 🔴/🔶/🔷 の優先度順に一覧化、選んだ項目を `/revise` で修正
   - AGENTS.md または本ブランチの PRD がある場合、または本ブランチの commit がマージ済み PRD を指す場合、まず**ブランチ規範セルフチェック(pre-review)**を実行:サブエージェントがプロジェクト制約、PRD、commit 本文の変更説明 vs ブランチ diff を比較、違反を反復修正
-  - PR 説明に `Requirement:` マーカーを付与;リポジトリは rebase マージのみ許可する必要あり(GitHub は「Allow rebase merging」のみかつメインブランチのルールセットの「Allowed merge methods」も Rebase のみ、GitLab は「Fast-forward merge」かつ squash を「Do not allow」)、各 commit が自身の `Requirement:` 行ごとそのままメインブランチに入る
+  - PR タイトルはリポジトリの commit スタイルに合わせ、説明に `Requirement:` マーカーを付与;リポジトリは squash マージのみ許可する必要あり(GitHub は「Allow squash merging」のみかつ既定メッセージを「Default to pull request title and description」に、メインブランチのルールセットの「Allowed merge methods」も Squash のみ、GitLab は「Fast-forward merge」、squash を「Require」、squash メッセージテンプレートを `%{title}`・空行・`%{description}` に)、各 PR はメインブランチに 1 つの commit として入り、メッセージは PR のタイトルと説明、開発途中で覆した commit はメインブランチに入らない
   - **6 セクションの PR 説明**(背景 / 要件 / アプローチ / 結果 / テスト / 規範、< 50 行)を起草、そのまま PR body として使用
 
 - **`/revise`** — いつでも介入可能な例外処理。
