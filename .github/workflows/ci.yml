@@ -26,3 +26,6 @@ jobs:
 
       - name: Run branch-prds behavior tests
         run: bash tests/branch-prds.test.sh
+
+      - name: Run pr-status behavior tests
+        run: bash tests/pr-status.test.sh
