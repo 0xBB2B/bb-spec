@@ -3,6 +3,7 @@ name: test-api
 description: 后端 API e2e 验证——Docker 整栈拉起→md 用例渲染为单文件 TS runner→`bun run` 顺序跑完→报告与 /revise 闭环；时间敏感规则（token 过期 / 订单超时 / 积分过期）经协议契约 /test/advance-time、/test/backdate、/test/trigger-job 测，应用侧用什么语言/库实现自选；零 subagent、零并发；跑完无条件 docker compose down -v。触发：/test-api、跑后端接口测试、API e2e 验收、验证后端业务流。跳过：Docker 不可用、Bun 不可用、应用未暴露 /test/healthz 协议。
 argument-hint: [scope]
 disable-model-invocation: true
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 
 # Test-API 后端 API e2e 验证
@@ -30,7 +31,7 @@ disable-model-invocation: true
    - 当前目录有 `.git` → **单 repo 模式**，root = 当前目录
    - 无 `.git`、有 workspace 标记（`.bb-workspace` 或用户 git-workflow 约定的标记）→ **多 repo 模式**，root 待步骤 2 与用户确认是落工作区根（跨 repo 整栈）还是某个 repo 内
    - 无 `.git`、无 workspace 标记 → 报错中止：「需要在 git 仓库或 bb-workspace 内运行」，不自动 `git init`
-2. **读 `.bb-spec.yaml`**：取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<root>/<base_dir>/docs`、`${CACHE_DIR}` = `<root>/<base_dir>/.cache`。
+2. **定位目录**：运行 `${CLAUDE_PLUGIN_ROOT}/scripts/bbspec-paths.sh`，`${DOCS_DIR}` 取输出的 `docs_dir`、`${CACHE_DIR}` 取 `cache_dir`。
 3. **缓存目录约定**：本 skill 临时产物（生成的 `runner.ts` / `cases.json`、runner 输出 `result.json`、docker logs）统一落 `${CACHE_DIR}/test-api-gen/`、`${CACHE_DIR}/test-api-logs/`，**首次写入前**确保 `${CACHE_DIR}/.gitignore` 存在——不存在则连目录一并创建、内容写单行 `*`。
 4. `$ARGUMENTS` 非空 → 仅跑该 scope，否则全量。
 
@@ -58,7 +59,7 @@ disable-model-invocation: true
 
 API e2e 用例的生成与覆盖完整性都由本 skill 独占负责。
 
-**覆盖对齐**（仅全量模式执行；`/test-api <scope>` 定向跑某类时跳过本环节）：读本分支新增 PRD（`git diff <基线分支>...HEAD --diff-filter=A --name-only -- '${DOCS_DIR}/prd/'`）的验收与验证路径（没有则读项目其他文档）；**不读已合并的历史 PRD**——其中的用例可能已被后续需求改掉，混进来会生成过时用例；把其中的 API 行为验收点 + 时间敏感规则归纳为「应有场景集」，与 `${DOCS_DIR}/test/api/` 现有用例（已有用例目录即历史需求的回归集）比对，算缺口：
+**覆盖对齐**（仅全量模式执行；`/test-api <scope>` 定向跑某类时跳过本环节）：读本分支新增 PRD（`${CLAUDE_PLUGIN_ROOT}/scripts/branch-prds.sh <基线分支>` 输出的 `new=` 行）的验收与验证路径（没有则读项目其他文档）；**不读已合并的历史 PRD**——其中的用例可能已被后续需求改掉，混进来会生成过时用例；把其中的 API 行为验收点 + 时间敏感规则归纳为「应有场景集」，与 `${DOCS_DIR}/test/api/` 现有用例（已有用例目录即历史需求的回归集）比对，算缺口：
 
 - **现有用例为空** → 缺口即全部，按 `references/api-testcase-format.md` 生成全部用例。
 - **有缺口** → `AskUserQuestion` 展示清单，二选一：①补全后再跑 ②先跑现有、缺口记入报告（步骤 5 显式列出，**禁静默漏测**）。

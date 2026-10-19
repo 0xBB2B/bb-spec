@@ -2,6 +2,7 @@
 name: exec
 description: 三 Agent 隔离执行 plan——由 /plan 自动调用或手动 /exec 续接；Test→Impl→Review 串行，三方各只看各的输入互不可见；互不依赖且文件目录不重叠的 plan 编为并行组并发推进；每步立即持久化 PROGRESS.md，跨会话/`/clear` 后从断点续接；启动先 worktree 感知定位执行现场（主仓库停在 main 时自动定位到进行中的 worktree）；全部完成后自动运行 /doc-update 收尾模式让本次 PRD 与 README 等文档追平代码、删除本次 plan 目录；每个 commit 带 `Requirement: <PRD 目录名>`；commit 不自动 push、main 分支禁自动 commit。触发：/exec、开始实施 plan、继续执行 plan、从断点继续、按 plan 把代码做出来。跳过：还没 /plan 产出实施计划、纯调研/方案讨论、要改已合并的行为（需求变了 →/prd，bug →/revise）。
 argument-hint: <YYYY-MM-DD.主题>[/<plan名>]
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 
 # Exec 计划执行
@@ -58,12 +59,12 @@ git worktree list --porcelain
 ```
 
 - **已在 linked worktree 或非 main/master 功能分支** → cwd 即执行现场，继续
-- **在主仓库且 HEAD 为 main/master** → 逐棵检查非 main 分支的 worktree：其 plan 目录（按该 worktree 内 `.bb-spec.yaml` 解析 `base_dir`，缺省 `.bb-spec`）下存在未全完成 PROGRESS.md、且未登记在根 `plan/INDEX.md` 里的主题即候选（指定了主题时须匹配该主题）：
+- **在主仓库且 HEAD 为 main/master** → 逐棵检查非 main 分支的 worktree：其 plan 目录（在该 worktree 里运行 `${CLAUDE_PLUGIN_ROOT}/scripts/bbspec-paths.sh`，取 `docs_dir` 下的 `plan/`）下存在未全完成 PROGRESS.md、且未登记在根 `plan/INDEX.md` 里的主题即候选（指定了主题时须匹配该主题）：
   - 恰一棵 → 它就是执行现场，**后续所有步骤——读 plan、写测试/实现、跑测试、commit——全部定位到该 worktree 内执行**（`cd` 进去或全程用其绝对路径）
   - 多棵 → AskUserQuestion 列出让用户选
   - 无 → 全新任务，按 git-workflow 先确定开分支方式再继续，**禁止把任何产出落在 main 工作区**
 
-现场确定后，在**该目录**下 `cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`。**多仓库工作区**（`${DOCS_DIR}` 所在的 git 仓库与代码不是同一个，如工作区根不是 git 仓库、`docs/` 与各服务各自独立）：文档仓库 = `git -C ${DOCS_DIR} rev-parse --show-toplevel`，下文 PRD / plan 相关的 git 命令都在文档仓库里执行、路径相对文档仓库根；代码相关的 git 命令（测试、`git log -L`、commit）在各代码仓库里分别执行。
+现场确定后，在**该目录**下运行 `${CLAUDE_PLUGIN_ROOT}/scripts/bbspec-paths.sh`，`${DOCS_DIR}` 取输出的 `docs_dir`。**多仓库工作区**（`${DOCS_DIR}` 所在的 git 仓库与代码不是同一个，如工作区根不是 git 仓库、`docs/` 与各服务各自独立）：文档仓库 = 输出的 `docs_repo`，下文 PRD / plan 相关的 git 命令都在文档仓库里执行、路径相对文档仓库根；代码相关的 git 命令（测试、`git log -L`、commit）在各代码仓库里分别执行。
 
 `${DOCS_DIR}/plan/` 下主题目录内 `PROGRESS.md` 含非 `done` 行的才是进行中的 plan（完成后整个目录会被删除）；根 `plan/INDEX.md` 和其中登记的主题目录（不论 `PROGRESS.md` 状态）、全部 `done` 的主题目录都是旧版本留下的，不执行，提示用户可以 `git rm -r` 清掉。按参数形式决定行为：
 

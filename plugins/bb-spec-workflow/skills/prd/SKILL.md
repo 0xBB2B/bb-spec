@@ -1,6 +1,7 @@
 ---
 name: prd
 description: 新需求的唯一入口——质疑→澄清→拆解，对话阶段不写文件，对齐后落盘 PRD（.bb-spec/docs/prd/<日期>.<主题>/，写「为什么」与可测的约束和验收；本分支内可改、合并后冻结）与项目级约束（项目根 AGENTS.md，含"先读代码再回答"的查询规矩），弹窗请用户读完 PRD、确认通过后自动依次运行 /plan → /exec（/exec 收尾自动 /doc-update）；之后每个 commit 带 `Requirement: <PRD 目录名>` 标记，代码经 git 可反查回 PRD。触发：/prd、新需求、新增功能、改已合并功能或老代码的行为（再小也算，例如把超时从 120 秒改成 600 秒、把按钮文字从'提交'改成'保存'）、头脑风暴需求、写个 PRD、需求拆解。跳过：修 bug、安全或鲁棒性问题、改本分支还没合并的 PRD（→/revise）、纯技术方案讨论。
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 
 # PRD：质疑 → 澄清 → 拆解 → 落盘 → 自动实施
@@ -23,13 +24,13 @@ description: 新需求的唯一入口——质疑→澄清→拆解，对话阶�
 **仓库布局**（所有 skill 共用这一节的定义）：
 
 - **单仓库**：PRD 与代码在同一个 git 仓库，`${DOCS_DIR}` 就在这个仓库里
-- **多仓库工作区**：`${DOCS_DIR}` 所在的 git 仓库（`git -C ${DOCS_DIR} rev-parse --show-toplevel`）与代码不在同一个仓库，常见为工作区根目录不是 git 仓库、`docs/` 与各服务各自是独立仓库。此时：
+- **多仓库工作区**：`${DOCS_DIR}` 所在的 git 仓库（`bbspec-paths.sh` 输出的 `docs_repo`）与代码不在同一个仓库，常见为工作区根目录不是 git 仓库、`docs/` 与各服务各自是独立仓库。此时：
   - **文档仓库** = `${DOCS_DIR}` 所在仓库；**代码仓库** = 工作区里其他 git 仓库（go.work 的 `use`、pnpm workspace 成员、或根目录下含 `.git` 的子目录）
   - 涉及 PRD 的 git 命令都在文档仓库里执行（`git -C <文档仓库>`），路径用相对文档仓库根的写法，下文记作 `<PRD 根>`（单仓库时就是 `${DOCS_DIR}/prd`）
   - 查代码历史的 git 命令（`git log -L`、`git log --grep "Requirement: …"`）在每个相关代码仓库里分别执行
   - 本次需求涉及的每个仓库（文档仓库 + 改动的代码仓库）都按 git-workflow 开同名功能分支，各自的 commit 都带 `Requirement:` 标记
 
-**本分支 PRD 的判定**（所有 skill 共用这一条）：`git -C <文档仓库> cat-file -e <基线分支>:<PRD 根>/<目录>/OVERVIEW.md` 失败（基线分支 main 或 master 上还没有它）= 本分支新增 = 可改；成功 = 已合并 = 冻结。单仓库时 `<文档仓库>` 就是当前仓库。
+**本分支 PRD 的判定**（所有 skill 共用这一条）：基线分支（main 或 master）上还没有 `<PRD 根>/<目录>/OVERVIEW.md` = 本分支新增 = 可改；已有 = 已合并 = 冻结。`${CLAUDE_PLUGIN_ROOT}/scripts/branch-prds.sh <基线分支>` 按这条规则列出本分支涉及的 PRD：`new=<目录>` 是本分支新增，`merged=<目录>` 是本分支 commit 的 `Requirement:` 指向的已合并 PRD；不在 `new=` 里的 PRD 都已合并。
 
 **一条约束放哪**：问"删掉相关功能后这条约束还成立吗？"——还成立 → 项目级，进 AGENTS.md；随功能一起消失 → 功能约束，进本次 PRD。已被某个已激活 skill（如 golang-constraints、database-constraints）覆盖的通用约束，两边都不写。
 
@@ -56,10 +57,10 @@ description: 新需求的唯一入口——质疑→澄清→拆解，对话阶�
 ### 步骤 0：读取配置 + 现状扫描
 
 ```bash
-cat .bb-spec.yaml 2>/dev/null
+${CLAUDE_PLUGIN_ROOT}/scripts/bbspec-paths.sh
 ```
 
-有 `base_dir` → 用其值作为 bb-spec 根目录；文件不存在或无该字段 → 缺省 `.bb-spec`。`${DOCS_DIR}` = `<base_dir>/docs`，后续所有路径基于此值。旧版本留下的 `${DOCS_DIR}/spec/`、`${DOCS_DIR}/prd/.archive/`、根 `plan/INDEX.md` 照常保留、不拦截，除下面的旧术语表外都不读。
+输出 bb-spec 各目录的绝对路径（从仓库根往上找 `.bb-spec.yaml`，多仓库工作区的配置在工作区根）：`${DOCS_DIR}` 取 `docs_dir`，后续所有路径基于此值；`docs_repo` 是文档仓库，为空说明还没有文档目录。旧版本留下的 `${DOCS_DIR}/spec/`、`${DOCS_DIR}/prd/.archive/`、根 `plan/INDEX.md` 照常保留、不拦截，除下面的旧术语表外都不读。
 
 ```bash
 cat AGENTS.md 2>/dev/null                                      # 项目级约束与查询规矩

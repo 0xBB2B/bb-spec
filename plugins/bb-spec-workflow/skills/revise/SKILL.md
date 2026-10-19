@@ -2,6 +2,7 @@
 name: revise
 description: 产出修订（诊断→定向修正→回归验证）——对 PRD→plan→exec 偏差做根因归类：prd-defect / impl-defect / requirement-change；先读代码确认现状、经 git 标记查回相关 PRD 再归因；改代码必先 Red 测试、最小影响只改必须改的层；需求变了（prd-defect / requirement-change）只在本分支 PRD 上改，相关 PRD 已合并或没有 PRD 时退出转 /prd 新开一份；bug、安全、鲁棒性修复留在本流程，修订原因与决策写进 commit 正文；完成后自动 /doc-update 收尾模式；启动先 worktree 感知定位修复现场（主仓库停在 main 时自动定位到进行中的 worktree）。触发：/revise、有 bug、结果不对、和预期不符、产出需要优化、review 发现违规需修复。跳过：纯新增需求、改已合并功能或老代码的行为（→/prd）、还没有 PRD/代码可对照。
 argument-hint: <问题或优化诉求描述>
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 
 # 产出修订（Revise）：诊断 → 定向修正 → 回归验证
@@ -16,7 +17,7 @@ argument-hint: <问题或优化诉求描述>
 2. **先诊断再修正**：禁止跳过归因直接改代码；诊断结果必须向用户通报（不阻断——通报后直接进入步骤 3），仅当期望行为本身有分歧、需附「冲突分析简报」时停下等用户裁决
 3. **三类归因**：每个问题必须归入 prd-defect / impl-defect / requirement-change 之一
 4. **TDD 修正**：涉及代码修改时必须先有失败测试（Red）再改实现（Green），测试须能暴露 bug
-5. **PRD 改不改看是否合并**：本分支新增的 PRD 可改（判定：`git -C <文档仓库> cat-file -e <基线分支>:<PRD 根>/<目录>/OVERVIEW.md` 失败；单仓库时文档仓库就是当前仓库、`<PRD 根>` 为 `${DOCS_DIR}/prd`，多仓库工作区时文档仓库是 `${DOCS_DIR}` 所在的独立仓库、`<PRD 根>` 相对它的根）；已合并的 PRD 冻结不改——需求层的问题（prd-defect / requirement-change）退出转 `/prd`；只有 impl-defect 留在本流程，期望行为以用户确认为准，修订原因写进 commit 正文，`git log -L` 会把它和代码一起找出来
+5. **PRD 改不改看是否合并**：本分支新增的 PRD 可改（判定：`${CLAUDE_PLUGIN_ROOT}/scripts/branch-prds.sh <基线分支>` 输出的 `new=` 行里有它；不在 `new=` 里的都已合并）；已合并的 PRD 冻结不改——需求层的问题（prd-defect / requirement-change）退出转 `/prd`；只有 impl-defect 留在本流程，期望行为以用户确认为准，修订原因写进 commit 正文，`git log -L` 会把它和代码一起找出来
 6. **修正闭环**：修正后必须验证——全量测试通过 + 期望行为合规 + 文档同步
 7. **决策必须落盘**：修订过程中定下的取舍——步骤 0 带入的讨论结论、冲突分析简报的裁决、3c 的确认问答——写明选了什么、否掉了哪些做法及理由、由谁在哪天定的；改了本分支 PRD 时记进它的「决策记录」，同时写进 commit 正文的「决策」段
 8. **最小影响**：只改必须改的层，不借修正之名扩展功能或重构（额外需求走 `/prd`）
@@ -56,7 +57,7 @@ argument-hint: <问题或优化诉求描述>
 - **在主仓库且 HEAD 为 main/master**，且问题指向某棵 worktree 上进行中的工作（其 plan PROGRESS.md 未全完成，或分支领先 main）→ 后续读资产、修代码、跑测试、commit **全部定位到该 worktree 内执行**（`cd` 进去或全程用其绝对路径）；多棵候选 → AskUserQuestion 让用户选
 - **问题针对 main 上已合入的代码** → 属新修复任务，按 git-workflow 先确定开分支方式再动手，**禁止直接在 main 工作区改代码**
 
-现场确定后，在**该目录**下 `cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`。读项目根 `AGENTS.md`，按下表定位四层资产并全部读取：
+现场确定后，在**该目录**下运行 `${CLAUDE_PLUGIN_ROOT}/scripts/bbspec-paths.sh`，`${DOCS_DIR}` 取输出的 `docs_dir`。读项目根 `AGENTS.md`，按下表定位四层资产并全部读取：
 
 | 资产 | 定位方式 | 目的 |
 |---|---|---|

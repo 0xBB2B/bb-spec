@@ -3,6 +3,7 @@ name: test-webview
 description: 网页项目全量交互验证——Docker 整栈拉起→经浏览器 MCP（playwright/chrome-devtools）逐个跑完 webview 测试用例；每用例派隔离串行 subagent，主上下文只留 verdict 摘要；全程零并发；跑完无条件 docker compose down -v；失败转 /revise。触发：/test-webview、跑网页交互测试、端到端验证网页、webview 验收。跳过：无可用 HTTP 网页服务、无浏览器 MCP、Docker 不可用。
 argument-hint: [category]
 disable-model-invocation: true
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 
 # Test-Webview 网页交互验证
@@ -32,7 +33,7 @@ disable-model-invocation: true
 
 ### 步骤 0：读取配置
 
-`cat .bb-spec.yaml 2>/dev/null` 取 `base_dir`（缺省 `.bb-spec`）；`${DOCS_DIR}` = `<base_dir>/docs`、`${CACHE_DIR}` = `<base_dir>/.cache`。`$ARGUMENTS` 非空 → 仅跑该 category，否则全量。
+运行 `${CLAUDE_PLUGIN_ROOT}/scripts/bbspec-paths.sh`，`${DOCS_DIR}` 取输出的 `docs_dir`、`${CACHE_DIR}` 取 `cache_dir`。`$ARGUMENTS` 非空 → 仅跑该 category，否则全量。
 
 **缓存约定**：本 skill 的临时产物（截图）统一落 `${CACHE_DIR}/`（截图落 `${CACHE_DIR}/webview-shots/`），与交付物目录 `${DOCS_DIR}/` 平级、不混入。**首次写入前**确保 `${CACHE_DIR}/.gitignore` 存在——不存在则连目录一并创建、内容写单行 `*`（把整个 `.cache` 含其自身排除出 git，无需改动任何上层 `.gitignore`）。
 
@@ -57,7 +58,7 @@ disable-model-invocation: true
 
 UI 验证用例的生成与覆盖完整性都由本 skill 独占负责。
 
-**覆盖对齐**（仅全量模式执行；`/test-webview <category>` 定向跑某类时跳过本环节，直接收集该类现有用例）：读本分支新增 PRD（`git diff <基线分支>...HEAD --diff-filter=A --name-only -- '${DOCS_DIR}/prd/'`）的验收与验证路径（没有则读项目其他文档）；**不读已合并的历史 PRD**——其中的用例可能已被后续需求改掉，混进来会生成过时用例；把其中的 UI 交互验收点归纳为「应有场景集」，与 `${DOCS_DIR}/test/webview/` 现有用例（已有用例目录即历史需求的回归集）比对，算出**缺口**（应测但无对应用例的场景）：
+**覆盖对齐**（仅全量模式执行；`/test-webview <category>` 定向跑某类时跳过本环节，直接收集该类现有用例）：读本分支新增 PRD（`${CLAUDE_PLUGIN_ROOT}/scripts/branch-prds.sh <基线分支>` 输出的 `new=` 行）的验收与验证路径（没有则读项目其他文档）；**不读已合并的历史 PRD**——其中的用例可能已被后续需求改掉，混进来会生成过时用例；把其中的 UI 交互验收点归纳为「应有场景集」，与 `${DOCS_DIR}/test/webview/` 现有用例（已有用例目录即历史需求的回归集）比对，算出**缺口**（应测但无对应用例的场景）：
 
 - **现有用例为空** → 缺口即全部，按规范生成全部用例。
 - **有缺口**（部分应有场景无对应用例） → 用 `AskUserQuestion` 展示缺口清单，让用户二选一：①**补全后再跑**（按规范生成缺口用例）②**先跑现有、缺口记入报告**（步骤 5 显式列出，**禁静默漏测**）。
@@ -79,7 +80,7 @@ UI 验证用例的生成与覆盖完整性都由本 skill 独占负责。
 - `base_url`：该用例 `target` 前端对应的 `${BASE_URL}`（`target` 即用例所在顶层目录段）
 - `mcp_family`：`${MCP_FAMILY}`（playwright | chrome-devtools）
 - `project_context`：技术栈一句话（供选择器 / 等待策略参考）
-- `screenshots_dir`：`${CACHE_DIR}/webview-shots/`（相对项目根，截图统一落此；派发首个用例前已按步骤 0 缓存约定确保该目录与 `.cache/.gitignore` 就位）
+- `screenshots_dir`：`${CACHE_DIR}/webview-shots/`（截图统一落此；派发首个用例前已按步骤 0 缓存约定确保该目录与 `.cache/.gitignore` 就位）
 
 subagent 返回结构化 verdict：`{ caseId, category, status: pass|fail|error, failedStep, evidence, screenshots[] }`（`skipped` 由主 agent 在依赖闸门处赋予，不派发）。主 agent 只把 verdict 摘要记入内存，**不回读** MCP 交互细节。
 
