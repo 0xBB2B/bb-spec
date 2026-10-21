@@ -127,7 +127,7 @@ grep -h '^features:' ${DOCS_DIR}/prd/*/OVERVIEW.md 2>/dev/null  # 已有功能�
 
 改动再小（只换一个按钮文字、一个颜色值）也要出预览。做法：
 
-1. 写一个 HTML 文件到 `${CACHE_DIR}/ui-preview/<主题>.html`，CSS 和 JS 都写在文件里，浏览器直接打开就能看。写入前确保 `${CACHE_DIR}/.gitignore` 存在：不存在就连目录一起创建，内容写单行 `*`，把整个缓存目录排除出 git
+1. 写一个 HTML 文件到 `${CACHE_DIR}/ui-preview/<YYYY-MM-DD>.<主题>.html`，文件名和步骤 7 的 PRD 目录名一致（`/exec` 收尾时按这个名字找到它，拿实际界面逐项对比），CSS 和 JS 都写在文件里，浏览器直接打开就能看。写入前确保 `${CACHE_DIR}/.gitignore` 存在：不存在就连目录一起创建，内容写单行 `*`，把整个缓存目录排除出 git
 2. 图形界面：还原布局、配色、文案，画出正常、空数据、加载中、出错这几种状态，有交互的地方做成可点击的。终端界面：在页面里模拟终端窗口（深色背景、等宽字体、默认 80 列），颜色按实际效果还原，多步交互按顺序画出每一步的画面
 3. 用 `open <文件路径>` 在浏览器里打开给用户看
 4. 用户提了意见就先改预览页，再请用户看，直到用户明确说"可以"
@@ -163,11 +163,11 @@ grep -h '^features:' ${DOCS_DIR}/prd/*/OVERVIEW.md 2>/dev/null  # 已有功能�
 git branch --show-current
 ```
 
-在 main/master 上 → 按 git-workflow 用 AskUserQuestion 选开分支方式（默认 worktree），切过去后**后续所有落盘、commit、自动实施都在新现场进行**；已在功能分支或 linked worktree → 直接继续。多仓库工作区：检查的是文档仓库与本次要改动的代码仓库，按 git-workflow 的多 repo 规则给它们开同名功能分支。
+在 main/master 上 → 按 git-workflow 用 AskUserQuestion 选开分支方式（默认 worktree），切过去后**后续所有落盘、commit、自动实施都在新现场进行**；已在功能分支或 linked worktree → 直接继续。步骤 3 出过界面预览、又切到了新现场时，在新现场重新运行 `bbspec-paths.sh` 取 `cache_dir`，把预览页移到新现场的 `ui-preview/` 下（`.gitignore` 的检查同步骤 3），后面的简报写新路径。多仓库工作区：检查的是文档仓库与本次要改动的代码仓库，按 git-workflow 的多 repo 规则给它们开同名功能分支。
 
 ### 步骤 7：落盘
 
-**7a. PRD**：写入 `${DOCS_DIR}/prd/<YYYY-MM-DD>.<主题>/`（主题 kebab-case）——`OVERVIEW.md` + 每个子需求一份 `<序号>-<子需求>.md`（`01-`、`02-`…）。
+**7a. PRD**：写入 `${DOCS_DIR}/prd/<YYYY-MM-DD>.<主题>/`（主题 kebab-case）——`OVERVIEW.md` + 每个子需求一份 `<序号>-<子需求>.md`（`01-`、`02-`…）。主题和出预览时定的不一样时，把预览页改成和 PRD 目录同名。
 
 **7b. GLOSSARY.md**：`${DOCS_DIR}/prd/GLOSSARY.md` 不存在而 `${DOCS_DIR}/spec/GLOSSARY.md` 存在时，先把旧表整份复制过来（旧表不动），表头说明里的「仅 /spec 维护」改成「仅 /prd 维护」；再按术语变更队列增行、并别名、改定义，删除不再被使用的术语；所有定义冲突必须已经用户裁决，禁静默覆盖。
 
