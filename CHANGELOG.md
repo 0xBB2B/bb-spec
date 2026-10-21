@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.1.0](https://github.com/0xBB2B/bb-spec/compare/v15.0.1...v15.1.0) (2026-10-21)
+
+
+### Features
+
+* **workflow:** 涉及界面的改动先出 HTML 预览确认，做完拿实际界面逐项对比 ([#306](https://github.com/0xBB2B/bb-spec/issues/306)) ([4bdd07b](https://github.com/0xBB2B/bb-spec/commit/4bdd07b2df21c0a5c09403cc7c166f0ff171fb72))
+
 ## [15.0.1](https://github.com/0xBB2B/bb-spec/compare/v15.0.0...v15.0.1) (2026-10-19)
 
 
