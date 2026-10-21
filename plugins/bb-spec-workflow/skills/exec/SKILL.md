@@ -64,7 +64,7 @@ git worktree list --porcelain
   - 多棵 → AskUserQuestion 列出让用户选
   - 无 → 全新任务，按 git-workflow 先确定开分支方式再继续，**禁止把任何产出落在 main 工作区**
 
-现场确定后，在**该目录**下运行 `${CLAUDE_PLUGIN_ROOT}/scripts/bbspec-paths.sh`，`${DOCS_DIR}` 取输出的 `docs_dir`。**多仓库工作区**（`${DOCS_DIR}` 所在的 git 仓库与代码不是同一个，如工作区根不是 git 仓库、`docs/` 与各服务各自独立）：文档仓库 = 输出的 `docs_repo`，下文 PRD / plan 相关的 git 命令都在文档仓库里执行、路径相对文档仓库根；代码相关的 git 命令（测试、`git log -L`、commit）在各代码仓库里分别执行。
+现场确定后，在**该目录**下运行 `${CLAUDE_PLUGIN_ROOT}/scripts/bbspec-paths.sh`，`${DOCS_DIR}` 取输出的 `docs_dir`，`${CACHE_DIR}` 取 `cache_dir`。**多仓库工作区**（`${DOCS_DIR}` 所在的 git 仓库与代码不是同一个，如工作区根不是 git 仓库、`docs/` 与各服务各自独立）：文档仓库 = 输出的 `docs_repo`，下文 PRD / plan 相关的 git 命令都在文档仓库里执行、路径相对文档仓库根；代码相关的 git 命令（测试、`git log -L`、commit）在各代码仓库里分别执行。
 
 `${DOCS_DIR}/plan/` 下主题目录内 `PROGRESS.md` 含非 `done` 行的才是进行中的 plan（完成后整个目录会被删除）；根 `plan/INDEX.md` 和其中登记的主题目录（不论 `PROGRESS.md` 状态）、全部 `done` 的主题目录都是旧版本留下的，不执行，提示用户可以 `git rm -r` 清掉。按参数形式决定行为：
 
@@ -123,7 +123,13 @@ git worktree list --porcelain
 
 - **单个 plan 模式**：当前 plan 完成即停，输出完成简报；若它是本主题最后一个未完成的 plan，按下方「全部完成」收尾
 - **全部执行 + 还有后续组**：并行组须**整组结束**（含阻塞项）后再回步骤 2 推进下一组——下一组可能依赖本组产出
-- **全部执行 + 全部完成**：① 运行全量测试确认无回归 ② 调用 `Skill bb-spec-workflow:doc-update`，参数 `--tail`（收尾模式：让本次 PRD 与 README、AGENTS.md 等文档追平实际交付，其他 PRD 不碰）③ `git rm -r` 删除本主题 plan 目录（多仓库时在文档仓库执行）——plan 内联复述了 PRD，留着会和 PRD 重复，历史靠 git 追溯 ④ 把 doc-update 改动与 plan 删除做一次本地 commit（守卫同步骤 3）⑤ 输出完成简报
+- **全部执行 + 全部完成**：① 运行全量测试确认无回归 ② 界面对比（见下方）③ 调用 `Skill bb-spec-workflow:doc-update`，参数 `--tail`（收尾模式：让本次 PRD 与 README、AGENTS.md 等文档追平实际交付，其他 PRD 不碰）④ `git rm -r` 删除本主题 plan 目录（多仓库时在文档仓库执行）——plan 内联复述了 PRD，留着会和 PRD 重复，历史靠 git 追溯 ⑤ 把 doc-update 改动与 plan 删除做一次本地 commit（守卫同步骤 3）⑥ 输出完成简报
+
+**界面对比**：`${CACHE_DIR}/ui-preview/<本次 PRD 目录名>.html` 存在，说明 `/prd` 阶段用户确认过一份界面预览。这时把实际界面跑起来，和预览逐项对比：布局、文案、每种状态（正常、空数据、加载中、出错）、每个交互操作后的结果。网页或 App 打开对应页面截图；终端界面直接运行命令看输出；截图放 `${CACHE_DIR}/ui-compare/`。
+
+- 全部一致 → 删掉预览页和本次截图
+- 有不一致 → 逐条写进完成简报（预览里是什么、实际是什么），保留预览页和截图供用户查看；修不修由用户决定，要修走 `/revise`
+- 实际界面跑不起来（缺服务、缺账号等）→ 简报里写清卡在哪，保留预览页，请用户自己对比
 
 **遇阻塞时**：在 PROGRESS.md 当前步骤标 `blocked`、"阻塞"区记录原因、告知用户等待指示。并行组内单个 plan 阻塞**不中断整组**——其余 plan 照常跑完各自的 Test→Impl→Review 并 commit，阻塞项汇总进完成简报。
 
@@ -140,6 +146,7 @@ git worktree list --porcelain
 - Review 结论：✅ 全部合规 / ⚠️ 经用户同意改了本次 PRD 的条目
 - 待解决：<阻塞项 / 无>
 - 文档同步：<doc-update 收尾改了哪些文档 / 无>
+- 界面对比：<✅ 与预览一致 / ⚠️ 不一致项（预览 → 实际），附预览页与截图路径 / 没跑起来，卡在 X / 无预览>
 - 下一步：<如"运行 /git-push 开 PR" / "继续执行剩余步骤" / 前端主题："**运行 `/test-webview` 跑一遍网页交互验收**" / "无">
 ```
 
