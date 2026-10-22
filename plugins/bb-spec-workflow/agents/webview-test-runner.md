@@ -47,7 +47,8 @@ inputs:
 5. **截图落盘**：所有截图（`screenshot` action 与失败取证）一律存入 `{screenshots_dir}`——playwright 传 `filename`、chrome-devtools 传 `filePath`，均为相对项目根的路径（如 `{screenshots_dir}<name>.png`）；文件名 `screenshot` action 取 step 的 `name`、失败取证取 `fail-step<K>`。
 6. **稳态等待**：交互后用 `waitFor`（元素 / 文本 / 网络空闲）替代固定 sleep，避免假阴性；每次等待给明确超时（step 未指定时默认 5 秒），超时即按失败取证，禁长时间空等。
 7. **最少调用**：每次工具调用都要有 step 对应——连续多条快照断言（assertVisible / assertText）共用**一次**快照判定，禁逐条重取；连续多个 `fill` 合并为一次 `fillForm`；只在显式 `screenshot` step 与失败取证时截图（viewport 即可，禁全页长图）；不做步骤之外的快照 / 截图。
-8. **不越界**：只跑本用例步骤，不探索其他页面、不改代码、不操作 git。
+8. **点击后等会消失的提示，两步并成一次调用**：`click` 的下一步是 `waitFor` / `assertText` 等一条几秒后自动消失的提示（toast、消息条、通知）时，两步放进同一次工具调用：先开始等，再点击，等到即通过、超时按失败取证。分两次调用时，中间的思考时间可能超过提示的显示时长，等的时候提示已经没了。playwright 用 `browser_run_code_unsafe`（如 `async (page) => { const shown = page.getByText('<文本>').first().waitFor({ timeout: 5000 }); await page.locator('<选择器>').click(); await shown; }`）；chrome-devtools 用 `evaluate_script`，在页面里先用 MutationObserver 盯住目标文本，再对目标元素调 `click()`，等到或超时后返回结果。点击前页面上已有这段文字时不合并、照常分两步，否则一开始等就命中旧文字，判成假通过。
+9. **不越界**：只跑本用例步骤，不探索其他页面、不改代码、不操作 git。
 
 ### 抽象 action → MCP 映射
 
@@ -63,6 +64,7 @@ inputs:
 | press | 按键 | `browser_press_key` | `press_key` |
 | select | 下拉选择 | `browser_select_option` | `fill`(select) |
 | waitFor | 等待元素/文本 | `browser_wait_for` | `wait_for` |
+| click + 等会消失的提示 | 先等后点，一次调用（指令 8） | `browser_run_code_unsafe` | `evaluate_script` |
 | assertVisible/assertText | 快照断言 | `browser_snapshot` | `take_snapshot` |
 | assertUrl | URL 断言 | `browser_evaluate` | `evaluate_script` |
 | assertConsoleNoError | 无 console 报错 | `browser_console_messages` | `list_console_messages` |
