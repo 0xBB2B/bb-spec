@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.1.1](https://github.com/0xBB2B/bb-spec/compare/v15.1.0...v15.1.1) (2026-10-22)
+
+
+### Bug Fixes
+
+* **workflow:** 网页用例点击后等会消失的提示时，先等后点并成一次调用 ([#308](https://github.com/0xBB2B/bb-spec/issues/308)) ([3f9f3ba](https://github.com/0xBB2B/bb-spec/commit/3f9f3bab4a8dc3b9e745ef936120ad00982f1d8d))
+
 ## [15.1.0](https://github.com/0xBB2B/bb-spec/compare/v15.0.1...v15.1.0) (2026-10-21)
 
 
