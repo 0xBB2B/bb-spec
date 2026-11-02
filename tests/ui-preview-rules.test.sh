@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 界面预览外壳规则校验：prd/revise/exec 的 SKILL 文案与 validate.sh 对外壳文件的检查
+# 界面预览规则校验：prototype 写明做法，prd/revise/exec 只调用它，以及 validate.sh 对外壳文件的检查
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -13,20 +13,56 @@ fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 
 has() {
   local skill="$1" text="$2"
-  if grep -qF -- "$text" "$SKILLS/$skill/SKILL.md"; then pass; else fail "${skill} 缺少：${text}"; fi
+  if grep -qF -- "$text" "$SKILLS/$skill/SKILL.md" 2>/dev/null; then pass; else fail "${skill} 缺少：${text}"; fi
 }
 
 lacks() {
   local skill="$1" text="$2"
-  if grep -qF -- "$text" "$SKILLS/$skill/SKILL.md"; then fail "${skill} 不应含：${text}"; else pass; fi
+  if grep -qF -- "$text" "$SKILLS/$skill/SKILL.md" 2>/dev/null; then fail "${skill} 不应含：${text}"; else pass; fi
 }
 
-echo "[prd、revise 用外壳出原型]"
+PROTO="$SKILLS/prototype/SKILL.md"
+
+echo "[prototype 的 frontmatter]"
+FM="$(awk '/^---[[:space:]]*$/{n++; next} n==1{print} n>=2{exit}' "$PROTO" 2>/dev/null || true)"
+if printf '%s\n' "$FM" | grep -qxF 'name: prototype'; then pass; else fail "prototype frontmatter 的 name 应是 prototype"; fi
+if printf '%s\n' "$FM" | grep -qF 'disable-model-invocation'; then fail "prototype frontmatter 不应含 disable-model-invocation"; else pass; fi
+
+echo "[prototype 写明原型做法]"
+for t in '${CLAUDE_PLUGIN_ROOT}/templates/ui-preview-shell.html' 'PROTOTYPE-START' 'PROTOTYPE-END' '外壳一律不改' \
+  '框里禁止放说明或切换控件' '`note`' '`fake`' '`openQuestions`' '`css`' '照实还原' '默认页面样式' \
+  '`schemes`' '不拆成多个文件' '把没选中的方案删掉' 'terminal: true' 'data-go' 'open <文件路径>' \
+  '明确说"可以"' '不写 PRD' '--file' '--compare' '和原型框里的内容逐项对比' '不参与对比' \
+  '假数据和假操作' 'ui-compare/' '没跑起来'; do
+  has prototype "$t"
+done
+
+echo "[prototype 正文的模式、取目录和文件位置]"
+for t in '| `/prototype <主题>` |' '| `<主题> --file <路径>` |' '| `--compare <路径>` |' \
+  'scripts/bbspec-paths.sh' '`${CACHE_DIR}/.gitignore`' '会话临时目录' \
+  '`${CACHE_DIR}/ui-preview/<YYYY-MM-DD>.<主题>.html`' '文件已存在时直接改它' \
+  '不改产品代码' '写了 `css` 后默认页面样式完全不生效' \
+  '外壳的左栏、框上方提示、底部说明不参与对比' '与实际界面不同不算不一致' '- 不一致：' '- 没跑起来：'; do
+  has prototype "$t"
+done
+if awk '/^## /{sec=$0} /bbspec-paths.sh/{print sec}' "$PROTO" 2>/dev/null | grep -qF '两种模式都先做'; then pass; else fail "prototype 取缓存目录要放在各模式之前"; fi
+
+echo "[prd、revise、exec 的调用写法和文件名]"
+has prd 'Skill bb-spec-workflow:prototype'
+has prd '--file ${CACHE_DIR}/ui-preview/<YYYY-MM-DD>.<主题>.html'
+has revise 'Skill bb-spec-workflow:prototype'
+has revise '--file ${CACHE_DIR}/ui-preview/revise-<YYYY-MM-DD>-<主题>.html'
+for s in exec revise; do
+  has "$s" 'Skill bb-spec-workflow:prototype'
+  has "$s" '--compare <预览页路径>'
+done
+lacks prd '同步骤 3'
+
+echo "[prd、revise 调用 prototype，不含做法细节]"
 for s in prd revise; do
-  for t in '${CLAUDE_PLUGIN_ROOT}/templates/ui-preview-shell.html' 'PROTOTYPE-START' 'PROTOTYPE-END' '外壳一律不改' '`note`' '`fake`' '`openQuestions`' \
-    '框里禁止放说明或切换控件' '`schemes`' '不拆成多个文件' '把没选中的方案删掉' \
-    'terminal: true' 'data-go'; do
-    has "$s" "$t"
+  has "$s" 'bb-spec-workflow:prototype'
+  for t in 'PROTOTYPE-START' 'terminal: true' '把没选中的方案删掉' '框里禁止放说明或切换控件' 'templates/ui-preview-shell.html'; do
+    lacks "$s" "$t"
   done
 done
 
@@ -34,17 +70,16 @@ echo "[prd、revise 的外壳不写成产品功能]"
 has prd '外壳不写成产品功能'
 has revise '外壳不算'
 
-echo "[exec、revise 只比框里的内容]"
+echo "[exec、revise 调用对比模式，不含对比细节]"
 for s in exec revise; do
-  for t in '和预览框里的内容逐项对比' '不参与对比' '假数据和假操作'; do
-    has "$s" "$t"
-  done
+  has "$s" '--compare'
+  for t in '不参与对比' '假数据和假操作'; do lacks "$s" "$t"; done
 done
 
-echo "[prd、revise 不含过期表述]"
-for s in prd revise; do lacks "$s" 'CSS 和 JS 都写在文件里'; done
+echo "[exec 保留三种处理]"
+for t in '全部一致' '有不一致' '实际界面跑不起来'; do has exec "$t"; done
 
-echo "[外壳文件存在]"
+echo "[prototype 引用的外壳文件]"
 if [[ -f "$ROOT/$SHELL_REL" ]]; then pass; else fail "外壳文件不存在：$SHELL_REL"; fi
 
 echo "[validate.sh 对外壳文件的检查]"
