@@ -80,7 +80,7 @@ ocr review --from <基线> --to <当前分支> --format json --audience agent \
 
 - `<基线>` 用步骤 4 选定的基线，不写死 `main`：ocr 审的是 `merge-base(from, to)..to`，rebase 之后正好是本分支自己的改动
 - `<cache_dir>` 取 `${CLAUDE_PLUGIN_ROOT}/scripts/bbspec-paths.sh` 输出的 `cache_dir`；`<branch>` 中的 `/` 替换为 `__`。写入前确认 `<cache_dir>/.gitignore` 存在且内容为单行 `*`，不存在则连目录一并创建
-- 用 Bash 的 `run_in_background` 运行、等完成通知：一次审查可能超过 10 分钟，前台调用会被超时掐断
+- 用 Bash 的 `run_in_background` 运行，再用前台 Bash 循环等 ocr 进程退出（不看输出文件是否出现），每次前台调用最多等 2 分钟，没退出就再等一次：一次审查可能超过 10 分钟，直接前台运行会被超时掐断
 
 | 结果 | 处理 |
 |---|---|

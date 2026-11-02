@@ -143,7 +143,7 @@
 **附帶產物**
 
 - **5 個編排 subagent**(被上述環節驅動):`test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer`
-- **4 個被動 hook**(自動生效):攔截 npm/yarn、攔截 main commit、相依版本自檢、Stop 四項自檢
+- **4 個被動 hook**(自動生效):攔截 npm/yarn、攔截 main commit、相依版本自檢、等背景腳本跑完
 
 ---
 
@@ -253,6 +253,7 @@ claude plugin update bb-spec-workflow@0xbb2b   # 在終端機裡更新某個子 
 | `block-non-bun-pm` | bb-spec-frontend | PreToolUse(Bash) | 攔截 `npm` / `yarn` / `pnpm` 的套件管理動作,強制 `bun`;既有專案已存在匹配 lockfile(如 `package-lock.json`)時放行 |
 | `git-workflow-guard` | bb-spec-core | PreToolUse(Bash) | 攔截 `main` / `master` 分支的 `git commit`;其餘 git 流程動作(開分支 / push / worktree / merge / PR)放行並注入 git-workflow 紀律與即時 git 狀態 |
 | `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | 編輯相依檔案後注入「先查官方最新版」自檢提示 |
+| `background-script-wait` | bb-spec-core | Stop | 發現本會話沒提示過的執行中背景命令時提示一次:Claude 用前景迴圈等完會結束的腳本,常駐服務不等 |
 ---
 
 ## 🧪 測試
@@ -291,7 +292,7 @@ base_dir: my/bb  # → my/bb/docs/{prd,plan,test}/ 與 my/bb/.cache/;填 ./ 則�
 |---|---|
 | 暫時允許 npm / yarn / pnpm | 暫時停用 `bb-spec-frontend` |
 | 暫時允許 main commit | 暫時停用 `bb-spec-core` |
-| 跳過 Stop 自檢 | 目前無開關——這是核心鐵律,不建議跳過 |
+| 跳過背景腳本等待提示 | 暫時停用 `bb-spec-core` |
 
 ---
 

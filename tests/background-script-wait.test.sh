@@ -216,6 +216,39 @@ echo "[hooks.json 注册]"
 if jq -e '[.hooks.Stop[]?.hooks[]?.command // empty | select(contains("background-script-wait.sh"))] | length > 0' "$HOOKS_JSON" >/dev/null 2>&1; then pass; else fail "Stop 下应注册 background-script-wait.sh"; fi
 if jq -e '[.hooks.SubagentStop[]?.hooks[]?.command // empty | select(contains("background-script-wait.sh"))] | length == 0' "$HOOKS_JSON" >/dev/null 2>&1; then pass; else fail "SubagentStop 下不应注册 background-script-wait.sh"; fi
 
+echo "[说明文档同步]"
+GIT_PUSH_SKILL="$ROOT/plugins/bb-spec-workflow/skills/git-push/SKILL.md"
+if grep -qF "每次前台调用最多等 2 分钟" "$GIT_PUSH_SKILL"; then pass; else fail "git-push SKILL 应写明每次前台调用最多等 2 分钟"; fi
+if grep -qF "循环等 ocr 进程退出" "$GIT_PUSH_SKILL"; then pass; else fail "git-push SKILL 应等 ocr 进程退出"; fi
+if grep -qF "等完成通知" "$GIT_PUSH_SKILL"; then fail "git-push SKILL 不应再靠等完成通知"; else pass; fi
+
+for f in "$ROOT/plugins/bb-spec-core/.claude-plugin/plugin.json" "$ROOT/.claude-plugin/marketplace.json"; do
+  if grep -qF "background-script-wait" "$f"; then pass; else fail "$f 应提到 background-script-wait"; fi
+  if grep -qF "三个被动 hook" "$f"; then pass; else fail "$f 应写三个被动 hook"; fi
+  if grep -qF "两个被动 hook" "$f"; then fail "$f 不应再写两个被动 hook"; else pass; fi
+done
+
+check_readme() {
+  local file="$1" list_marker="$2" stop_item="$3" new_item="$4" total="$5" core="$6" stale_row="$7" new_row="$8"
+  local list_line
+  list_line="$(grep -F "$list_marker" "$ROOT/$file" | head -1)"
+  if grep -q '^| `background-script-wait` |' "$ROOT/$file"; then pass; else fail "$file 钩子表应有 background-script-wait 行"; fi
+  if [[ "$list_line" == *"$stop_item"* ]]; then fail "$file 被动 hook 列表仍含 Stop 自检项"; else pass; fi
+  if [[ "$list_line" == *"$new_item"* ]]; then pass; else fail "$file 被动 hook 列表应含 $new_item"; fi
+  if [[ "$list_line" == *"$total"* ]]; then pass; else fail "$file 被动 hook 列表数量应为 $total"; fi
+  local items
+  items="$(LINE="$list_line" python3 -c 'import os, re; print(len(re.split("、|, ", os.environ["LINE"].split("):", 1)[1])))')"
+  if [[ "$items" == "4" ]]; then pass; else fail "$file 被动 hook 列表实际应有 4 项，现在是 $items 项"; fi
+  if grep -F '**bb-spec-core**' "$ROOT/$file" | grep -qF "$core"; then pass; else fail "$file bb-spec-core 钩子数量应为 $core"; fi
+  if grep -qF "$stale_row" "$ROOT/$file"; then fail "$file 开关速查仍有 Stop 自检行"; else pass; fi
+  if grep -qF "$new_row" "$ROOT/$file"; then pass; else fail "$file 开关速查应有 $new_row"; fi
+}
+check_readme README.md "被动 hook**" "Stop 四项自检" "等后台脚本跑完" "4 个被动 hook" "3 个被动 hook" "跳过 Stop 自检" "跳过后台脚本等待提示"
+check_readme README.zh-TW.md "被動 hook**" "Stop 四項自檢" "等背景腳本跑完" "4 個被動 hook" "3 個被動 hook" "跳過 Stop 自檢" "跳過背景腳本等待提示"
+check_readme README.en.md "passive hooks**" "Stop four-point self-check" "wait for background scripts to finish" "4 passive hooks" "3 passive hooks" "Skip the Stop self-check" "Skip the background-script wait prompt"
+check_readme README.ja.md "受動 hook**" "Stop 時の 4 項目セルフチェック" "バックグラウンドスクリプトの完了待ち" "4 つの受動 hook" "3 つの受動 hook" "Stop セルフチェックをスキップ" "バックグラウンドスクリプト待ちの通知をスキップ"
+check_readme README.ko.md "수동 hook**" "Stop 시 4항목 자가 점검" "백그라운드 스크립트 완료 대기" "4개 수동 hook" "3개 수동 hook" "Stop 자가 점검 건너뛰기" "백그라운드 스크립트 대기 알림 건너뛰기"
+
 echo ""
 echo "通过 ${PASS}，失败 ${FAIL}"
 [[ "$FAIL" -eq 0 ]]
