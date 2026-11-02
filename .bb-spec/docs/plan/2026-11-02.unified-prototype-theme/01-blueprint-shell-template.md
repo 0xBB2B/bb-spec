@@ -19,6 +19,7 @@ description: 外壳改成蓝图样式，内置默认页面样式，底部高度�
 - 框里的任何样式都不改变外壳，外壳样式也不进入框里，包括强制生效的全局规则。
 - 终端固定配色：底色 `#0b1730`，文字 `#d7e6ff`，绿、黄、蓝、红分别是 `#7ee7c1`、`#ffd479`、`#7fd4ff`、`#ff8f8f`。
 - 底部高度等于这份原型所有画面里最长说明的高度，说明最长的画面下方只留 8 像素。切换时底部和框的高度都不变。最长说明超过窗口高度 30% 时，底部高 30%，内部滚动。窗口大小改变时重新计算，当前画面的说明不变。
+- 填写内容写错类型时（`note`、`fake`、`openQuestions` 不是数组）框里显示错误原因，并写明是哪个页面。
 - 外壳现有行为全部保留：框的隔离、链接拦截、填写出错提示、多方案、名字不冲突、长文本不破坏布局。
 
 ## 涉及文件
@@ -383,6 +384,14 @@ const PROTOTYPE = {
     const hasChoice = schemes.length > 1;
     const incomplete = hasChoice && schemes.find((scheme) => !scheme.note || !scheme.desc);
     if (incomplete) throw new Error(`${incomplete.label} 缺少 note 或 desc`);
+    const requireList = (value, where) => {
+      if (value !== undefined && !Array.isArray(value)) throw new Error(`${where} 要写成数组`);
+    };
+    requireList(PROTOTYPE.openQuestions, 'openQuestions');
+    for (const page of pages) {
+      requireList(page.fake, `「${page.name}」的 fake`);
+      for (const state of page.states) requireList(state.note, `「${page.name} · ${state.name}」的 note`);
+    }
     const el = (id) => document.getElementById(id);
     const schemeName = (scheme) => `${scheme.label}：${scheme.desc}`;
     const current = { scheme: schemes[0], page: pages[0], state: pages[0].states[0] };
@@ -418,7 +427,7 @@ const PROTOTYPE = {
     function frameDoc(page, state, scheme) {
       const html = differsByScheme(state) ? state.html[scheme.id] : state.html;
       if (html === undefined) throw new Error(`「${page.name} · ${state.name}」缺少${scheme.label} 的内容`);
-      const css = page.terminal ? TERMINAL_CSS : PROTOTYPE.css || DEFAULT_PAGE_CSS;
+      const css = page.terminal ? TERMINAL_CSS : PROTOTYPE.css?.trim() || DEFAULT_PAGE_CSS;
       const body = page.terminal ? `<pre>${html}</pre>` : html;
       return `<!doctype html><html><head><meta charset="utf-8"><style>${css}</style></head><body>${body}${FRAME_BRIDGE}</body></html>`;
     }
@@ -478,9 +487,9 @@ const PROTOTYPE = {
     document.title = `${PROTOTYPE.title} · 原型`;
     el('sideTitle').textContent = PROTOTYPE.title;
     el('sideVersion').textContent = `第 ${PROTOTYPE.version} 版 · 这一栏上线后不存在`;
-    window.addEventListener('resize', fitDock);
     render();
     fitDock();
+    window.addEventListener('resize', fitDock);
   })();
 </script>
 </body>
