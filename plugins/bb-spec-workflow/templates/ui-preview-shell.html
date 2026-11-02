@@ -179,13 +179,14 @@
      id、name：页面标识和名字。fake：这页只在原型里成立的内容（假数据、假操作）。
      stateLabel：第二组按钮的名字，多步交互写"步骤"，其他情况不写。
      terminal：终端界面写 true。这时 html 写终端里的文字，颜色用
-       <span class="g">绿</span>、<span class="y">黄</span>、<span class="b">蓝</span>。
+       <span class="g">绿</span>、<span class="y">黄</span>、<span class="b">蓝</span>、<span class="r">红</span>。
        终端文字里的 < 和 & 要写成 &lt; 和 &amp;，否则会被当成标签吞掉。
      states：这页的状态或步骤，每项有 id、name、note（说明，每条一句）、html（框里的内容）。
        html 各方案相同时写字符串；不同时写 { 方案id: 内容 }，比如 { a: '...', b: '...' }，每个方案都要写。
      note、fake、openQuestions 都是数组，每条一句，没内容写 []。
 
    框里的跳转：给元素加 data-go="页面id:状态id"，点击后框和左栏一起切换。
+   框里的普通链接和表单不会跳走，alert、localStorage 也用不了，这些效果都用 data-go 切换状态来演示。
    html 里需要 script 结束标签时，斜杠前要加反斜杠，写成 <\/script>，否则这段脚本会提前结束。
 */
 const orderRows = [
@@ -339,7 +340,7 @@ const PROTOTYPE = {
     const TERMINAL_CSS = `
       body { box-sizing: border-box; margin: 0; min-height: 100vh; padding: 8px; background: #15181e; }
       pre { width: 80ch; max-width: 100%; margin: 0; color: #d7dde4; font: 14px/1.5 Menlo, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
-      .g { color: #7ee787; } .y { color: #e3b341; } .b { color: #79c0ff; }
+      .g { color: #7ee787; } .y { color: #e3b341; } .b { color: #79c0ff; } .r { color: #ff7b72; }
     `;
     const FRAME_BRIDGE = `<script>document.addEventListener('click', (e) => {
       if (e.target.closest('a[href]')) e.preventDefault();

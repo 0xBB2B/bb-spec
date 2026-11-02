@@ -393,6 +393,7 @@ group('自定义数据：终端页面', () => {
   ok(s.includes('80ch'), '终端 srcdoc 含 80ch');
   ok(s.includes('box-sizing: border-box'), '终端 srcdoc 含 box-sizing: border-box');
   ok(s.includes('monospace'), '终端 srcdoc 用等宽字体');
+  ok(/\.r\s*\{\s*color:/.test(s), '终端 srcdoc 有红色');
   ok(s.includes('TERM_LINE_ONE'), '终端内容');
   ok(!s.includes('CSS_MARK_XYZ'), '终端 srcdoc 不含 PROTOTYPE.css');
   ok(s.includes('padding: 8px'), '终端 srcdoc 有 padding: 8px');
