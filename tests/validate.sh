@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 结构性校验：多 plugin 结构 + marketplace 一致性 + agent / skill / hook 格式完整性 + 安全基线 + 路径泄露检测
+# 结构性校验：多 plugin 结构 + marketplace 一致性 + agent / skill / hook 格式完整性 + 安全基线 + 模板引用 + 路径泄露检测
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -187,10 +187,26 @@ done
 
 # ─────────────────────────────────────────────
 echo ""
+echo "=== 模板引用检测 ==="
+while IFS= read -r hit; do
+  [[ -z "$hit" ]] && continue
+  file="${hit%%:*}"
+  tpl="${hit#*:}"
+  tpl="${tpl##*/templates/}"
+  skill="$(basename "$(dirname "$file")")"
+  plugin_dir="${file%/skills/*}"
+  if [[ -f "$plugin_dir/templates/$tpl" ]]; then
+    pass
+  else
+    fail "skill $skill 引用的模板 templates/$tpl 不存在"
+  fi
+done < <(grep -rHo '${CLAUDE_PLUGIN_ROOT}/templates/[A-Za-z0-9._-]*' "$PLUGINS_DIR" --include='SKILL.md' 2>/dev/null || true)
+
+echo ""
 echo "=== 路径泄露检测 ==="
 echo "[个人路径]"
 leaked=$(grep -rn '/Users/\|/home/' "$PLUGINS_DIR" \
-  --include='*.md' --include='*.sh' --include='*.json' \
+  --include='*.md' --include='*.sh' --include='*.json' --include='*.html' \
   2>/dev/null || true)
 
 if [[ -z "$leaked" ]]; then

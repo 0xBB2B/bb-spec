@@ -1,3 +1,5 @@
+@AGENTS.md
+
 # CLAUDE.md
 
 ## Commit Message 规范
