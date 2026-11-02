@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.4.0](https://github.com/0xBB2B/bb-spec/compare/v15.3.0...v15.4.0) (2026-11-02)
+
+
+### Features
+
+* **hooks:** 后台脚本跑完前 Claude 不结束回合，减少提前的完成通知 ([#314](https://github.com/0xBB2B/bb-spec/issues/314)) ([ba75ebd](https://github.com/0xBB2B/bb-spec/commit/ba75ebdb81fb5224bd708dd53d388fc430c0f69d))
+
 ## [15.3.0](https://github.com/0xBB2B/bb-spec/compare/v15.2.0...v15.3.0) (2026-11-02)
 
 
