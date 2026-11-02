@@ -261,7 +261,7 @@ const SCH = [
   { id: 'c', label: '方案 C', desc: '列表', note: 'C取舍' },
 ];
 const mk = (n, over) => {
-  const schemes = SCH.slice(0, n);
+  const schemes = SCH.slice(0, n).map((scheme) => ({ ...scheme }));
   return Object.assign({
     title: '自定义标题',
     version: 3,
