@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.3.0](https://github.com/0xBB2B/bb-spec/compare/v15.2.0...v15.3.0) (2026-11-02)
+
+
+### Features
+
+* **workflow:** 原型统一蓝图样式，新增 /prototype 专门处理原型设计 ([#312](https://github.com/0xBB2B/bb-spec/issues/312)) ([c6fe827](https://github.com/0xBB2B/bb-spec/commit/c6fe8276441471e16cdaf4763694fa45f86656c2))
+
 ## [15.2.0](https://github.com/0xBB2B/bb-spec/compare/v15.1.1...v15.2.0) (2026-11-02)
 
 
