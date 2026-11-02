@@ -47,6 +47,25 @@ for t in '| `/prototype <主题>` |' '| `<主题> --file <路径>` |' '| `--comp
 done
 if awk '/^## /{sec=$0} /bbspec-paths.sh/{print sec}' "$PROTO" 2>/dev/null | grep -qF '两种模式都先做'; then pass; else fail "prototype 取缓存目录要放在各模式之前"; fi
 
+echo "[prototype 给了文件时取缓存目录的写法和顺序]"
+T_FILE='给了 `--file` 或 `--compare`、且这个文件在 `ui-preview/` 目录下的，`${CACHE_DIR}` 改取这个 `ui-preview/` 的上一级'
+T_TEMP='其余情况下，项目没有 `.bb-spec/` 和 `.bb-spec.yaml` 时'
+T_IGNORE='确保 `${CACHE_DIR}/.gitignore` 存在'
+has prototype "$T_FILE"
+has prototype "$T_TEMP"
+lacks prototype '改取这个文件所在目录的上一级'
+text_pos() {
+  awk -v t="$2" '{ i = index($0, t); if (i > 0) { print NR * 100000 + i; exit } }' "$1" 2>/dev/null
+}
+P_FILE="$(text_pos "$PROTO" "$T_FILE")"
+P_TEMP="$(text_pos "$PROTO" "$T_TEMP")"
+P_IGNORE="$(text_pos "$PROTO" "$T_IGNORE")"
+if [[ -n "$P_FILE" && -n "$P_TEMP" && -n "$P_IGNORE" && "$P_FILE" -le "$P_TEMP" && "$P_TEMP" -le "$P_IGNORE" ]]; then
+  pass
+else
+  fail "prototype 里应依次出现：给了文件的取法、两者都没给的临时目录、.gitignore 那句"
+fi
+
 echo "[prd、revise、exec 的调用写法和文件名]"
 has prd 'Skill bb-spec-workflow:prototype'
 has prd '--file ${CACHE_DIR}/ui-preview/<YYYY-MM-DD>.<主题>.html'

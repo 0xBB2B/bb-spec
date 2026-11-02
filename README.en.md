@@ -44,7 +44,7 @@
 /plugin install bb-spec-workflow@0xbb2b
 ```
 
-The 5 commands you type day to day:
+The 6 commands you type day to day:
 
 | Command | What it does | When |
 |---|---|---|

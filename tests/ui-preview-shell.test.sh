@@ -837,6 +837,12 @@ group('默认页面样式', () => {
     DEFAULT_MARKS.forEach((m) => ok(a.srcdoc().includes(m), `${label}：切到别的页面仍含默认样式 ${m}`));
   });
 
+  const rule = (src, sel) => { const m = new RegExp('(?:^|[}\\s])' + sel + '\\s*\\{([^}]*)\\}').exec(src); return m ? m[1] : ''; };
+  const base = sample.srcdoc();
+  ok(/background:\s*#f5f7fa/.test(rule(base, 'body')), '默认页面 body 底色 background: #f5f7fa');
+  ok(/background:\s*#fff\b/.test(rule(base, '\\.card')), '默认页面 .card 背景 background: #fff');
+  ok(/background:\s*#2563eb/.test(rule(base, 'button')), '默认页面 button 背景 background: #2563eb');
+
   const own = load(mk(2));
   ok(own.srcdoc().includes('CSS_MARK_XYZ'), '写了 css 时 srcdoc 含项目样式');
   DEFAULT_MARKS.forEach((m) => ok(!own.srcdoc().includes(m), `写了 css 时 srcdoc 不含默认样式 ${m}`));

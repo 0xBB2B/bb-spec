@@ -13,7 +13,7 @@ allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 
 ## 两种模式都先做
 
-运行 `${CLAUDE_PLUGIN_ROOT}/scripts/bbspec-paths.sh`，`${CACHE_DIR}` 取输出的 `cache_dir`。项目没有 `.bb-spec/` 和 `.bb-spec.yaml` 时，`${CACHE_DIR}` 改用会话临时目录，不创建 `.bb-spec/`。写入 `${CACHE_DIR}` 前确保 `${CACHE_DIR}/.gitignore` 存在：不存在就连目录一起创建，内容写单行 `*`，把整个缓存目录排除出 git。
+运行 `${CLAUDE_PLUGIN_ROOT}/scripts/bbspec-paths.sh`，`${CACHE_DIR}` 取输出的 `cache_dir`。给了 `--file` 或 `--compare`、且这个文件在 `ui-preview/` 目录下的，`${CACHE_DIR}` 改取这个 `ui-preview/` 的上一级。其余情况下，项目没有 `.bb-spec/` 和 `.bb-spec.yaml` 时，`${CACHE_DIR}` 改用会话临时目录，不创建 `.bb-spec/`。写入 `${CACHE_DIR}` 前确保 `${CACHE_DIR}/.gitignore` 存在：不存在就连目录一起创建，内容写单行 `*`，把整个缓存目录排除出 git。
 
 ## 模式
 
