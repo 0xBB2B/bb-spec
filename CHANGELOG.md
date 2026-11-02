@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.2.0](https://github.com/0xBB2B/bb-spec/compare/v15.1.1...v15.2.0) (2026-11-02)
+
+
+### Features
+
+* **workflow:** 所有原型用统一外壳，分开正式页面和设计说明 ([#310](https://github.com/0xBB2B/bb-spec/issues/310)) ([c5910a3](https://github.com/0xBB2B/bb-spec/commit/c5910a3d180505893502e146c0537192f19e800a))
+
 ## [15.1.1](https://github.com/0xBB2B/bb-spec/compare/v15.1.0...v15.1.1) (2026-10-22)
 
 
