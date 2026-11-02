@@ -49,6 +49,7 @@ The 5 commands you type day to day:
 | Command | What it does | When |
 |---|---|---|
 | `/prd` | Challenge → clarify → break down; writes the PRD + AGENTS.md, you read and approve once, then it auto-runs plan → exec → doc-update | New requirement, or changing how a merged feature behaves |
+| `/prototype` | Build an HTML prototype in the shared blueprint shell and iterate until you approve it; `/prd` and `/revise` call it for UI changes | You want to see a design first, without the full requirement flow |
 | `/revise` | Diagnose by root cause → targeted fix → regression check, then auto-runs doc-update | A bug, or results that don't match expectations |
 | `/git-push` | pre-review self-check + push + open PR | Ready to open a PR |
 | `/exec` | Resume the plan from where it stopped | After an interruption or `/clear` |
