@@ -8,3 +8,6 @@
 | preview-shell | 所有原型共用的 HTML 外框，由左栏、框上方提示、底部说明组成，这些内容都不做进产品 | 简体「外壳」「原型外壳」 |
 | preview-frame | 外壳中间显示正式页面的区域，只有这里的内容要做进产品 | 简体「框」 |
 | default-page-style | 项目没有自己的设计时，框里使用的统一页面样式；填写了项目样式后完全不生效 | 简体「默认页面样式」 |
+| turn | Claude 从开始工作到把控制权交还给用户的一段连续过程 | 简体「回合」 |
+| background-script | Claude 用后台方式启动、运行一段时间后会自己结束的命令，如测试、构建、审查 | 简体「后台脚本」 |
+| long-running-service | Claude 用后台方式启动、不会自己结束的命令，如 dev server、watch、`tail -f` | 简体「常驻服务」 |
