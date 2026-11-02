@@ -10,18 +10,19 @@ description: 随插件发布统一的原型外壳文件，并用测试保住它�
 
 ## 业务规则（来源：PRD 01-preview-shell）
 
-外壳分三块：左栏在左，框在右上，底部说明在框的下方。框里的内容才要做进产品，框里与外壳完全隔开，框里读不到「设计说明」「被设计的页面」「只在原型里成立」「当前看的是」这些文字。
+外壳分三块：左栏在左，框在右上，底部说明在框的下方。框里的内容才要做进产品，框里与外壳完全隔开，框里读不到「设计说明」「被设计的页面」「只在原型里成立」「当前看的是」这些文字，框里的链接和表单不会让框离开当前页面。
 
 - 外观：深色外壳、琥珀色竖线分隔左右、选中项琥珀底、框周围浅灰；外壳颜色不随框里内容变化。
 - 左栏顶部：标签「设计说明 · 不属于页面」、原型标题、「第 N 版 · 这一栏上线后不存在」。下面是「切换要看的内容」，分「页面」和「状态」两组；多步交互页面的第二组叫「步骤」。
 - 框上方：左边「▼ 被设计的页面：只有这个框里的内容要实现」，右边「<页面名> · <状态名>」。
-- 底部：标签「设计说明 · 不属于页面」和「这一块上线后不存在」，三列标题依次是「这个画面的说明」「只在原型里成立」「还没确认的问题」。后两列没内容时显示「无」。
+- 底部：标签「设计说明 · 不属于页面」和「这一块上线后不存在」，三列标题依次是「这个画面的说明」「只在原型里成立」「还没确认的问题」。后两列没内容或漏写时显示「无」。
 - 底部固定占窗口高度 26%，切换时框高度不变，说明太长只在底部内部滚动。
 - 点左栏按钮，框、框上方提示、底部说明都更新。框里的页面自己跳转时，这三处同步更新，当前方案保持不变。
-- 2 个及以上方案：左栏最上方显示单独描边的切换框，标题「有 N 个方案，点这里切换对比」；框上方提示语后显示「当前看的是 <方案名>」。切方案时页面和状态不变。只有 1 个方案时，切换框和方案标签都不显示。
+- 2 个及以上方案：左栏在标题下方、其他切换按钮上方显示单独描边的切换框，标题「有 N 个方案，点这里切换对比」；框上方提示语后显示「当前看的是 <方案名>」。切方案时页面和状态不变。只有 1 个方案时，切换框和方案标签都不显示。
 - 多方案时，「这个画面的说明」第一条写当前方案的取舍；各方案没差别的画面写「各方案在这个画面上一样。」
 - 多方案时，「还没确认的问题」第一条自动生成：2 个方案写「选方案 A 还是方案 B」，3 个及以上写「选方案 A、方案 B 还是方案 C」。
 - 终端界面：内容从左上角开始（8 像素边距），底色铺满框，等宽字体，80 列换行，内容没超出时没有滚动条。
+- 原型内容填错时（语法错误、某个方案缺内容等），框里显示「原型填写有误，这不是正式页面。」和错误原因，框上方右边显示「原型填写有误」，不出现空白页。填写内容用了和外壳内部相同的名字时，原型照常显示。
 - 一个 HTML 文件，双击打开，不联网、不构建，不引用外部资源。窗口窄于 960 像素时横向滚动，三块布局不变。
 
 ## 涉及文件
@@ -118,11 +119,14 @@ description: 随插件发布统一的原型外壳文件，并用测试保住它�
     justify-content: space-between;
     gap: 16px;
     padding: 5px 2px;
+    overflow: hidden;
     color: var(--frame-text);
     font-size: 12px;
+    white-space: nowrap;
   }
   .frame-bar strong { font-weight: 600; }
-  .frame-left { display: flex; align-items: center; gap: 8px; }
+  .frame-left { display: flex; flex: none; align-items: center; gap: 8px; }
+  #frameTitle { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   iframe {
     display: block;
     width: 100%;
@@ -155,7 +159,7 @@ description: 随插件发布统一的原型外壳文件，并用测试保住它�
       <h1 id="sideTitle"></h1>
       <p id="sideVersion"></p>
     </div>
-    <div class="scheme" id="schemeBox">
+    <div class="scheme" id="schemeBox" hidden>
       <h2 id="schemeHint"></h2>
       <div class="pick" id="schemePick"></div>
     </div>
@@ -172,11 +176,11 @@ description: 随插件发布统一的原型外壳文件，并用测试保住它�
     <div class="frame-bar">
       <div class="frame-left">
         <strong>▼ 被设计的页面：只有这个框里的内容要实现</strong>
-        <span class="tag" id="frameScheme"></span>
+        <span class="tag" id="frameScheme" hidden></span>
       </div>
       <span id="frameTitle"></span>
     </div>
-    <iframe id="stage" title="被设计的页面"></iframe>
+    <iframe id="stage" title="被设计的页面" sandbox="allow-scripts"></iframe>
     <section class="dock" aria-label="页面说明">
       <div class="dock-head">
         <span class="tag">设计说明 · 不属于页面</span>
@@ -189,6 +193,15 @@ description: 随插件发布统一的原型外壳文件，并用测试保住它�
       </div>
     </section>
   </main>
+
+<script>
+  window.addEventListener('error', (e) => {
+    window.prototypeBroken = true;
+    const reason = String(e.message).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    document.getElementById('frameTitle').textContent = '原型填写有误';
+    document.getElementById('stage').srcdoc = `<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0;padding:16px;font:14px/1.6 Menlo,Consolas,monospace;color:#b42318;background:#fff"><strong>原型填写有误，这不是正式页面。</strong><br>${reason}</body></html>`;
+  });
+</script>
 
 <script>
 /* PROTOTYPE-START
@@ -204,8 +217,10 @@ description: 随插件发布统一的原型外壳文件，并用测试保住它�
      stateLabel：第二组按钮的名字，多步交互写"步骤"，其他情况不写。
      terminal：终端界面写 true。这时 html 写终端里的文字，颜色用
        <span class="g">绿</span>、<span class="y">黄</span>、<span class="b">蓝</span>。
+       终端文字里的 < 和 & 要写成 &lt; 和 &amp;，否则会被当成标签吞掉。
      states：这页的状态或步骤，每项有 id、name、note（说明，每条一句）、html（框里的内容）。
-       html 各方案相同时写字符串；不同时写 { 方案id: 内容 }，比如 { a: '...', b: '...' }。
+       html 各方案相同时写字符串；不同时写 { 方案id: 内容 }，比如 { a: '...', b: '...' }，每个方案都要写。
+     note、fake、openQuestions 都是数组，每条一句，没内容写 []。
 
    框里的跳转：给元素加 data-go="页面id:状态id"，点击后框和左栏一起切换。
    html 里需要 script 结束标签时，斜杠前要加反斜杠，写成 <\/script>，否则这段脚本会提前结束。
@@ -355,91 +370,100 @@ const PROTOTYPE = {
 </script>
 
 <script>
-  const TERMINAL_CSS = `
-    body { box-sizing: border-box; margin: 0; min-height: 100vh; padding: 8px; background: #15181e; }
-    pre { width: 80ch; max-width: 100%; margin: 0; color: #d7dde4; font: 14px/1.5 Menlo, Consolas, monospace; white-space: pre-wrap; }
-    .g { color: #7ee787; } .y { color: #e3b341; } .b { color: #79c0ff; }
-  `;
-  const FRAME_BRIDGE = `<script>document.addEventListener('click', (e) => {
-    const target = e.target.closest('[data-go]');
-    if (target) parent.postMessage({ go: target.dataset.go }, '*');
-  });<\/script>`;
+  (() => {
+    if (window.prototypeBroken) return;
 
-  const { schemes, pages } = PROTOTYPE;
-  const hasChoice = schemes.length > 1;
-  const el = (id) => document.getElementById(id);
-  const schemeName = (scheme) => `${scheme.label}：${scheme.desc}`;
-  const current = { scheme: schemes[0], page: pages[0], state: pages[0].states[0] };
+    const TERMINAL_CSS = `
+      body { box-sizing: border-box; margin: 0; min-height: 100vh; padding: 8px; background: #15181e; }
+      pre { width: 80ch; max-width: 100%; margin: 0; color: #d7dde4; font: 14px/1.5 Menlo, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+      .g { color: #7ee787; } .y { color: #e3b341; } .b { color: #79c0ff; }
+    `;
+    const FRAME_BRIDGE = `<script>document.addEventListener('click', (e) => {
+      if (e.target.closest('a[href]')) e.preventDefault();
+      const target = e.target.closest('[data-go]');
+      if (target) parent.postMessage({ go: target.dataset.go }, '*');
+    });<\/script>`;
 
-  function pickButtons(box, items, selected, nameOf, onPick) {
-    box.replaceChildren(...items.map((item) => {
-      const button = document.createElement('button');
-      button.textContent = nameOf(item);
-      button.setAttribute('aria-pressed', String(item === selected));
-      button.addEventListener('click', () => onPick(item));
-      return button;
-    }));
-  }
+    const { schemes, pages } = PROTOTYPE;
+    const hasChoice = schemes.length > 1;
+    const incomplete = hasChoice && schemes.find((scheme) => !scheme.note || !scheme.desc);
+    if (incomplete) throw new Error(`${incomplete.label} 缺少 note 或 desc`);
+    const el = (id) => document.getElementById(id);
+    const schemeName = (scheme) => `${scheme.label}：${scheme.desc}`;
+    const current = { scheme: schemes[0], page: pages[0], state: pages[0].states[0] };
 
-  function fillList(box, lines) {
-    box.replaceChildren(...(lines.length ? lines : ['无']).map((line) => {
-      const item = document.createElement('li');
-      item.textContent = line;
-      return item;
-    }));
-  }
+    function pickButtons(box, items, selected, nameOf, onPick) {
+      box.replaceChildren(...items.map((item) => {
+        const button = document.createElement('button');
+        button.textContent = nameOf(item);
+        button.setAttribute('aria-pressed', String(item === selected));
+        button.addEventListener('click', () => onPick(item));
+        return button;
+      }));
+    }
 
-  function differsByScheme(state) {
-    return typeof state.html !== 'string';
-  }
+    function fillList(box, lines) {
+      box.replaceChildren(...(lines.length ? lines : ['无']).map((line) => {
+        const item = document.createElement('li');
+        item.textContent = line;
+        return item;
+      }));
+    }
 
-  function chooseSchemeQuestion() {
-    const labels = schemes.map((scheme) => scheme.label);
-    return `选${labels.slice(0, -1).join('、')} 还是${labels[labels.length - 1]}`;
-  }
+    function differsByScheme(state) {
+      return typeof state.html === 'object';
+    }
 
-  function frameDoc(page, state, scheme) {
-    const html = differsByScheme(state) ? state.html[scheme.id] : state.html;
-    const css = page.terminal ? TERMINAL_CSS : PROTOTYPE.css;
-    const body = page.terminal ? `<pre>${html}</pre>` : html;
-    return `<!doctype html><html><head><meta charset="utf-8"><style>${css}</style></head><body>${body}${FRAME_BRIDGE}</body></html>`;
-  }
+    function chooseSchemeQuestion() {
+      const labels = schemes.map((scheme) => scheme.label);
+      return `选${labels.slice(0, -1).join('、')} 还是${labels[labels.length - 1]}`;
+    }
 
-  function select(scheme, page, state) {
-    Object.assign(current, { scheme, page, state });
+    function frameDoc(page, state, scheme) {
+      const html = differsByScheme(state) ? state.html[scheme.id] : state.html;
+      if (html === undefined) throw new Error(`「${page.name} · ${state.name}」缺少${scheme.label} 的内容`);
+      const css = page.terminal ? TERMINAL_CSS : PROTOTYPE.css;
+      const body = page.terminal ? `<pre>${html}</pre>` : html;
+      return `<!doctype html><html><head><meta charset="utf-8"><style>${css}</style></head><body>${body}${FRAME_BRIDGE}</body></html>`;
+    }
+
+    function select(scheme, page, state) {
+      Object.assign(current, { scheme, page, state });
+      render();
+    }
+
+    function render() {
+      const { scheme, page, state } = current;
+      const doc = frameDoc(page, state, scheme);
+      el('schemeBox').hidden = !hasChoice;
+      el('frameScheme').hidden = !hasChoice;
+      el('schemeHint').textContent = `有 ${schemes.length} 个方案，点这里切换对比`;
+      el('frameScheme').textContent = `当前看的是 ${schemeName(scheme)}`;
+      pickButtons(el('schemePick'), schemes, scheme, schemeName, (item) => select(item, page, state));
+      pickButtons(el('pagePick'), pages, page, (item) => item.name, (item) => select(scheme, item, item.states[0]));
+      pickButtons(el('statePick'), page.states, state, (item) => item.name, (item) => select(scheme, page, item));
+      el('stateLabel').textContent = page.stateLabel || '状态';
+      el('frameTitle').textContent = `${page.name} · ${state.name}`;
+      const schemeNote = !hasChoice ? [] : [differsByScheme(state) ? scheme.note : '各方案在这个画面上一样。'];
+      fillList(el('noteList'), [...schemeNote, ...(state.note ?? [])]);
+      fillList(el('fakeList'), page.fake ?? []);
+      fillList(el('openList'), [...(hasChoice ? [chooseSchemeQuestion()] : []), ...(PROTOTYPE.openQuestions ?? [])]);
+      el('stage').srcdoc = doc;
+    }
+
+    window.addEventListener('message', (e) => {
+      if (e.source !== el('stage').contentWindow || typeof e.data?.go !== 'string') return;
+      const [pageId, stateId] = e.data.go.split(':');
+      const page = pages.find((item) => item.id === pageId);
+      const state = page?.states.find((item) => item.id === stateId);
+      if (state) select(current.scheme, page, state);
+    });
+
+    document.title = `${PROTOTYPE.title} · 原型`;
+    el('sideTitle').textContent = PROTOTYPE.title;
+    el('sideVersion').textContent = `第 ${PROTOTYPE.version} 版 · 这一栏上线后不存在`;
     render();
-  }
-
-  function render() {
-    const { scheme, page, state } = current;
-    el('schemeBox').hidden = !hasChoice;
-    el('frameScheme').hidden = !hasChoice;
-    el('schemeHint').textContent = `有 ${schemes.length} 个方案，点这里切换对比`;
-    el('frameScheme').textContent = `当前看的是 ${schemeName(scheme)}`;
-    pickButtons(el('schemePick'), schemes, scheme, schemeName, (item) => select(item, page, state));
-    pickButtons(el('pagePick'), pages, page, (item) => item.name, (item) => select(scheme, item, item.states[0]));
-    pickButtons(el('statePick'), page.states, state, (item) => item.name, (item) => select(scheme, page, item));
-    el('stateLabel').textContent = page.stateLabel || '状态';
-    el('frameTitle').textContent = `${page.name} · ${state.name}`;
-    const schemeNote = !hasChoice ? [] : [differsByScheme(state) ? scheme.note : '各方案在这个画面上一样。'];
-    fillList(el('noteList'), [...schemeNote, ...state.note]);
-    fillList(el('fakeList'), page.fake);
-    fillList(el('openList'), [...(hasChoice ? [chooseSchemeQuestion()] : []), ...PROTOTYPE.openQuestions]);
-    el('stage').srcdoc = frameDoc(page, state, scheme);
-  }
-
-  window.addEventListener('message', (e) => {
-    if (e.source !== el('stage').contentWindow || typeof e.data?.go !== 'string') return;
-    const [pageId, stateId] = e.data.go.split(':');
-    const page = pages.find((item) => item.id === pageId);
-    const state = page?.states.find((item) => item.id === stateId);
-    if (state) select(current.scheme, page, state);
-  });
-
-  document.title = `${PROTOTYPE.title} · 原型`;
-  el('sideTitle').textContent = PROTOTYPE.title;
-  el('sideVersion').textContent = `第 ${PROTOTYPE.version} 版 · 这一栏上线后不存在`;
-  render();
+  })();
 </script>
 </body>
 </html>
@@ -460,10 +484,11 @@ const PROTOTYPE = {
 | `frameDoc` | 拼出框里的独立页面 |
 | `select` | 记下当前方案、页面、状态并刷新 |
 | `render` | 按当前选择刷新左栏、框上方提示、框和底部说明 |
+| `error` 事件监听（填写区之前的脚本） | 把填写错误显示在框里 |
 
 ## 协作关系
 
-点左栏按钮或框里的 `data-go` 元素 → `select` → `render` → `frameDoc`。框里的点击通过 `postMessage` 传给外壳。无外部依赖。
+点左栏按钮或框里的 `data-go` 元素 → `select` → `render` → `frameDoc`。框里的点击通过 `postMessage` 传给外壳，框里的脚本拦下链接跳转，框的权限限制挡住表单提交。外壳脚本包在立即执行函数里，名字不和填写区冲突。无外部依赖。
 
 ## 验证方式
 
