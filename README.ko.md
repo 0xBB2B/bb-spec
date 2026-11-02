@@ -44,11 +44,12 @@
 /plugin install bb-spec-workflow@0xbb2b
 ```
 
-일상적으로 직접 입력하는 5개 명령:
+일상적으로 직접 입력하는 6개 명령:
 
 | 명령 | 무엇을 하는가 | 언제 사용 |
 |---|---|---|
 | `/prd` | 질의→명확화→분해, PRD + AGENTS.md를 작성한 뒤 읽고 한 번 승인하면 plan → exec → doc-update를 자동 실행 | 새 요구사항 착수 시, 머지된 기능의 동작을 바꿀 때 |
+| `/prototype` | 공통 블루프린트 외곽으로 HTML 프로토타입을 만들고 승인될 때까지 수정. `/prd`·`/revise`가 UI 변경 시 자동 호출 | 요구사항 흐름 없이 먼저 화면을 보고 싶을 때 |
 | `/revise` | 근본 원인 진단→표적 수정→회귀 검증, 완료 후 doc-update 자동 실행 | 버그나 기대와 다른 결과가 나왔을 때 |
 | `/git-push` | pre-review 자가 점검 + push + PR 생성 | PR을 올릴 때 |
 | `/exec` | 중단된 지점부터 plan 실행 재개 | 중단이나 `/clear` 이후 |

@@ -6,15 +6,13 @@
 <title>界面原型</title>
 <style>
   :root {
-    --shell-bg: #141c28;
-    --shell-raised: #1f2a3a;
-    --shell-line: #2c3a4e;
-    --shell-text: #e6eaf0;
-    --shell-muted: #9aa7b8;
-    --amber: #f0b64f;
-    --amber-ink: #2a1d05;
-    --frame-bg: #c9cdd6;
-    --frame-text: #2a3240;
+    --shell-bg: #12264a;
+    --shell-line: #2f4a77;
+    --shell-text: #e6f1ff;
+    --shell-muted: #9fb6d9;
+    --accent: #7fd4ff;
+    --accent-ink: #0a1f3f;
+    --grid: rgba(127, 212, 255, .07);
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
@@ -23,15 +21,17 @@
     min-width: 960px;
     display: grid;
     grid-template-columns: 240px 1fr;
-    font: 13px/1.6 -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
-    background: var(--frame-bg);
+    font: 12px/1.6 ui-monospace, Menlo, "PingFang SC", "Microsoft YaHei", monospace;
+    color: var(--shell-text);
+    background-color: var(--shell-bg);
+    background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 24px 24px;
   }
   .tag {
     display: inline-block;
     padding: 1px 8px;
-    border-radius: 4px;
-    background: var(--amber);
-    color: var(--amber-ink);
+    border: 1px dashed var(--accent);
+    color: var(--accent);
     font-size: 12px;
     font-weight: 600;
   }
@@ -39,78 +39,73 @@
   .side {
     height: 100vh;
     overflow-y: auto;
-    background: var(--shell-bg);
-    color: var(--shell-text);
-    border-right: 4px solid var(--amber);
+    border-right: 1px dashed var(--accent);
   }
-  .side-head { padding: 14px 14px 12px; border-bottom: 1px solid var(--shell-line); }
-  .side-head h1 { margin: 10px 0 2px; font-size: 15px; }
-  .side-head p { margin: 0; font-size: 12px; color: var(--shell-muted); }
+  .side-head { padding: 12px 14px; border-bottom: 1px solid var(--shell-line); }
+  .side-head h1 { margin: 10px 0 2px; font-size: 14px; }
+  .side-head p { margin: 0; font-size: 11px; color: var(--shell-muted); }
   .scheme {
-    margin: 12px 14px 0;
+    margin: 12px 10px 0;
     padding: 10px;
-    border: 2px solid var(--amber);
-    border-radius: 8px;
+    border: 1px dashed var(--accent);
   }
-  .scheme h2 { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--amber); }
-  .side-body { padding: 14px; }
+  .scheme h2 { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: var(--accent); }
+  .side-body { padding: 14px 12px; }
   .side-body h2 { margin: 0 0 6px; font-size: 12px; font-weight: 500; color: var(--shell-muted); }
   .side-body h3 { margin: 14px 0 6px; font-size: 12px; font-weight: 500; color: var(--shell-muted); }
-  .pick { display: flex; flex-direction: column; gap: 5px; }
+  .pick { display: flex; flex-direction: column; gap: 4px; }
   .pick button {
-    padding: 6px 10px;
-    border: 0;
-    border-radius: 6px;
-    background: var(--shell-raised);
+    padding: 5px 10px;
+    border: 1px solid var(--shell-line);
+    background: transparent;
     color: inherit;
     font: inherit;
     text-align: left;
     cursor: pointer;
   }
-  .pick button:hover { background: var(--shell-line); }
-  .pick button[aria-pressed="true"] { background: var(--amber); color: var(--amber-ink); font-weight: 600; }
+  .pick button:hover { border-color: var(--accent); }
+  .pick button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: 600; }
 
   main {
     display: grid;
     grid-template-rows: auto minmax(0, 1fr) auto;
     height: 100vh;
     min-width: 0;
-    padding: 0 10px 10px;
+    padding: 0 6px 6px;
   }
   .frame-bar {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     gap: 16px;
-    padding: 5px 2px;
+    padding: 5px 2px 6px;
     overflow: hidden;
-    color: var(--frame-text);
     font-size: 12px;
     white-space: nowrap;
   }
-  .frame-bar strong { font-weight: 600; }
-  .frame-left { display: flex; flex: none; align-items: center; gap: 8px; }
-  #frameTitle { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .frame-bar strong { flex: none; font-weight: 600; }
+  .frame-right { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .frame-right .tag { flex: none; }
+  #frameTitle { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--shell-muted); }
   iframe {
     display: block;
     width: 100%;
     height: 100%;
-    border: 1px solid #8f96a3;
-    border-radius: 4px;
+    border: 0;
+    outline: 1px dashed var(--accent);
+    outline-offset: 2px;
     background: #fff;
   }
 
   .dock {
-    height: 26vh;
+    max-height: 30vh;
     overflow-y: auto;
-    margin-top: 10px;
-    padding: 10px 14px 12px;
-    border-top: 3px solid var(--amber);
-    border-radius: 0 0 4px 4px;
-    background: var(--shell-bg);
-    color: var(--shell-text);
+    margin-top: 9px;
+    padding: 8px 12px;
+    border-top: 1px dashed var(--accent);
   }
   .dock-head { display: flex; align-items: center; gap: 8px; color: var(--shell-muted); font-size: 12px; }
-  .dock-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 8px; }
+  .dock-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 6px; }
   .dock h2 { margin: 0 0 2px; font-size: 12px; font-weight: 500; color: var(--shell-muted); }
   .dock ul, .dock ol { margin: 0; padding-left: 18px; }
 </style>
@@ -137,14 +132,14 @@
 
   <main>
     <div class="frame-bar">
-      <div class="frame-left">
-        <strong>▼ 被设计的页面：只有这个框里的内容要实现</strong>
+      <strong>▼ 被设计的页面：只有这个框里的内容要实现</strong>
+      <div class="frame-right">
         <span class="tag" id="frameScheme" hidden></span>
+        <span id="frameTitle"></span>
       </div>
-      <span id="frameTitle"></span>
     </div>
     <iframe id="stage" title="被设计的页面" sandbox="allow-scripts"></iframe>
-    <section class="dock" aria-label="页面说明">
+    <section class="dock" id="dock" aria-label="页面说明">
       <div class="dock-head">
         <span class="tag">设计说明 · 不属于页面</span>
         <span>这一块上线后不存在</span>
@@ -171,7 +166,10 @@
    只改 PROTOTYPE-START 到 PROTOTYPE-END 之间的内容，这段之外是外壳，一律不改。
 
    title：原型标题。version：第几版，每次按用户意见改完加 1。
-   css：框里普通页面的样式。终端页面用外壳自带的样式。
+   css：项目有自己的设计时，在这里写项目的样式，写了之后默认页面样式完全不生效。
+     项目没有自己的设计时不写这一项，框里用默认页面样式，可以直接用的元素有
+     header、h1、main、.card、table、button、button.plain、.center、.alert、.bar、dl、.cards。
+     终端页面固定用外壳自带的样式。
    openQuestions：还没确认的问题。多方案时外壳会自动在最前面加上"选哪个方案"。
    schemes：方案列表。id 用于 html 取值，label 是"方案 A"这样的短名，desc 是方案特点，
      note 是方案取舍。只有一个方案时只留一项，外壳不显示任何方案切换。
@@ -201,32 +199,6 @@ const detailHead = '<header><h1>订单 A1024</h1><button class="plain" data-go="
 const PROTOTYPE = {
   title: '订单导出（示例）',
   version: 1,
-  css: `
-    * { box-sizing: border-box; }
-    body { margin: 0; font: 14px/1.6 -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; color: #1f2933; background: #f5f7fa; }
-    header { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; background: #fff; border-bottom: 1px solid #e4e7eb; }
-    h1 { margin: 0; font-size: 18px; }
-    main { padding: 24px; }
-    .card { padding: 20px; background: #fff; border: 1px solid #e4e7eb; border-radius: 8px; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e4e7eb; }
-    th { color: #616e7c; font-weight: 500; }
-    tbody tr { cursor: pointer; }
-    tbody tr:hover { background: #f0f4f8; }
-    button { padding: 6px 14px; border: 0; border-radius: 6px; background: #2563eb; color: #fff; font: inherit; cursor: pointer; }
-    button.plain { background: #e4e7eb; color: #1f2933; }
-    .center { padding: 56px 0; text-align: center; color: #616e7c; }
-    .alert { padding: 12px 14px; border-radius: 6px; background: #fdecea; color: #b42318; }
-    .bar { height: 14px; margin: 14px 0; border-radius: 4px; background: #e4e7eb; animation: pulse 1.2s infinite; }
-    @keyframes pulse { 50% { opacity: .45; } }
-    dl { display: grid; grid-template-columns: 90px 1fr; gap: 8px; margin: 0; }
-    dt { color: #616e7c; } dd { margin: 0; }
-    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-    .cards .card { cursor: pointer; }
-    .cards .card:hover { background: #f0f4f8; }
-    .cards strong { display: block; font-size: 18px; }
-    .cards span { color: #616e7c; }
-  `,
   openQuestions: [
     '导出的文件用 CSV 还是 Excel',
     '订单超过一万笔时怎么导出',
@@ -337,10 +309,36 @@ const PROTOTYPE = {
   (() => {
     if (window.prototypeBroken) return;
 
+    const DEFAULT_PAGE_CSS = `
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 14px/1.6 -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; color: #1f2933; background: #f5f7fa; }
+    header { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; background: #fff; border-bottom: 1px solid #e4e7eb; }
+    h1 { margin: 0; font-size: 18px; }
+    main { padding: 24px; }
+    .card { padding: 20px; background: #fff; border: 1px solid #e4e7eb; border-radius: 8px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e4e7eb; }
+    th { color: #616e7c; font-weight: 500; }
+    tbody tr { cursor: pointer; }
+    tbody tr:hover { background: #f0f4f8; }
+    button { padding: 6px 14px; border: 0; border-radius: 6px; background: #2563eb; color: #fff; font: inherit; cursor: pointer; }
+    button.plain { background: #e4e7eb; color: #1f2933; }
+    .center { padding: 56px 0; text-align: center; color: #616e7c; }
+    .alert { padding: 12px 14px; border-radius: 6px; background: #fdecea; color: #b42318; }
+    .bar { height: 14px; margin: 14px 0; border-radius: 4px; background: #e4e7eb; animation: pulse 1.2s infinite; }
+    @keyframes pulse { 50% { opacity: .45; } }
+    dl { display: grid; grid-template-columns: 90px 1fr; gap: 8px; margin: 0; }
+    dt { color: #616e7c; } dd { margin: 0; }
+    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .cards .card { cursor: pointer; }
+    .cards .card:hover { background: #f0f4f8; }
+    .cards strong { display: block; font-size: 18px; }
+    .cards span { color: #616e7c; }
+    `;
     const TERMINAL_CSS = `
-      body { box-sizing: border-box; margin: 0; min-height: 100vh; padding: 8px; background: #15181e; }
-      pre { width: 80ch; max-width: 100%; margin: 0; color: #d7dde4; font: 14px/1.5 Menlo, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
-      .g { color: #7ee787; } .y { color: #e3b341; } .b { color: #79c0ff; } .r { color: #ff7b72; }
+      body { box-sizing: border-box; margin: 0; min-height: 100vh; padding: 8px; background: #0b1730; }
+      pre { width: 80ch; max-width: 100%; margin: 0; color: #d7e6ff; font: 14px/1.5 Menlo, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+      .g { color: #7ee7c1; } .y { color: #ffd479; } .b { color: #7fd4ff; } .r { color: #ff8f8f; }
     `;
     const FRAME_BRIDGE = `<script>document.addEventListener('click', (e) => {
       if (e.target.closest('a[href]')) e.preventDefault();
@@ -352,6 +350,14 @@ const PROTOTYPE = {
     const hasChoice = schemes.length > 1;
     const incomplete = hasChoice && schemes.find((scheme) => !scheme.note || !scheme.desc);
     if (incomplete) throw new Error(`${incomplete.label} 缺少 note 或 desc`);
+    const requireList = (value, where) => {
+      if (value !== undefined && !Array.isArray(value)) throw new Error(`${where} 要写成数组`);
+    };
+    requireList(PROTOTYPE.openQuestions, 'openQuestions');
+    for (const page of pages) {
+      requireList(page.fake, `「${page.name}」的 fake`);
+      for (const state of page.states) requireList(state.note, `「${page.name} · ${state.name}」的 note`);
+    }
     const el = (id) => document.getElementById(id);
     const schemeName = (scheme) => `${scheme.label}：${scheme.desc}`;
     const current = { scheme: schemes[0], page: pages[0], state: pages[0].states[0] };
@@ -370,6 +376,7 @@ const PROTOTYPE = {
       box.replaceChildren(...(lines.length ? lines : ['无']).map((line) => {
         const item = document.createElement('li');
         item.textContent = line;
+        if (!lines.length) item.style.listStyle = 'none';
         return item;
       }));
     }
@@ -386,9 +393,32 @@ const PROTOTYPE = {
     function frameDoc(page, state, scheme) {
       const html = differsByScheme(state) ? state.html[scheme.id] : state.html;
       if (html === undefined) throw new Error(`「${page.name} · ${state.name}」缺少${scheme.label} 的内容`);
-      const css = page.terminal ? TERMINAL_CSS : PROTOTYPE.css;
+      const css = page.terminal ? TERMINAL_CSS : PROTOTYPE.css?.trim() || DEFAULT_PAGE_CSS;
       const body = page.terminal ? `<pre>${html}</pre>` : html;
       return `<!doctype html><html><head><meta charset="utf-8"><style>${css}</style></head><body>${body}${FRAME_BRIDGE}</body></html>`;
+    }
+
+    function fillNotes(scheme, page, state) {
+      const schemeNote = !hasChoice ? [] : [differsByScheme(state) ? scheme.note : '各方案在这个画面上一样。'];
+      fillList(el('noteList'), [...schemeNote, ...(state.note ?? [])]);
+      fillList(el('fakeList'), page.fake ?? []);
+      fillList(el('openList'), [...(hasChoice ? [chooseSchemeQuestion()] : []), ...(PROTOTYPE.openQuestions ?? [])]);
+    }
+
+    function fitDock() {
+      const dock = el('dock');
+      dock.style.height = 'auto';
+      let tallest = 0;
+      for (const scheme of schemes) {
+        for (const page of pages) {
+          for (const state of page.states) {
+            fillNotes(scheme, page, state);
+            tallest = Math.max(tallest, dock.offsetHeight);
+          }
+        }
+      }
+      dock.style.height = `${tallest}px`;
+      fillNotes(current.scheme, current.page, current.state);
     }
 
     function select(scheme, page, state) {
@@ -401,17 +431,14 @@ const PROTOTYPE = {
       const doc = frameDoc(page, state, scheme);
       el('schemeBox').hidden = !hasChoice;
       el('frameScheme').hidden = !hasChoice;
-      el('schemeHint').textContent = `有 ${schemes.length} 个方案，点这里切换对比`;
-      el('frameScheme').textContent = `当前看的是 ${schemeName(scheme)}`;
+      el('schemeHint').textContent = `这份原型有 ${schemes.length} 个方案，点这里切换对比`;
+      el('frameScheme').textContent = schemeName(scheme);
       pickButtons(el('schemePick'), schemes, scheme, schemeName, (item) => select(item, page, state));
       pickButtons(el('pagePick'), pages, page, (item) => item.name, (item) => select(scheme, item, item.states[0]));
       pickButtons(el('statePick'), page.states, state, (item) => item.name, (item) => select(scheme, page, item));
       el('stateLabel').textContent = page.stateLabel || '状态';
       el('frameTitle').textContent = `${page.name} · ${state.name}`;
-      const schemeNote = !hasChoice ? [] : [differsByScheme(state) ? scheme.note : '各方案在这个画面上一样。'];
-      fillList(el('noteList'), [...schemeNote, ...(state.note ?? [])]);
-      fillList(el('fakeList'), page.fake ?? []);
-      fillList(el('openList'), [...(hasChoice ? [chooseSchemeQuestion()] : []), ...(PROTOTYPE.openQuestions ?? [])]);
+      fillNotes(scheme, page, state);
       el('stage').srcdoc = doc;
     }
 
@@ -427,6 +454,8 @@ const PROTOTYPE = {
     el('sideTitle').textContent = PROTOTYPE.title;
     el('sideVersion').textContent = `第 ${PROTOTYPE.version} 版 · 这一栏上线后不存在`;
     render();
+    fitDock();
+    window.addEventListener('resize', fitDock);
   })();
 </script>
 </body>

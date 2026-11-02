@@ -44,11 +44,12 @@
 /plugin install bb-spec-workflow@0xbb2b
 ```
 
-日常要手动敲的 5 条命令:
+日常要手动敲的 6 条命令:
 
 | 命令 | 做什么 | 何时用 |
 |---|---|---|
 | `/prd` | 质疑→澄清→拆解,落盘 PRD + AGENTS.md 后请你读完确认一次,通过就自动跑 plan → exec → doc-update | 新需求开工、要改已合并功能的行为 |
+| `/prototype` | 用统一的蓝图外壳出 HTML 原型,改到你说"可以";`/prd`、`/revise` 改界面时自动调用 | 想先看样子,不走完整需求流程 |
 | `/revise` | 按根因诊断→定向修正→回归验证,修完自动跑 doc-update | 有 bug、结果和预期不符 |
 | `/git-push` | pre-review 自查 + 推 + 开 PR | 准备提 PR |
 | `/exec` | 从断点接着执行 plan | 中断或 `/clear` 之后 |

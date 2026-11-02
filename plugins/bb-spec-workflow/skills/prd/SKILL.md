@@ -120,19 +120,7 @@ grep -h '^features:' ${DOCS_DIR}/prd/*/OVERVIEW.md 2>/dev/null  # 已有功能�
 - 推荐项前缀 `✅` + 一句**根因式**理由（为什么是它，不是它有什么优点）
 - 两选项行为相近时显式写"**差异仅在 X**"
 
-**界面预览**：需求改变用户看到的界面时，界面这个维度用 HTML 预览页来问。界面包括两类：
-
-- 图形界面：网页、桌面或手机 App 的页面、组件、样式、布局、交互
-- 终端界面：命令行输出的排版、颜色、表格、进度条、交互提示
-
-改动再小（只换一个按钮文字、一个颜色值）也要出预览。做法：
-
-1. 把 `${CLAUDE_PLUGIN_ROOT}/templates/ui-preview-shell.html` 复制到 `${CACHE_DIR}/ui-preview/<YYYY-MM-DD>.<主题>.html`，文件名和步骤 7 的 PRD 目录名一致（`/exec` 收尾时按这个名字找到它，拿实际界面逐项对比）。写入前确保 `${CACHE_DIR}/.gitignore` 存在：不存在就连目录一起创建，内容写单行 `*`，把整个缓存目录排除出 git
-2. 这个文件是统一的原型外壳：左栏放切换，中间的框放正式页面，底部放说明，只有框里的内容要做进产品。只改文件里 `PROTOTYPE-START` 到 `PROTOTYPE-END` 之间的填写区，格式按那里的说明写，外壳一律不改。正式页面只放进框里，框里禁止放说明或切换控件；说明写进 `note`（这个画面的说明）、`fake`（只在原型里成立）、`openQuestions`（还没确认的问题）
-3. 图形界面：还原布局、配色、文案，画出正常、空数据、加载中、出错这几种状态，有交互的地方做成可点击的，框里的跳转用 `data-go`。终端界面：页面设 `terminal: true`，颜色按实际效果还原，多步交互每一步写成一个状态，并设 `stateLabel: '步骤'`
-4. 同一次设计有多个方案时，都放进同一份原型的 `schemes`，不拆成多个文件；用户选定方案后，把没选中的方案删掉，再请用户确认
-5. 用 `open <文件路径>` 在浏览器里打开给用户看
-6. 用户提了意见就先改预览页，再请用户看，直到用户明确说"可以"
+**界面预览**：需求改变用户看到的界面时，界面这个维度用原型来问，改动再小（只换一个按钮文字、一个颜色值）也要出。调用 `Skill bb-spec-workflow:prototype`，参数 `<主题> --file ${CACHE_DIR}/ui-preview/<YYYY-MM-DD>.<主题>.html`，文件名和步骤 7 的 PRD 目录名一致（`/exec` 收尾时按这个名字找到它，拿实际界面逐项对比）。
 
 预览获用户确认后才进步骤 4。预览页是澄清用的草稿：PRD 里不写它的路径，确认过的内容在步骤 4 写进约束和验收。
 
@@ -165,7 +153,7 @@ grep -h '^features:' ${DOCS_DIR}/prd/*/OVERVIEW.md 2>/dev/null  # 已有功能�
 git branch --show-current
 ```
 
-在 main/master 上 → 按 git-workflow 用 AskUserQuestion 选开分支方式（默认 worktree），切过去后**后续所有落盘、commit、自动实施都在新现场进行**；已在功能分支或 linked worktree → 直接继续。步骤 3 出过界面预览、又切到了新现场时，在新现场重新运行 `bbspec-paths.sh` 取 `cache_dir`，把预览页移到新现场的 `ui-preview/` 下（`.gitignore` 的检查同步骤 3），后面的简报写新路径。多仓库工作区：检查的是文档仓库与本次要改动的代码仓库，按 git-workflow 的多 repo 规则给它们开同名功能分支。
+在 main/master 上 → 按 git-workflow 用 AskUserQuestion 选开分支方式（默认 worktree），切过去后**后续所有落盘、commit、自动实施都在新现场进行**；已在功能分支或 linked worktree → 直接继续。步骤 3 出过界面预览、又切到了新现场时，在新现场重新运行 `bbspec-paths.sh` 取 `cache_dir`，把预览页移到新现场的 `ui-preview/` 下（写入前确保 `${CACHE_DIR}/.gitignore` 存在：不存在就连目录一起创建，内容写单行 `*`），后面的简报写新路径。多仓库工作区：检查的是文档仓库与本次要改动的代码仓库，按 git-workflow 的多 repo 规则给它们开同名功能分支。
 
 ### 步骤 7：落盘
 
