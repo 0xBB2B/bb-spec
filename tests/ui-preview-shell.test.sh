@@ -1314,6 +1314,18 @@ group('终端页面：terminalCss 指定项目自己的终端样式', () => {
   ok(a.srcdoc().includes('#123456') && !a.srcdoc().includes('#0b1730'), '切回终端页 A 仍用 terminalCss');
 });
 
+group('终端页面：terminalCss 写了排版属性时外壳的 80 列排版仍生效', () => {
+  const layoutCss = 'pre{width:120ch;white-space:pre;font:13px serif}';
+  const a = load(mkTerm(layoutCss));
+  eq(a.errors.length, 0, '不报错');
+  a.pick('pagePick', 2);
+  const s = a.srcdoc();
+  const own = s.indexOf(layoutCss);
+  ok(own >= 0, 'srcdoc 含 terminalCss');
+  ['width: 80ch', 'white-space: pre-wrap', 'monospace'].forEach((m) =>
+    ok(s.indexOf(m) > own, `外壳排版 ${m} 写在 terminalCss 后面，同一选择器下以它为准`));
+});
+
 group('终端页面：terminalCss 为空或只有空白时用默认终端样式', () => {
   ['', '   ', '\n  '].forEach((v) => {
     const a = load(mkTerm(v));

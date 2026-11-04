@@ -437,7 +437,7 @@ const PROTOTYPE = {
     function frameDoc(page, state, scheme) {
       const html = differsByScheme(state) ? state.html[scheme.id] : state.html;
       if (html === undefined) throw new Error(`「${page.name} · ${state.name}」缺少${scheme.label} 的内容`);
-      const css = page.terminal ? TERMINAL_LAYOUT_CSS + (page.terminalCss?.trim() || TERMINAL_COLOR_CSS) : PROTOTYPE.css?.trim() || DEFAULT_PAGE_CSS;
+      const css = page.terminal ? (page.terminalCss?.trim() || TERMINAL_COLOR_CSS) + TERMINAL_LAYOUT_CSS : PROTOTYPE.css?.trim() || DEFAULT_PAGE_CSS;
       const body = page.terminal ? `<pre>${html}</pre>` : html;
       return `<!doctype html><html><head><meta charset="utf-8"><style>${css}</style></head><body>${body}${FRAME_BRIDGE}</body></html>`;
     }
