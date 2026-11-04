@@ -68,7 +68,7 @@
  做什麼   怎麼做    Red→Green 文件追平程式碼  pre-review+開 PR
  (唯一一次核可)     →Review
 
- ══► 自動銜接(僅新增第三方相依套件或需設計裁決時停下)
+ ══► 自動銜接(僅需引入新技術或需設計裁決時停下)
  ──► 由你手動觸發
 
  (可選) /test-webview · /test-api — 提 PR 前多加一道檢查:
@@ -98,12 +98,12 @@
 
 - **`/plan`** — PRD → 自包含、**函式級**實施計畫,回答**「怎麼做」**。
   - 每檔案一獨立問題,詳細到函式名與職責;宣告式產物(DDL / API 契約 / 設定)**直接內聯最終成品**,exec 原樣落盤
-  - 由 `/prd` 自動呼叫,產出後直接跑 `/exec`;只有需要**新增第三方相依套件**時才停下請使用者同意,同意即視為 version-policy 要求的授權
+  - 由 `/prd` 自動呼叫,產出後直接跑 `/exec`;只有需要**引入新技術**時才停下,逐項列出理由請使用者一次核准,核准即視為 version-policy 要求的授權
   - plan 只在執行期間存在,全部完成後由 `/exec` 刪除,避免和 PRD 重複
 
 - **`/exec`** — **三 Agent 隔離執行**,核心反作弊設計。
   - *Test* Agent 只讀 PRD 約束寫失敗測試(Red)
-  - *Impl* Agent **看不到 PRD**,只看測試 + 函式清單寫實作(Green),無法「照著意圖作弊」;新增第三方函式庫受 plan 已核可相依清單約束
+  - *Impl* Agent **看不到 PRD**,只看測試 + 函式清單寫實作(Green),無法「照著意圖作弊」;引入新技術受 plan 已核准的「新增技術」表約束
   - *Review* Agent 對照 PRD 驗收與 AGENTS.md 檢查並過一遍強健性/安全視角,唯讀不寫
   - 每步進度寫 `PROGRESS.md`,token 耗盡也能**無損續接**
   - 實施中發現方案有問題,停下讓你選:改程式碼 / 改本次 PRD / 暫停;小改就地改,大改回到 `/prd` 重新核可
@@ -154,7 +154,7 @@
 ### bb-spec-core — 通用紀律
 
 - **`tdd-workflow`** — Red-Green-Refactor 紀律,涵蓋增 / 改 / 刪三場景標準流程
-- **`version-policy`** — 官方函式庫 / 標準函式庫優先,新增第三方函式庫須經使用者明確同意(`/plan` 階段使用者同意的相依清單視為已同意);釘版本前先查相依套件官方最新版,禁憑訓練記憶
+- **`version-policy`** — 標準函式庫優先,引入專案裡原本沒有的新技術(函式庫、框架、語言、資料庫、中介軟體、工具、映像檔、CI Action、外部服務)前逐項列出用途和為什麼非它不可,使用者核准後才能用,外掛預設技術棧和使用者點名的也一樣(`/plan` 階段核准的「新增技術」表視為已核准);釘版本前先查相依套件官方最新版,禁憑訓練記憶
 - **`git-workflow`** — 分支決策、階段性 commit、六段式 PR 描述、合併後清理
 
 ### bb-spec-backend — 後端技術框架約束
@@ -252,7 +252,7 @@ claude plugin update bb-spec-workflow@0xbb2b   # 在終端機裡更新某個子 
 |---|---|---|---|
 | `block-non-bun-pm` | bb-spec-frontend | PreToolUse(Bash) | 攔截 `npm` / `yarn` / `pnpm` 的套件管理動作,強制 `bun`;既有專案已存在匹配 lockfile(如 `package-lock.json`)時放行 |
 | `git-workflow-guard` | bb-spec-core | PreToolUse(Bash) | 攔截 `main` / `master` 分支的 `git commit`;其餘 git 流程動作(開分支 / push / worktree / merge / PR)放行並注入 git-workflow 紀律與即時 git 狀態 |
-| `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | 編輯相依檔案後注入「先查官方最新版」自檢提示 |
+| `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | 編輯相依檔案後注入「先查官方最新版」自檢提示,並提醒未核准的新技術要撤回、先列清單請使用者核准 |
 | `background-script-wait` | bb-spec-core | Stop | 發現本會話沒提示過的執行中背景命令時提示一次:Claude 用前景迴圈等完會結束的腳本,常駐服務不等 |
 ---
 
