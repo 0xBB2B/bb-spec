@@ -13,6 +13,7 @@ description: 依赖文件被改后，钩子提示里加一句：引入了没批�
 - 钩子在文件改完之后才运行，只能事后提醒：没批准就撤回，回到"先列清单、等批准"。
 - 钩子现有行为不变：只对依赖文件、配置文件输出提示，其他文件静默；没有 `jq` 时静默退出 0。
 
+- 第二轮补充：提示里任何"可以忽略"的说法只能管版本号那部分，新技术提醒不管改的是不是版本字段都要检查；新技术提醒要写全七项内容，并说明弹一次窗。
 ## 涉及文件
 - `plugins/bb-spec-core/hooks/dep-version-check.sh` 修改
 - `tests/dep-version-check.test.sh` 新建（Test Agent 写）
@@ -29,6 +30,14 @@ description: 依赖文件被改后，钩子提示里加一句：引入了没批�
 
 ```
 若本次改动引入了项目里原来没有的新技术，且它不在用户已批准的清单里，立刻撤回这次改动，先按 version-policy 的新技术清单逐项列出用途、现有手段为什么不够、替代方案为什么不选，请用户批准后再改。
+```
+
+### 第二轮补改（审查后，在第一轮改好的文件上继续改）
+
+`MSG=$(printf '…' "$FILE")` 的格式串整体替换为下面这段（`%s` 是文件路径，换行用 `\n`，不得出现其他 `%`）：
+
+```
+依赖版本号自检（version-policy）：刚改动了 `%s`。\n① 版本号：若本次改动写入或更新了任何外部资产的版本号（npm/Go/PyPI/Cargo/Maven/Actions/容器镜像/IaC provider/Helm/CLI 等），请确认每个版本号都通过**官方渠道**查询过最新稳定版（npm view / go list -m -versions / pip index versions / cargo search / docker manifest 等），未凭训练记忆填写；只改了非版本字段（脚本、配置 key 等）时，这一条可以跳过。\n② 新技术：若本次改动引入了项目里原来没有的新技术（新的依赖、镜像、Action、安装新工具的命令等），且它不在用户已批准的清单里，立刻撤回这次改动，先按 version-policy 的新技术清单逐项写齐七项内容（名称、类别、来源、用途、现有手段为什么不够、替代方案为什么不选、版本策略），弹一次窗请用户批准后再改。这一条不管改的是不是版本字段都要检查。
 ```
 
 ## 函数清单
@@ -48,3 +57,5 @@ description: 依赖文件被改后，钩子提示里加一句：引入了没批�
 - [ ] `tool_name=Edit`、`file_path=/p/README.md` → 退出 0，输出为空
 - [ ] `tool_name=Bash`、`file_path=/p/package.json` → 退出 0，输出为空
 - [ ] `PATH` 里找不到 `jq`（用只含 `bash` 和基础命令、不含 `jq` 的临时目录作 `PATH`）时 → 退出 0，输出为空
+- [ ] 第二轮：package.json 的 `additionalContext` 含 `七项内容`、`名称、类别、来源、用途、现有手段为什么不够、替代方案为什么不选、版本策略`、`弹一次窗`、`不管改的是不是版本字段都要检查`；不含 `请忽略本提示`
+- [ ] 第二轮：Dockerfile 和 `.github/workflows/ci.yml` 的 `additionalContext` 同样含 `立刻撤回这次改动`、`新技术清单`、`请用户批准`、`官方渠道`；另测 `tool_name=Edit`、`file_path=/p/go.mod` 和 `file_path=/p/compose.yaml` 也输出含 `立刻撤回这次改动` 的提示
