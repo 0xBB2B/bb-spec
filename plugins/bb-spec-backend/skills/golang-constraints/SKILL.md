@@ -123,7 +123,7 @@ user-invocable: false
 
 ### 3.8 第三方库
 
-默认：标准库 → 项目已有依赖 → 不新增。**官方库优先**（`database/sql`、`net/http` 等）；禁止第三方封装替代。确需新增第三方库时，**必须先向用户说明理由（标准库 / 已有依赖为何不满足、候选库是什么）并获明确同意**，才能写入 `import` 或 `go.mod`；用户主动点名的库视为已同意。涉及版本号遵循 `version-policy` skill。
+默认：标准库 → 项目已有依赖 → 不新增。**官方库优先**（`database/sql`、`net/http` 等）；禁止第三方封装替代。确需引入新技术（含 `golang.org/x/*` 这类不在标准库里的官方扩展库）时，按 `version-policy` skill 的新技术清单逐项列出理由，用户批准后才能写入 `import` 或 `go.mod`，用户点名的库也一样。涉及版本号遵循 `version-policy` skill。
 
 ### 3.9 测试
 

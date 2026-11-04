@@ -68,7 +68,7 @@
  무엇을   어떻게    Red→Green 문서 동기화     pre-review+PR 생성
  (유일한 승인)      →Review
 
- ══► 자동 연결(신규 제3자 의존성이나 설계 판단이 필요할 때만 멈춤)
+ ══► 자동 연결(새 기술 도입이나 설계 판단이 필요할 때만 멈춤)
  ──► 사용자가 수동으로 실행
 
  (선택) /test-webview · /test-api — PR 전 추가 점검:
@@ -99,12 +99,12 @@
 
 - **`/plan`** — PRD → 자기 완결형, **함수 수준** 구현 계획, **"어떻게 만들 것인가"**에 답한다.
   - 한 파일 한 독립 문제, 함수명과 책임까지 상세화; 선언형 산출물(DDL / API 계약 / 설정)은 **최종 산출물 형태로 직접 인라인**, exec이 그대로 작성
-  - `/prd`가 자동 호출하며 산출 후 바로 `/exec`를 실행; **신규 제3자 의존성**이 필요할 때만 멈추고 사용자 동의를 구하며, 동의는 version-policy가 요구하는 승인으로 간주
+  - `/prd`가 자동 호출하며 산출 후 바로 `/exec`를 실행; **새 기술 도입**이 필요할 때만 멈추고 항목별 이유를 나열해 사용자에게 한 번에 승인을 구하며, 승인은 version-policy가 요구하는 승인으로 간주
   - plan은 실행 중에만 존재하며, 전부 완료되면 `/exec`가 삭제해 PRD와의 중복을 피함
 
 - **`/exec`** — **3 에이전트 격리 실행**, 부정행위 방지 핵심 설계.
   - *Test* 에이전트는 PRD 제약만 읽고 실패 테스트를 작성(Red)
-  - *Impl* 에이전트는 **PRD를 보지 않음**, 테스트 + 함수 목록만 보고 구현 작성(Green), "의도에 맞춰 부정"할 수 없음; 신규 제3자 라이브러리는 plan에서 승인된 의존 목록에 제한
+  - *Impl* 에이전트는 **PRD를 보지 않음**, 테스트 + 함수 목록만 보고 구현 작성(Green), "의도에 맞춰 부정"할 수 없음; 새 기술 도입은 plan에서 승인된 '신규 기술' 표에 제한
   - *Review* 에이전트는 PRD 인수 조건과 AGENTS.md에 대조하고 견고성/보안 관점으로도 점검, 읽기 전용
   - 각 단계의 진행을 `PROGRESS.md`에 기록, token 소진 시에도 **무손실 재개** 가능
   - 구현 중 설계 문제를 발견하면 멈추고 선택을 요청: 코드 수정 / 이번 PRD 수정 / 일시 중지; 작은 수정은 그 자리에서, 큰 수정은 `/prd`로 돌아가 재승인
@@ -155,7 +155,7 @@
 ### bb-spec-core — 범용 규율
 
 - **`tdd-workflow`** — Red-Green-Refactor 규율, 추가 / 수정 / 삭제 3 시나리오 표준 흐름 커버
-- **`version-policy`** — 표준 / 공식 라이브러리 우선, 신규 제3자 라이브러리 도입은 사용자의 명시적 동의 필요(`/plan` 단계에서 사용자가 동의한 의존 목록은 동의로 간주); 버전 고정 전 의존성의 공식 최신 버전 확인, 훈련 기억에 의존 금지
+- **`version-policy`** — 표준 라이브러리 우선, 프로젝트에 아직 없는 새 기술(라이브러리, 프레임워크, 언어, 데이터베이스, 미들웨어, 도구, 이미지, CI Action, 외부 서비스)을 도입하기 전에 항목별로 용도와 꼭 그것이어야 하는 이유를 나열하고 사용자 승인 후에만 사용, 플러그인 기본 스택과 사용자가 지정한 것도 동일(`/plan` 단계에서 승인된 '신규 기술' 표는 승인된 것으로 간주); 버전 고정 전 의존성의 공식 최신 버전 확인, 훈련 기억에 의존 금지
 - **`git-workflow`** — 브랜치 결정, 단계적 commit, 6개 섹션 PR 설명, 머지 후 정리
 
 ### bb-spec-backend — 백엔드 스택 제약
@@ -172,7 +172,7 @@
 
 ### bb-spec-frontend — 프론트엔드 스택 제약
 
-- **`vue-constraints`** — Vue 3 + TypeScript + Vite + Tailwind + bun 스택 강제 제약
+- **`vue-constraints`** — Vue 3 + TypeScript + Vite + Tailwind + bun 스택 제약(기본 스택은 도입 전 사용자 승인 필요, 사용자가 거부 가능)
 - **`frontend-constraints`** — 엔지니어링 규약: 통일된 요청 client, 에러 코드→UI 매핑 집중, UX 전용 라우트 가드, 계약에서 유래한 타입
 
 ---
@@ -251,9 +251,9 @@ claude plugin update bb-spec-workflow@0xbb2b   # 터미널에서 특정 서브 p
 
 | Hook | 소속 서브 plugin | 트리거 시점 | 효과 |
 |---|---|---|---|
-| `block-non-bun-pm` | bb-spec-frontend | PreToolUse(Bash) | `npm` / `yarn` / `pnpm`의 패키지 관리 동작을 차단하고 `bun` 강제; 기존 프로젝트에 매칭되는 lockfile(예: `package-lock.json`)이 존재할 경우 통과 |
+| `block-non-bun-pm` | bb-spec-frontend | PreToolUse(Bash) | `npm` / `yarn` / `pnpm`의 패키지 관리 동작: 아직 lockfile이 없는 프로젝트에서는 권한 확인 창으로 사용자에게 묻고(기본 추천은 `bun`), 매칭되는 lockfile(예: `package-lock.json`)이 있으면 통과, 다른 도구의 lockfile이 있으면 차단 |
 | `git-workflow-guard` | bb-spec-core | PreToolUse(Bash) | `main` / `master` 브랜치의 `git commit` 차단; 다른 git 흐름 동작(브랜치 생성 / push / worktree / merge / PR)은 통과시키고 git-workflow 규율과 실시간 git 상태 주입 |
-| `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | 의존성 파일 편집 후 "공식 최신 버전 먼저 확인" 자가 점검 리마인더 주입 |
+| `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | 의존성 파일 편집 후 "공식 최신 버전 먼저 확인" 자가 점검 리마인더 주입, 승인되지 않은 새 기술은 되돌리고 목록을 만들어 승인을 받도록 안내 |
 | `background-script-wait` | bb-spec-core | Stop | 이 세션에서 아직 알리지 않은 실행 중 백그라운드 명령을 발견하면 한 번 알림:Claude는 끝나는 스크립트는 포그라운드 루프로 기다리고, 상주 서비스는 기다리지 않음 |
 ---
 

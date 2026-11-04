@@ -15,7 +15,7 @@ allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 2. **角色隔离**：三个 Agent 各看各的输入互不可见——Test **禁看**函数清单和实现路径，Impl **禁看** PRD 原文，Review **禁止**修改文件
 3. **三 Agent 串行**：必须 Test → Impl → Review 顺序；每个 Agent prompt 自包含，不依赖对话上下文
 4. **进度即时持久化**：每步完成后立即更新 PROGRESS.md（不攒批），它是唯一进度事实源，重启后仅凭此文件恢复
-5. **Plan 即合同**：严格按 plan 的函数清单和业务规则实现，不自行扩展（额外需求走 `/prd`）；新增第三方库以 plan「新增第三方依赖」清单为上限——该清单已在 `/plan` 阶段经用户同意，清单外需要新库时必须停下询问用户，**禁自行 import**
+5. **Plan 即合同**：严格按 plan 的函数清单和业务规则实现，不自行扩展（额外需求走 `/prd`）；引入新技术以 plan「新增技术」表为上限——该表已在 `/plan` 阶段经用户批准；表外的新技术（项目里原来没有的库、框架、语言、数据库、中间件、工具、服务等）必须停下，按 `version-policy` 的新技术清单格式列出并弹窗请用户批准，**禁自行引入**
 6. **如实上报**：验证失败禁标 done；阻塞禁静默跳过——必须记录并告知用户
 7. **commit 守卫**：每步本地 commit 后**禁止自动 push**；在 main 分支上**禁止自动 commit**
 8. **遵守已激活 skill 约束**：exec 不重复其他 skill 的规则，但执行时必须遵守已激活约束（如 golang-testing 测试惯用法、golang-constraints 架构约束）
@@ -39,7 +39,7 @@ allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 | 行为预期（plan「验证方式」区） | ✅ | ❌ | ✅ |
 | 函数清单 + 文件路径 | ❌ | ✅ | ❌ |
 | 成品定义（plan「成品定义」区，如有） | ❌ | ✅ | ❌ |
-| 新增第三方依赖清单（plan「新增第三方依赖」区，如有） | ❌ | ✅ | ❌ |
+| 新增技术表（plan「新增技术」区，如有） | ✅ | ✅ | ❌ |
 | 协作关系 | ❌ | ✅ | ❌ |
 | 项目约束（语言/框架/架构） | ✅ | ✅ | ❌ |
 | 项目级约束（项目根 `AGENTS.md`「项目约束」节，如有） | ✅ | ✅ | ✅ |
@@ -96,9 +96,11 @@ git worktree list --porcelain
 
 组内每个 plan 各自完整走一遍 2a→2b→2c，多 plan 时组内各 plan 并发推进。**串行、并行都一样：Red / Green / Review 和修复后回归，跑测试只跑本 plan 的测试文件**（如 `go test ./internal/xxx`、`vitest run tests/xxx.test.ts`），不跑全量，派工 prompt 也不得要求子代理跑全量——全量测试一次可能要十几分钟，每个 plan 都跑会把整个 exec 拖慢；并行时同组其他 plan 还可能停在 Red，全量结果也判断不了本 plan 是否通过。plan 之间互相改坏的情况，留给步骤 4「全部完成」时的那一次全量测试发现。
 
-**2a. Test Agent — Red**：派 `bb-spec-workflow:test-engineer`，prompt 传「业务规则」+「验证方式」+ 项目测试惯例。主 Agent 验证：编译通过 + 断言失败 → ✅ Red 进 2b；编译失败 → 主 Agent 修 import/类型后重跑；意外全 PASS → 行为已存在则跳过，测试错误则修正；Test Agent 报告「方案问题」（约束互相矛盾、无法写成可判定的测试）→ 带它给的证据进下方「归因」。
+**2a. Test Agent — Red**：派 `bb-spec-workflow:test-engineer`，prompt 传「业务规则」+「验证方式」+ 新增技术表（如有）+ 项目测试惯例。主 Agent 验证：先做下方「新技术守卫」，再看：编译通过 + 断言失败 → ✅ Red 进 2b；编译失败 → 主 Agent 修 import/类型后重跑；意外全 PASS → 行为已存在则跳过，测试错误则修正；Test Agent 报告「方案问题」（约束互相矛盾、无法写成可判定的测试）→ 带它给的证据进下方「归因」。
 
-**2b. Impl Agent — Green**：派 `bb-spec-workflow:impl-engineer`，prompt 传「函数清单 + 文件路径 + 协作关系 + 成品定义（如有）+ 新增第三方依赖清单（如有）」+ 测试文件路径。主 Agent 验证：全部通过 → **依赖守卫**（diff `go.mod` / `package.json` 等依赖文件，新增第三方库不得超出 plan「新增第三方依赖」清单；超出则令 Impl Agent 改用标准库 / 已有依赖重跑，确属必需时停下询问用户、同意后先补录 plan 清单再继续）+ 简洁性审视（是否用最少实现解决问题、有无 plan 未要求的抽象/防御/功能），发现过度设计则反馈 Impl Agent 简化后重跑、通过则 ✅ Green 进 2c；有失败 → 反馈错误给 Impl Agent 重试（最多 1 次）；Impl Agent 报告「方案问题」（按函数清单或成品定义无法让测试通过，附证据）→ 不重试，直接进下方「归因」；仍失败 → 仍失败报告用户。
+**2b. Impl Agent — Green**：派 `bb-spec-workflow:impl-engineer`，prompt 传「函数清单 + 文件路径 + 协作关系 + 成品定义（如有）+ 新增技术表（如有）」+ 测试文件路径。主 Agent 验证：全部通过 → 下方「新技术守卫」+ 简洁性审视（是否用最少实现解决问题、有无 plan 未要求的抽象/防御/功能），发现过度设计则反馈 Impl Agent 简化后重跑、通过则 ✅ Green 进 2c；有失败 → 反馈错误给 Impl Agent 重试（最多 1 次）；Impl Agent 报告「方案问题」（按函数清单或成品定义无法让测试通过，附证据）→ 要用表外新技术的走下方「新技术守卫」，其余不重试，直接进下方「归因」；仍失败 → 仍失败报告用户。
+
+**新技术守卫**（2a、2b 每次子代理返回后都做）：比对范围是本主题全部 plan 的「新增技术」表合起来。① diff 本步骤对依赖文件和配置文件（如 `go.mod`、`package.json`、`Dockerfile`、`compose.yaml`、`.github/workflows/*`）的改动；② 看子代理报告的「方案问题」里有没有要用表外新技术。新技术的判定按 `version-policy`：官方扩展库（如 `golang.org/x/*`）、代码里直接引用的间接依赖都算。发现表外新技术时，这一步不算完成：先撤回本步骤引入的表外项：依赖文件和配置文件里的这些条目，以及本 plan 文件里引用它们的代码（只撤这些，同组其他 plan 的改动不动），再按 `version-policy` 的新技术清单格式列出、弹窗请用户批准，不进下方「归因」。用户同意 → 先补进对应 plan 的「新增技术」表，再重派这一步；用户不同意 → 令子代理改用标准库 / 项目已在用的技术重跑，做不到则标 blocked 上报。
 
 **2c. Review Agent — PRD 合规**：派 `bb-spec-workflow:prd-reviewer`，prompt 传「业务规则」+「验证方式」+ AGENTS.md 项目级约束（如有）+ 所有变更文件路径。主 Agent 处理：全 ✅ → 进步骤 3；有 ❌ 或 ⚠️ → **先归因，再按根因决定自决还是问用户**——非设计判断自行解决，不打断用户。
 
@@ -117,7 +119,7 @@ git worktree list --porcelain
 
 验证通过后**立即**更新 PROGRESS.md：当前步骤标 `done` + 填完成时间、"当前"区更新为下一步骤、清除已解决阻塞项。
 
-随后把本步骤产出做一次**本地** commit：先 `git branch --show-current` 确认分支（**在 main 上则跳过自动 commit**并提示按 git-workflow 先建分支）；按文件路径逐一 `git add`，只提交本步骤涉及文件（实现 + 测试 + `PROGRESS.md`；多仓库时实现与测试在各自代码仓库提交、`PROGRESS.md` 在文档仓库提交，每个 commit 都带标记）——并行期间工作区含同组其他 plan 的半成品，**禁 `git add .` / `git add -A`**；message 遵循仓库历史风格（先 `git log --oneline -10`）、不硬编码类型前缀，带 `Requirement: <本次 PRD 目录名>`（单独一行写在 commit 说明末尾）；**仅本地不自动 push**；blocked / 未通过的步骤不 commit。
+随后把本步骤产出做一次**本地** commit：先 `git branch --show-current` 确认分支（**在 main 上则跳过自动 commit**并提示按 git-workflow 先建分支）；按文件路径逐一 `git add`，只提交本步骤涉及文件（实现 + 测试 + `PROGRESS.md` + 本步骤补过「新增技术」表的 plan 文件；多仓库时实现与测试在各自代码仓库提交、`PROGRESS.md` 在文档仓库提交，每个 commit 都带标记）——并行期间工作区含同组其他 plan 的半成品，**禁 `git add .` / `git add -A`**；message 遵循仓库历史风格（先 `git log --oneline -10`）、不硬编码类型前缀，带 `Requirement: <本次 PRD 目录名>`（单独一行写在 commit 说明末尾）；**仅本地不自动 push**；blocked / 未通过的步骤不 commit。
 
 ### 步骤 4：循环或收尾
 

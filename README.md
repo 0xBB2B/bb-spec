@@ -68,7 +68,7 @@
  做什么   怎么做    Red→Green 文档追平代码    pre-review+开 PR
  (唯一一次批准)     →Review
 
- ══► 自动衔接(仅新增第三方依赖或需设计裁决时停下)
+ ══► 自动衔接(仅需引入新技术或需设计裁决时停下)
  ──► 由你手动触发
 
  (可选) /test-webview · /test-api — 提 PR 前多加一道检查:
@@ -98,12 +98,12 @@
 
 - **`/plan`** — PRD → 自包含、**函数级**实施计划,回答**「怎么做」**。
   - 每文件一独立问题,详细到函数名与职责;声明式产物(DDL / API 契约 / 配置)**直接内联最终成品**,exec 原样落盘
-  - 由 `/prd` 自动调用,产出后直接跑 `/exec`;只有需要**新增第三方依赖**时才停下请用户同意,同意即视为 version-policy 要求的授权
+  - 由 `/prd` 自动调用,产出后直接跑 `/exec`;只有需要**引入新技术**时才停下,逐项列出理由请用户一次批准,批准即视为 version-policy 要求的授权
   - plan 只在执行期间存在,全部完成后由 `/exec` 删除,避免和 PRD 重复
 
 - **`/exec`** — **三 Agent 隔离执行**,核心反作弊设计。
   - *Test* Agent 只读 PRD 约束写失败测试(Red)
-  - *Impl* Agent **看不到 PRD**,只看测试 + 函数清单写实现(Green),无法「照着意图作弊」;新增第三方库受 plan 已批依赖清单约束
+  - *Impl* Agent **看不到 PRD**,只看测试 + 函数清单写实现(Green),无法「照着意图作弊」;引入新技术受 plan 已批准的「新增技术」表约束
   - *Review* Agent 对照 PRD 验收与 AGENTS.md 检查并过一遍鲁棒性/安全视角,只读不写
   - 每步进度写 `PROGRESS.md`,token 耗尽也能**无损续接**
   - 实施中发现方案有问题,停下让你选:改代码 / 改本次 PRD / 暂停;小改就地改,大改回到 `/prd` 重新批准
@@ -154,7 +154,7 @@
 ### bb-spec-core — 通用纪律
 
 - **`tdd-workflow`** — Red-Green-Refactor 纪律,覆盖增 / 改 / 删三场景标准流程
-- **`version-policy`** — 官方库 / 标准库优先,新增第三方库须经用户明确同意(`/plan` 阶段用户同意的依赖清单视为已同意);钉版本前先查依赖官方最新版,禁凭训练记忆
+- **`version-policy`** — 标准库优先,引入项目里原来没有的新技术(库、框架、语言、数据库、中间件、工具、镜像、CI Action、外部服务)前逐项列出用途和为什么非它不可,用户批准后才能用,插件默认栈和用户点名的也一样(`/plan` 阶段批准的「新增技术」表视为已批准);钉版本前先查依赖官方最新版,禁凭训练记忆
 - **`git-workflow`** — 分支决策、阶段性 commit、六段式 PR 描述、合并后清理
 
 ### bb-spec-backend — 后端技术框架约束
@@ -171,7 +171,7 @@
 
 ### bb-spec-frontend — 前端技术框架约束
 
-- **`vue-constraints`** — Vue 3 + TypeScript + Vite + Tailwind + bun 技术栈强约束
+- **`vue-constraints`** — Vue 3 + TypeScript + Vite + Tailwind + bun 技术栈约束(默认栈引入前经用户批准,用户可否决)
 - **`frontend-constraints`** — 工程约定:统一请求 client、错误码→UI 映射集中、路由守卫仅 UX、类型来自契约
 
 ---
@@ -250,9 +250,9 @@ claude plugin update bb-spec-workflow@0xbb2b   # 在终端里更新某个子 plu
 
 | Hook | 所属子 plugin | 触发时机 | 作用 |
 |---|---|---|---|
-| `block-non-bun-pm` | bb-spec-frontend | PreToolUse(Bash) | 拦截 `npm` / `yarn` / `pnpm` 的包管理动作,强制 `bun`;既有项目已存在匹配 lockfile(如 `package-lock.json`)时放行 |
+| `block-non-bun-pm` | bb-spec-frontend | PreToolUse(Bash) | `npm` / `yarn` / `pnpm` 的包管理动作:项目还没有 lockfile 时弹权限确认窗问用户(默认推荐 `bun`),已有匹配 lockfile(如 `package-lock.json`)时放行,已有别的工具的 lockfile 时拒绝 |
 | `git-workflow-guard` | bb-spec-core | PreToolUse(Bash) | 拦截 `main` / `master` 分支的 `git commit`;其余 git 流程动作(开分支 / push / worktree / merge / PR)放行并注入 git-workflow 纪律与实时 git 状态 |
-| `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | 编辑依赖文件后注入「先查官方最新版」自检提示 |
+| `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | 编辑依赖文件后注入「先查官方最新版」自检提示,并提醒没批准的新技术要撤回、先列清单请用户批准 |
 | `background-script-wait` | bb-spec-core | Stop | 发现本会话没提示过的运行中后台命令时提示一次:Claude 用前台循环等完会结束的脚本,常驻服务不等 |
 ---
 
