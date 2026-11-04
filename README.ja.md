@@ -172,7 +172,7 @@
 
 ### bb-spec-frontend — フロントエンドスタック制約
 
-- **`vue-constraints`** — Vue 3 + TypeScript + Vite + Tailwind + bun スタック強制制約
+- **`vue-constraints`** — Vue 3 + TypeScript + Vite + Tailwind + bun スタック制約(デフォルトスタックは導入前にユーザー承認が必要、ユーザーは否決可能)
 - **`frontend-constraints`** — エンジニアリング規約:統一リクエスト client、エラーコード→UI マッピング集中、UX のみのルートガード、契約由来の型
 
 ---
@@ -251,7 +251,7 @@ claude plugin update bb-spec-workflow@0xbb2b   # ターミナルから特定の�
 
 | Hook | 所属サブ plugin | トリガータイミング | 効果 |
 |---|---|---|---|
-| `block-non-bun-pm` | bb-spec-frontend | PreToolUse(Bash) | `npm` / `yarn` / `pnpm` のパッケージ管理動作をブロックし `bun` を強制;既存プロジェクトで対応する lockfile(例 `package-lock.json`)がある場合は通過 |
+| `block-non-bun-pm` | bb-spec-frontend | PreToolUse(Bash) | `npm` / `yarn` / `pnpm` のパッケージ管理動作:まだ lockfile がないプロジェクトでは権限確認ダイアログでユーザーに確認(デフォルト推奨は `bun`)、対応する lockfile(例 `package-lock.json`)があれば通過、別ツールの lockfile があればブロック |
 | `git-workflow-guard` | bb-spec-core | PreToolUse(Bash) | `main` / `master` ブランチでの `git commit` をブロック;他の git フロー動作(ブランチ作成 / push / worktree / merge / PR)は通過させ git-workflow 規律とリアルタイム git ステータスを注入 |
 | `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | 依存ファイル編集後に「公式最新版を先に確認」セルフチェックリマインダを注入し、未承認の新技術は取り消してリストを出し承認を求めるよう促す |
 | `background-script-wait` | bb-spec-core | Stop | このセッションで未通知の実行中バックグラウンドコマンドを見つけたとき 1 回だけ通知:Claude は終了するスクリプトをフォアグラウンドのループで待ち、常駐サービスは待たない |

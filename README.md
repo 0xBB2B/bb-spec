@@ -171,7 +171,7 @@
 
 ### bb-spec-frontend — 前端技术框架约束
 
-- **`vue-constraints`** — Vue 3 + TypeScript + Vite + Tailwind + bun 技术栈强约束
+- **`vue-constraints`** — Vue 3 + TypeScript + Vite + Tailwind + bun 技术栈约束(默认栈引入前经用户批准,用户可否决)
 - **`frontend-constraints`** — 工程约定:统一请求 client、错误码→UI 映射集中、路由守卫仅 UX、类型来自契约
 
 ---
@@ -250,7 +250,7 @@ claude plugin update bb-spec-workflow@0xbb2b   # 在终端里更新某个子 plu
 
 | Hook | 所属子 plugin | 触发时机 | 作用 |
 |---|---|---|---|
-| `block-non-bun-pm` | bb-spec-frontend | PreToolUse(Bash) | 拦截 `npm` / `yarn` / `pnpm` 的包管理动作,强制 `bun`;既有项目已存在匹配 lockfile(如 `package-lock.json`)时放行 |
+| `block-non-bun-pm` | bb-spec-frontend | PreToolUse(Bash) | `npm` / `yarn` / `pnpm` 的包管理动作:项目还没有 lockfile 时弹权限确认窗问用户(默认推荐 `bun`),已有匹配 lockfile(如 `package-lock.json`)时放行,已有别的工具的 lockfile 时拒绝 |
 | `git-workflow-guard` | bb-spec-core | PreToolUse(Bash) | 拦截 `main` / `master` 分支的 `git commit`;其余 git 流程动作(开分支 / push / worktree / merge / PR)放行并注入 git-workflow 纪律与实时 git 状态 |
 | `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | 编辑依赖文件后注入「先查官方最新版」自检提示,并提醒没批准的新技术要撤回、先列清单请用户批准 |
 | `background-script-wait` | bb-spec-core | Stop | 发现本会话没提示过的运行中后台命令时提示一次:Claude 用前台循环等完会结束的脚本,常驻服务不等 |

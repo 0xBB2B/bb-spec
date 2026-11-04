@@ -172,7 +172,7 @@ These feed rules into the pipeline above — install only the layers you need.
 
 ### bb-spec-frontend — frontend stack constraints
 
-- **`vue-constraints`** — Vue 3 + TypeScript + Vite + Tailwind + bun hard stack constraints
+- **`vue-constraints`** — Vue 3 + TypeScript + Vite + Tailwind + bun stack constraints (defaults need user approval before being introduced, and the user can veto them)
 - **`frontend-constraints`** — Conventions: one unified request client, centralized error-code → UI mapping, UX-only route guards, types from the contract
 
 ---
@@ -251,7 +251,7 @@ Each hook ships with the sub-plugin that owns its concern — install that plugi
 
 | Hook | Sub-plugin | Trigger | Effect |
 |---|---|---|---|
-| `block-non-bun-pm` | bb-spec-frontend | PreToolUse(Bash) | Blocks `npm` / `yarn` / `pnpm` package-manager actions, enforcing `bun`; existing projects with a matching lockfile (e.g. `package-lock.json`) are allowed through |
+| `block-non-bun-pm` | bb-spec-frontend | PreToolUse(Bash) | For `npm` / `yarn` / `pnpm` package-manager actions: asks the user via a permission prompt when the project has no lockfile yet (`bun` is the default recommendation), allows them when a matching lockfile (e.g. `package-lock.json`) exists, and blocks them when another tool's lockfile exists |
 | `git-workflow-guard` | bb-spec-core | PreToolUse(Bash) | Blocks `git commit` on `main` / `master`; for other git flow actions (branch / push / worktree / merge / PR) allows them through and injects the git-workflow discipline plus live git status |
 | `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | After editing a dependency file, injects a "check the official latest version first" reminder, plus a reminder to revert any unapproved new tech and list it for approval first |
 | `background-script-wait` | bb-spec-core | Stop | When a running background command not yet flagged in this session is found, prompts once: Claude uses a foreground loop to wait for scripts that will finish, and does not wait for long-running services |

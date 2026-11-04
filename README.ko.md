@@ -172,7 +172,7 @@
 
 ### bb-spec-frontend — 프론트엔드 스택 제약
 
-- **`vue-constraints`** — Vue 3 + TypeScript + Vite + Tailwind + bun 스택 강제 제약
+- **`vue-constraints`** — Vue 3 + TypeScript + Vite + Tailwind + bun 스택 제약(기본 스택은 도입 전 사용자 승인 필요, 사용자가 거부 가능)
 - **`frontend-constraints`** — 엔지니어링 규약: 통일된 요청 client, 에러 코드→UI 매핑 집중, UX 전용 라우트 가드, 계약에서 유래한 타입
 
 ---
@@ -251,7 +251,7 @@ claude plugin update bb-spec-workflow@0xbb2b   # 터미널에서 특정 서브 p
 
 | Hook | 소속 서브 plugin | 트리거 시점 | 효과 |
 |---|---|---|---|
-| `block-non-bun-pm` | bb-spec-frontend | PreToolUse(Bash) | `npm` / `yarn` / `pnpm`의 패키지 관리 동작을 차단하고 `bun` 강제; 기존 프로젝트에 매칭되는 lockfile(예: `package-lock.json`)이 존재할 경우 통과 |
+| `block-non-bun-pm` | bb-spec-frontend | PreToolUse(Bash) | `npm` / `yarn` / `pnpm`의 패키지 관리 동작: 아직 lockfile이 없는 프로젝트에서는 권한 확인 창으로 사용자에게 묻고(기본 추천은 `bun`), 매칭되는 lockfile(예: `package-lock.json`)이 있으면 통과, 다른 도구의 lockfile이 있으면 차단 |
 | `git-workflow-guard` | bb-spec-core | PreToolUse(Bash) | `main` / `master` 브랜치의 `git commit` 차단; 다른 git 흐름 동작(브랜치 생성 / push / worktree / merge / PR)은 통과시키고 git-workflow 규율과 실시간 git 상태 주입 |
 | `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | 의존성 파일 편집 후 "공식 최신 버전 먼저 확인" 자가 점검 리마인더 주입, 승인되지 않은 새 기술은 되돌리고 목록을 만들어 승인을 받도록 안내 |
 | `background-script-wait` | bb-spec-core | Stop | 이 세션에서 아직 알리지 않은 실행 중 백그라운드 명령을 발견하면 한 번 알림:Claude는 끝나는 스크립트는 포그라운드 루프로 기다리고, 상주 서비스는 기다리지 않음 |
