@@ -146,7 +146,9 @@ git log -L :<函数>:<文件> -s --format='%h %s%n%b' | grep -e '^[0-9a-f]\{7,40
 
 > **多 repo 派发节律**（修复涉及 ≥ 2 个 repo 时适用）：以「单 repo 的 PRD/code/test 链路」为最小派发单元，按 repo 顺序逐个走完整 Test→Impl→Review 循环，**禁止把多 repo 路径塞进一个 subagent**。全部完成后才进入步骤 4 回归验证。
 
-**轻量修复判断**：**同时满足全部条件**时可向用户提议跳过 3-Agent 隔离直接修——归因为 impl-defect + 改动 ≤ 1 个文件 ≤ 10 行 + 修复逻辑显而易见（拼写错误、off-by-one、条件取反）。
+> **新技术**：修复要用项目里原来没有的新技术（判定和清单格式按 `version-policy` skill）时，先停下按新技术清单列出、弹窗请用户批准，同意前不改依赖文件和配置文件。派 test-engineer、impl-engineer 时，把用户在本次 revise 里批准的项作为「新增技术」表一起传过去；子代理在「方案问题」里上报要用表外新技术时，同样先列清单弹窗，不进归因。
+
+**轻量修复判断**：**同时满足全部条件**时可向用户提议跳过 3-Agent 隔离直接修——归因为 impl-defect + 改动 ≤ 1 个文件 ≤ 10 行 + 修复逻辑显而易见（拼写错误、off-by-one、条件取反）+ 不引入新技术。
 
 提议话术：`"这个修复只改 <文件>，约 <N> 行，是否跳过 3-Agent 隔离直接修？"`
 - 同意 → 主 agent 直接 TDD 修复（仍须先补失败测试再改实现），跳过 Agent 派发；**修代码前必须调用 `Skill code-constraints` 加载代码纪律约束并严格遵守**
@@ -163,14 +165,14 @@ git log -L :<函数>:<文件> -s --format='%h %s%n%b' | grep -e '^[0-9a-f]\{7,40
 1. 编辑本分支 PRD 修正约束 / 验收 / 用例，保持约束与验收一一对应，并在「决策记录」记一条：改了什么、为什么、否掉了哪些做法
 2. **检查 plan 影响**：有进行中的 plan 用到这条约束 → 原地修正其业务规则 / 验证方式，`done` 的步骤改回 `pending`；没有 → 跳过
 3. **TDD 修复实现（强制三 Agent 派发）**：
-   - 派 `bb-spec-workflow:test-engineer`，prompt 传「期望行为 + 验证预期 + 项目测试惯例」→ 主 agent 验证 Red
-   - 派 `bb-spec-workflow:impl-engineer`，prompt 传「函数清单 + 文件路径 + 测试文件路径 + 项目约束」→ 主 agent 验证 Green
+   - 派 `bb-spec-workflow:test-engineer`，prompt 传「期望行为 + 验证预期 + 新增技术表（本次批准的，如有）+ 项目测试惯例」→ 主 agent 验证 Red
+   - 派 `bb-spec-workflow:impl-engineer`，prompt 传「函数清单 + 文件路径 + 测试文件路径 + 新增技术表（本次批准的，如有）+ 项目约束」→ 主 agent 验证 Green
    - 派 `bb-spec-workflow:prd-reviewer`，prompt 传「期望行为 + 验证预期 + AGENTS.md 项目级约束（如有）+ 所有变更文件路径」→ 主 agent 处理 review 结果
 
 #### 3b. impl-defect（强制三 Agent 派发）
 
-1. 派 `bb-spec-workflow:test-engineer`，prompt 传「被违反的期望行为 + 验证预期 + 项目测试惯例」→ 主 agent 验证测试能暴露 bug（Red）
-2. 派 `bb-spec-workflow:impl-engineer`，prompt 传「函数清单 + 文件路径 + 测试文件 + 项目约束」→ 主 agent 验证 Green
+1. 派 `bb-spec-workflow:test-engineer`，prompt 传「被违反的期望行为 + 验证预期 + 新增技术表（本次批准的，如有）+ 项目测试惯例」→ 主 agent 验证测试能暴露 bug（Red）
+2. 派 `bb-spec-workflow:impl-engineer`，prompt 传「函数清单 + 文件路径 + 测试文件 + 新增技术表（本次批准的，如有）+ 项目约束」→ 主 agent 验证 Green
 3. 派 `bb-spec-workflow:prd-reviewer`，prompt 传「期望行为 + 验证预期 + AGENTS.md 项目级约束（如有）+ 所有变更文件路径」→ 主 agent 处理 review 结果
 
 #### 3c. requirement-change
