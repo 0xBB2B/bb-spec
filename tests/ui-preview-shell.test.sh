@@ -44,9 +44,12 @@ if grep -qF 'max-height: 30vh' "$SHELL_HTML"; then pass; else fail "底部最大
 if [[ "$(grep -cF '/* PROTOTYPE-START' "$SHELL_HTML")" == "1" ]]; then pass; else fail "填写区起点标记应恰好出现一次"; fi
 if [[ "$(grep -cF '/* PROTOTYPE-END */' "$SHELL_HTML")" == "1" ]]; then pass; else fail "填写区终点标记应恰好出现一次"; fi
 
-echo "[外壳里的 15 个元素都写在 HTML 里]"
-for id in schemeBox schemeHint schemePick pagePick statePick stateLabel frameScheme frameTitle stage noteList fakeList openList sideTitle sideVersion dock; do
+echo "[外壳里的 14 个元素都写在 HTML 里]"
+for id in schemeBar schemeCurrent schemePick pagePick statePick stateLabel frameTitle stage noteList fakeList openList sideTitle sideVersion dock; do
   if grep -qE "<[a-z0-9]+[^>]*[[:space:]]id=\"${id}\"" "$SHELL_HTML"; then pass; else fail "HTML 里没有 id=\"${id}\" 的元素"; fi
+done
+for id in schemeBox schemeHint frameScheme; do
+  if grep -qF "id=\"${id}\"" "$SHELL_HTML"; then fail "HTML 里不应有 id=\"${id}\""; else pass; fi
 done
 
 TMPDIR_T="$(mktemp -d)"
@@ -233,8 +236,9 @@ const loadHtml = (html, media) => {
     },
     snap: () => JSON.stringify({
       title: $('frameTitle').textContent,
-      scheme: $('frameScheme').textContent,
-      schemeHidden: $('frameScheme').hidden,
+      current: $('schemeCurrent').textContent,
+      barHidden: $('schemeBar').hidden,
+      currentHidden: $('schemeCurrent').hidden,
       srcdoc: $('stage').srcdoc,
       notes: api.texts('noteList'),
       fakes: api.texts('fakeList'),
@@ -278,6 +282,7 @@ const SCH = [
   { id: 'b', label: '方案 B', desc: '卡片', note: 'B取舍' },
   { id: 'c', label: '方案 C', desc: '列表', note: 'C取舍' },
 ];
+const schemeLabels = (a) => a.buttons('schemePick').map((b) => b.textContent);
 const mk = (n, over) => {
   const schemes = SCH.slice(0, n).map((scheme) => ({ ...scheme }));
   return Object.assign({
@@ -312,12 +317,12 @@ group('默认数据：初始画面', () => {
   const a = load();
   eq(a.txt('sideTitle'), '订单导出（示例）', '左栏标题');
   eq(a.txt('sideVersion'), '第 1 版 · 这一栏上线后不存在', '版本文字');
-  eq(a.txt('schemeHint'), '这份原型有 2 个方案，点这里切换对比', '方案切换提示');
-  eq(a.txt('frameScheme'), '方案 A：表格', '框上方方案标签');
-  eq(a.txt('frameTitle'), '订单列表 · 正常', '框上方右侧标题');
+  eq(a.txt('schemeCurrent'), '当前：方案 A：表格', '左栏当前方案');
+  eq(schemeLabels(a), ['方案 A：表格', '方案 B：卡片'], '框上方方案按钮文字');
+  eq(a.txt('frameTitle'), '订单列表 · 正常', '框上方左侧标题');
   eq(a.txt('stateLabel'), '状态', '普通页面的第二组标题');
-  ok(a.$('schemeBox').hidden === false, '2 个方案时切换框显示');
-  ok(a.$('frameScheme').hidden === false, '2 个方案时方案标签显示');
+  ok(a.$('schemeBar').hidden === false, '2 个方案时框上方方案区显示');
+  ok(a.$('schemeCurrent').hidden === false, '2 个方案时左栏当前方案显示');
   eq([a.buttons('schemePick').length, a.buttons('pagePick').length, a.buttons('statePick').length], [2, 3, 4], '按钮数量');
   eq([a.pressed('schemePick'), a.pressed('pagePick'), a.pressed('statePick')],
     [[true, false], [true, false, false], [true, false, false, false]], '选中态 aria-pressed');
@@ -330,7 +335,7 @@ group('默认数据：方案、页面、状态切换', () => {
   const before = a.srcdoc();
   const noteA = a.texts('noteList')[0];
   a.pick('schemePick', 1);
-  eq(a.txt('frameScheme'), '方案 B：卡片', '切方案后标签');
+  eq(a.txt('schemeCurrent'), '当前：方案 B：卡片', '切方案后左栏当前方案');
   eq(a.txt('frameTitle'), '订单列表 · 正常', '切方案后页面和状态不变');
   ok(a.srcdoc() !== before, '各方案不同的画面切方案后 srcdoc 变化');
   ok(a.texts('noteList')[0] !== noteA && a.texts('noteList')[0] !== SAME, '各方案不同的画面第一条是当前方案的取舍');
@@ -339,7 +344,7 @@ group('默认数据：方案、页面、状态切换', () => {
   eq(a.texts('noteList')[0], SAME, '空数据画面（各方案相同）第一条');
   a.pick('schemePick', 0);
   eq(a.texts('noteList')[0], SAME, '切回方案 A 后仍是各方案一样');
-  eq(a.txt('frameScheme'), '方案 A：表格', '切回方案 A');
+  eq(a.txt('schemeCurrent'), '当前：方案 A：表格', '切回方案 A');
 
   a.pick('statePick', 3);
   eq(a.txt('frameTitle'), '订单列表 · 出错', '切状态');
@@ -363,7 +368,7 @@ group('默认数据：框内跳转', () => {
   viaBtn.pick('schemePick', 1);
   viaBtn.pick('pagePick', 1);
   eq(a.txt('frameTitle'), '订单详情 · 正常', '跳转后标题');
-  eq(a.txt('frameScheme'), '方案 B：卡片', '跳转后方案不变');
+  eq(a.txt('schemeCurrent'), '当前：方案 B：卡片', '跳转后方案不变');
   eq(a.snap(), viaBtn.snap(), '跳转与点按钮结果一致（框、提示、说明三处同步）');
   const b = load();
   b.pick('schemePick', 1);
@@ -387,8 +392,8 @@ group('自定义数据：初始画面与说明', () => {
   const a = load(mk(2));
   eq(a.txt('sideTitle'), '自定义标题', '标题');
   eq(a.txt('sideVersion'), '第 3 版 · 这一栏上线后不存在', '版本');
-  eq(a.txt('schemeHint'), '这份原型有 2 个方案，点这里切换对比', '提示');
-  eq(a.txt('frameScheme'), '方案 A：表格', '方案标签');
+  eq(a.txt('schemeCurrent'), '当前：方案 A：表格', '左栏当前方案');
+  eq(schemeLabels(a), ['方案 A：表格', '方案 B：卡片'], '方案按钮文字');
   eq(a.txt('frameTitle'), '页一 · 态一', '框上方标题');
   eq(a.texts('noteList')[0], 'A取舍', '说明第一条是当前方案取舍');
   ok(a.texts('noteList').includes('N1'), '说明含画面自己的说明');
@@ -413,7 +418,7 @@ group('自定义数据：切换保持与重置', () => {
   a.pick('schemePick', 1);
   a.pick('pagePick', 1);
   eq(a.txt('frameTitle'), '页二 · 甲', '切页面回到第一项');
-  eq(a.txt('frameScheme'), '方案 B：卡片', '切页面方案不变');
+  eq(a.txt('schemeCurrent'), '当前：方案 B：卡片', '切页面方案不变');
   eq(a.texts('fakeList'), ['无'], '没有假内容时显示无');
   eq(a.texts('noteList')[0], SAME, '相同画面第一条（页二）');
   eq(a.pressed('pagePick'), [false, true, false], '页面选中态');
@@ -454,27 +459,52 @@ group('自定义数据：跳转', () => {
   a.pick('schemePick', 1);
   a.post('p2:t2');
   eq(a.txt('frameTitle'), '页二 · 乙', '跳转标题');
-  eq(a.txt('frameScheme'), '方案 B：卡片', '跳转方案不变');
+  eq(a.txt('schemeCurrent'), '当前：方案 B：卡片', '跳转方案不变');
   eq(a.pressed('pagePick'), [false, true, false], '跳转后页面选中');
   eq(a.pressed('statePick'), [false, true], '跳转后状态选中');
   ok(a.srcdoc().includes('P2T2'), '跳转后内容');
   eq(a.texts('noteList'), [SAME, 'M2'], '跳转后说明');
 });
 
+group('方案切换在框上方右侧', () => {
+  const a = load(mk(2));
+  ok(a.$('schemeBar').hidden === false, '2 个方案时 schemeBar 显示');
+  eq(schemeLabels(a), ['方案 A：表格', '方案 B：卡片'], '方案按钮文字是「短名：特点」');
+  eq(a.buttons('schemePick').map((b) => b.getAttribute('aria-pressed')), ['true', 'false'], '当前方案按钮 aria-pressed 为 true');
+  eq(a.txt('schemeCurrent'), '当前：方案 A：表格', '左栏当前方案');
+  a.pick('pagePick', 1);
+  a.pick('statePick', 1);
+  const titleBefore = a.txt('frameTitle');
+  a.pick('schemePick', 1);
+  eq(a.txt('frameTitle'), titleBefore, '点方案 B 后 frameTitle 不变');
+  eq(a.txt('schemeCurrent'), '当前：方案 B：卡片', '点方案 B 后左栏当前方案跟着变');
+  eq([a.pressed('pagePick'), a.pressed('statePick')], [[false, true, false], [false, true]], '点方案 B 后页面和状态选中项不变');
+  eq(a.pressed('schemePick'), [false, true], '点方案 B 后方案按钮选中项跟着变');
+
+  const b = load(mk(2));
+  b.pick('statePick', 0);
+  const before = b.srcdoc();
+  b.pick('schemePick', 1);
+  ok(b.srcdoc().includes('HTML_b') && b.srcdoc() !== before, '方案 A 的状态点方案 B 后 srcdoc 换成方案 B 的内容');
+  eq(b.txt('frameTitle'), '页一 · 态一', '框上方标题不变');
+});
+
 group('3 个方案', () => {
   const a = load(mk(3));
-  eq(a.txt('schemeHint'), '这份原型有 3 个方案，点这里切换对比', '提示');
+  eq(schemeLabels(a), ['方案 A：表格', '方案 B：卡片', '方案 C：列表'], '3 个方案按钮文字');
+  eq(a.txt('schemeCurrent'), '当前：方案 A：表格', '初始当前方案');
   eq(a.texts('openList')[0], '选方案 A、方案 B 还是方案 C', '3 个方案的问题');
   a.pick('schemePick', 2);
-  eq(a.txt('frameScheme'), '方案 C：列表', '方案 C 标签');
+  eq(a.txt('schemeCurrent'), '当前：方案 C：列表', '切到方案 C 后当前方案');
+  eq(a.pressed('schemePick'), [false, false, true], '方案 C 选中');
   eq(a.texts('noteList')[0], 'C取舍', '方案 C 取舍');
   eq(a.texts('openList')[0], '选方案 A、方案 B 还是方案 C', '切方案后问题不变');
 });
 
 group('只有 1 个方案', () => {
   const a = load(mk(1));
-  ok(a.$('schemeBox').hidden === true, 'schemeBox 隐藏');
-  ok(a.$('frameScheme').hidden === true, 'frameScheme 隐藏');
+  ok(a.$('schemeBar').hidden === true, 'schemeBar 隐藏');
+  ok(a.$('schemeCurrent').hidden === true, 'schemeCurrent 隐藏');
   eq(a.texts('noteList'), ['N1'], '说明里没有方案相关内容');
   eq(a.texts('openList'), ['Q1'], '问题里没有方案相关内容');
   a.pick('statePick', 1);
@@ -585,7 +615,7 @@ group('省略的字段', () => {
 
 const ERR_TEXT = '原型填写有误，这不是正式页面。';
 const ERR_TITLE = '原型填写有误';
-const TEXT_IDS = ['schemeHint', 'frameScheme', 'stateLabel', 'noteList', 'fakeList', 'openList'];
+const TEXT_IDS = ['schemeCurrent', 'stateLabel', 'noteList', 'fakeList', 'openList'];
 const untouched = (a, label) => TEXT_IDS.forEach((id) => eq(a.txt(id), '', `${label}：${id} 在抛错前不应被更新`));
 
 group('错误提示：监听器在填写区之前注册', () => {
@@ -616,20 +646,20 @@ group('错误提示：缺方案内容、省略 html', () => {
   ok(a.srcdoc().includes(msg), '框里显示错误原因');
   eq(a.txt('frameTitle'), ERR_TITLE, '框上方右边显示原型填写有误');
   untouched(a, '缺方案内容');
-  eq(a.$('schemeBox').hidden, true, '首屏出错时切换框隐藏');
-  eq(a.$('frameScheme').hidden, true, '首屏出错时方案标签隐藏');
+  eq(a.$('schemeBar').hidden, true, '首屏出错时框上方方案区隐藏');
+  eq(a.$('schemeCurrent').hidden, true, '首屏出错时左栏当前方案隐藏');
 
   const c = mk(2);
   c.pages[0].states[0].html = { a: '<p>only a</p>' };
   const b = load(c);
   eq(b.errors.length, 0, '当前方案有内容时不报错');
-  const scheme = b.txt('frameScheme');
+  const current = b.txt('schemeCurrent');
   const notes = b.texts('noteList');
   b.pick('schemePick', 1);
   eq(b.errors.length, 1, '切到缺内容的方案时抛错');
   ok(b.errors.length === 1 && b.errors[0].message.includes('缺少方案 B 的内容'), '错误信息含缺少方案 B 的内容');
   ok(b.srcdoc().includes(ERR_TEXT), '切换后框里显示固定提示');
-  eq(b.txt('frameScheme'), scheme, '抛错前没有更新方案标签');
+  eq(b.txt('schemeCurrent'), current, '抛错前没有更新当前方案');
   eq(b.texts('noteList'), notes, '抛错前没有更新说明');
 
   const e = mk(2);
@@ -751,16 +781,16 @@ group('方案字段漏写', () => {
 
 group('出错时方案区隐藏', () => {
   const tag = (id) => (new RegExp('<\\w+[^>]*\\sid="' + id + '"[^>]*>').exec(HTML) || [''])[0];
-  ok(/\shidden(?=[\s>])/.test(tag('schemeBox')), 'HTML 里 schemeBox 开始标签带 hidden');
-  ok(/\shidden(?=[\s>])/.test(tag('frameScheme')), 'HTML 里 frameScheme 开始标签带 hidden');
+  ok(/\shidden(?=[\s>])/.test(tag('schemeBar')), 'HTML 里 schemeBar 开始标签带 hidden');
+  ok(/\shidden(?=[\s>])/.test(tag('schemeCurrent')), 'HTML 里 schemeCurrent 开始标签带 hidden');
 
   const bad = loadHtml(withFill('const PROTOTYPE = 1 2;'));
-  ok(bad.$('schemeBox').hidden === true, '语法错误时 schemeBox 隐藏');
-  ok(bad.$('frameScheme').hidden === true, '语法错误时 frameScheme 隐藏');
+  ok(bad.$('schemeBar').hidden === true, '语法错误时 schemeBar 隐藏');
+  ok(bad.$('schemeCurrent').hidden === true, '语法错误时 schemeCurrent 隐藏');
 
   const good = load(mk(2));
-  ok(good.$('schemeBox').hidden === false, '多方案正常加载后 schemeBox 不隐藏');
-  ok(good.$('frameScheme').hidden === false, '多方案正常加载后 frameScheme 不隐藏');
+  ok(good.$('schemeBar').hidden === false, '多方案正常加载后 schemeBar 不隐藏');
+  ok(good.$('schemeCurrent').hidden === false, '多方案正常加载后 schemeCurrent 不隐藏');
 });
 
 group('填写区用了和外壳内部相同的名字', () => {
@@ -798,7 +828,6 @@ group('结构与样式（按区块）', () => {
   ok(/dashed/.test(tagCss), '.tag 是虚线框');
   ok(/(?:^|[;\s])color:\s*var\(--accent\)/.test(tagCss), '.tag 文字色是 var(--accent)');
   ok(!/background/.test(tagCss), '.tag 没有背景');
-  ok(/1px dashed var\(--accent\)/.test(block('\\.scheme')), '.scheme 是 1px 强调色虚线框');
   ok(/outline:\s*1px dashed var\(--accent\)/.test(block('iframe')), 'iframe 有 outline: 1px dashed var(--accent)');
   const dockCss = block('\\.dock');
   ok(/border-top:\s*1px dashed var\(--accent\)/.test(dockCss), '.dock 上边 1px 强调色虚线');
@@ -821,23 +850,35 @@ group('结构与样式（按区块）', () => {
   ok(/min-width:\s*960px/.test(block('body')), 'body 规则块里有 min-width: 960px');
   ok(/grid-template-columns:\s*240px 1fr/.test(block('body')), 'body 规则块里有 grid-template-columns: 240px 1fr');
   ok(/grid-template-rows:\s*auto minmax\(0, 1fr\) auto/.test(block('main')), 'main 规则块里有 grid-template-rows: auto minmax(0, 1fr) auto');
-  const bar = block('\\.frame-bar');
-  ok(/white-space:\s*nowrap/.test(bar) && /overflow:\s*hidden/.test(bar), '.frame-bar 有 white-space: nowrap 和 overflow: hidden');
-  const title = block('#frameTitle');
-  ok(/min-width:\s*0/.test(title) && /overflow:\s*hidden/.test(title) && /text-overflow:\s*ellipsis/.test(title), '#frameTitle 有 min-width: 0、overflow: hidden、text-overflow: ellipsis');
+  const frameRight = block('\\.frame-right');
+  ok(/flex-wrap:\s*wrap/.test(frameRight), '.frame-right 有 flex-wrap: wrap');
+  ok(/justify-content:\s*flex-end/.test(frameRight), '.frame-right 有 justify-content: flex-end');
+  ok(/flex-wrap:\s*wrap/.test(block('\\.frame-bar')), '.frame-bar 有 flex-wrap: wrap，左边标题太长时右侧按钮组整组换到下一行');
+  ok(/min-width:\s*260px/.test(frameRight) && /(?:^|[;\s])flex:\s*1 1 260px/.test(frameRight), '.frame-right 至少保留 260px（flex: 1 1 260px; min-width: 260px），按钮不被挤出窗口');
+  ok(/(?:^|[;\s])flex:\s*none/.test(block('\\.frame-left')), '.frame-left 有 flex: none');
+  ok(!/text-overflow:\s*ellipsis/.test(css), 'CSS 里没有 text-overflow: ellipsis');
 
   const at = (needle, from = 0) => HTML.indexOf(needle, from);
   ok(at('<aside') >= 0 && at('<aside') < at('<main>'), '<aside 在 <main> 之前');
   ok(at('class="frame-bar"') >= 0 && at('class="frame-bar"') < at('id="stage"'), 'frame-bar 在 stage 之前');
   ok(at('id="stage"') >= 0 && at('id="stage"') < at('class="dock"'), 'stage 在 dock 之前');
-  const side = [aside.indexOf('id="sideTitle"'), aside.indexOf('id="schemeBox"'), aside.indexOf('id="pagePick"')];
-  ok(side.every((i, k) => i >= 0 && (k === 0 || i > side[k - 1])), `左栏里 sideTitle、schemeBox、pagePick 依次出现：${side}`);
-  const barAt = at('class="frame-bar"');
-  const top = [at('被设计的页面', barAt), at('id="frameScheme"', barAt), at('id="frameTitle"', barAt)];
-  ok(top.every((i, k) => i >= 0 && (k === 0 || i > top[k - 1])), `框上方：被设计的页面、frameScheme、frameTitle 依次出现：${top}`);
-  const rightAt = at('class="frame-right"', barAt);
-  ok(rightAt >= 0 && rightAt > top[0] && rightAt < top[1], `frame-right 在被设计的页面之后、frameScheme 之前：${rightAt}`);
-  ok(rightAt >= 0 && rightAt < top[2] && at('id="stage"') > top[2], 'frameScheme 和 frameTitle 都在 frame-right 里（stage 之前）');
+  const side = [aside.indexOf('id="sideTitle"'), aside.indexOf('id="schemeCurrent"'), aside.indexOf('id="pagePick"')];
+  ok(side.every((i, k) => i >= 0 && (k === 0 || i > side[k - 1])), `左栏里 sideTitle、schemeCurrent、pagePick 依次出现：${side}`);
+  ok(!aside.includes('id="schemePick"') && !aside.includes('id="schemeBar"'), '左栏里没有方案按钮');
+  const leftAt = at('class="frame-left"', at('class="frame-bar"'));
+  const rightAt = at('class="frame-right"', leftAt);
+  ok(leftAt >= 0 && rightAt > leftAt, `frame-left 在 frame-right 之前：${leftAt},${rightAt}`);
+  const left = HTML.slice(leftAt, rightAt);
+  const leftOrder = [left.indexOf('被设计的页面'), left.indexOf('id="frameTitle"')];
+  ok(leftOrder.every((i, k) => i >= 0 && (k === 0 || i > leftOrder[k - 1])), `.frame-left 里被设计的页面、frameTitle 依次出现：${leftOrder}`);
+  const right = HTML.slice(rightAt, at('id="stage"'));
+  ok(!right.includes('id="frameTitle"') && !right.includes('被设计的页面'), '.frame-right 里没有 frameTitle 和被设计的页面');
+  const rightOrder = [right.indexOf('id="schemeBar"'), right.indexOf('id="themeLight"')];
+  ok(rightOrder.every((i, k) => i >= 0 && (k === 0 || i > rightOrder[k - 1])), `.frame-right 里 schemeBar 在 themeLight 之前：${rightOrder}`);
+  ok(/id="schemeBar"[^]*?>方案<[^]*?id="schemePick"/.test(right), '#schemeBar 里先是文字「方案」，后面是 #schemePick');
+  const themeAt = right.search(/<[a-z]+[^>]*class="theme"[^>]*>/);
+  const themeEnd = right.indexOf('</span>', themeAt);
+  ok(themeAt >= 0 && themeEnd > themeAt && /^\s*<\/div>/.test(right.slice(themeEnd + '</span>'.length)), '.theme 是 .frame-right 的最后一个子元素');
 });
 
 group('主题：颜色变量', () => {
@@ -870,12 +911,11 @@ group('主题：切换按钮的位置和文字', () => {
   const rightAt = HTML.indexOf('class="frame-right"');
   const stageAt = HTML.indexOf('id="stage"');
   const right = HTML.slice(rightAt, stageAt);
-  const titleAt = right.indexOf('id="frameTitle"');
   const lightAt = right.indexOf('id="themeLight"');
   const darkAt = right.indexOf('id="themeDark"');
-  ok(rightAt >= 0 && titleAt >= 0 && lightAt > titleAt && darkAt > lightAt, `#themeLight、#themeDark 在 .frame-right 里且在 #frameTitle 之后：${titleAt},${lightAt},${darkAt}`);
+  ok(rightAt >= 0 && lightAt >= 0 && darkAt > lightAt, `#themeLight、#themeDark 在 .frame-right 里且先明亮后暗黑：${lightAt},${darkAt}`);
   const wrapAt = right.search(/<[a-z]+[^>]*class="theme"[^>]*>/);
-  ok(wrapAt > titleAt && wrapAt < lightAt, '两个按钮外包一层 class 为 theme 的元素');
+  ok(wrapAt >= 0 && wrapAt < lightAt, '两个按钮外包一层 class 为 theme 的元素');
   const tagOf = (id) => (new RegExp('<button[^>]*id="' + id + '"[^>]*>([^<]*)<').exec(right) || ['', '']);
   eq(tagOf('themeLight')[1].trim(), '☀ 明亮', '明亮按钮文字');
   eq(tagOf('themeDark')[1].trim(), '☾ 暗黑', '暗黑按钮文字');

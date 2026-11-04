@@ -55,12 +55,6 @@
   .side-head { padding: 12px 14px; border-bottom: 1px solid var(--shell-line); }
   .side-head h1 { margin: 10px 0 2px; font-size: 14px; }
   .side-head p { margin: 0; font-size: 11px; color: var(--shell-muted); }
-  .scheme {
-    margin: 12px 10px 0;
-    padding: 10px;
-    border: 1px dashed var(--accent);
-  }
-  .scheme h2 { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: var(--accent); }
   .side-body { padding: 14px 12px; }
   .side-body h2 { margin: 0 0 6px; font-size: 12px; font-weight: 500; color: var(--shell-muted); }
   .side-body h3 { margin: 14px 0 6px; font-size: 12px; font-weight: 500; color: var(--shell-muted); }
@@ -87,18 +81,20 @@
   }
   .frame-bar {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     gap: 16px;
     padding: 5px 2px 6px;
-    overflow: hidden;
     font-size: 12px;
-    white-space: nowrap;
   }
-  .frame-bar strong { flex: none; font-weight: 600; }
-  .frame-right { display: flex; align-items: center; gap: 10px; min-width: 0; }
-  .frame-right .tag { flex: none; }
-  #frameTitle { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--shell-muted); }
+  .frame-left { flex: none; display: flex; gap: 10px; padding-top: 5px; white-space: nowrap; }
+  .frame-left strong { font-weight: 600; }
+  #frameTitle { color: var(--shell-muted); }
+  .frame-right { flex: 1 1 260px; min-width: 260px; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 4px; }
+  #schemeBar, #schemePick { display: contents; }
+  .scheme-label { margin-right: 2px; color: var(--shell-muted); }
+  .scheme-current { margin: 0 0 10px; color: var(--accent); font-weight: 600; }
   iframe {
     display: block;
     width: 100%;
@@ -129,11 +125,8 @@
       <h1 id="sideTitle"></h1>
       <p id="sideVersion"></p>
     </div>
-    <div class="scheme" id="schemeBox" hidden>
-      <h2 id="schemeHint"></h2>
-      <div class="pick" id="schemePick"></div>
-    </div>
     <div class="side-body">
+      <p class="scheme-current" id="schemeCurrent" hidden></p>
       <h2>切换要看的内容</h2>
       <h3>页面</h3>
       <div class="pick" id="pagePick"></div>
@@ -144,10 +137,12 @@
 
   <main>
     <div class="frame-bar">
-      <strong>▼ 被设计的页面：只有这个框里的内容要实现</strong>
-      <div class="frame-right">
-        <span class="tag" id="frameScheme" hidden></span>
+      <div class="frame-left">
+        <strong>▼ 被设计的页面：只有这个框里的内容要实现</strong>
         <span id="frameTitle"></span>
+      </div>
+      <div class="frame-right">
+        <span id="schemeBar" hidden><span class="scheme-label">方案</span><span class="pick" id="schemePick"></span></span>
         <span class="theme" aria-label="外壳明暗">
           <button type="button" id="themeLight" aria-pressed="false">☀ 明亮</button>
           <button type="button" id="themeDark" aria-pressed="false">☾ 暗黑</button>
@@ -471,10 +466,9 @@ const PROTOTYPE = {
     function render() {
       const { scheme, page, state } = current;
       const doc = frameDoc(page, state, scheme);
-      el('schemeBox').hidden = !hasChoice;
-      el('frameScheme').hidden = !hasChoice;
-      el('schemeHint').textContent = `这份原型有 ${schemes.length} 个方案，点这里切换对比`;
-      el('frameScheme').textContent = schemeName(scheme);
+      el('schemeBar').hidden = !hasChoice;
+      el('schemeCurrent').hidden = !hasChoice;
+      el('schemeCurrent').textContent = `当前：${schemeName(scheme)}`;
       pickButtons(el('schemePick'), schemes, scheme, schemeName, (item) => select(item, page, state));
       pickButtons(el('pagePick'), pages, page, (item) => item.name, (item) => select(scheme, item, item.states[0]));
       pickButtons(el('statePick'), page.states, state, (item) => item.name, (item) => select(scheme, page, item));
