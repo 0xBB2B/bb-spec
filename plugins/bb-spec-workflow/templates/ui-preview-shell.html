@@ -201,19 +201,24 @@
    只改 PROTOTYPE-START 到 PROTOTYPE-END 之间的内容，这段之外是外壳，一律不改。
 
    title：原型标题。version：第几版，每次按用户意见改完加 1。
-   css：项目有自己的设计时，在这里写项目的样式，写了之后默认页面样式完全不生效。
-     项目没有自己的设计时不写这一项，框里用默认页面样式，可以直接用的元素有
+   css：页面样式，照项目根目录 DESIGN.md 和项目现有样式写，写了之后默认页面样式完全不生效。
+     不写时框里用默认页面样式，可以直接用的元素有
      header、h1、main、.card、table、button、button.plain、.center、.alert、.bar、dl、.cards。
-     终端页面固定用外壳自带的样式。
+     终端页面用 terminalCss，不用 css。
    openQuestions：还没确认的问题。多方案时外壳会自动在最前面加上"选哪个方案"。
    schemes：方案列表。id 用于 html 取值，label 是"方案 A"这样的短名，desc 是方案特点，
      note 是方案取舍。只有一个方案时只留一项，外壳不显示任何方案切换。
    pages：要设计的页面，每页一项。
      id、name：页面标识和名字。fake：这页只在原型里成立的内容（假数据、假操作）。
      stateLabel：第二组按钮的名字，多步交互写"步骤"，其他情况不写。
-     terminal：终端界面写 true。这时 html 写终端里的文字，颜色用
-       <span class="g">绿</span>、<span class="y">黄</span>、<span class="b">蓝</span>、<span class="r">红</span>。
+     terminal：终端界面写 true。这时 html 写终端里的文字，<pre> 外面包好了，不用再写。
        终端文字里的 < 和 & 要写成 &lt; 和 &amp;，否则会被当成标签吞掉。
+     terminalCss：终端页面的配色，照 DESIGN.md「终端界面」和项目实际输出写，比如
+       'body { background: #1e1e1e; } pre { color: #d4d4d4; } .ok { color: #4ec9b0; }'，
+       html 里用 <span class="ok">…</span> 上色。只对这一页生效。
+       只换配色，80 列宽度、等宽字体和自动换行由外壳固定。
+       不写时用外壳默认终端配色，颜色用 <span class="g">绿</span>、<span class="y">黄</span>、
+       <span class="b">蓝</span>、<span class="r">红</span>；默认配色只在项目没有命令行输出代码时用。
      states：这页的状态或步骤，每项有 id、name、note（说明，每条一句）、html（框里的内容）。
        html 各方案相同时写字符串；不同时写 { 方案id: 内容 }，比如 { a: '...', b: '...' }，每个方案都要写。
      note、fake、openQuestions 都是数组，每条一句，没内容写 []。
@@ -370,9 +375,13 @@ const PROTOTYPE = {
     .cards strong { display: block; font-size: 18px; }
     .cards span { color: #616e7c; }
     `;
-    const TERMINAL_CSS = `
-      body { box-sizing: border-box; margin: 0; min-height: 100vh; padding: 8px; background: #0b1730; }
-      pre { width: 80ch; max-width: 100%; margin: 0; color: #d7e6ff; font: 14px/1.5 Menlo, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+    const TERMINAL_LAYOUT_CSS = `
+      body { box-sizing: border-box; margin: 0; min-height: 100vh; padding: 8px; }
+      pre { width: 80ch; max-width: 100%; margin: 0; font: 14px/1.5 Menlo, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+    `;
+    const TERMINAL_COLOR_CSS = `
+      body { background: #0b1730; }
+      pre { color: #d7e6ff; }
       .g { color: #7ee7c1; } .y { color: #ffd479; } .b { color: #7fd4ff; } .r { color: #ff8f8f; }
     `;
     const FRAME_BRIDGE = `<script>document.addEventListener('click', (e) => {
@@ -428,7 +437,7 @@ const PROTOTYPE = {
     function frameDoc(page, state, scheme) {
       const html = differsByScheme(state) ? state.html[scheme.id] : state.html;
       if (html === undefined) throw new Error(`「${page.name} · ${state.name}」缺少${scheme.label} 的内容`);
-      const css = page.terminal ? TERMINAL_CSS : PROTOTYPE.css?.trim() || DEFAULT_PAGE_CSS;
+      const css = page.terminal ? TERMINAL_LAYOUT_CSS + (page.terminalCss?.trim() || TERMINAL_COLOR_CSS) : PROTOTYPE.css?.trim() || DEFAULT_PAGE_CSS;
       const body = page.terminal ? `<pre>${html}</pre>` : html;
       return `<!doctype html><html><head><meta charset="utf-8"><style>${css}</style></head><body>${body}${FRAME_BRIDGE}</body></html>`;
     }

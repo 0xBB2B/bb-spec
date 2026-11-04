@@ -23,9 +23,10 @@ description: 外壳允许单个终端页面用 terminalCss 指定项目自己的
 ```
      terminal：终端界面写 true。这时 html 写终端里的文字，<pre> 外面包好了，不用再写。
        终端文字里的 < 和 & 要写成 &lt; 和 &amp;，否则会被当成标签吞掉。
-     terminalCss：终端页面的样式，照项目实际输出的颜色写，比如
+     terminalCss：终端页面的配色，照 DESIGN.md「终端界面」和项目实际输出写，比如
        'body { background: #1e1e1e; } pre { color: #d4d4d4; } .ok { color: #4ec9b0; }'，
        html 里用 <span class="ok">…</span> 上色。只对这一页生效。
+       只换配色，80 列宽度、等宽字体和自动换行由外壳固定。
        不写时用外壳默认终端配色，颜色用 <span class="g">绿</span>、<span class="y">黄</span>、
        <span class="b">蓝</span>、<span class="r">红</span>；默认配色只在项目没有命令行输出代码时用。
 ```
@@ -43,10 +44,10 @@ description: 外壳允许单个终端页面用 terminalCss 指定项目自己的
 ### plugins/bb-spec-workflow/templates/ui-preview-shell.html（外壳渲染脚本）
 | 函数名 | 职责 |
 |---|---|
-| `frameDoc` | 修改：终端页面的样式改为"这一页的 `terminalCss` 去掉首尾空白后非空就用它，否则用外壳默认终端样式"；普通页面的样式选择不变 |
+| `frameDoc` | 修改：终端页面的样式改为"外壳固定的终端布局（80 列、等宽字体、自动换行）+ 配色"，配色取这一页的 `terminalCss`（去掉首尾空白后非空），否则用外壳默认终端配色；普通页面的样式选择不变 |
 
 ## 协作关系
-`frameDoc` 被 `render` 调用生成框的 `srcdoc`；终端页面仍然把 html 包进 `<pre>`，并附上现有的框内跳转脚本。外壳默认终端样式常量保留不变。
+`frameDoc` 被 `render` 调用生成框的 `srcdoc`；终端页面仍然把 html 包进 `<pre>`，并附上现有的框内跳转脚本。外壳原来的默认终端样式拆成固定布局和默认配色两段，默认终端页面的最终样式不变。
 
 ## 验证方式
 - 测试入口：`bash tests/ui-preview-shell.test.sh`（假 DOM + node `vm` 加载外壳，沿用现有 `load`/`mk`/`srcdoc()`/`pick` 写法）
