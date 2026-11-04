@@ -24,7 +24,6 @@ echo "[固定文案]"
 for phrase in \
   "设计说明 · 不属于页面" \
   "这一栏上线后不存在" \
-  "切换要看的内容" \
   "▼ 被设计的页面：只有这个框里的内容要实现" \
   "这一块上线后不存在" \
   "这个画面的说明" \
@@ -32,6 +31,7 @@ for phrase in \
   "还没确认的问题"; do
   if grep -qF -- "$phrase" "$SHELL_HTML"; then pass; else fail "缺少固定文案「$phrase」"; fi
 done
+if awk '/<aside/,/<\/aside>/' "$SHELL_HTML" | grep -qE '<h2[ >]'; then fail "左栏里不应有小标题 <h2>：当前方案下面直接是页面和状态切换"; else pass; fi
 
 echo "[单文件、不联网、不引用外部资源]"
 for pattern in 'http://' 'https://' '<link' '<script[^>]*[[:space:]]src[[:space:]]*=' '@import'; do
