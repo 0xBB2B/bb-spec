@@ -28,6 +28,8 @@ FM="$(awk '/^---[[:space:]]*$/{n++; next} n==1{print} n>=2{exit}' "$PROTO" 2>/de
 if printf '%s\n' "$FM" | grep -qxF 'name: prototype'; then pass; else fail "prototype frontmatter 的 name 应是 prototype"; fi
 if printf '%s\n' "$FM" | grep -qF 'disable-model-invocation'; then fail "prototype frontmatter 不应含 disable-model-invocation"; else pass; fi
 
+if printf '%s\n' "$FM" | grep -qF '左栏切页面和状态、右上角切方案和明暗主题'; then pass; else fail "prototype frontmatter 的 description 应含「左栏切页面和状态、右上角切方案和明暗主题」"; fi
+
 echo "[prototype 写明原型做法]"
 for t in '${CLAUDE_PLUGIN_ROOT}/templates/ui-preview-shell.html' 'PROTOTYPE-START' 'PROTOTYPE-END' '外壳一律不改' \
   '框里禁止放说明或切换控件' '`note`' '`fake`' '`openQuestions`' '`css`' '照实还原' '默认页面样式' \

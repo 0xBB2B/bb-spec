@@ -1,6 +1,6 @@
 ---
 name: prototype
-description: 界面原型的唯一规程——用统一的蓝图外壳出 HTML 原型：左栏放切换、中间的框只放正式页面、底部放说明，多方案放同一份原型切换，改到用户明确说"可以"；也负责做完后拿实际界面和原型对比。触发：/prototype、做个原型、出个界面预览；/prd、/revise 要出原型时调用；/exec、/revise 收尾时用 --compare 调用。跳过：改动不影响用户看到的界面。
+description: 界面原型的唯一规程——用统一的蓝图外壳出 HTML 原型：左栏切页面和状态、右上角切方案和明暗主题、中间的框只放正式页面、底部放说明，多方案放同一份原型切换，改到用户明确说"可以"；也负责做完后拿实际界面和原型对比。触发：/prototype、做个原型、出个界面预览；/prd、/revise 要出原型时调用；/exec、/revise 收尾时用 --compare 调用。跳过：改动不影响用户看到的界面。
 argument-hint: <主题> [--file <原型文件路径>] | --compare <原型文件路径>
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
