@@ -19,7 +19,13 @@ has() {
 
 lacks() {
   local file="$1" text="$2"
-  if grep -qF -- "$text" "$file" 2>/dev/null; then fail "$(basename "$(dirname "$file")") 不应含：${text}"; else pass; fi
+  local rc=0
+  grep -qF -- "$text" "$file" 2>/dev/null || rc=$?
+  case "$rc" in
+    0) fail "$(basename "$(dirname "$file")") 不应含：${text}" ;;
+    1) pass ;;
+    *) fail "读不到 ${file}" ;;
+  esac
 }
 
 echo "[version-policy 正文]"

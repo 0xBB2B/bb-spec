@@ -17,7 +17,13 @@ has() {
 
 lacks() {
   local file="$1" text="$2"
-  if grep -qF -- "$text" "$WF/$file" 2>/dev/null; then fail "${file} 不应含：${text}"; else pass; fi
+  local rc=0
+  grep -qF -- "$text" "$WF/$file" 2>/dev/null || rc=$?
+  case "$rc" in
+    0) fail "${file} 不应含：${text}" ;;
+    1) pass ;;
+    *) fail "读不到 ${WF}/${file}" ;;
+  esac
 }
 
 PLAN=skills/plan/SKILL.md
