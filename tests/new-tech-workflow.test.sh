@@ -32,16 +32,20 @@ IMPL=agents/impl-engineer.md
 PRD=skills/prd/SKILL.md
 
 echo "[plan 列清单并一次弹窗]"
-for t in '只在需要引入新技术时停下问用户' '上面 N 项新技术，你同意引入吗？' '全部同意，继续' '否决其中几项' \
+for t in '只在需要引入新技术时停下问用户' '上面 N 项新技术，你同意引入吗？' \
+  '选项依次是"同意"、"不同意"' '在正文追问要改哪几项、改成什么' \
   '插件默认栈和用户点名的也列' '## 新增技术（仅本 plan 引入新技术时存在）' \
   '| 名称 | 类别 | 来源 | 用途 | 现有手段为什么不够 | 替代方案为什么不选 | 版本策略 |'; do
   has "$PLAN" "$t"
 done
-for t in '新增第三方依赖' '| 库名 | 用途 | 版本策略 |'; do lacks "$PLAN" "$t"; done
+for t in '新增第三方依赖' '| 库名 | 用途 | 版本策略 |' '全部同意，继续' '否决其中几项'; do lacks "$PLAN" "$t"; done
 
 echo "[exec 的新技术守卫]"
 for t in '新增技术表' '新技术守卫' 'compose.yaml' '.github/workflows/*' '这一步不算完成'; do has "$EXEC" "$t"; done
 for t in '新增第三方依赖' '依赖守卫'; do lacks "$EXEC" "$t"; done
+has "$EXEC" '按 `version-policy` 的「批准方式」处理：用户最终选"同意"'
+has "$EXEC" '用户不要任何新技术 → 令子代理改用标准库'
+lacks "$EXEC" '用户不同意 → 令子代理改用标准库'
 
 echo "[impl-engineer 只引入表内技术]"
 for t in '「新增技术」表' '没有这张表就一项都不能引入' '方案问题'; do has "$IMPL" "$t"; done
@@ -64,8 +68,8 @@ lacks "$EXEC" '| 新增技术表（plan「新增技术」区，如有） | ❌ |
 for t in '以及本 plan 文件里引用它们的代码' '只撤这些，同组其他 plan 的改动不动'; do has "$EXEC" "$t"; done
 lacks "$EXEC" '只撤这些项'
 
-echo "[plan：否决、写文档时机、自检]"
-for t in '只替换这几项，整份清单再列一遍' '在此之前不写 plan 文档' '用户不要任何新技术' '没有新技术 → 不列清单、不问' \
+echo "[plan：改清单、写文档时机、自检]"
+for t in '只替换提到的项，整份清单再列一遍' '直到用户选"同意"；在此之前不写 plan 文档' '用户已选"同意"（没有新技术则未询问）' '用户不要任何新技术' '没有新技术 → 不列清单、不问' \
   '七栏内容和清单一致' '两条理由写的是具体原因、不是"业界常用""更优雅""更流行"'; do
   has "$PLAN" "$t"
 done
