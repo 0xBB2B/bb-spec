@@ -31,7 +31,9 @@ lacks() {
 echo "[version-policy 正文]"
 for t in '项目里原来没有的外部东西' '插件默认栈' '用户点名' 'Claude 提议' \
   '现有手段为什么不够' '替代方案为什么不选' '上面 N 项新技术，你同意引入吗？' \
-  '全部同意，继续' '否决其中几项' '只替换被否决的项' '"业界常用""更优雅""更流行"' \
+  '选项依次是"同意"（选项说明写"按这份清单引入"）、"不同意"（选项说明写"Claude 接着问你要改哪几项、改成什么"）' \
+  '只替换用户提到的项' '停下等用户回复，这一步不弹窗' '直到用户选"同意"' '用户已选"同意"' \
+  '"业界常用""更优雅""更流行"' \
   '「新增技术」表' '容器镜像' 'CI Action' '外部服务接口'; do
   has "$VP" "$t"
 done
@@ -44,7 +46,7 @@ for t in '新技术' '插件默认栈和用户点名的也一样'; do
 done
 
 echo "[version-policy 不含的说法]"
-for t in '视为已同意' '批准即同意' '新增第三方库的同意流程'; do
+for t in '视为已同意' '批准即同意' '新增第三方库的同意流程' '全部同意，继续' '否决其中几项' '被否决的项' '没写编号时' '不再弹窗'; do
   lacks "$VP" "$t"
 done
 
@@ -59,11 +61,11 @@ has "$VUE" '来源标"插件默认栈"'
 lacks "$VUE" '统一使用以下技术栈，**不接受个人偏好替代**'
 
 echo "[version-policy：扩展库与间接依赖、追问、类别、流程]"
-for t in '不在标准库里的官方扩展库' 'golang.org/x/*' '间接依赖' '没写编号时，追问一次' \
+for t in '不在标准库里的官方扩展库' 'golang.org/x/*' '间接依赖' '要改哪几项？改成什么？' \
   '项目里原来没有 bun 时，它也是新技术' '本次没有新技术时跳过前三条' \
   '编程语言' '运行时' '数据库' '中间件' '构建或测试工具' '用户点名的项也要写' \
   '整份清单再列一遍、再弹一次窗' '用户不要任何新技术' \
-  '用户选"全部同意，继续"之前，不改依赖文件和配置文件' \
+  '用户选"同意"之前，不改依赖文件和配置文件' \
   '不管是在执行计划、修 bug 还是普通对话中' '每项七项内容齐全'; do
   has "$VP" "$t"
 done
@@ -99,11 +101,23 @@ echo "[golang-constraints：官方扩展库]"
 has "$GO" 'golang.org/x/*'
 lacks "$GO" '确需新增第三方库时'
 
-echo "[前端插件描述不再说 hook 强制 bun]"
+echo "[前端插件描述不提 bun 钩子]"
 for f in "$ROOT/plugins/bb-spec-frontend/.claude-plugin/plugin.json" "$ROOT/.claude-plugin/marketplace.json"; do
   lacks "$f" 'hook 强制 bun'
-  has "$f" '无 lockfile 时询问用户'
+  lacks "$f" 'block-non-bun-pm'
+  lacks "$f" 'bun hook'
+  lacks "$f" 'bun 钩子'
 done
+
+echo "[前端插件没有钩子]"
+if [[ ! -e "$ROOT/plugins/bb-spec-frontend/hooks" ]]; then pass; else fail "plugins/bb-spec-frontend/hooks 不应存在"; fi
+
+echo "[前端规则的包管理器判定表]"
+has "$VUE" '| 既有项目，有 `bun.lock` / `bun.lockb` | **bun**（强制） |'
+has "$VUE" '| 既有项目，有 `package-lock.json` | **npm**'
+has "$VUE" '| 既有项目，有 `yarn.lock` | **yarn**'
+has "$VUE" '| 既有项目，有 `pnpm-lock.yaml` | **pnpm**'
+has "$VUE" '| 新建项目 | **bun**（默认，引入前按 version-policy 列清单经用户批准） |'
 
 echo ""
 echo "通过 ${PASS}，失败 ${FAIL}"

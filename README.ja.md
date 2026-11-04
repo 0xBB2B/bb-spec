@@ -144,7 +144,7 @@
 **同梱されるもの**
 
 - **5 個のオーケストレーションサブエージェント**(上記ステージに駆動される):`test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer`
-- **4 つの受動 hook**(自動発動):npm/yarn ブロック、main コミットブロック、依存バージョンセルフチェック、バックグラウンドスクリプトの完了待ち
+- **3 つの受動 hook**(自動発動):main コミットブロック、依存バージョンセルフチェック、バックグラウンドスクリプトの完了待ち
 
 ---
 
@@ -194,7 +194,7 @@ BB-Spec は**4 つの独立インストール可能なサブ plugin** に分割 
 | **bb-spec-core** _(推奨ベース)_ | TDD / バージョンポリシー / Git 規律 + 3 つの受動 hook | `/plugin install bb-spec-core@0xbb2b` |
 | **bb-spec-workflow** _(コア機能)_ | prd → plan → exec → doc-update → revise → git-push(+ 任意 test-webview / test-api e2e)、git-clone ワンショット初期化 + 5 サブエージェント | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / 認証 / 認可 / 可観測性 / サービスガバナンス / 設定制約 | `/plugin install bb-spec-backend@0xbb2b` |
-| **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun スタック & エンジニアリング規約(bun hook 付き) | `/plugin install bb-spec-frontend@0xbb2b` |
+| **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun スタック & エンジニアリング規約 | `/plugin install bb-spec-frontend@0xbb2b` |
 
 必要に応じて選択 —— 例えば規律とワークフローのみでスタック意見なし:`bb-spec-core` + `bb-spec-workflow`;フルセット:4 つすべて。
 
@@ -251,7 +251,6 @@ claude plugin update bb-spec-workflow@0xbb2b   # ターミナルから特定の�
 
 | Hook | 所属サブ plugin | トリガータイミング | 効果 |
 |---|---|---|---|
-| `block-non-bun-pm` | bb-spec-frontend | PreToolUse(Bash) | `npm` / `yarn` / `pnpm` のパッケージ管理動作:まだ lockfile がないプロジェクトでは権限確認ダイアログでユーザーに確認(デフォルト推奨は `bun`)、対応する lockfile(例 `package-lock.json`)があれば通過、別ツールの lockfile があればブロック |
 | `git-workflow-guard` | bb-spec-core | PreToolUse(Bash) | `main` / `master` ブランチでの `git commit` をブロック;他の git フロー動作(ブランチ作成 / push / worktree / merge / PR)は通過させ git-workflow 規律とリアルタイム git ステータスを注入 |
 | `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | 依存ファイル編集後に「公式最新版を先に確認」セルフチェックリマインダを注入し、未承認の新技術は取り消してリストを出し承認を求めるよう促す |
 | `background-script-wait` | bb-spec-core | Stop | このセッションで未通知の実行中バックグラウンドコマンドを見つけたとき 1 回だけ通知:Claude は終了するスクリプトをフォアグラウンドのループで待ち、常駐サービスは待たない |
@@ -291,7 +290,6 @@ base_dir: my/bb  # → my/bb/docs/{prd,plan,test}/ と my/bb/.cache/ ; ./ を指
 
 | シナリオ | スイッチ |
 |---|---|
-| 一時的に npm / yarn / pnpm を許可 | `bb-spec-frontend` を一時的に無効化 |
 | 一時的に main commit を許可 | `bb-spec-core` を一時的に無効化 |
 | バックグラウンドスクリプト待ちの通知をスキップ | `bb-spec-core` を一時的に無効化 |
 

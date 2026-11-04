@@ -102,7 +102,8 @@ echo "[prototype 引用的外壳文件]"
 if [[ -f "$ROOT/$SHELL_REL" ]]; then pass; else fail "外壳文件不存在：$SHELL_REL"; fi
 
 echo "[validate.sh 对外壳文件的检查]"
-COPY="$(cd "$(mktemp -d)" && pwd -P)"
+COPY="$(mktemp -d)"
+COPY="$(cd "$COPY" && pwd -P)"
 trap 'rm -rf "$COPY"' EXIT
 
 copy_repo() {

@@ -144,7 +144,7 @@ First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.
 **Ships with**
 
 - **5 orchestration subagents** driven by the stages above: `test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer`
-- **4 passive hooks** (automatic): block npm/yarn, block main commit, dependency version self-check, wait for background scripts to finish
+- **3 passive hooks** (automatic): block main commit, dependency version self-check, wait for background scripts to finish
 
 ---
 
@@ -194,7 +194,7 @@ Then install whichever layers you want:
 | **bb-spec-core** _(recommended base)_ | TDD / version-policy / git-workflow discipline + 3 passive hooks | `/plugin install bb-spec-core@0xbb2b` |
 | **bb-spec-workflow** _(core)_ | prd → plan → exec → doc-update → revise → git-push (+ opt test-webview / test-api e2e), git-clone one-shot init + 5 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / authN / authZ / observability / service / config constraints | `/plugin install bb-spec-backend@0xbb2b` |
-| **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun stack & engineering conventions (+ bun hook) | `/plugin install bb-spec-frontend@0xbb2b` |
+| **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun stack & engineering conventions | `/plugin install bb-spec-frontend@0xbb2b` |
 
 Pick by need — e.g. just the disciplines and workflow without any stack opinions: install `bb-spec-core` + `bb-spec-workflow`. Want everything: install all four.
 
@@ -251,7 +251,6 @@ Each hook ships with the sub-plugin that owns its concern — install that plugi
 
 | Hook | Sub-plugin | Trigger | Effect |
 |---|---|---|---|
-| `block-non-bun-pm` | bb-spec-frontend | PreToolUse(Bash) | For `npm` / `yarn` / `pnpm` package-manager actions: asks the user via a permission prompt when the project has no lockfile yet (`bun` is the default recommendation), allows them when a matching lockfile (e.g. `package-lock.json`) exists, and blocks them when another tool's lockfile exists |
 | `git-workflow-guard` | bb-spec-core | PreToolUse(Bash) | Blocks `git commit` on `main` / `master`; for other git flow actions (branch / push / worktree / merge / PR) allows them through and injects the git-workflow discipline plus live git status |
 | `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | After editing a dependency file, injects a "check the official latest version first" reminder, plus a reminder to revert any unapproved new tech and list it for approval first |
 | `background-script-wait` | bb-spec-core | Stop | When a running background command not yet flagged in this session is found, prompts once: Claude uses a foreground loop to wait for scripts that will finish, and does not wait for long-running services |
@@ -291,7 +290,6 @@ Reference template: [`.bb-spec.template.yaml`](./.bb-spec.template.yaml).
 
 | Scenario | Switch |
 |---|---|
-| Temporarily allow npm / yarn / pnpm | Disable `bb-spec-frontend` temporarily |
 | Temporarily allow main commit | Disable `bb-spec-core` temporarily |
 | Skip the background-script wait prompt | Disable `bb-spec-core` temporarily |
 

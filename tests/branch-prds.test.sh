@@ -10,7 +10,8 @@ FAIL=0
 pass() { PASS=$((PASS + 1)); }
 fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 
-FIXROOT="$(cd "$(mktemp -d)" && pwd -P)"
+FIXROOT="$(mktemp -d)"
+FIXROOT="$(cd "$FIXROOT" && pwd -P)"
 trap 'rm -rf "$FIXROOT"' EXIT
 
 g() { git -C "$1" -c user.email=t@t.local -c user.name=t "${@:2}"; }
