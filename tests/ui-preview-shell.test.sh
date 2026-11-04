@@ -855,7 +855,10 @@ group('结构与样式（按区块）', () => {
   ok(/justify-content:\s*flex-end/.test(frameRight), '.frame-right 有 justify-content: flex-end');
   ok(/flex-wrap:\s*wrap/.test(block('\\.frame-bar')), '.frame-bar 有 flex-wrap: wrap，左边标题太长时右侧按钮组整组换到下一行');
   ok(/min-width:\s*260px/.test(frameRight) && /(?:^|[;\s])flex:\s*1 1 260px/.test(frameRight), '.frame-right 至少保留 260px（flex: 1 1 260px; min-width: 260px），按钮不被挤出窗口');
-  ok(/(?:^|[;\s])flex:\s*none/.test(block('\\.frame-left')), '.frame-left 有 flex: none');
+  const frameLeft = block('\\.frame-left');
+  ok(/(?:^|[;\s])flex:\s*0 1 auto/.test(frameLeft) && /min-width:\s*0/.test(frameLeft), '.frame-left 能缩到可用宽度内（flex: 0 1 auto; min-width: 0），超长标题不把页面撑宽');
+  ok(!/nowrap/.test(frameLeft) && !/nowrap/.test(block('#frameTitle')), '「页面名 · 状态名」放不下时能折行（.frame-left、#frameTitle 都不写 nowrap）');
+  ok(/white-space:\s*nowrap/.test(block('\\.frame-left strong')) && /(?:^|[;\s])flex:\s*none/.test(block('\\.frame-left strong')), '「▼ 被设计的页面…」提示始终一行（flex: none; white-space: nowrap）');
   ok(!/text-overflow:\s*ellipsis/.test(css), 'CSS 里没有 text-overflow: ellipsis');
 
   const at = (needle, from = 0) => HTML.indexOf(needle, from);
