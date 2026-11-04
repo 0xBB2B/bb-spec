@@ -49,7 +49,7 @@ The 6 commands you type day to day:
 | Command | What it does | When |
 |---|---|---|
 | `/prd` | Challenge → clarify → break down; writes the PRD + AGENTS.md, you read and approve once, then it auto-runs plan → exec → doc-update | New requirement, or changing how a merged feature behaves |
-| `/prototype` | Build an HTML prototype in the shared blueprint shell and iterate until you approve it; `/prd` and `/revise` call it for UI changes | You want to see a design first, without the full requirement flow |
+| `/prototype` | Read the project-root DESIGN.md first (draft one if missing), draw the whole page around the change to match the project, build an HTML prototype in the shared blueprint shell and iterate until you approve it; `/prd` and `/revise` call it for UI changes | You want to see a design first, without the full requirement flow |
 | `/revise` | Diagnose by root cause → targeted fix → regression check, then auto-runs doc-update | A bug, or results that don't match expectations |
 | `/git-push` | pre-review self-check + push + open PR | Ready to open a PR |
 | `/exec` | Resume the plan from where it stopped | After an interruption or `/clear` |
@@ -111,7 +111,7 @@ First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.
   - When everything is done, auto-runs `/doc-update` in tail mode so this PRD and docs like README mirror what was actually delivered
 
 - **`/doc-update`** — Doc / code **consistency sweep**.
-  - Four finding classes: doc-stale (root docs out of date) / prd-stale (this branch's PRD doesn't match what was delivered) / code-violation (code breaks AGENTS.md) / agents-conflict (project constraints contradict each other)
+  - Four finding classes: doc-stale (root docs out of date) / prd-stale (this branch's PRD doesn't match what was delivered) / code-violation (code breaks AGENTS.md or doesn't match DESIGN.md) / agents-conflict (project constraints contradict each other)
   - **Code is the truth; docs are mirrored to it**; code changes always ask first and route to `/revise` for TDD; merged PRDs are never touched in any mode
   - Maintains the **ARCHITECTURE.md** outline at the project root (which modules exist, where they live, how they work together; tables and APIs as an overview only): full-repo mode drafts it from the code when missing and writes it after your approval; tail mode keeps it current as the branch adds, removes or moves modules or changes tables and API groups. When learning the current state, the AI reads it first to locate modules, then reads the code
   - **Tail mode** (`--tail`): auto-invoked when `/exec` or `/revise` finishes; covers only what the current branch touched

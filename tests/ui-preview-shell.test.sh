@@ -1275,6 +1275,108 @@ group('底部高度：首屏出错不计算高度', () => {
   ok(bad.srcdoc().includes(ERR_TEXT), '语法错误时错误提示没被覆盖');
 });
 
+const TERM_CSS = 'body{background:#123456} .ok{color:#abcdef}';
+const mkTerm = (termCss) => {
+  const d = mk(2, { css: '.CSS_MARK_XYZ{color:#654321}' });
+  d.pages[2].terminalCss = termCss;
+  d.pages[2].states[0].html = 'TERM_A <span class="ok">ok</span> <a data-go="p2:t2">跳</a>';
+  d.pages.push({
+    id: 'p4', name: '终端页B', fake: [], terminal: true, states: [
+      { id: 'v1', name: '第一步', note: ['V1'], html: 'TERM_B' },
+    ],
+  });
+  return d;
+};
+const DEFAULT_TERM = ['#0b1730', '.g { color: #7ee7c1; }'];
+
+group('终端页面：terminalCss 指定项目自己的终端样式', () => {
+  const a = load(mkTerm(TERM_CSS));
+  eq(a.errors.length, 0, '不报错');
+  a.pick('pagePick', 2);
+  const s = a.srcdoc();
+  ok(s.includes('#123456') && s.includes('.ok{color:#abcdef}'), '终端页 A 的 srcdoc 含 terminalCss');
+  ok(!s.includes('#0b1730'), '终端页 A 的 srcdoc 不含外壳默认终端底色');
+  ok(!s.includes('CSS_MARK_XYZ'), '终端页 A 的 srcdoc 不含项目 css');
+  ok(s.includes('width: 80ch') && s.includes('white-space: pre-wrap') && s.includes('monospace'), '终端页 A 写了 terminalCss 后仍按 80 列换行、用等宽字体');
+  ok(s.includes('TERM_A'), '终端页 A 内容仍在');
+
+  a.pick('pagePick', 3);
+  const b = a.srcdoc();
+  DEFAULT_TERM.forEach((m) => ok(b.includes(m), `终端页 B 的 srcdoc 含默认终端样式 ${m}`));
+  ok(!b.includes('#123456'), '终端页 B 的 srcdoc 不含 A 的 terminalCss');
+
+  a.pick('pagePick', 0);
+  const c = a.srcdoc();
+  ok(c.includes('CSS_MARK_XYZ'), '普通页 C 的 srcdoc 含项目 css');
+  ok(!c.includes('#123456') && !c.includes('#0b1730'), '普通页 C 的 srcdoc 不含 terminalCss 和默认终端底色');
+
+  a.pick('pagePick', 2);
+  ok(a.srcdoc().includes('#123456') && !a.srcdoc().includes('#0b1730'), '切回终端页 A 仍用 terminalCss');
+});
+
+group('终端页面：terminalCss 写了排版属性时外壳的 80 列排版仍生效', () => {
+  const layoutCss = 'pre{width:120ch;white-space:pre;font:13px serif}';
+  const a = load(mkTerm(layoutCss));
+  eq(a.errors.length, 0, '不报错');
+  a.pick('pagePick', 2);
+  const s = a.srcdoc();
+  const own = s.indexOf(layoutCss);
+  ok(own >= 0, 'srcdoc 含 terminalCss');
+  ['width: 80ch', 'white-space: pre-wrap', 'monospace'].forEach((m) =>
+    ok(s.indexOf(m) > own, `外壳排版 ${m} 写在 terminalCss 后面，同一选择器下以它为准`));
+});
+
+group('终端页面：terminalCss 为空或只有空白时用默认终端样式', () => {
+  ['', '   ', '\n  '].forEach((v) => {
+    const a = load(mkTerm(v));
+    eq(a.errors.length, 0, `terminalCss=${JSON.stringify(v)} 不报错`);
+    a.pick('pagePick', 2);
+    DEFAULT_TERM.forEach((m) => ok(a.srcdoc().includes(m), `terminalCss=${JSON.stringify(v)}：srcdoc 含默认终端样式 ${m}`));
+    ok(a.srcdoc().includes('TERM_A'), `terminalCss=${JSON.stringify(v)}：内容仍在`);
+  });
+});
+
+group('终端页面：terminalCss 页面仍包在 pre 里，data-go 可用', () => {
+  const a = load(mkTerm(TERM_CSS));
+  a.pick('pagePick', 2);
+  const s = a.srcdoc();
+  ok(/<pre>[^]*TERM_A[^]*<\/pre>/.test(s), '终端页 A 的 html 包在 <pre> 里');
+  ok(s.includes('data-go="p2:t2"'), 'srcdoc 保留 data-go 元素');
+  const f = frameOf(s);
+  eq(f.errors.length, 0, '框内脚本不报错');
+  f.fire('click', elem('a', { 'data-go': 'p2:t2' }));
+  ok(f.posts.some((m) => m && m.go === 'p2:t2'), '点 data-go 元素向外壳发 go');
+  a.post('p2:t2');
+  eq(a.txt('frameTitle'), '页二 · 乙', '外壳收到 go 后跳转');
+});
+
+group('终端页面：terminalCss 页面在两种主题下 srcdoc 相同', () => {
+  const open = (dark) => {
+    const a = load(mkTerm(TERM_CSS), makeMedia(dark));
+    a.pick('pagePick', 2);
+    return a;
+  };
+  const light = open(false);
+  const dark = open(true);
+  ok(light.srcdoc().includes('#123456'), 'srcdoc 含 terminalCss');
+  eq(light.srcdoc() === dark.srcdoc(), true, '系统浅色与深色 srcdoc 相同');
+  const before = light.srcdoc();
+  light.$('themeDark').click();
+  eq(light.srcdoc(), before, '点按钮切主题后 srcdoc 不变');
+});
+
+group('终端页面：terminalCss 页面通过隔离检查', () => {
+  sweep(load(mkTerm(TERM_CSS)), 'terminalCss');
+});
+
+group('填写区说明：terminalCss 与 css 的文字', () => {
+  const fill = HTML.slice(HTML.indexOf(START), HTML.indexOf(END));
+  ['terminalCss', '只对这一页生效', '默认配色只在项目没有命令行输出代码时用',
+    '照项目根目录 DESIGN.md 和项目现有样式写', '终端页面用 terminalCss，不用 css。',
+    '照 DESIGN.md「终端界面」和项目实际输出写', '只换配色，80 列宽度、等宽字体和自动换行由外壳固定'].forEach((p) => ok(fill.includes(p), `填写区说明含「${p}」`));
+  ['项目没有自己的设计时不写这一项', '终端页面固定用外壳自带的样式'].forEach((p) => ok(!HTML.includes(p), `外壳全文不含「${p}」`));
+});
+
 console.log('RESULT ' + pass + ' ' + fail);
 JSEOF
 

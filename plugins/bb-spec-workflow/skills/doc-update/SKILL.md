@@ -1,13 +1,13 @@
 ---
 name: doc-update
-description: 文档与代码一致性维护——代码是事实，让仓库根目录下名单固定的根文档（README*.md、CLAUDE.md、AGENTS.md、CONTRIBUTING.md、ARCHITECTURE.md，名单外的文档不碰）追平代码现状（项目根没有 ARCHITECTURE.md 大纲时，全仓模式读代码起草），并检查代码是否违反 AGENTS.md 项目约束；/exec 与 /revise 收尾时以 --tail 收尾模式自动调用，额外核对本分支 PRD 与实际交付是否一致；已合并的 PRD 任何模式都不碰；改代码一律先问用户、转 /revise。触发：/doc-update、文档和代码不一致、README 过期、维护一下文档。跳过：单点 bug 或定向修复（→/revise）、新需求（→/prd）。
+description: 文档与代码一致性维护——代码是事实，让仓库根目录下名单固定的根文档（README*.md、CLAUDE.md、AGENTS.md、CONTRIBUTING.md、ARCHITECTURE.md、DESIGN.md，名单外的文档不碰）追平代码现状（项目根没有 ARCHITECTURE.md 大纲时，全仓模式读代码起草），并检查代码是否违反 AGENTS.md 项目约束；/exec 与 /revise 收尾时以 --tail 收尾模式自动调用，额外核对本分支 PRD 与实际交付是否一致；已合并的 PRD 任何模式都不碰；改代码一律先问用户、转 /revise。触发：/doc-update、文档和代码不一致、README 过期、维护一下文档。跳过：单点 bug 或定向修复（→/revise）、新需求（→/prd）。
 argument-hint: [--tail | 可选：限定范围，如某目录 / 某文档]
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 
 # Doc-Update 文档与代码一致性维护
 
-默认认为「代码是事实」，文档追平代码；**仅当代码明显违反 AGENTS.md 项目约束**时停下用 `AskUserQuestion` 请用户裁决，确认后转 `/revise` 改代码。
+默认认为「代码是事实」，文档追平代码；**仅当代码明显违反 AGENTS.md 项目约束**时停下用 `AskUserQuestion` 请用户裁决，确认后转 `/revise` 改代码。DESIGN.md 例外：它是设计规范，和代码对不上时一律请用户裁决。
 
 > 与相邻 skill 的边界
 > - `/revise`：单点 bug 或定向修复；本 skill 只改文档、不改代码
@@ -15,7 +15,7 @@ allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 
 ## 核心原则（兼硬约束）
 
-1. **代码是事实，文档追平代码**：禁止凭文档反推代码该怎么写
+1. **代码是事实，文档追平代码**：禁止凭文档反推代码该怎么写（DESIGN.md 除外，见 C 类）
 2. **不改代码**：发现代码违反项目约束，停下用 `AskUserQuestion` 请用户拍板，同意后产出挂单交给 `/revise`，本 skill 不直接改实现
 3. **已合并的 PRD 只读**：PRD 是需求记录，合并后冻结，任何模式下都不改、不删。唯一能改的是收尾模式下的**本分支 PRD**——判定：`${CLAUDE_PLUGIN_ROOT}/scripts/branch-prds.sh <基线分支>`（基线分支为 main 或 master）输出的 `new=` 行里有它
 4. **批改前先汇总**（收尾模式下 A 类除外）：所有发现分类列出 + 默认动作 + 待裁决项一次性展示，用户批准后才落盘
@@ -40,7 +40,7 @@ allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 |---|---|---|---|
 | A | **doc-stale** | 名单内的 README*.md / CLAUDE.md / AGENTS.md / CONTRIBUTING.md 引用了已改名、删除或行为变了的函数、路径、命令、配置项；或 ARCHITECTURE.md 没写到新增的模块、目录、数据表、API 分组，仍写着已删除、已搬走的，关键流程经过的模块变了 | 改文档追平代码 |
 | B | **prd-stale**（仅收尾模式） | 本分支 PRD 的约束或验收与实际交付不一致，且没有经用户同意的修改记录 | AskUserQuestion：改 PRD 认可代码 / 转 `/revise` 改代码 |
-| C | **code-violation** | 代码明显违反 AGENTS.md 的项目约束 | AskUserQuestion：改代码（转 `/revise`）/ 改项目约束 / 跳过 |
+| C | **code-violation** | 代码明显违反 AGENTS.md 的项目约束，或界面代码和项目根 DESIGN.md 对不上（DESIGN.md 是规范，不按 A 类改成代码的样子；DESIGN.md 里任何和代码不一致的地方都归 C 类，包括颜色、尺寸、组件写法里的结构和类名） | AskUserQuestion：改代码（转 `/revise`）/ 改项目约束或 DESIGN.md / 跳过；选之前两边都不改 |
 | D | **agents-conflict** | AGENTS.md 的约束之间互相矛盾，或与已激活的技术栈 skill 冲突 | AskUserQuestion：选保留哪条 |
 
 每条发现必须落到具体 `文件:行号` + 一句话说明哪里不一致；说不出位置的丢弃。性能、可读性、口味偏好不算 C 类。
@@ -66,13 +66,14 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/bbspec-paths.sh
 主 agent 自做，**禁派子代理**：
 
 1. **读根文档**：只认下面这份名单，名单外的文档不读、不改
-   - 名单：每个仓库根目录下的 `README*.md`（含各语言版本）、`CLAUDE.md`、`AGENTS.md`、`CONTRIBUTING.md`、`ARCHITECTURE.md`，不存在的跳过。单仓库就是项目根；多仓库工作区包括每个成员仓库的根和文档仓库的根
+   - 名单：每个仓库根目录下的 `README*.md`（含各语言版本）、`CLAUDE.md`、`AGENTS.md`、`CONTRIBUTING.md`、`ARCHITECTURE.md`、`DESIGN.md`，不存在的跳过。单仓库就是项目根；多仓库工作区包括每个成员仓库的根和文档仓库的根
    - 名单外的例子：`CHANGELOG.md`（发版工具生成）、`docs/` 等子目录里的文档、子目录里的 `README.md`
    - 例外：全仓模式下用户在参数里点名的文档照样处理
    - 收尾模式只看引用了本分支改动文件、命令、配置项的段落
 2. **抽取可核对的引用**：文档里出现的函数名、文件路径、命令、env var、CLI flag、配置 key、默认值、超时阈值
 3. **对照代码**：codegraph 可用则 `codegraph_explore`，否则 `grep -rnE` + 读相关文件，确认每个引用在代码里是否还成立
 4. **项目约束核对**：逐条读 AGENTS.md「项目约束」，在范围内的代码里找违反项
+   - **DESIGN.md 核对**：项目根有 DESIGN.md 时，在范围内的界面代码里找用到的颜色、字号、间距、圆角、阴影不在 DESIGN.md 里、或和 DESIGN.md 写的值不同的地方，记为 C 类，写出代码 文件:行号 和 DESIGN.md 里的值
 5. **对照 ARCHITECTURE.md**：
    - 收尾模式：看本分支是否新增、删除、搬迁了模块目录，增删了数据表（migration / DDL），增删了 API 分组（路由定义），或改变了关键流程经过的模块；有则记为 A 类
    - 全仓模式：整份核对模块地图、关键流程、数据表、API 与代码现状
@@ -116,7 +117,7 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/bbspec-paths.sh
 
 1. **改根文档**：用 `Edit` 精准替换过期的 symbol / 路径 / 命令 / 配置，语言与原文一致
 2. **改本分支 PRD**（B 类选「改 PRD」）：只改不一致的约束、验收或用例，保证约束与验收仍一一对应
-3. **改 AGENTS.md**（C 类选「改项目约束」、D 类裁决结果）：只动「项目约束」节的相关条目
+3. **改 AGENTS.md 或 DESIGN.md**（C 类选「改项目约束或 DESIGN.md」、D 类裁决结果）：AGENTS.md 只动「项目约束」节的相关条目；DESIGN.md 只动不一致的那一项
 4. **C / B 类选「改代码」**：不改实现，产出挂单交给 `/revise`：
 
    ```

@@ -68,6 +68,113 @@ else
   fail "prototype 里应依次出现：给了文件的取法、两者都没给的临时目录、.gitignore 那句"
 fi
 
+echo "[prototype 的 description 写明先读 DESIGN.md 和取证]"
+for t in '先读项目根目录的 DESIGN.md' '改动所在的整个页面' '缺的只读对应源码' '源码定不下来才问用户要不要跑服务'; do
+  if printf '%s\n' "$FM" | grep -qF -- "$t"; then pass; else fail "prototype frontmatter 的 description 应含「${t}」"; fi
+done
+
+echo "[prototype 的 DESIGN.md 两节在出原型之前]"
+sec_line() { grep -nxF -- "$1" "$PROTO" 2>/dev/null | head -n1 | cut -d: -f1 || true; }
+L_DESIGN="$(sec_line '## 设计规范（DESIGN.md）')"
+L_EVID="$(sec_line '## 取证顺序')"
+L_PROTO="$(sec_line '## 出原型')"
+if [[ -n "$L_DESIGN" && -n "$L_EVID" && -n "$L_PROTO" && "$L_DESIGN" -lt "$L_PROTO" && "$L_EVID" -lt "$L_PROTO" ]]; then
+  pass
+else
+  fail "prototype 的「## 设计规范（DESIGN.md）」和「## 取证顺序」都应在「## 出原型」之前"
+fi
+
+echo "[prototype 的 DESIGN.md 位置与写入]"
+for t in 'docs_repo' '为空时放在输出的 `root`' '新建和修改都要用户明确同意后才写入这个位置' \
+  '.DESIGN.draft.md' '${CLAUDE_PLUGIN_ROOT}/templates/DESIGN.md'; do
+  has prototype "$t"
+done
+
+echo "[prototype 的 DESIGN.md 写法标准]"
+for t in '风格定位、颜色、字体与字号、间距、「圆角、边框、阴影」、布局与断点、组件、动效、无障碍、终端界面' \
+  '不适用' '按用途命名' '明暗两套' 'WCAG 2.2 AA' '4.5:1' '3:1' '24px 及以上，或 18.66px 及以上加粗' \
+  '相对亮度公式' '4 的倍数' '9999px' '形容词' '按钮、输入框、表格、卡片、弹窗、提示条' \
+  '写法（HTML 结构和类名）' '默认、悬停、按下、禁用、聚焦' '页面框架' '「例外」表里的项，检查时不再报'; do
+  has prototype "$t"
+done
+
+echo "[prototype 过一遍 DESIGN.md]"
+for t in '第一步先读 DESIGN.md' '如实记录现状，包括页面框架和组件的写法' '确认前不出原型' '2～3 套' \
+  '方案 `html` 开头的 `<style>`' '把选中风格的样式移进 `css`' '选定前不出要设计的页面' \
+  '缺项或不达标' '先改 DESIGN.md' '「例外」表记下哪一项、实际值、用户确认的日期' '逐个标出' '改用 DESIGN.md 里有的'; do
+  has prototype "$t"
+done
+
+echo "[prototype 的取证顺序]"
+for t in '前一步够用就不往下走' '只按 DESIGN.md 画，不读源码' '只读这一部分对应的源码' \
+  '整理成 DESIGN.md 的补充内容' '仍定不下来样子' '问用户要不要把项目跑起来看' '哪些部分可能不准'; do
+  has prototype "$t"
+done
+
+echo "[prototype 跑服务取底稿]"
+for t in '只在用户同意后' '完整的启动命令和它的出处' '哪个文件、哪一行' '依赖没装时一并说明' '用户再次同意才执行' \
+  '最终生效的样式' '去掉其中的 `<script>`、内联事件属性' '真实用户数据' '不改的部分保持原样' \
+  '立即关掉为出原型启动的服务' '没有能打开网页的工具' '卡在哪一步'; do
+  has prototype "$t"
+done
+
+echo "[prototype 画什么]"
+for t in '整个页面，包括顶栏、侧边栏、导航、页面标题和周围的组件' '照 DESIGN.md 的写法写' 'HTML 结构和类名' \
+  '读了哪些源码文件' '底稿来自哪个地址'; do
+  has prototype "$t"
+done
+
+echo "[prototype 终端原型]"
+for t in 'DESIGN.md「终端界面」' '实际运行命令看输出' 'terminalCss' '外壳默认终端配色只在项目没有命令行输出代码时使用'; do
+  has prototype "$t"
+done
+
+echo "[prototype 出原型第 1 条先过 DESIGN.md]"
+L_FIRST="$(grep -n '^1\. 按「设计规范（DESIGN.md）」先过一遍 DESIGN.md' "$PROTO" 2>/dev/null | head -n1 | cut -d: -f1 || true)"
+L_PLACE="$(grep -n '^[0-9][0-9]*\. 确定文件位置' "$PROTO" 2>/dev/null | head -n1 | cut -d: -f1 || true)"
+if [[ -n "$L_FIRST" && -n "$L_PLACE" && -n "$L_PROTO" && "$L_FIRST" -gt "$L_PROTO" && "$L_FIRST" -lt "$L_PLACE" ]]; then
+  pass
+else
+  fail "「## 出原型」编号列表第 1 条应以「1. 按「设计规范（DESIGN.md）」先过一遍 DESIGN.md」开头，且排在「确定文件位置」那一条之前"
+fi
+
+echo "[prototype 不含与取证顺序矛盾的写法]"
+lacks prototype '文字颜色用外壳提供的绿、黄、蓝、红'
+lacks prototype '项目没有自己的设计时不写 `css`'
+lacks prototype '判定能不能跑起来'
+
+echo "[prototype 草稿写入、不想建时的退路、跑服务和对比的保护]"
+for t in '被 `/prd` 调用时' '先写进和原型文件同名的草稿' '由 `/prd` 落盘 PRD 时一起写入项目' \
+  '被 `/revise` 调用或单独运行时，用户同意即写入' '用户这次不想建 DESIGN.md' '按草稿出这一次原型，不写入项目' '下次出原型时再问' \
+  '每套风格画一页风格样张' '按下面第 2～4 步建好原型文件' \
+  '问用户之前先确认有能打开网页的工具' '没有就不问' \
+  '登录凭据和 token' '换成假数据' '确认端口已不在监听' '启动失败' '2 分钟内打不开要改的页面' '页面要登录' \
+  '用到了 DESIGN.md 的哪几节' \
+  '运行前同样先列出完整命令和出处' '用户再次同意才执行；输出里的真实数据换成假数据' \
+  '需要跑项目时，同样先列出完整命令和出处' '对比完立即关掉' '用户不同意时返回「没跑起来」'; do
+  has prototype "$t"
+done
+P1="$(text_pos "$PROTO" '1. **DESIGN.md**：')"
+P2="$(text_pos "$PROTO" '2. **源码**：')"
+P3="$(text_pos "$PROTO" '3. **问用户要不要跑**：')"
+if [[ -n "$P1" && -n "$P2" && -n "$P3" && "$P1" -lt "$P2" && "$P2" -lt "$P3" ]]; then pass; else fail "取证顺序应依次是 DESIGN.md、源码、问用户要不要跑：${P1:-无} ${P2:-无} ${P3:-无}"; fi
+lacks prototype '把实际界面跑起来，和原型框里的内容逐项对比'
+for t in '改完后的完整 DESIGN.md' '还没确认的草稿只贴在对话里' \
+  '草稿只留在对话里' '不提议写入 DESIGN.md' '用户选定风格但不想建 DESIGN.md 时同第 2 条' \
+  '命令行项目展示「终端界面」一节的颜色、符号、表格和进度条' '删掉其余方案和风格样张页' '按第 8、9 步打开给用户看' \
+  '运行命令不需要能打开网页的工具' '依赖没装时一并说明，用户再次同意才执行' \
+  '启动前先看要用的端口有没有被占用' '用现有服务时不关它' '只确认自己启动的' '用户现有的服务不关' \
+  '终端界面运行命令看输出（同样先经用户同意）' '符号、表格和进度条格式'; do
+  has prototype "$t"
+done
+lacks prototype '终端界面直接运行命令看输出'
+lacks prototype '${CACHE_DIR}/DESIGN.draft.md'
+for t in '`revise-` 开头' '不留草稿文件' '原型文件旁边的草稿存在时，后面再出原型以它为准' \
+  '命令行项目移进各终端页的 `terminalCss`' '至少放一条' '用户不同意 → 按源码画，`fake` 写明端口被占用' \
+  '也立即关掉为出原型启动的服务' '占用它的服务是从哪个目录起的' '对比完立即关掉为对比启动的服务并确认端口已不在监听'; do
+  has prototype "$t"
+done
+
 echo "[prd、revise、exec 的调用写法和文件名]"
 has prd 'Skill bb-spec-workflow:prototype'
 has prd '--file ${CACHE_DIR}/ui-preview/<YYYY-MM-DD>.<主题>.html'
