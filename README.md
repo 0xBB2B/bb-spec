@@ -49,7 +49,7 @@
 | 命令 | 做什么 | 何时用 |
 |---|---|---|
 | `/prd` | 质疑→澄清→拆解,落盘 PRD + AGENTS.md 后请你读完确认一次,通过就自动跑 plan → exec → doc-update | 新需求开工、要改已合并功能的行为 |
-| `/prototype` | 用统一的蓝图外壳出 HTML 原型,改到你说"可以";`/prd`、`/revise` 改界面时自动调用 | 想先看样子,不走完整需求流程 |
+| `/prototype` | 先读项目根的 DESIGN.md(没有就起草),照项目整体界面画出改动所在的整个页面,用统一的蓝图外壳出 HTML 原型,改到你说"可以";`/prd`、`/revise` 改界面时自动调用 | 想先看样子,不走完整需求流程 |
 | `/revise` | 按根因诊断→定向修正→回归验证,修完自动跑 doc-update | 有 bug、结果和预期不符 |
 | `/git-push` | pre-review 自查 + 推 + 开 PR | 准备提 PR |
 | `/exec` | 从断点接着执行 plan | 中断或 `/clear` 之后 |
@@ -110,7 +110,7 @@
   - 全部完成后自动跑 `/doc-update` 收尾模式,让本次 PRD 和 README 等文档追平实际交付
 
 - **`/doc-update`** — 文档与代码**一致性体检**。
-  - 四类发现:doc-stale(根文档过期)/ prd-stale(本分支 PRD 与交付不符)/ code-violation(代码违反 AGENTS.md)/ agents-conflict(项目约束互相矛盾)
+  - 四类发现:doc-stale(根文档过期)/ prd-stale(本分支 PRD 与交付不符)/ code-violation(代码违反 AGENTS.md,或和 DESIGN.md 对不上)/ agents-conflict(项目约束互相矛盾)
   - **代码是事实、文档追平代码**;改代码一律先问、挂回 `/revise` 走 TDD;已合并的 PRD 任何模式都不碰
   - 维护项目根的 **ARCHITECTURE.md** 大纲(有哪些模块、各在哪、怎么协作,数据表与 API 只写概览):全仓模式没有时读代码起草,批准后落盘;收尾模式随本分支增删、搬迁模块或改动数据表、API 分组自动追平。AI 了解现状时先读它定位模块,再读代码
   - **收尾模式**(`--tail`):`/exec`、`/revise` 结束时自动调用,只处理本分支改动涉及的范围
