@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.6.0](https://github.com/0xBB2B/bb-spec/compare/v15.5.0...v15.6.0) (2026-11-04)
+
+
+### Features
+
+* **workflow:** 原型照项目整页还原，新增项目根 DESIGN.md 设计规范 ([#320](https://github.com/0xBB2B/bb-spec/issues/320)) ([ee5f522](https://github.com/0xBB2B/bb-spec/commit/ee5f52273ec493425b2e73356530730c234ac343))
+
 ## [15.5.0](https://github.com/0xBB2B/bb-spec/compare/v15.4.0...v15.5.0) (2026-11-04)
 
 
