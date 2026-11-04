@@ -238,16 +238,16 @@ check_readme() {
   if [[ "$list_line" == *"$total"* ]]; then pass; else fail "$file 被动 hook 列表数量应为 $total"; fi
   local items
   items="$(LINE="$list_line" python3 -c 'import os, re; print(len(re.split("、|, ", os.environ["LINE"].split("):", 1)[1])))')"
-  if [[ "$items" == "4" ]]; then pass; else fail "$file 被动 hook 列表实际应有 4 项，现在是 $items 项"; fi
+  if [[ "$items" == "3" ]]; then pass; else fail "$file 被动 hook 列表实际应有 3 项，现在是 $items 项"; fi
   if grep -F '**bb-spec-core**' "$ROOT/$file" | grep -qF "$core"; then pass; else fail "$file bb-spec-core 钩子数量应为 $core"; fi
   if grep -qF "$stale_row" "$ROOT/$file"; then fail "$file 开关速查仍有 Stop 自检行"; else pass; fi
   if grep -qF "$new_row" "$ROOT/$file"; then pass; else fail "$file 开关速查应有 $new_row"; fi
 }
-check_readme README.md "被动 hook**" "Stop 四项自检" "等后台脚本跑完" "4 个被动 hook" "3 个被动 hook" "跳过 Stop 自检" "跳过后台脚本等待提示"
-check_readme README.zh-TW.md "被動 hook**" "Stop 四項自檢" "等背景腳本跑完" "4 個被動 hook" "3 個被動 hook" "跳過 Stop 自檢" "跳過背景腳本等待提示"
-check_readme README.en.md "passive hooks**" "Stop four-point self-check" "wait for background scripts to finish" "4 passive hooks" "3 passive hooks" "Skip the Stop self-check" "Skip the background-script wait prompt"
-check_readme README.ja.md "受動 hook**" "Stop 時の 4 項目セルフチェック" "バックグラウンドスクリプトの完了待ち" "4 つの受動 hook" "3 つの受動 hook" "Stop セルフチェックをスキップ" "バックグラウンドスクリプト待ちの通知をスキップ"
-check_readme README.ko.md "수동 hook**" "Stop 시 4항목 자가 점검" "백그라운드 스크립트 완료 대기" "4개 수동 hook" "3개 수동 hook" "Stop 자가 점검 건너뛰기" "백그라운드 스크립트 대기 알림 건너뛰기"
+check_readme README.md "被动 hook**" "Stop 四项自检" "等后台脚本跑完" "3 个被动 hook" "3 个被动 hook" "跳过 Stop 自检" "跳过后台脚本等待提示"
+check_readme README.zh-TW.md "被動 hook**" "Stop 四項自檢" "等背景腳本跑完" "3 個被動 hook" "3 個被動 hook" "跳過 Stop 自檢" "跳過背景腳本等待提示"
+check_readme README.en.md "passive hooks**" "Stop four-point self-check" "wait for background scripts to finish" "3 passive hooks" "3 passive hooks" "Skip the Stop self-check" "Skip the background-script wait prompt"
+check_readme README.ja.md "受動 hook**" "Stop 時の 4 項目セルフチェック" "バックグラウンドスクリプトの完了待ち" "3 つの受動 hook" "3 つの受動 hook" "Stop セルフチェックをスキップ" "バックグラウンドスクリプト待ちの通知をスキップ"
+check_readme README.ko.md "수동 hook**" "Stop 시 4항목 자가 점검" "백그라운드 스크립트 완료 대기" "3개 수동 hook" "3개 수동 hook" "Stop 자가 점검 건너뛰기" "백그라운드 스크립트 대기 알림 건너뛰기"
 
 echo ""
 echo "通过 ${PASS}，失败 ${FAIL}"
