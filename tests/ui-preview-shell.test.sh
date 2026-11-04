@@ -134,6 +134,7 @@ class Doc extends El {
     super('#document');
     this.title = '';
     this.byId = {};
+    this.documentElement = new El('html');
     const markup = html.slice(0, Math.max(html.indexOf('<script'), 0));
     for (const m of markup.matchAll(/<(\w+)([^>]*)>/g)) {
       const id = /\bid="([^"]+)"/.exec(m[2]);
@@ -176,12 +177,27 @@ const withFill = (code) => {
 };
 const withData = (data, extra = '') => withFill('const PROTOTYPE = ' + JSON.stringify(data) + ';' + extra);
 
-const loadHtml = (html) => {
+const makeMedia = (initial) => {
+  const subs = [];
+  const mql = {
+    matches: initial,
+    media: '(prefers-color-scheme: dark)',
+    addEventListener: (type, fn) => { if (type === 'change') subs.push(fn); },
+    set: (next) => {
+      mql.matches = next;
+      subs.forEach((fn) => fn({ matches: next, media: mql.media }));
+    },
+  };
+  return mql;
+};
+
+const loadHtml = (html, media) => {
   const doc = new Doc(html);
   const L = {};
   const errors = [];
   const ctx = { document: doc, console };
   ctx.window = ctx;
+  if (media) ctx.matchMedia = () => media;
   ctx.addEventListener = (t, f) => { (L[t] = L[t] || []).push(f); };
   const fireError = (message) => (L.error || []).forEach((f) => f({ message }));
   const raise = (err) => { errors.push(err); fireError(err.message); };
@@ -201,6 +217,8 @@ const loadHtml = (html) => {
     dockHeight: () => (doc.getElementById('dock') ? doc.getElementById('dock').style.height : undefined),
     dockReads: () => (doc.getElementById('dock') ? doc.getElementById('dock').reads : -1),
     txt: (id) => $(id).textContent,
+    theme: () => doc.documentElement.getAttribute('data-theme'),
+    themePressed: () => [$('themeLight').getAttribute('aria-pressed'), $('themeDark').getAttribute('aria-pressed')],
     texts: (id) => $(id).children.map((c) => c.textContent),
     pick: (g, i) => {
       const b = buttons(g)[i];
@@ -226,7 +244,7 @@ const loadHtml = (html) => {
   };
   return api;
 };
-const load = (data) => loadHtml(data ? withData(data) : HTML);
+const load = (data, media) => loadHtml(data ? withData(data) : HTML, media);
 
 const frameOf = (srcdoc) => {
   const doc = new Doc('');
@@ -774,27 +792,31 @@ group('结构与样式（按区块）', () => {
 
   const css = (/<style>([\s\S]*?)<\/style>/.exec(HTML) || ['', ''])[1];
   const block = (sel) => [...css.matchAll(new RegExp('(?:^|[\\s,}])' + sel + '\\s*\\{([^}]*)\\}', 'g'))].map((m) => m[1]).join('\n');
-  ok(/--shell-bg:\s*#12264a/.test(css), '--shell-bg 是 #12264a');
-  ok(/--accent:\s*#7fd4ff/.test(css), '--accent 是 #7fd4ff');
   ok(/background-image/.test(block('body')) && /ui-monospace/.test(block('body')), 'body 有网格 background-image 和等宽字体 ui-monospace');
-  ok(/border-right:\s*1px dashed var\(--accent\)/.test(block('\\.side')), '.side 右边 1px 青色虚线');
+  ok(/border-right:\s*1px dashed var\(--accent\)/.test(block('\\.side')), '.side 右边 1px 强调色虚线');
   const tagCss = block('\\.tag');
   ok(/dashed/.test(tagCss), '.tag 是虚线框');
   ok(/(?:^|[;\s])color:\s*var\(--accent\)/.test(tagCss), '.tag 文字色是 var(--accent)');
   ok(!/background/.test(tagCss), '.tag 没有背景');
-  ok(/1px dashed var\(--accent\)/.test(block('\\.scheme')), '.scheme 是 1px 青色虚线框');
+  ok(/1px dashed var\(--accent\)/.test(block('\\.scheme')), '.scheme 是 1px 强调色虚线框');
   ok(/outline:\s*1px dashed var\(--accent\)/.test(block('iframe')), 'iframe 有 outline: 1px dashed var(--accent)');
   const dockCss = block('\\.dock');
-  ok(/border-top:\s*1px dashed var\(--accent\)/.test(dockCss), '.dock 上边 1px 青色虚线');
+  ok(/border-top:\s*1px dashed var\(--accent\)/.test(dockCss), '.dock 上边 1px 强调色虚线');
   ok(/max-height:\s*30vh/.test(dockCss), '.dock 有 max-height: 30vh');
   ok(/overflow-y:\s*auto/.test(dockCss), '.dock 内容多时滚动');
   ok(!/height:\s*26vh/.test(dockCss) && !/26vh/.test(css), '.dock 没有固定高度');
   ok(/\[hidden\]\s*\{\s*display:\s*none\s*!important;?\s*\}/.test(css), '[hidden] 强制隐藏');
-  const pressed = (/[^{}]*aria-pressed="true"[^{}]*\{([^}]*)\}/.exec(css) || ['', ''])[1];
-  ok(/background:\s*var\(--accent\)/.test(pressed), '选中按钮背景用 var(--accent)');
-  ok(/(?:^|[;\s])color:\s*var\(--accent-ink\)/.test(pressed), '选中按钮文字色用 var(--accent-ink)');
-  ok(/background:\s*transparent/.test(block('button')), '未选中按钮背景透明');
+  const pressedRule = /([^{}]*aria-pressed="true"[^{}]*)\{([^}]*)\}/.exec(css) || ['', '', ''];
+  const pressed = pressedRule[2];
+  ok(/border-color:\s*var\(--accent\)/.test(pressed) || /border:[^;]*var\(--accent\)/.test(pressed), '选中按钮边框用 var(--accent)');
+  ok(/background:\s*var\(--pick-bg\)/.test(pressed), '选中按钮背景用 var(--pick-bg)');
+  ok(/(?:^|[;\s])color:\s*var\(--pick-text\)/.test(pressed), '选中按钮文字色用 var(--pick-text)');
+  ok(/font-weight:\s*(?:600|700|bold)/.test(pressed), '选中按钮字加粗');
+  ok(/\.pick button/.test(pressedRule[1]) && /\.theme button/.test(pressedRule[1]), '主题按钮和左栏切换按钮共用选中样式');
+  const idleRule = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].find((m) => /\.pick button\s*(?:,|$)/.test(m[1].trim()) && /\.theme button/.test(m[1]));
+  ok(idleRule && /background:\s*transparent/.test(idleRule[2]) && /border:\s*1px solid var\(--shell-line\)/.test(idleRule[2]), '主题按钮和左栏切换按钮共用未选中样式：细线框、透明底');
   ok(!/border-radius/.test(css), '外壳 CSS 不含 border-radius');
+  ok(/border-left:[^;]*var\(--shell-line\)/.test(block('\\.theme')), '.theme 左边有 var(--shell-line) 竖线');
 
   ok(/min-width:\s*960px/.test(block('body')), 'body 规则块里有 min-width: 960px');
   ok(/grid-template-columns:\s*240px 1fr/.test(block('body')), 'body 规则块里有 grid-template-columns: 240px 1fr');
@@ -816,6 +838,177 @@ group('结构与样式（按区块）', () => {
   const rightAt = at('class="frame-right"', barAt);
   ok(rightAt >= 0 && rightAt > top[0] && rightAt < top[1], `frame-right 在被设计的页面之后、frameScheme 之前：${rightAt}`);
   ok(rightAt >= 0 && rightAt < top[2] && at('id="stage"') > top[2], 'frameScheme 和 frameTitle 都在 frame-right 里（stage 之前）');
+});
+
+group('主题：颜色变量', () => {
+  const css = (/<style>([\s\S]*?)<\/style>/.exec(HTML) || ['', ''])[1];
+  const vars = (sel) => {
+    const m = new RegExp('(?:^|[\\s,}])' + sel + '\\s*\\{([^}]*)\\}').exec(css);
+    return m ? m[1] : '';
+  };
+  const check = (label, body, want) => {
+    ok(body !== '', label + '：规则块存在');
+    Object.entries(want).forEach(([k, v]) => {
+      const m = new RegExp('(?:^|[;\\s])' + k + ':\\s*([^;]+);').exec(body);
+      eq(m ? m[1].trim() : null, v, label + ' ' + k);
+    });
+  };
+  const light = vars(':root');
+  const dark = vars(':root\\[data-theme="dark"\\]');
+  check('明亮', light, {
+    '--shell-bg': '#d5dae1', '--shell-line': '#b7bfca', '--shell-text': '#1d2633', '--shell-muted': '#4f5b6b',
+    '--accent': '#47607f', '--pick-bg': '#c2cad5', '--pick-text': '#1d2633', '--grid': 'rgba(71, 96, 127, .06)',
+  });
+  check('暗黑', dark, {
+    '--shell-bg': '#26282c', '--shell-line': '#3a3d43', '--shell-text': '#d4d4d4', '--shell-muted': '#8f949b',
+    '--accent': '#8e9aa8', '--pick-bg': '#33363c', '--pick-text': '#e6e6e6', '--grid': 'rgba(255, 255, 255, .03)',
+  });
+  ok(!/--accent-ink/.test(light), ':root 里没有 --accent-ink');
+});
+
+group('主题：切换按钮的位置和文字', () => {
+  const rightAt = HTML.indexOf('class="frame-right"');
+  const stageAt = HTML.indexOf('id="stage"');
+  const right = HTML.slice(rightAt, stageAt);
+  const titleAt = right.indexOf('id="frameTitle"');
+  const lightAt = right.indexOf('id="themeLight"');
+  const darkAt = right.indexOf('id="themeDark"');
+  ok(rightAt >= 0 && titleAt >= 0 && lightAt > titleAt && darkAt > lightAt, `#themeLight、#themeDark 在 .frame-right 里且在 #frameTitle 之后：${titleAt},${lightAt},${darkAt}`);
+  const wrapAt = right.search(/<[a-z]+[^>]*class="theme"[^>]*>/);
+  ok(wrapAt > titleAt && wrapAt < lightAt, '两个按钮外包一层 class 为 theme 的元素');
+  const tagOf = (id) => (new RegExp('<button[^>]*id="' + id + '"[^>]*>([^<]*)<').exec(right) || ['', '']);
+  eq(tagOf('themeLight')[1].trim(), '☀ 明亮', '明亮按钮文字');
+  eq(tagOf('themeDark')[1].trim(), '☾ 暗黑', '暗黑按钮文字');
+  ok(!/hidden/.test(tagOf('themeLight')[0]) && !/hidden/.test(tagOf('themeDark')[0]), '主题按钮不带 hidden');
+  ok(!/<[a-z]+[^>]*class="theme"[^>]*hidden/.test(right), 'theme 容器不带 hidden');
+  ok(!HTML.includes('localStorage') && !HTML.includes('sessionStorage'), 'HTML 里不出现 localStorage、sessionStorage');
+});
+
+group('主题：打开时按系统外观', () => {
+  const light = load(null, makeMedia(false));
+  eq(light.theme(), 'light', '系统浅色 → light');
+  eq(light.themePressed(), ['true', 'false'], '系统浅色时明亮按钮选中');
+  const dark = load(null, makeMedia(true));
+  eq(dark.theme(), 'dark', '系统深色 → dark');
+  eq(dark.themePressed(), ['false', 'true'], '系统深色时暗黑按钮选中');
+  eq(light.errors.length + dark.errors.length, 0, '加载不报错');
+});
+
+group('主题：没点过按钮时跟随系统', () => {
+  const m = makeMedia(false);
+  const a = load(null, m);
+  m.set(true);
+  eq(a.theme(), 'dark', '系统变深色后跟着变 dark');
+  eq(a.themePressed(), ['false', 'true'], '按钮选中跟着变');
+  m.set(false);
+  eq(a.theme(), 'light', '系统变回浅色后跟着变 light');
+  eq(a.themePressed(), ['true', 'false'], '按钮选中跟着变回');
+});
+
+group('主题：点过按钮后不再跟随系统', () => {
+  const m = makeMedia(false);
+  const a = load(null, m);
+  a.$('themeLight').click();
+  eq(a.theme(), 'light', '点明亮后是 light');
+  m.set(true);
+  eq(a.theme(), 'light', '点过明亮后系统变深色，保持 light');
+  eq(a.themePressed(), ['true', 'false'], '点过明亮后按钮选中不变');
+
+  const m2 = makeMedia(false);
+  const b = load(null, m2);
+  b.$('themeDark').click();
+  eq([b.theme(), b.themePressed()], ['dark', ['false', 'true']], '点暗黑后立即变 dark，选中跟着变');
+  m2.set(true);
+  m2.set(false);
+  eq(b.theme(), 'dark', '点过暗黑后系统怎么变都保持 dark');
+
+  b.$('themeLight').click();
+  eq([b.theme(), b.themePressed()], ['light', ['true', 'false']], '再点明亮能切回 light');
+});
+
+group('主题：切换不影响当前画面', () => {
+  const a = load(mk(3), makeMedia(false));
+  a.pick('schemePick', 1);
+  a.pick('pagePick', 1);
+  a.pick('statePick', 1);
+  const before = a.snap();
+  const heightBefore = a.dockHeight();
+  a.$('themeDark').click();
+  eq(a.theme(), 'dark', '点暗黑后变 dark');
+  eq(a.snap(), before, '方案、页面、状态、frameTitle、srcdoc 与点之前相同');
+  eq(a.dockHeight(), heightBefore, '底部高度不变');
+  a.$('themeLight').click();
+  eq(a.snap(), before, '切回明亮后画面仍与最初相同');
+  eq(a.dockHeight(), heightBefore, '切回明亮后底部高度不变');
+  eq(a.errors.length, 0, '切换不报错');
+});
+
+group('主题：框里的页面两种主题下一样', () => {
+  [['网页画面', null], ['终端画面', 2]].forEach(([name, pageIdx]) => {
+    const open = (dark) => {
+      const a = load(mk(2), makeMedia(dark));
+      if (pageIdx !== null) a.pick('pagePick', pageIdx);
+      return a;
+    };
+    const lightDoc = open(false);
+    const darkDoc = open(true);
+    eq(lightDoc.srcdoc() === darkDoc.srcdoc(), true, name + '：系统浅色与深色打开 srcdoc 相同');
+    ok(lightDoc.srcdoc().length > 0, name + '：srcdoc 不为空');
+    ['--shell-', '--accent'].forEach((w) => ok(!darkDoc.srcdoc().includes(w), `${name}：srcdoc 不含 ${w}`));
+    const before = lightDoc.srcdoc();
+    lightDoc.$('themeDark').click();
+    eq(lightDoc.srcdoc() === before && before === darkDoc.srcdoc(), true, name + '：点按钮切主题后 srcdoc 仍相同');
+  });
+});
+
+group('主题：填写区语法错误', () => {
+  const m = makeMedia(true);
+  const a = loadHtml(withFill('const PROTOTYPE = 1 2;'), m);
+  eq(a.theme(), 'dark', '语法错误时主题仍按系统深色设为 dark');
+  eq(a.themePressed(), ['false', 'true'], '语法错误时按钮选中状态正确');
+  a.$('themeLight').click();
+  eq([a.theme(), a.themePressed()], ['light', ['true', 'false']], '语法错误时点按钮仍能切换');
+  const b = loadHtml(withFill('const PROTOTYPE = 1 2;'), makeMedia(false));
+  eq(b.theme(), 'light', '语法错误时系统浅色 → light');
+});
+
+group('主题：外壳渲染时报错', () => {
+  const data = mk(2);
+  delete data.schemes[1].desc;
+  const a = load(data, makeMedia(true));
+  ok(a.broken(), '方案缺 desc 时外壳报错');
+  eq(a.theme(), 'dark', '外壳报错时主题仍按系统深色设为 dark');
+  a.$('themeLight').click();
+  eq([a.theme(), a.themePressed()], ['light', ['true', 'false']], '外壳报错时点按钮仍能切换');
+});
+
+group('主题：旧浏览器的 matchMedia 没有 addEventListener', () => {
+  const m = makeMedia(true);
+  delete m.addEventListener;
+  const a = load(null, m);
+  eq(a.errors.length, 0, '不报错');
+  ok(!a.broken(), 'prototypeBroken 不为真，原型正常显示');
+  eq(a.theme(), 'dark', '初始主题仍按系统深色设为 dark');
+  a.$('themeLight').click();
+  eq(a.theme(), 'light', '点按钮仍能切换');
+});
+
+group('主题：浏览器没有 matchMedia', () => {
+  [['默认数据', loadHtml(HTML)], ['自定义数据', loadHtml(withData(mk(2)))]].forEach(([name, a]) => {
+    eq(a.theme(), 'light', name + '：data-theme 是 light');
+    eq(a.themePressed(), ['true', 'false'], name + '：明亮按钮选中');
+    eq(a.errors.length, 0, name + '：不报错');
+    ok(!a.broken(), name + '：prototypeBroken 不为真');
+  });
+  const a = loadHtml(HTML);
+  a.$('themeDark').click();
+  eq(a.theme(), 'dark', '没有 matchMedia 时点按钮仍能切换');
+});
+
+group('主题：只有 1 个方案也显示按钮', () => {
+  const a = load(mk(1), makeMedia(false));
+  ok(a.$('themeLight').hidden === false && a.$('themeDark').hidden === false, '1 个方案时主题按钮不隐藏');
+  eq(a.theme(), 'light', '1 个方案时主题照常设置');
 });
 
 const DEFAULT_MARKS = ['.card', '.alert', '#2563eb'];

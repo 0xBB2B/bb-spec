@@ -6,13 +6,24 @@
 <title>界面原型</title>
 <style>
   :root {
-    --shell-bg: #12264a;
-    --shell-line: #2f4a77;
-    --shell-text: #e6f1ff;
-    --shell-muted: #9fb6d9;
-    --accent: #7fd4ff;
-    --accent-ink: #0a1f3f;
-    --grid: rgba(127, 212, 255, .07);
+    --shell-bg: #d5dae1;
+    --shell-line: #b7bfca;
+    --shell-text: #1d2633;
+    --shell-muted: #4f5b6b;
+    --accent: #47607f;
+    --pick-bg: #c2cad5;
+    --pick-text: #1d2633;
+    --grid: rgba(71, 96, 127, .06);
+  }
+  :root[data-theme="dark"] {
+    --shell-bg: #26282c;
+    --shell-line: #3a3d43;
+    --shell-text: #d4d4d4;
+    --shell-muted: #8f949b;
+    --accent: #8e9aa8;
+    --pick-bg: #33363c;
+    --pick-text: #e6e6e6;
+    --grid: rgba(255, 255, 255, .03);
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
@@ -54,7 +65,7 @@
   .side-body h2 { margin: 0 0 6px; font-size: 12px; font-weight: 500; color: var(--shell-muted); }
   .side-body h3 { margin: 14px 0 6px; font-size: 12px; font-weight: 500; color: var(--shell-muted); }
   .pick { display: flex; flex-direction: column; gap: 4px; }
-  .pick button {
+  .pick button, .theme button {
     padding: 5px 10px;
     border: 1px solid var(--shell-line);
     background: transparent;
@@ -63,8 +74,9 @@
     text-align: left;
     cursor: pointer;
   }
-  .pick button:hover { border-color: var(--accent); }
-  .pick button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .pick button:hover, .theme button:hover { border-color: var(--accent); }
+  .pick button[aria-pressed="true"], .theme button[aria-pressed="true"] { border-color: var(--accent); background: var(--pick-bg); color: var(--pick-text); font-weight: 600; }
+  .theme { display: flex; flex: none; gap: 4px; margin-left: 6px; padding-left: 10px; border-left: 1px solid var(--shell-line); }
 
   main {
     display: grid;
@@ -136,6 +148,10 @@
       <div class="frame-right">
         <span class="tag" id="frameScheme" hidden></span>
         <span id="frameTitle"></span>
+        <span class="theme" aria-label="外壳明暗">
+          <button type="button" id="themeLight" aria-pressed="false">☀ 明亮</button>
+          <button type="button" id="themeDark" aria-pressed="false">☾ 暗黑</button>
+        </span>
       </div>
     </div>
     <iframe id="stage" title="被设计的页面" sandbox="allow-scripts"></iframe>
@@ -162,6 +178,32 @@
 </script>
 
 <script>
+  (() => {
+    const root = document.documentElement;
+    const light = document.getElementById('themeLight');
+    const dark = document.getElementById('themeDark');
+
+    function applyTheme(theme) {
+      root.setAttribute('data-theme', theme);
+      light.setAttribute('aria-pressed', String(theme === 'light'));
+      dark.setAttribute('aria-pressed', String(theme === 'dark'));
+    }
+
+    function initTheme() {
+      const media = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+      let manual = false;
+      applyTheme(media && media.matches ? 'dark' : 'light');
+      media?.addEventListener?.('change', (e) => { if (!manual) applyTheme(e.matches ? 'dark' : 'light'); });
+      for (const [button, theme] of [[light, 'light'], [dark, 'dark']]) {
+        button.addEventListener('click', () => { manual = true; applyTheme(theme); });
+      }
+    }
+
+    initTheme();
+  })();
+</script>
+
+<script>
 /* PROTOTYPE-START
    只改 PROTOTYPE-START 到 PROTOTYPE-END 之间的内容，这段之外是外壳，一律不改。
 
@@ -184,7 +226,7 @@
      note、fake、openQuestions 都是数组，每条一句，没内容写 []。
 
    框里的跳转：给元素加 data-go="页面id:状态id"，点击后框和左栏一起切换。
-   框里的普通链接和表单不会跳走，alert、localStorage 也用不了，这些效果都用 data-go 切换状态来演示。
+   框里的普通链接和表单不会跳走，alert、浏览器本地存储也用不了，这些效果都用 data-go 切换状态来演示。
    html 里需要 script 结束标签时，斜杠前要加反斜杠，写成 <\/script>，否则这段脚本会提前结束。
 */
 const orderRows = [

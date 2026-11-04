@@ -93,4 +93,5 @@ description: 方案切换挪到框上方右侧、排在主题切换左边，左�
 - [ ] 填写区语法错误 → `#schemeBar`、`#schemeCurrent` 都隐藏；HTML 里这两个元素的开始标签带 `hidden`
 - [ ] HTML 里没有 `id="schemeBox"`、`id="schemeHint"`、`id="frameScheme"`；左栏里 `sideTitle`、`schemeCurrent`、`pagePick` 依次出现；框上方 `被设计的页面`、`frameTitle` 在 `.frame-left` 里，`schemeBar` 在 `.frame-right` 里且在 `themeLight` 之前
 - [ ] 切换所有方案、页面、状态组合时底部高度不变（沿用现有底部高度测试）
+- [ ] `.theme` 是 `.frame-right` 的最后一个子元素；窗口 960 宽、方案特点写 30 个汉字时，`#themeDark` 的右边缘不超出 `.frame-bar`（真浏览器里复核）
 - [ ] `SKILL.md` 的 `description` 含「左栏切页面和状态、右上角切方案和明暗主题」
