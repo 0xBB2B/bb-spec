@@ -30,7 +30,14 @@ description: 外壳允许单个终端页面用 terminalCss 指定项目自己的
        <span class="b">蓝</span>、<span class="r">红</span>；默认配色只在项目没有命令行输出代码时用。
 ```
 
-同一段注释里 `css` 说明中的「终端页面固定用外壳自带的样式。」换成「终端页面用 terminalCss，不用 css。」
+同一段注释里 `css` 的说明（从「css：项目有自己的设计时」到「终端页面固定用外壳自带的样式。」共 4 行）整段换成：
+
+```
+   css：页面样式，照项目根目录 DESIGN.md 和项目现有样式写，写了之后默认页面样式完全不生效。
+     不写时框里用默认页面样式，可以直接用的元素有
+     header、h1、main、.card、table、button、button.plain、.center、.alert、.bar、dl、.cards。
+     终端页面用 terminalCss，不用 css。
+```
 
 ## 函数清单
 ### plugins/bb-spec-workflow/templates/ui-preview-shell.html（外壳渲染脚本）
@@ -51,5 +58,5 @@ description: 外壳允许单个终端页面用 terminalCss 指定项目自己的
 - [ ] `terminalCss` 为 `''` 或 `'   '` → 用默认终端样式
 - [ ] 终端页 A 的 html 仍然包在 `<pre>` 里，框内 `data-go` 跳转仍可用
 - [ ] 两种主题下终端页 A 的 `srcdoc` 相同（框里的页面不随外壳主题变化）
-- [ ] 填写区说明里含 `terminalCss`、`只对这一页生效`、`默认配色只在项目没有命令行输出代码时用`；`css` 说明含「终端页面用 terminalCss，不用 css。」
+- [ ] 填写区说明里含 `terminalCss`、`只对这一页生效`、`默认配色只在项目没有命令行输出代码时用`；`css` 说明含「照项目根目录 DESIGN.md 和项目现有样式写」「终端页面用 terminalCss，不用 css。」；外壳全文不含「项目没有自己的设计时不写这一项」「终端页面固定用外壳自带的样式」
 - [ ] 现有外壳测试全部仍通过
