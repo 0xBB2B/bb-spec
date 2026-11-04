@@ -166,14 +166,14 @@ git log -L :<函数>:<文件> -s --format='%h %s%n%b' | grep -e '^[0-9a-f]\{7,40
 2. **检查 plan 影响**：有进行中的 plan 用到这条约束 → 原地修正其业务规则 / 验证方式，`done` 的步骤改回 `pending`；没有 → 跳过
 3. **TDD 修复实现（强制三 Agent 派发）**：
    - 派 `bb-spec-workflow:test-engineer`，prompt 传「期望行为 + 验证预期 + 新增技术表（本次批准的，如有）+ 项目测试惯例」→ 主 agent 验证 Red
-   - 派 `bb-spec-workflow:impl-engineer`，prompt 传「函数清单 + 文件路径 + 测试文件路径 + 新增技术表（本次批准的，如有）+ 项目约束」→ 主 agent 验证 Green
-   - 派 `bb-spec-workflow:prd-reviewer`，prompt 传「期望行为 + 验证预期 + AGENTS.md 项目级约束（如有）+ 所有变更文件路径」→ 主 agent 处理 review 结果
+   - 派 `bb-spec-workflow:impl-engineer`，prompt 传「函数清单 + 文件路径 + 测试文件路径 + 新增技术表（本次批准的，如有）+ 项目约束 + DESIGN.md 路径（改动界面代码且项目有 DESIGN.md 时）」→ 主 agent 验证 Green
+   - 派 `bb-spec-workflow:prd-reviewer`，prompt 传「期望行为 + 验证预期 + AGENTS.md 项目级约束（如有）+ 所有变更文件路径 + DESIGN.md 路径（同上，要求报告里写「DESIGN.md 对照」）」→ 主 agent 处理 review 结果
 
 #### 3b. impl-defect（强制三 Agent 派发）
 
 1. 派 `bb-spec-workflow:test-engineer`，prompt 传「被违反的期望行为 + 验证预期 + 新增技术表（本次批准的，如有）+ 项目测试惯例」→ 主 agent 验证测试能暴露 bug（Red）
-2. 派 `bb-spec-workflow:impl-engineer`，prompt 传「函数清单 + 文件路径 + 测试文件 + 新增技术表（本次批准的，如有）+ 项目约束」→ 主 agent 验证 Green
-3. 派 `bb-spec-workflow:prd-reviewer`，prompt 传「期望行为 + 验证预期 + AGENTS.md 项目级约束（如有）+ 所有变更文件路径」→ 主 agent 处理 review 结果
+2. 派 `bb-spec-workflow:impl-engineer`，prompt 传「函数清单 + 文件路径 + 测试文件 + 新增技术表（本次批准的，如有）+ 项目约束 + DESIGN.md 路径（改动界面代码且项目有 DESIGN.md 时）」→ 主 agent 验证 Green
+3. 派 `bb-spec-workflow:prd-reviewer`，prompt 传「期望行为 + 验证预期 + AGENTS.md 项目级约束（如有）+ 所有变更文件路径 + DESIGN.md 路径（同上，要求报告里写「DESIGN.md 对照」）」→ 主 agent 处理 review 结果
 
 #### 3c. requirement-change
 
@@ -189,7 +189,7 @@ git log -L :<函数>:<文件> -s --format='%h %s%n%b' | grep -e '^[0-9a-f]\{7,40
 2. **期望行为合规**：检查修复是否引入新的违规；修复改变了本分支 PRD 描述的任一行为而 PRD 未同步，说明归因漏判，回到 3a 补改 PRD 后才允许 commit
 3. **界面对比**：出过界面预览时，调用 `Skill bb-spec-workflow:prototype`，参数 `--compare <预览页路径>`。全部一致 → 删掉预览页和本次截图；有不一致 → 逐条写进完成简报（预览里是什么、实际是什么），保留预览页和截图，回到步骤 3 修；实际界面跑不起来 → 简报里写清卡在哪，保留预览页，请用户自己对比
 4. **文档同步**：调用 `Skill bb-spec-workflow:doc-update`，参数 `--tail`，让本分支 PRD 与 README、AGENTS.md 等文档追平代码；已合并的 PRD 不碰
-5. **本地 commit**：先 `git branch --show-current` 确认分支（**在 main 上则跳过**并提示按 git-workflow 先建分支），只提交本次涉及文件（PRD / plan / 实现 / 测试 + doc-update 收尾改动；多仓库时各仓库分别提交，每个 commit 都带标记），message 遵循仓库历史风格（先 `git log --oneline -10`）、不硬编码类型前缀；**正文写清修订原因（改前什么行为、改后什么行为、为什么改）**；本次没改 PRD 而有取舍时再写「决策」段（改了 PRD 的取舍记在它的「决策记录」里，commit 正文写一份就重复了）：选了什么、否掉了哪些做法及理由、由谁在哪天定的（按核心原则 7 收集）；末尾单独一行带 `Requirement: <相关 PRD 目录名>`（修已合并功能写原需求目录；找不到相关 PRD 写 `none`）；**仅本地、不自动 push**
+5. **本地 commit**：先 `git branch --show-current` 确认分支（**在 main 上则跳过**并提示按 git-workflow 先建分支），只提交本次涉及文件（PRD / plan / 实现 / 测试 + doc-update 收尾改动 + 本次经用户同意新建或改过的 DESIGN.md；多仓库时各仓库分别提交，每个 commit 都带标记），message 遵循仓库历史风格（先 `git log --oneline -10`）、不硬编码类型前缀；**正文写清修订原因（改前什么行为、改后什么行为、为什么改）**；本次没改 PRD 而有取舍时再写「决策」段（改了 PRD 的取舍记在它的「决策记录」里，commit 正文写一份就重复了）：选了什么、否掉了哪些做法及理由、由谁在哪天定的（按核心原则 7 收集）；末尾单独一行带 `Requirement: <相关 PRD 目录名>`（修已合并功能写原需求目录；找不到相关 PRD 写 `none`）；**仅本地、不自动 push**
 
 ### 步骤 5：完成简报
 
@@ -214,5 +214,5 @@ git log -L :<函数>:<文件> -s --format='%h %s%n%b' | grep -e '^[0-9a-f]\{7,40
 | Agent | 可见 | 不可见 |
 |---|---|---|
 | Test Agent | 期望行为 + 验证预期 + 项目测试惯例 | 函数清单、实现路径、现有实现代码 |
-| Impl Agent | 函数清单 + 文件路径 + 成品定义（如有）+ 测试文件 + 项目约束 | PRD 原文 |
-| Review Agent | 期望行为 + 验证预期 + AGENTS.md 项目级约束（如有）+ 所有变更文件 | 不修改任何文件 |
+| Impl Agent | 函数清单 + 文件路径 + 成品定义（如有）+ 测试文件 + 项目约束 + DESIGN.md（改动界面代码且有时） | PRD 原文 |
+| Review Agent | 期望行为 + 验证预期 + AGENTS.md 项目级约束（如有）+ 所有变更文件 + DESIGN.md（改动界面代码且有时） | 不修改任何文件 |

@@ -28,8 +28,8 @@ description: /exec、/revise 写界面代码时把 DESIGN.md 交给实现工程�
 
 **exec SKILL.md**
 - 信息隔离矩阵表格在「项目级约束」那一行之后加一行：`| 设计规范（项目根 `DESIGN.md`，改动界面代码时，如有） | ❌ | ✅ | ✅ |`
-- 2b 句中「prompt 传「函数清单 + 文件路径 + 协作关系 + 成品定义（如有）+ 新增技术表（如有）」+ 测试文件路径」之后插入：`；本 plan 改动界面代码（页面、组件、样式文件，或命令行输出的颜色和格式）且项目有 DESIGN.md 时，再传 DESIGN.md 的路径，要求按它写`
-- 2c 句中「prompt 传「业务规则」+「验证方式」+ AGENTS.md 项目级约束（如有）+ 所有变更文件路径」之后插入：`；同样情况下再传 DESIGN.md 的路径，要求报告里写「DESIGN.md 对照」。项目没有 DESIGN.md 或本 plan 不涉及界面代码时，2b、2c 都不传`
+- 2b 句中「prompt 传「函数清单 + 文件路径 + 协作关系 + 成品定义（如有）+ 新增技术表（如有）」+ 测试文件路径」之后插入：`；本 plan 改动界面代码（页面、组件、样式文件，或命令行输出的颜色和格式）且项目有 DESIGN.md 时，再传 DESIGN.md 路径，要求按它写；项目没有 DESIGN.md 或本 plan 不涉及界面代码时不传`
+- 2c 句中「prompt 传「业务规则」+「验证方式」+ AGENTS.md 项目级约束（如有）+ 所有变更文件路径」之后插入：`；本 plan 改动界面代码且项目有 DESIGN.md 时，再传 DESIGN.md 路径，要求报告里写「DESIGN.md 对照」；项目没有 DESIGN.md 或本 plan 不涉及界面代码时不传`
 
 **revise SKILL.md**
 - 步骤 4 第 5 条「只提交本次涉及文件（PRD / plan / 实现 / 测试 + doc-update 收尾改动；」改成「只提交本次涉及文件（PRD / plan / 实现 / 测试 + doc-update 收尾改动 + 本次经用户同意新建或改过的 DESIGN.md；」

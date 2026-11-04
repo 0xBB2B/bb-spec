@@ -4,8 +4,8 @@
 | 01 | 01-design-doc-template | done | 2026-11-04 |
 | 02 | 02-prototype-rules | done | 2026-11-04 |
 | 03 | 03-terminal-palette | done | 2026-11-04 |
-| 04 | 04-design-doc-enforcement | pending | — |
+| 04 | 04-design-doc-enforcement | done | 2026-11-04 |
 ## 当前
-准备执行 `04-design-doc-enforcement.md`。03 Review 后自修 1 次：写了 terminalCss 会丢掉 80 列、等宽字体和换行（违反已合并 PRD 2026-11-02.prototype-page-isolation 的 C18），改成终端样式拆为固定布局和可替换配色两段；填写区说明写明只换配色、依据 DESIGN.md「终端界面」。
+全部完成，进入收尾。04 Review 后自修 1 次并由主 Agent 验证：主题改名时草稿一起改名、「需要修改」重出原型后按 7d 再写入、doc-update 总述和原则 1 写明 DESIGN.md 例外且不一致一律归 C 类、prd 原则和自检允许草稿、「不做了」说明含 DESIGN.md、审查报告总结行在无规范时省略、实现工程师遇到规范外样式值上报、4b 改成子项；补 5 处测试缺口。
 ## 阻塞
 （无）

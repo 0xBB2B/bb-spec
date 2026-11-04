@@ -36,7 +36,7 @@ allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 
 ## 核心原则
 
-1. **先对齐再落盘，读过再实施**：质疑、澄清、拆解全程只读代码和文档，PRD、AGENTS.md 等交付文件一个不写（❌ 澄清没结束就先建文件）；需求涉及界面时，只在 `${CACHE_DIR}/ui-preview/` 写 HTML 预览页给用户看，这个目录不进 git；落盘后用户在弹窗里确认读过 PRD 并通过，才 commit 和实施
+1. **先对齐再落盘，读过再实施**：质疑、澄清、拆解全程只读代码和文档，PRD、AGENTS.md 等交付文件一个不写（❌ 澄清没结束就先建文件）；需求涉及界面时，只在 `${CACHE_DIR}/ui-preview/` 写 HTML 预览页和它的 DESIGN.md 草稿给用户看，这个目录不进 git；落盘后用户在弹窗里确认读过 PRD 并通过，才 commit 和实施
 2. **质疑前置**：先评判值不值得做，再讨论怎么做；结论允许是"不值得做"，此时不落盘、不往下跑
 3. **禁止脑补**：用户没明说的每个细节都是未定项，必须问出来，不用"常见做法"替用户拍板
 4. **现状以代码为准**：了解系统现在怎么做，读代码，不读旧 PRD；旧 PRD 只用来了解当时为什么这样设计
@@ -153,11 +153,11 @@ grep -h '^features:' ${DOCS_DIR}/prd/*/OVERVIEW.md 2>/dev/null  # 已有功能�
 git branch --show-current
 ```
 
-在 main/master 上 → 按 git-workflow 用 AskUserQuestion 选开分支方式（默认 worktree），切过去后**后续所有落盘、commit、自动实施都在新现场进行**；已在功能分支或 linked worktree → 直接继续。步骤 3 出过界面预览、又切到了新现场时，在新现场重新运行 `bbspec-paths.sh` 取 `cache_dir`，把预览页移到新现场的 `ui-preview/` 下（写入前确保 `${CACHE_DIR}/.gitignore` 存在：不存在就连目录一起创建，内容写单行 `*`），后面的简报写新路径。多仓库工作区：检查的是文档仓库与本次要改动的代码仓库，按 git-workflow 的多 repo 规则给它们开同名功能分支。
+在 main/master 上 → 按 git-workflow 用 AskUserQuestion 选开分支方式（默认 worktree），切过去后**后续所有落盘、commit、自动实施都在新现场进行**；已在功能分支或 linked worktree → 直接继续。步骤 3 出过界面预览、又切到了新现场时，在新现场重新运行 `bbspec-paths.sh` 取 `cache_dir`，把预览页移到新现场的 `ui-preview/` 下；预览页旁边同名的 `.DESIGN.draft.md` 草稿存在时一起移过去（写入前确保 `${CACHE_DIR}/.gitignore` 存在：不存在就连目录一起创建，内容写单行 `*`），后面的简报写新路径。多仓库工作区：检查的是文档仓库与本次要改动的代码仓库，按 git-workflow 的多 repo 规则给它们开同名功能分支。
 
 ### 步骤 7：落盘
 
-**7a. PRD**：写入 `${DOCS_DIR}/prd/<YYYY-MM-DD>.<主题>/`（主题 kebab-case）——`OVERVIEW.md` + 每个子需求一份 `<序号>-<子需求>.md`（`01-`、`02-`…）。主题和出预览时定的不一样时，把预览页改成和 PRD 目录同名。
+**7a. PRD**：写入 `${DOCS_DIR}/prd/<YYYY-MM-DD>.<主题>/`（主题 kebab-case）——`OVERVIEW.md` + 每个子需求一份 `<序号>-<子需求>.md`（`01-`、`02-`…）。主题和出预览时定的不一样时，把预览页改成和 PRD 目录同名；同名的 `.DESIGN.draft.md` 草稿存在时一起改名。
 
 **7b. GLOSSARY.md**：`${DOCS_DIR}/prd/GLOSSARY.md` 不存在而 `${DOCS_DIR}/spec/GLOSSARY.md` 存在时，先把旧表整份复制过来（旧表不动），表头说明里的「仅 /spec 维护」改成「仅 /prd 维护」；再按术语变更队列增行、并别名、改定义，删除不再被使用的术语；所有定义冲突必须已经用户裁决，禁静默覆盖。
 
@@ -168,9 +168,11 @@ git branch --show-current
 - 已存在 → 「查功能、查问题的规矩」节整节按模板覆盖（这一节由插件维护，旧版本写进去的查法要随插件更新）；「项目约束」节只做本次的增删改；其他内容不动
 - 确保会话启动目录（单仓库为项目根，多仓库为工作区根）的 `CLAUDE.md` 含导入行 `@<AGENTS.md 相对它的路径>`（单仓库为 `@AGENTS.md`，多仓库如 `@docs/AGENTS.md`；Claude Code 只读 CLAUDE.md，靠这一行把 AGENTS.md 一起加载）：没有 CLAUDE.md → 新建只含这一行的文件；有但缺这一行 → 加在文件最前面
 
+**7d. DESIGN.md**：本次预览页旁边同名的 `<预览页名>.DESIGN.draft.md` 存在（步骤 3 出原型时用户同意了新建或修改 DESIGN.md，草稿是改完后的完整文件）→ 把它写到 DESIGN.md 的位置（`bbspec-paths.sh` 输出的 `docs_repo` 根目录，为空时为 `root`），写完删掉草稿
+
 ### 步骤 8：自检
 
-- [ ] 步骤 0~5 只在 `${CACHE_DIR}/ui-preview/` 写过预览页，没写别的文件？涉及界面时，预览已获用户明确确认，框里确认过的布局、文案、各种状态都写进了约束和验收，外壳没写成产品功能？
+- [ ] 步骤 0~5 只在 `${CACHE_DIR}/ui-preview/` 写过预览页和它的 DESIGN.md 草稿，没写别的文件？涉及界面时，预览已获用户明确确认，框里确认过的布局、文案、各种状态都写进了约束和验收，外壳没写成产品功能？
 - [ ] 质疑已完成；OVERVIEW 有背景、目标、非目标、子需求清单、整体验证路径、决策记录；frontmatter 含 name + description（≤ 80 字）+ date + 单行写法的 `features: [a, b]`？
 - [ ] 每份子文档：每条约束可测且在验收里有对应项；每条 P0 有主路径用例；有验证路径；全文无实现方案；没有引用其他文档？
 - [ ] `features:` 复用了已有功能名？新功能名都会列进步骤 9 的简报？
@@ -188,6 +190,7 @@ git branch --show-current
 - 功能：<features 列表>（新功能名：<列表 / 无>）
 - 项目约束（AGENTS.md）：新增 X / 修改 Y / 删除 Z（无则写"无"）；新建了 AGENTS.md、或在 CLAUDE.md 加了导入行（含新建 CLAUDE.md）时逐项写明
 - 术语表：新增 X / 新别名 Y / 修改 Z / 删除 K（无则写"无"）
+- DESIGN.md：新建 / 修改了哪几节 / 无
 - 界面预览：<用户确认过的预览页完整路径 / 无>
 - 下一步：请阅读上面的 PRD 文件，在弹窗里确认
 ```
@@ -197,14 +200,14 @@ git branch --show-current
 | 选项 | 选项说明 | 选了之后 |
 |---|---|---|
 | 已阅读，通过并执行（标推荐） | 提交 PRD，然后自动跑 /plan → /exec → /doc-update；中途只在需要引入新技术或遇到设计判断时停下问你 | 进步骤 10 |
-| 需要修改 | 告诉我要改哪里，改完重新给你看、重新弹窗确认 | 问清要改什么，就地改文件，重跑步骤 8 自检，再回到本步骤重新简报、重新弹窗 |
-| 不做了 | 删除本次新建的 PRD 文件，撤销对 AGENTS.md / CLAUDE.md / 术语表的改动 | 删掉本次新建的文件（PRD 目录、界面预览页，以及本次新建的 AGENTS.md / CLAUDE.md / GLOSSARY.md），本次改过的已有文件用 `git checkout -- <文件>` 恢复（多仓库时在文档仓库里执行；工作区根不受 git 管的 CLAUDE.md 手动删掉本次加的导入行）；步骤 6 开的分支或 worktree 不删，告诉用户它在哪；不 commit、不往下跑 |
+| 需要修改 | 告诉我要改哪里，改完重新给你看、重新弹窗确认 | 问清要改什么，就地改文件；重新出过原型、预览页旁边又有 DESIGN.md 草稿时，按 7d 再写入一次；重跑步骤 8 自检，再回到本步骤重新简报、重新弹窗 |
+| 不做了 | 删除本次新建的 PRD 文件，撤销对 AGENTS.md / CLAUDE.md / 术语表 / DESIGN.md 的改动 | 删掉本次新建的文件（PRD 目录、界面预览页、DESIGN.md 草稿，以及本次新建的 AGENTS.md / CLAUDE.md / GLOSSARY.md），本次新建的 DESIGN.md 删掉，本次改过的已有文件用 `git checkout -- <文件>` 恢复（多仓库时在文档仓库里执行；工作区根不受 git 管的 CLAUDE.md 手动删掉本次加的导入行）；步骤 6 开的分支或 worktree 不删，告诉用户它在哪；不 commit、不往下跑 |
 
 用户在「其他」里直接写意见时，按「需要修改」处理。
 
 ### 步骤 10：本地 commit + 自动实施
 
-只提交本次涉及的文件（PRD 目录 + GLOSSARY + AGENTS.md + 受 git 管的 CLAUDE.md；多仓库时在文档仓库提交），message 遵循仓库历史风格（先 `git log --oneline -10`），**末尾单独一行带 `Requirement: <本次 PRD 目录名>`**，**仅本地、不 push**。`/plan` 靠 `git diff <基线分支>...HEAD` 发现本次 PRD，不提交就检测不到。
+只提交本次涉及的文件（PRD 目录 + GLOSSARY + AGENTS.md + 受 git 管的 CLAUDE.md + 7d 写入的 DESIGN.md；多仓库时在文档仓库提交），message 遵循仓库历史风格（先 `git log --oneline -10`），**末尾单独一行带 `Requirement: <本次 PRD 目录名>`**，**仅本地、不 push**。`/plan` 靠 `git diff <基线分支>...HEAD` 发现本次 PRD，不提交就检测不到。
 
 commit 后**直接调用 `Skill bb-spec-workflow:plan`**。
 

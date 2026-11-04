@@ -43,6 +43,7 @@ allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 | 协作关系 | ❌ | ✅ | ❌ |
 | 项目约束（语言/框架/架构） | ✅ | ✅ | ❌ |
 | 项目级约束（项目根 `AGENTS.md`「项目约束」节，如有） | ✅ | ✅ | ✅ |
+| 设计规范（项目根 `DESIGN.md`，改动界面代码时，如有） | ❌ | ✅ | ✅ |
 | 项目测试惯例 | ✅ | ❌ | ❌ |
 | Test Agent 写的测试文件 | — | ✅ | ✅ |
 | Impl Agent 写的代码 | — | — | ✅ |
@@ -98,11 +99,11 @@ git worktree list --porcelain
 
 **2a. Test Agent — Red**：派 `bb-spec-workflow:test-engineer`，prompt 传「业务规则」+「验证方式」+ 新增技术表（如有）+ 项目测试惯例。主 Agent 验证：先做下方「新技术守卫」，再看：编译通过 + 断言失败 → ✅ Red 进 2b；编译失败 → 主 Agent 修 import/类型后重跑；意外全 PASS → 行为已存在则跳过，测试错误则修正；Test Agent 报告「方案问题」（约束互相矛盾、无法写成可判定的测试）→ 带它给的证据进下方「归因」。
 
-**2b. Impl Agent — Green**：派 `bb-spec-workflow:impl-engineer`，prompt 传「函数清单 + 文件路径 + 协作关系 + 成品定义（如有）+ 新增技术表（如有）」+ 测试文件路径。主 Agent 验证：全部通过 → 下方「新技术守卫」+ 简洁性审视（是否用最少实现解决问题、有无 plan 未要求的抽象/防御/功能），发现过度设计则反馈 Impl Agent 简化后重跑、通过则 ✅ Green 进 2c；有失败 → 反馈错误给 Impl Agent 重试（最多 1 次）；Impl Agent 报告「方案问题」（按函数清单或成品定义无法让测试通过，附证据）→ 要用表外新技术的走下方「新技术守卫」，其余不重试，直接进下方「归因」；仍失败 → 仍失败报告用户。
+**2b. Impl Agent — Green**：派 `bb-spec-workflow:impl-engineer`，prompt 传「函数清单 + 文件路径 + 协作关系 + 成品定义（如有）+ 新增技术表（如有）」+ 测试文件路径；本 plan 改动界面代码（页面、组件、样式文件，或命令行输出的颜色和格式）且项目有 DESIGN.md 时，再传 DESIGN.md 路径，要求按它写；项目没有 DESIGN.md 或本 plan 不涉及界面代码时不传。主 Agent 验证：全部通过 → 下方「新技术守卫」+ 简洁性审视（是否用最少实现解决问题、有无 plan 未要求的抽象/防御/功能），发现过度设计则反馈 Impl Agent 简化后重跑、通过则 ✅ Green 进 2c；有失败 → 反馈错误给 Impl Agent 重试（最多 1 次）；Impl Agent 报告「方案问题」（按函数清单或成品定义无法让测试通过，附证据）→ 要用表外新技术的走下方「新技术守卫」，其余不重试，直接进下方「归因」；仍失败 → 仍失败报告用户。
 
 **新技术守卫**（2a、2b 每次子代理返回后都做）：比对范围是本主题全部 plan 的「新增技术」表合起来。① diff 本步骤对依赖文件和配置文件（如 `go.mod`、`package.json`、`Dockerfile`、`compose.yaml`、`.github/workflows/*`）的改动；② 看子代理报告的「方案问题」里有没有要用表外新技术。新技术的判定按 `version-policy`：官方扩展库（如 `golang.org/x/*`）、代码里直接引用的间接依赖都算。发现表外新技术时，这一步不算完成：先撤回本步骤引入的表外项：依赖文件和配置文件里的这些条目，以及本 plan 文件里引用它们的代码（只撤这些，同组其他 plan 的改动不动），再按 `version-policy` 的新技术清单格式列出、弹窗请用户批准，不进下方「归因」。按 `version-policy` 的「批准方式」处理：用户最终选"同意" → 先补进对应 plan 的「新增技术」表，再重派这一步；用户不要任何新技术 → 令子代理改用标准库 / 项目已在用的技术重跑，做不到则标 blocked 上报。
 
-**2c. Review Agent — PRD 合规**：派 `bb-spec-workflow:prd-reviewer`，prompt 传「业务规则」+「验证方式」+ AGENTS.md 项目级约束（如有）+ 所有变更文件路径。主 Agent 处理：全 ✅ → 进步骤 3；有 ❌ 或 ⚠️ → **先归因，再按根因决定自决还是问用户**——非设计判断自行解决，不打断用户。
+**2c. Review Agent — PRD 合规**：派 `bb-spec-workflow:prd-reviewer`，prompt 传「业务规则」+「验证方式」+ AGENTS.md 项目级约束（如有）+ 所有变更文件路径；本 plan 改动界面代码且项目有 DESIGN.md 时，再传 DESIGN.md 路径，要求报告里写「DESIGN.md 对照」；项目没有 DESIGN.md 或本 plan 不涉及界面代码时不传。主 Agent 处理：全 ✅ → 进步骤 3；有 ❌ 或 ⚠️ → **先归因，再按根因决定自决还是问用户**——非设计判断自行解决，不打断用户。
 
 **归因**：对照 PRD → plan → 实现 → 测试链路，判定根因——prd-defect（本次 PRD 或 plan 写错、写漏、互相矛盾）/ impl-defect（PRD 正确但实现不符）/ requirement-change（用户实际需要与本次 PRD 不同）。
 
