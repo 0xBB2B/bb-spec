@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# DESIGN.md 模板校验：10 节结构、开头写法要求、颜色表头、组件 5 状态、终端界面、间距尺度
+# DESIGN.md 模板结构校验
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -115,5 +115,31 @@ else
   if [[ "$COUNT" -ge 5 ]]; then pass; else fail "尺度行至少要有 5 个数字，实际 ${COUNT} 个"; fi
   if [[ -z "$BAD" ]]; then pass; else fail "尺度行有不是 4 的倍数的数字：${BAD}"; fi
 fi
+
+echo "[组件的写法]"
+S7_HEAD="$(section '## 7. 组件' '^### ')"
+in_text 组件开头 '写法' "$S7_HEAD"
+in_text 组件开头 'HTML 结构和类名' "$S7_HEAD"
+in_text 组件开头 '代码块' "$S7_HEAD"
+in_text 组件开头 'modal-header' "$S7_HEAD"
+in_text 按钮写法 '主按钮、次按钮各写一份' "$(section '### 按钮' '^#{1,3} ')"
+for c in 按钮 输入框 表格 卡片 弹窗 提示条; do
+  SUB="$(section "### $c" '^#{1,3} ' | tail -n +2)"
+  if printf '%s\n' "$SUB" | grep -q -- '^- 写法：'; then pass; else fail "${c} 缺少以 - 写法： 开头的行"; fi
+done
+
+echo "[页面框架表]"
+LAYOUT="$(section '## 6. 布局与断点' '^## ')"
+if printf '%s\n' "$LAYOUT" | grep -E '^\|' | grep -F '位置和尺寸' | grep -F '写法（HTML 结构和类名）' | grep -qF '不同断点下怎么变'; then pass; else fail "布局一节的表头应同一行含 位置和尺寸、写法（HTML 结构和类名）、不同断点下怎么变"; fi
+in_text 布局 '不适用：<原因>' "$LAYOUT"
+in_text 布局 '页面框架写法' "$LAYOUT"
+for r in 顶栏 侧边栏 导航; do
+  if printf '%s\n' "$LAYOUT" | grep -q -- "^| $r |"; then pass; else fail "布局一节缺少以 | ${r} | 开头的行"; fi
+done
+
+echo "[无障碍例外表]"
+A11Y="$(section '## 9. 无障碍' '^## ')"
+in_text 无障碍 '例外' "$A11Y"
+if printf '%s\n' "$A11Y" | grep -E '^\|' | grep -F '| 项 |' | grep -F '实际值' | grep -qF '用户确认日期'; then pass; else fail "无障碍一节的例外表头应同一行含 项、实际值、用户确认日期"; fi
 
 summary
