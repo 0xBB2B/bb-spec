@@ -99,11 +99,21 @@ echo "[golang-constraints：官方扩展库]"
 has "$GO" 'golang.org/x/*'
 lacks "$GO" '确需新增第三方库时'
 
-echo "[前端插件描述不再说 hook 强制 bun]"
+echo "[前端插件描述不提 bun 钩子]"
 for f in "$ROOT/plugins/bb-spec-frontend/.claude-plugin/plugin.json" "$ROOT/.claude-plugin/marketplace.json"; do
   lacks "$f" 'hook 强制 bun'
-  has "$f" '无 lockfile 时询问用户'
+  lacks "$f" 'block-non-bun-pm'
 done
+
+echo "[前端插件没有钩子]"
+if [[ ! -e "$ROOT/plugins/bb-spec-frontend/hooks" ]]; then pass; else fail "plugins/bb-spec-frontend/hooks 不应存在"; fi
+
+echo "[前端规则的包管理器判定表]"
+has "$VUE" '| 既有项目，有 `bun.lock` / `bun.lockb` | **bun**（强制） |'
+has "$VUE" '| 既有项目，有 `package-lock.json` | **npm**'
+has "$VUE" '| 既有项目，有 `yarn.lock` | **yarn**'
+has "$VUE" '| 既有项目，有 `pnpm-lock.yaml` | **pnpm**'
+has "$VUE" '| 新建项目 | **bun**（默认，引入前按 version-policy 列清单经用户批准） |'
 
 echo ""
 echo "通过 ${PASS}，失败 ${FAIL}"
