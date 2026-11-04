@@ -1,5 +1,14 @@
 # Changelog
 
+## [15.5.0](https://github.com/0xBB2B/bb-spec/compare/v15.4.0...v15.5.0) (2026-11-04)
+
+
+### Features
+
+* **workflow:** 删掉 bun 钩子，技术选型弹窗只留同意和不同意，测试不再误删目录 ([#318](https://github.com/0xBB2B/bb-spec/issues/318)) ([4b0272a](https://github.com/0xBB2B/bb-spec/commit/4b0272ab97a54f69e3db3b70e60265758f9293bb))
+* **workflow:** 原型外壳改成明暗两套柔和配色，方案切换挪到右上角 ([#319](https://github.com/0xBB2B/bb-spec/issues/319)) ([9c701e3](https://github.com/0xBB2B/bb-spec/commit/9c701e348580d921ea900096f5dab1496fa34f37))
+* **workflow:** 引入新技术前逐项列出理由，用户批准后才能用，插件默认栈也可否决 ([#316](https://github.com/0xBB2B/bb-spec/issues/316)) ([d3e6759](https://github.com/0xBB2B/bb-spec/commit/d3e67594db2279cb9c880c212b80bd8366518f13))
+
 ## [15.4.0](https://github.com/0xBB2B/bb-spec/compare/v15.3.0...v15.4.0) (2026-11-02)
 
 
