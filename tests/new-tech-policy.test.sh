@@ -81,12 +81,29 @@ for t in ' 自动改为 `bun add X` 执行' '不接受"个人偏好"作为偏离
   lacks "$VUE" "$t"
 done
 
+has "$VUE" '用户在新技术清单里另选的除外'
+for t in '- **禁止** Vue 2' '- **禁止** 纯 JavaScript' '- **禁止**直接配置 webpack' \
+  '- **禁止**引入 styled-components' '前端技术栈强制约束' '## 2. 禁止替代清单'; do
+  lacks "$VUE" "$t"
+done
+
 for t in '含用户批准用 bun 的新建项目' '新项目按用户批准的清单'; do has "$VUE" "$t"; done
 for t in '（含新建项目）' '新项目 bun；'; do lacks "$VUE" "$t"; done
+for t in '并征得理解后' '- `*.vue` 文件 `<script>` 必须带 `lang="ts"`' '| 不得使用 | 应使用 | 原因 |' \
+  '- [ ] 框架是 **Vue 3**（不是 Vue 2）'; do
+  lacks "$VUE" "$t"
+done
+has "$VUE" '- [ ] 技术栈与用户批准的新技术清单一致'
 
 echo "[golang-constraints：官方扩展库]"
 has "$GO" 'golang.org/x/*'
 lacks "$GO" '确需新增第三方库时'
+
+echo "[前端插件描述不再说 hook 强制 bun]"
+for f in "$ROOT/plugins/bb-spec-frontend/.claude-plugin/plugin.json" "$ROOT/.claude-plugin/marketplace.json"; do
+  lacks "$f" 'hook 强制 bun'
+  has "$f" '无 lockfile 时询问用户'
+done
 
 echo ""
 echo "通过 ${PASS}，失败 ${FAIL}"

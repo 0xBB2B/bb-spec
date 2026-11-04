@@ -1,7 +1,7 @@
 {
   "name": "bb-spec-frontend",
   "version": "15.4.0",
-  "description": "BB-Spec 前端技术框架约束：Vue 3 + TypeScript + Vite + Tailwind + bun 技术栈与前端工程约定；含 block-non-bun-pm hook 强制 bun。",
+  "description": "BB-Spec 前端技术框架约束：Vue 3 + TypeScript + Vite + Tailwind + bun 技术栈与前端工程约定；含 block-non-bun-pm hook：无 lockfile 时询问用户，lockfile 与命令不匹配时拒绝。",
   "author": {
     "name": "0xBB2B",
     "url": "https://github.com/0xBB2B"

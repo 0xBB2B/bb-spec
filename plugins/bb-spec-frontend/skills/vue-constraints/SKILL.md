@@ -1,6 +1,6 @@
 ---
 name: vue-constraints
-description: 前端技术栈强制约束——默认 Vue 3 + TS + Vite + Tailwind；bun 是默认包管理器（新项目默认，引入前经用户批准），既有项目跟随 lockfile 不迁移。触发：新建前端项目；编辑 package.json/vite.config/tailwind.config/.vue/.ts/.tsx；用户提到前端/vue/vite/tailwind。跳过：纯后端/CLI/工具项目；用户明确说用 React/Nuxt/Svelte 等。
+description: 前端技术栈约束——默认 Vue 3 + TS + Vite + Tailwind；bun 是默认包管理器（新项目默认，引入前经用户批准），既有项目跟随 lockfile 不迁移。触发：新建前端项目；编辑 package.json/vite.config/tailwind.config/.vue/.ts/.tsx；用户提到前端/vue/vite/tailwind。跳过：纯后端/CLI/工具项目；用户明确说用 React/Nuxt/Svelte 等。
 user-invocable: false
 ---
 
@@ -31,7 +31,7 @@ user-invocable: false
 **SKIP**（以下情况本约束不适用）：
 
 - 纯后端 / CLI / 工具项目
-- 用户明确说明"这个项目用 React" / "这个用 Nuxt" / "这个用 Svelte" 等其他栈，并征得理解后
+- 用户明确说明"这个项目用 React" / "这个用 Nuxt" / "这个用 Svelte" 等其他栈
 
 ---
 
@@ -50,32 +50,32 @@ user-invocable: false
 ### 1.1 Vue 3
 
 - 使用 Composition API（`<script setup>`）作为默认风格
-- **禁止** Vue 2 / Options API 风格新代码（既有项目维护除外）
+- Claude 不主动写 Vue 2 / Options API 风格新代码（既有项目维护、用户在新技术清单里另选的除外）
 
 ### 1.2 TypeScript
 
-- **禁止** 纯 JavaScript（`.js` / `.jsx`）作为前端源文件
+- Claude 不主动用纯 JavaScript（`.js` / `.jsx`）写前端源文件（用户在新技术清单里另选的除外）
 - 启用 `strict: true`（含 `strictNullChecks`、`noImplicitAny` 等）
-- `*.vue` 文件 `<script>` 必须带 `lang="ts"`
+- `*.vue` 文件 `<script>` 带 `lang="ts"`（用户在新技术清单里另选纯 JavaScript 的除外）
 
 ### 1.3 Vite
 
-- **禁止**直接配置 webpack / rollup 替代 Vite
+- Claude 不主动直接配置 webpack / rollup 替代 Vite（用户在新技术清单里另选的除外）
 - 复杂构建需求优先用 Vite 插件生态满足
 
 ### 1.4 Tailwind CSS
 
 - 优先使用 Tailwind utility class
-- **禁止**引入 styled-components / emotion / 纯手写 SCSS 体系 等替代 CSS 方案
+- Claude 不主动引入 styled-components / emotion / 纯手写 SCSS 体系等替代 CSS 方案（用户在新技术清单里另选的除外）
 - 复杂组件样式优先抽组件，**不要**依赖 `@apply` 堆叠
 
 ---
 
-## 2. 禁止替代清单
+## 2. 替代方案清单
 
 以下替代方案 Claude 不主动提议；用户在新技术清单里否决默认项、点名要用它们时，按用户的选择：
 
-| 不得使用 | 应使用 | 原因 |
+| 默认不用 | 默认使用 | 原因 |
 |---|---|---|
 | Vue 2 | Vue 3 | Vue 2 已 EOL，Composition API 是主流 |
 | 纯 JavaScript（无类型） | TypeScript | 类型安全、IDE 体验、重构友好 |
@@ -180,10 +180,7 @@ bun run dev
 新建前端项目或为前端项目添加依赖前，对照以下清单：
 
 - [ ] 默认栈各项已列进新技术清单（来源标"插件默认栈"），用户已批准
-- [ ] 框架是 **Vue 3**（不是 Vue 2）
-- [ ] 语言是 **TypeScript**（启用 strict）
-- [ ] 构建工具是 **Vite**（不是 webpack/rollup 直配）
-- [ ] CSS 方案是 **Tailwind CSS**（不是 styled-components / 手写 SCSS 体系）
+- [ ] 技术栈与用户批准的新技术清单一致（没有另选时：框架 Vue 3、语言 TypeScript 且启用 strict、构建工具 Vite、CSS 方案 Tailwind CSS）
 - [ ] 包管理器符合第 3.1 节判定规则（新项目按用户批准的清单；既有项目跟随现存 lockfile）
 - [ ] lockfile 唯一：bun 项目仅 `bun.lock` 已提交；非 bun 既有项目保留原 lockfile 未被替换
 - [ ] 偏离默认栈的部分已与用户确认并写明原因
