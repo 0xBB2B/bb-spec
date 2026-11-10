@@ -6,16 +6,6 @@
 <title>界面原型</title>
 <style>
   :root {
-    --shell-bg: #d5dae1;
-    --shell-line: #b7bfca;
-    --shell-text: #1d2633;
-    --shell-muted: #4f5b6b;
-    --accent: #47607f;
-    --pick-bg: #c2cad5;
-    --pick-text: #1d2633;
-    --grid: rgba(71, 96, 127, .06);
-  }
-  :root[data-theme="dark"] {
     --shell-bg: #26282c;
     --shell-line: #3a3d43;
     --shell-text: #d4d4d4;
@@ -58,7 +48,7 @@
   .side-body { padding: 14px 12px; }
   .side-body h3 { margin: 14px 0 6px; font-size: 12px; font-weight: 500; color: var(--shell-muted); }
   .pick { display: flex; flex-direction: column; gap: 4px; }
-  .pick button, .theme button {
+  .pick button {
     padding: 5px 10px;
     border: 1px solid var(--shell-line);
     background: transparent;
@@ -67,13 +57,12 @@
     text-align: left;
     cursor: pointer;
   }
-  .pick button:hover, .theme button:hover { border-color: var(--accent); }
-  .pick button[aria-pressed="true"], .theme button[aria-pressed="true"] { border-color: var(--accent); background: var(--pick-bg); color: var(--pick-text); font-weight: 600; }
-  .theme { display: flex; flex: none; gap: 4px; margin-left: 6px; padding-left: 10px; border-left: 1px solid var(--shell-line); }
+  .pick button:hover { border-color: var(--accent); }
+  .pick button[aria-pressed="true"] { border-color: var(--accent); background: var(--pick-bg); color: var(--pick-text); font-weight: 600; }
 
   main {
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr);
     height: 100vh;
     min-width: 0;
     padding: 0 6px 6px;
@@ -103,18 +92,6 @@
     outline-offset: 2px;
     background: #fff;
   }
-
-  .dock {
-    max-height: 30vh;
-    overflow-y: auto;
-    margin-top: 9px;
-    padding: 8px 12px;
-    border-top: 1px dashed var(--accent);
-  }
-  .dock-head { display: flex; align-items: center; gap: 8px; color: var(--shell-muted); font-size: 12px; }
-  .dock-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 6px; }
-  .dock h2 { margin: 0 0 2px; font-size: 12px; font-weight: 500; color: var(--shell-muted); }
-  .dock ul, .dock ol { margin: 0; padding-left: 18px; }
 </style>
 </head>
 <body>
@@ -141,24 +118,9 @@
       </div>
       <div class="frame-right">
         <span id="schemeBar" hidden><span class="scheme-label">方案</span><span class="pick" id="schemePick"></span></span>
-        <span class="theme" aria-label="外壳明暗">
-          <button type="button" id="themeLight" aria-pressed="false">☀ 明亮</button>
-          <button type="button" id="themeDark" aria-pressed="false">☾ 暗黑</button>
-        </span>
       </div>
     </div>
     <iframe id="stage" title="被设计的页面" sandbox="allow-scripts"></iframe>
-    <section class="dock" id="dock" aria-label="页面说明">
-      <div class="dock-head">
-        <span class="tag">设计说明 · 不属于页面</span>
-        <span>这一块上线后不存在</span>
-      </div>
-      <div class="dock-cols">
-        <div><h2>这个画面的说明</h2><ul id="noteList"></ul></div>
-        <div><h2>只在原型里成立</h2><ul id="fakeList"></ul></div>
-        <div><h2>还没确认的问题</h2><ol id="openList"></ol></div>
-      </div>
-    </section>
   </main>
 
 <script>
@@ -171,32 +133,6 @@
 </script>
 
 <script>
-  (() => {
-    const root = document.documentElement;
-    const light = document.getElementById('themeLight');
-    const dark = document.getElementById('themeDark');
-
-    function applyTheme(theme) {
-      root.setAttribute('data-theme', theme);
-      light.setAttribute('aria-pressed', String(theme === 'light'));
-      dark.setAttribute('aria-pressed', String(theme === 'dark'));
-    }
-
-    function initTheme() {
-      const media = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
-      let manual = false;
-      applyTheme(media && media.matches ? 'dark' : 'light');
-      media?.addEventListener?.('change', (e) => { if (!manual) applyTheme(e.matches ? 'dark' : 'light'); });
-      for (const [button, theme] of [[light, 'light'], [dark, 'dark']]) {
-        button.addEventListener('click', () => { manual = true; applyTheme(theme); });
-      }
-    }
-
-    initTheme();
-  })();
-</script>
-
-<script>
 /* PROTOTYPE-START
    只改 PROTOTYPE-START 到 PROTOTYPE-END 之间的内容，这段之外是外壳，一律不改。
 
@@ -205,11 +141,9 @@
      不写时框里用默认页面样式，可以直接用的元素有
      header、h1、main、.card、table、button、button.plain、.center、.alert、.bar、dl、.cards。
      终端页面用 terminalCss，不用 css。
-   openQuestions：还没确认的问题。多方案时外壳会自动在最前面加上"选哪个方案"。
-   schemes：方案列表。id 用于 html 取值，label 是"方案 A"这样的短名，desc 是方案特点，
-     note 是方案取舍。只有一个方案时只留一项，外壳不显示任何方案切换。
+   schemes：方案列表。id 用于 html 取值，label 是"方案 A"这样的短名，desc 是方案特点。只有一个方案时只留一项，外壳不显示任何方案切换。
    pages：要设计的页面，每页一项。
-     id、name：页面标识和名字。fake：这页只在原型里成立的内容（假数据、假操作）。
+     id、name：页面标识和名字。
      stateLabel：第二组按钮的名字，多步交互写"步骤"，其他情况不写。
      terminal：终端界面写 true。这时 html 写终端里的文字，<pre> 外面包好了，不用再写。
        终端文字里的 < 和 & 要写成 &lt; 和 &amp;，否则会被当成标签吞掉。
@@ -219,9 +153,8 @@
        只换配色，80 列宽度、等宽字体和自动换行由外壳固定。
        不写时用外壳默认终端配色，颜色用 <span class="g">绿</span>、<span class="y">黄</span>、
        <span class="b">蓝</span>、<span class="r">红</span>；默认配色只在项目没有命令行输出代码时用。
-     states：这页的状态或步骤，每项有 id、name、note（说明，每条一句）、html（框里的内容）。
+     states：这页的状态或步骤，每项有 id、name、html（框里的内容）。
        html 各方案相同时写字符串；不同时写 { 方案id: 内容 }，比如 { a: '...', b: '...' }，每个方案都要写。
-     note、fake、openQuestions 都是数组，每条一句，没内容写 []。
 
    框里的跳转：给元素加 data-go="页面id:状态id"，点击后框和左栏一起切换。
    框里的普通链接和表单不会跳走，alert、浏览器本地存储也用不了，这些效果都用 data-go 切换状态来演示。
@@ -239,25 +172,18 @@ const detailHead = '<header><h1>订单 A1024</h1><button class="plain" data-go="
 const PROTOTYPE = {
   title: '订单导出（示例）',
   version: 1,
-  openQuestions: [
-    '导出的文件用 CSV 还是 Excel',
-    '订单超过一万笔时怎么导出',
-    '哪些角色可以导出订单',
-  ],
   schemes: [
-    { id: 'a', label: '方案 A', desc: '表格', note: '方案 A 用表格，一屏能看到更多订单，方便比较金额。' },
-    { id: 'b', label: '方案 B', desc: '卡片', note: '方案 B 用卡片，金额更醒目，但一屏看到的订单更少。' },
+    { id: 'a', label: '方案 A', desc: '表格' },
+    { id: 'b', label: '方案 B', desc: '卡片' },
   ],
   pages: [
     {
       id: 'list',
       name: '订单列表',
-      fake: ['订单都是编的假数据。', '点「导出」在这个原型里没有反应。'],
       states: [
         {
           id: 'normal',
           name: '正常',
-          note: ['用户打开页面后看到的样子。', '点任意一笔订单，进入订单详情，左栏的选中项也跟着变。'],
           html: {
             a: listHead(true) + `<main><div class="card"><table>
               <thead><tr><th>订单号</th><th>客户</th><th>金额</th></tr></thead>
@@ -269,19 +195,16 @@ const PROTOTYPE = {
         {
           id: 'empty',
           name: '空数据',
-          note: ['一笔订单都没有时的样子。', '此时没有东西可导出，右上角不显示「导出」按钮。'],
           html: listHead(false) + '<main><div class="card center">还没有订单</div></main>',
         },
         {
           id: 'loading',
           name: '加载中',
-          note: ['数据还没回来时，用灰色条占位，页面不会突然跳动。'],
           html: listHead(false) + `<main>${skeleton}</main>`,
         },
         {
           id: 'error',
           name: '出错',
-          note: ['加载失败时说清楚发生了什么，并给「重试」按钮。', '点「重试」回到正常状态。'],
           html: listHead(false) + '<main><div class="alert">订单加载失败，请检查网络后重试。</div><p><button data-go="list:normal">重试</button></p></main>',
         },
       ],
@@ -289,12 +212,10 @@ const PROTOTYPE = {
     {
       id: 'detail',
       name: '订单详情',
-      fake: ['订单内容是编的假数据。', '点「重试」只切换这个原型的显示，不发请求。'],
       states: [
         {
           id: 'normal',
           name: '正常',
-          note: ['这一页只有一笔订单，不存在空数据的情况，所以少一个状态。', '点「返回订单列表」回到订单列表。'],
           html: detailHead + `<main><div class="card"><dl>
             <dt>客户</dt><dd>王小明</dd><dt>金额</dt><dd>¥ 320</dd><dt>下单时间</dt><dd>2026-11-01 10:24</dd>
           </dl></div></main>`,
@@ -302,13 +223,11 @@ const PROTOTYPE = {
         {
           id: 'loading',
           name: '加载中',
-          note: ['详情还没回来时的占位样子。'],
           html: detailHead + `<main>${skeleton}</main>`,
         },
         {
           id: 'error',
           name: '出错',
-          note: ['这笔订单读取失败时的样子。', '点「重试」回到正常状态。'],
           html: detailHead + '<main><div class="alert">这笔订单读取失败。</div><p><button data-go="detail:normal">重试</button></p></main>',
         },
       ],
@@ -318,24 +237,20 @@ const PROTOTYPE = {
       name: '终端界面（举例）',
       stateLabel: '步骤',
       terminal: true,
-      fake: ['命令 shop export 是编的举例。', '进度和文件名都是假数据，不会真的生成文件。'],
       states: [
         {
           id: 'step1',
           name: '第 1 步：确认',
-          note: ['终端界面也用同一个外框。', '框里就是终端全屏的样子：内容从左上角开始，按 80 列换行。', '多步交互放在左栏按步骤切换。'],
           html: '<span class="b">$</span> shop export --month 2026-10\n\n本次导出 <span class="y">312</span> 笔订单，继续吗？(y/N) ',
         },
         {
           id: 'step2',
           name: '第 2 步：进度',
-          note: ['用户按 y 之后显示进度条。'],
           html: '<span class="b">$</span> shop export --month 2026-10\n\n本次导出 <span class="y">312</span> 笔订单，继续吗？(y/N) y\n\n[<span class="g">████████████</span>        ] 60%  187/312',
         },
         {
           id: 'step3',
           name: '第 3 步：完成',
-          note: ['导出结束后告诉用户文件存在哪里。'],
           html: '<span class="b">$</span> shop export --month 2026-10\n\n本次导出 <span class="y">312</span> 笔订单，继续吗？(y/N) y\n\n<span class="g">✓ 导出完成</span>  orders-2026-10.csv',
         },
       ],
@@ -392,16 +307,8 @@ const PROTOTYPE = {
 
     const { schemes, pages } = PROTOTYPE;
     const hasChoice = schemes.length > 1;
-    const incomplete = hasChoice && schemes.find((scheme) => !scheme.note || !scheme.desc);
-    if (incomplete) throw new Error(`${incomplete.label} 缺少 note 或 desc`);
-    const requireList = (value, where) => {
-      if (value !== undefined && !Array.isArray(value)) throw new Error(`${where} 要写成数组`);
-    };
-    requireList(PROTOTYPE.openQuestions, 'openQuestions');
-    for (const page of pages) {
-      requireList(page.fake, `「${page.name}」的 fake`);
-      for (const state of page.states) requireList(state.note, `「${page.name} · ${state.name}」的 note`);
-    }
+    const incomplete = hasChoice && schemes.find((scheme) => !scheme.desc);
+    if (incomplete) throw new Error(`${incomplete.label} 缺少 desc`);
     const el = (id) => document.getElementById(id);
     const schemeName = (scheme) => `${scheme.label}：${scheme.desc}`;
     const current = { scheme: schemes[0], page: pages[0], state: pages[0].states[0] };
@@ -416,22 +323,8 @@ const PROTOTYPE = {
       }));
     }
 
-    function fillList(box, lines) {
-      box.replaceChildren(...(lines.length ? lines : ['无']).map((line) => {
-        const item = document.createElement('li');
-        item.textContent = line;
-        if (!lines.length) item.style.listStyle = 'none';
-        return item;
-      }));
-    }
-
     function differsByScheme(state) {
       return typeof state.html === 'object';
-    }
-
-    function chooseSchemeQuestion() {
-      const labels = schemes.map((scheme) => scheme.label);
-      return `选${labels.slice(0, -1).join('、')} 还是${labels[labels.length - 1]}`;
     }
 
     function frameDoc(page, state, scheme) {
@@ -440,29 +333,6 @@ const PROTOTYPE = {
       const css = page.terminal ? (page.terminalCss?.trim() || TERMINAL_COLOR_CSS) + TERMINAL_LAYOUT_CSS : PROTOTYPE.css?.trim() || DEFAULT_PAGE_CSS;
       const body = page.terminal ? `<pre>${html}</pre>` : html;
       return `<!doctype html><html><head><meta charset="utf-8"><style>${css}</style></head><body>${body}${FRAME_BRIDGE}</body></html>`;
-    }
-
-    function fillNotes(scheme, page, state) {
-      const schemeNote = !hasChoice ? [] : [differsByScheme(state) ? scheme.note : '各方案在这个画面上一样。'];
-      fillList(el('noteList'), [...schemeNote, ...(state.note ?? [])]);
-      fillList(el('fakeList'), page.fake ?? []);
-      fillList(el('openList'), [...(hasChoice ? [chooseSchemeQuestion()] : []), ...(PROTOTYPE.openQuestions ?? [])]);
-    }
-
-    function fitDock() {
-      const dock = el('dock');
-      dock.style.height = 'auto';
-      let tallest = 0;
-      for (const scheme of schemes) {
-        for (const page of pages) {
-          for (const state of page.states) {
-            fillNotes(scheme, page, state);
-            tallest = Math.max(tallest, dock.offsetHeight);
-          }
-        }
-      }
-      dock.style.height = `${tallest}px`;
-      fillNotes(current.scheme, current.page, current.state);
     }
 
     function select(scheme, page, state) {
@@ -481,7 +351,6 @@ const PROTOTYPE = {
       pickButtons(el('statePick'), page.states, state, (item) => item.name, (item) => select(scheme, page, item));
       el('stateLabel').textContent = page.stateLabel || '状态';
       el('frameTitle').textContent = `${page.name} · ${state.name}`;
-      fillNotes(scheme, page, state);
       el('stage').srcdoc = doc;
     }
 
@@ -497,8 +366,6 @@ const PROTOTYPE = {
     el('sideTitle').textContent = PROTOTYPE.title;
     el('sideVersion').textContent = `第 ${PROTOTYPE.version} 版 · 这一栏上线后不存在`;
     render();
-    fitDock();
-    window.addEventListener('resize', fitDock);
   })();
 </script>
 </body>
