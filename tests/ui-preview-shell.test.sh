@@ -107,6 +107,15 @@ class El {
     const ev = { type: 'click', target: this, preventDefault() {}, stopPropagation() {} };
     (this.listeners.click || []).forEach((f) => f(ev));
   }
+  append(...ns) { this.replaceChildren(...this.children, ...ns); }
+  get options() { return this.children.filter((c) => c.tagName === 'OPTION'); }
+  get selectedIndex() { return this._si ?? 0; }
+  set selectedIndex(i) { this._si = Number(i); }
+  change(index) {
+    this.selectedIndex = index;
+    const ev = { type: 'change', target: this, currentTarget: this, preventDefault() {}, stopPropagation() {} };
+    (this.listeners.change || []).forEach((f) => f(ev));
+  }
   closest(selector) {
     const parts = selector.split(',').map((s) => s.trim());
     for (let n = this; n; n = n.parent) {
@@ -261,6 +270,38 @@ const SCH = [
   { id: 'c', label: '方案 C', desc: '列表' },
 ];
 const schemeLabels = (a) => a.buttons('schemePick').map((b) => b.textContent);
+const THEMES = [
+  { id: 'dark', label: '☾ 暗黑' },
+  { id: 'light', label: '☀ 浅色' },
+  { id: 'soft', label: '◐ 柔和' },
+  { id: 'contrast', label: '◉ 高对比' },
+];
+const findSelect = (e) => {
+  if (e.tagName === 'SELECT') return e;
+  for (const c of e.children) { const f = findSelect(c); if (f) return f; }
+  return null;
+};
+const selectOf = (a, g) => findSelect(a.$(g));
+const optTexts = (a, g) => selectOf(a, g).options.map((o) => o.textContent);
+const chosen = (a, g) => selectOf(a, g).selectedIndex;
+const choose = (a, g, i) => {
+  try { selectOf(a, g).change(i); } catch (err) { a.errors.push(err); a.fireError(err.message); }
+};
+const THEME_TXT = (n) => THEMES.slice(0, n).map((t) => t.label);
+const mkT = (n, themes, over) => mk(n, Object.assign({ themes: themes.map((t) => ({ ...t })) }, over || {}));
+const SCH4 = [
+  { id: 'a', label: '方案 A', desc: '表格' },
+  { id: 'b', label: '方案 B', desc: '卡片' },
+  { id: 'c', label: '方案 C', desc: '紧凑列表' },
+  { id: 'd', label: '方案 D', desc: '看板' },
+];
+const mk4 = (themes) => {
+  const d = mkT(3, themes);
+  d.schemes = SCH4.map((s) => ({ ...s }));
+  d.pages[0].states[0].html = Object.fromEntries(SCH4.map((s) => [s.id, '<p>HTML_' + s.id + '</p>']));
+  return d;
+};
+const themeOf = (srcdoc) => (/<html[^>]*\sdata-theme="([^"]*)"/.exec(srcdoc) || [])[1];
 const mk = (n, over) => {
   const schemes = SCH.slice(0, n).map((scheme) => ({ ...scheme }));
   return Object.assign({
@@ -755,6 +796,10 @@ group('结构与样式（按区块）', () => {
   ok(/background:\s*var\(--pick-bg\)/.test(pressed), '选中按钮背景用 var(--pick-bg)');
   ok(/(?:^|[;\s])color:\s*var\(--pick-text\)/.test(pressed), '选中按钮文字色用 var(--pick-text)');
   ok(/font-weight:\s*(?:600|700|bold)/.test(pressed), '选中按钮字加粗');
+  const menuRule = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].find((m) => /\.pick select/.test(m[1]));
+  ok(menuRule && /border:\s*1px solid var\(--accent\)/.test(menuRule[2]), '下拉菜单细线框用强调色');
+  ok(menuRule && /background:\s*var\(--shell-bg\)/.test(menuRule[2]), '下拉菜单底色用外壳底色');
+  ok(menuRule && /font:\s*inherit/.test(menuRule[2]), '下拉菜单字体继承');
   ok(/\.pick button/.test(pressedRule[1]), '左栏切换按钮有选中样式');
   const idleRule = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].find((m) => /\.pick button\s*(?:,|$)/.test(m[1].trim()));
   ok(idleRule && /background:\s*transparent/.test(idleRule[2]) && /border:\s*1px solid var\(--shell-line\)/.test(idleRule[2]), '左栏切换按钮未选中样式：细线框、透明底');
@@ -1005,6 +1050,191 @@ group('填写区说明与示例数据：没有 note、fake、openQuestions', () 
   eq(keys("JSON.stringify(PROTOTYPE.pages.some((p) => p.states.some((s) => 'note' in s)))"), false, '示例状态没有 note');
   eq(keys("JSON.stringify('openQuestions' in PROTOTYPE)"), false, '示例没有 openQuestions');
   eq(keys('JSON.stringify([PROTOTYPE.pages.length, PROTOTYPE.pages.map((p) => p.states.length), PROTOTYPE.pages.some((p) => p.terminal)])'), [3, [4, 3, 3], true], '示例保留 3 个页面、各自状态和终端页面');
+});
+group('主题与方案：显示规则 0 或 1 个时整组隐藏', () => {
+  const none = load(mk(1));
+  ok(none.$('schemeBar').hidden === true && none.$('themeBar').hidden === true, '1 个方案、没写 themes：两组都隐藏');
+  const empty = load(mkT(1, []));
+  ok(empty.$('schemeBar').hidden === true && empty.$('themeBar').hidden === true, '1 个方案、themes 为空数组：两组都隐藏');
+  const one = load(mkT(1, THEMES.slice(0, 1)));
+  ok(one.$('schemeBar').hidden === true && one.$('themeBar').hidden === true, '1 个方案、1 套主题：两组都隐藏');
+  eq(one.errors.length, 0, '1 套主题不报错');
+  const m1 = load(mkT(2, THEMES.slice(0, 1)));
+  ok(m1.$('schemeBar').hidden === false && m1.$('themeBar').hidden === true, '2 个方案、1 套主题：只有方案组显示');
+  const t2 = load(mkT(1, THEMES.slice(0, 2)));
+  ok(t2.$('schemeBar').hidden === true && t2.$('themeBar').hidden === false, '1 个方案、2 套主题：只有主题组显示');
+  eq(t2.buttons('themePick').length, 2, '只有主题组时是 2 个按钮');
+  ok(/id="themeBar"[^>]*>\s*<span[^>]*>主题<\/span>/.test(HTML), '主题组带「主题」文字');
+  ok(/id="schemeBar"[^>]*>\s*<span[^>]*>方案<\/span>/.test(HTML), '方案组带「方案」文字');
+  ok(load(mk(2)).$('themeBar').hidden === true, '示例没写 themes 时主题组隐藏');
+});
+
+group('主题与方案：2～3 个时平铺按钮', () => {
+  const a = load(mkT(3, THEMES.slice(0, 2)));
+  ok(a.$('schemeBar').hidden === false && a.$('themeBar').hidden === false, '3 个方案、2 套主题：两组都显示');
+  eq(schemeLabels(a), ['方案 A：表格', '方案 B：卡片', '方案 C：列表'], '方案按钮文字是「短名：特点」');
+  eq(a.buttons('themePick').map((b) => b.textContent), THEME_TXT(2), '主题按钮文字等于 label');
+  eq(a.pressed('schemePick'), [true, false, false], '当前方案 aria-pressed');
+  eq(a.pressed('themePick'), [true, false], '当前主题 aria-pressed');
+  eq([selectOf(a, 'schemePick'), selectOf(a, 'themePick')], [null, null], '2～3 个时没有下拉菜单');
+  const b = load(mkT(2, THEMES.slice(0, 3)));
+  eq(b.buttons('themePick').map((x) => x.textContent), THEME_TXT(3), '3 套主题平铺按钮');
+  eq(selectOf(b, 'themePick'), null, '3 套主题没有下拉菜单');
+  b.pick('themePick', 2);
+  eq(b.pressed('themePick'), [false, false, true], '点第 3 个主题后选中项跟着变');
+});
+
+group('主题与方案：4 个及以上时下拉菜单', () => {
+  const a = load(mk4(THEMES));
+  ok(a.$('schemeBar').hidden === false && a.$('themeBar').hidden === false, '4 个方案、4 套主题：两组都显示');
+  ok(selectOf(a, 'schemePick') !== null && selectOf(a, 'themePick') !== null, '两组都是 select');
+  eq([a.buttons('schemePick').length, a.buttons('themePick').length], [0, 0], '下拉菜单时没有平铺按钮');
+  eq(optTexts(a, 'schemePick'), ['方案 A：表格', '方案 B：卡片', '方案 C：紧凑列表', '方案 D：看板'], '方案选项按填写顺序列全部项');
+  eq(optTexts(a, 'themePick'), THEME_TXT(4), '主题选项按填写顺序列全部项');
+  eq([chosen(a, 'schemePick'), chosen(a, 'themePick')], [0, 0], '初始选中第一项');
+
+  const five = load(mkT(1, THEMES.concat([{ id: 'x5', label: '第五套' }])));
+  ok(selectOf(five, 'themePick') !== null, '5 套主题也是下拉菜单');
+  eq(optTexts(five, 'themePick').length, 5, '5 套主题列出 5 项');
+});
+
+group('主题与方案：下拉菜单切换', () => {
+  const a = load(mk4(THEMES));
+  choose(a, 'schemePick', 2);
+  eq(a.txt('schemeCurrent'), '当前：方案 C：紧凑列表', '下拉菜单选方案 C 后左栏当前方案');
+  eq(a.txt('frameTitle'), '页一 · 态一', '选方案 C 后页面和状态不变');
+  ok(a.srcdoc().includes('HTML_c') && !a.srcdoc().includes('HTML_a'), '框里是方案 C 同一页面和状态的内容');
+  eq(chosen(a, 'schemePick'), 2, '收起时显示方案 C');
+  eq(themeOf(a.srcdoc()), 'dark', '换方案后主题不变');
+
+  choose(a, 'themePick', 3);
+  eq(themeOf(a.srcdoc()), 'contrast', '下拉菜单选第 4 套主题后框带该主题 id');
+  eq(chosen(a, 'themePick'), 3, '收起时显示第 4 套主题');
+  eq(a.txt('schemeCurrent'), '当前：方案 C：紧凑列表', '换主题后方案不变');
+  eq(a.txt('frameTitle'), '页一 · 态一', '换主题后页面和状态不变');
+  ok(a.srcdoc().includes('HTML_c'), '换主题后仍是方案 C 的内容');
+  eq(a.errors.length, 0, '下拉菜单操作不报错');
+});
+
+group('主题与方案：页面、状态始终平铺按钮', () => {
+  const d = mkT(2, THEMES.slice(0, 2));
+  d.pages.push({ id: 'p4', name: '页四', states: [{ id: 'q1', name: '一', html: '<p>Q</p>' }] });
+  d.pages[0].states = ['1', '2', '3', '4', '5'].map((n) => ({ id: 's' + n, name: '态' + n, html: '<p>X' + n + '</p>' }));
+  const a = load(d);
+  eq(a.errors.length, 0, '4 个页面、5 个状态不报错');
+  eq(a.buttons('pagePick').length, 4, '4 个页面仍是 4 个按钮');
+  eq(a.buttons('statePick').length, 5, '5 个状态仍是 5 个按钮');
+  eq([selectOf(a, 'pagePick'), selectOf(a, 'statePick')], [null, null], '页面和状态没有下拉菜单');
+});
+
+group('主题：打开时用第一项，不看系统外观', () => {
+  const dark = load(mkT(2, THEMES.slice(0, 2)), makeMedia(false));
+  eq(themeOf(dark.srcdoc()), 'dark', '暗黑排第一、系统浅色：框带 data-theme="dark"');
+  ok(dark.srcdoc().includes('<html data-theme="dark">'), 'srcdoc 里是 <html data-theme="dark">');
+  eq(dark.pressed('themePick'), [true, false], '系统浅色时当前主题仍是暗黑');
+  const light = load(mkT(2, [THEMES[1], THEMES[0]]), makeMedia(true));
+  eq(themeOf(light.srcdoc()), 'light', '浅色排第一、系统深色：框带 data-theme="light"');
+  const m = makeMedia(false);
+  const a = load(mkT(2, THEMES.slice(0, 2)), m);
+  m.set(true);
+  eq(themeOf(a.srcdoc()), 'dark', '系统外观变化后主题不变');
+});
+
+group('主题：框里页面根元素带主题 id', () => {
+  const a = load(mkT(2, THEMES.slice(0, 2)));
+  ok(a.srcdoc().includes('<html data-theme="dark">'), '网页页面带 data-theme');
+  a.pick('pagePick', 2);
+  ok(a.srcdoc().includes('<pre>') && a.srcdoc().includes('TERM_LINE_ONE'), '切到了终端页面');
+  ok(a.srcdoc().includes('<html data-theme="dark">'), '终端页面也带 data-theme');
+  a.pick('themePick', 1);
+  ok(a.srcdoc().includes('<html data-theme="light">'), '终端页面切主题后带新主题 id');
+
+  const none = load(mk(2));
+  ok(!none.srcdoc().includes('data-theme'), '没有声明主题：网页页面 srcdoc 不含 data-theme');
+  none.pick('pagePick', 2);
+  ok(!none.srcdoc().includes('data-theme'), '没有声明主题：终端页面 srcdoc 不含 data-theme');
+  ok(!load(mkT(2, [])).srcdoc().includes('data-theme'), 'themes 为空数组：srcdoc 不含 data-theme');
+  ok(!load().srcdoc().includes('data-theme'), '示例原型 srcdoc 不含 data-theme');
+});
+
+group('主题：切换只换主题，其余不变', () => {
+  const a = load(mkT(3, [THEMES[1], THEMES[0]]));
+  a.pick('schemePick', 1);
+  a.pick('pagePick', 1);
+  a.pick('statePick', 1);
+  const before = {
+    title: a.txt('frameTitle'),
+    current: a.txt('schemeCurrent'),
+    pressed: [a.pressed('schemePick'), a.pressed('pagePick'), a.pressed('statePick')],
+  };
+  ok(a.srcdoc().includes('data-theme="light"') && a.srcdoc().includes('P2T2'), '切换前是浅色、页二乙');
+  a.pick('themePick', 1);
+  ok(a.srcdoc().includes('<html data-theme="dark">'), '切到暗黑后 srcdoc 带暗黑标记');
+  eq(a.theme(), null, '切主题后外壳根元素不带主题标记，外壳配色不变');
+  ok(a.srcdoc().includes('P2T2'), '内容不变');
+  eq(a.txt('frameTitle'), before.title, '切主题后框上方标题不变');
+  eq(a.txt('schemeCurrent'), before.current, '切主题后左栏当前方案不变');
+  eq([a.pressed('schemePick'), a.pressed('pagePick'), a.pressed('statePick')], before.pressed, '切主题后方案、页面、状态选中项不变');
+  eq(a.pressed('themePick'), [false, true], '主题选中项跟着变');
+  eq(a.errors.length, 0, '切主题不报错');
+});
+
+group('主题：切方案、页面、状态、data-go 后主题不变', () => {
+  const a = load(mkT(3, [THEMES[1], THEMES[0]]));
+  a.pick('themePick', 1);
+  a.pick('schemePick', 2);
+  eq(themeOf(a.srcdoc()), 'dark', '切方案后仍是暗黑');
+  a.pick('statePick', 1);
+  eq(themeOf(a.srcdoc()), 'dark', '切状态后仍是暗黑');
+  a.pick('pagePick', 1);
+  eq(themeOf(a.srcdoc()), 'dark', '切页面后仍是暗黑');
+  a.pick('pagePick', 0);
+  a.pick('statePick', 1);
+  a.post('p2:t2');
+  eq(a.txt('frameTitle'), '页二 · 乙', 'data-go 跳转生效');
+  eq(themeOf(a.srcdoc()), 'dark', 'data-go 跳转后仍是暗黑');
+  eq(a.pressed('themePick'), [false, true], '主题按钮选中项仍是暗黑');
+});
+
+group('主题：填写有误', () => {
+  const reason = (a) => String(a.srcdoc().split('<br>')[1] || '');
+  const noLabel = load(mkT(2, [THEMES[0], { id: 'light' }]));
+  ok(noLabel.srcdoc().includes('原型填写有误'), '主题缺 label：框里显示「原型填写有误」');
+  ok(reason(noLabel).includes('第 2 项') && reason(noLabel).includes('label'), '主题缺 label：说明第 2 项缺 label');
+  const noId = load(mkT(2, [{ label: '无 id' }, THEMES[1]]));
+  ok(noId.srcdoc().includes('原型填写有误'), '主题缺 id：框里显示「原型填写有误」');
+  ok(reason(noId).includes('第 1 项') && reason(noId).includes('id'), '主题缺 id：说明第 1 项缺 id');
+  const dup = load(mkT(2, [{ id: 'same_id', label: '甲' }, { id: 'same_id', label: '乙' }]));
+  ok(dup.srcdoc().includes('原型填写有误'), '主题 id 重复：框里显示「原型填写有误」');
+  ok(reason(dup).includes('same_id'), '主题 id 重复：出错项含重复的 id');
+  ok(noLabel.broken() && noId.broken() && dup.broken(), '三种出错都走外壳统一的出错画面');
+});
+
+group('主题：外壳结构与竖线样式', () => {
+  const tag = (id) => (new RegExp('<\\w+[^>]*\\sid="' + id + '"[^>]*>').exec(HTML) || [''])[0];
+  ok(tag('themeBar') !== '', 'HTML 里有 id=themeBar 的元素');
+  ok(tag('themePick') !== '', 'HTML 里有 id=themePick 的元素');
+  ok(/\shidden(?=[\s>])/.test(tag('themeBar')), 'themeBar 初始带 hidden');
+  const at = (s) => HTML.indexOf(s);
+  ok(at('id="schemeBar"') > at('frame-right') && at('id="schemeBar"') < at('id="themeBar"') && at('id="themeBar"') < at('id="stage"'),
+    '方案组在前、主题组在后，都在框上方');
+  const themeBar = /id="themeBar"[\s\S]*?id="themePick"/.test(HTML);
+  ok(themeBar, 'themePick 在 themeBar 里面');
+
+  const css = (/<style>([\s\S]*?)<\/style>/.exec(HTML) || ['', ''])[1];
+  const rules = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)]
+    .filter((m) => /border-left:\s*1px\s+solid\s+var\(--shell-line\)/.test(m[2]));
+  ok(rules.length > 0, '样式里有 border-left: 1px solid var(--shell-line) 的竖线规则');
+  ok(rules.every((m) => m[1].includes('#themeBar') && m[1].includes('#schemeBar') && m[1].includes(':not([hidden])')),
+    '竖线只作用于主题组，并且依赖方案组没有隐藏');
+  ok(rules.some((m) => /#schemeBar:not\(\[hidden\]\)\s*\+\s*#themeBar/.test(m[1])), '竖线选择器是 #schemeBar:not([hidden]) + #themeBar');
+});
+
+group('主题：填写区说明', () => {
+  const fill = HTML.slice(HTML.indexOf(START), HTML.indexOf(END));
+  ['themes', 'data-theme', '第一套'].forEach((p) => ok(fill.includes(p), `填写区说明含「${p}」`));
+  const a = load();
+  eq(JSON.parse(a.run("JSON.stringify('themes' in PROTOTYPE)")), false, '示例数据里没有 themes');
 });
 console.log('RESULT ' + pass + ' ' + fail);
 JSEOF

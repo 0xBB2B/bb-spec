@@ -57,6 +57,14 @@
     text-align: left;
     cursor: pointer;
   }
+  .pick select {
+    padding: 5px 10px;
+    border: 1px solid var(--accent);
+    background: var(--shell-bg);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
   .pick button:hover { border-color: var(--accent); }
   .pick button[aria-pressed="true"] { border-color: var(--accent); background: var(--pick-bg); color: var(--pick-text); font-weight: 600; }
 
@@ -80,7 +88,9 @@
   .frame-left strong { flex: none; font-weight: 600; white-space: nowrap; }
   #frameTitle { color: var(--shell-muted); }
   .frame-right { flex: 1 1 260px; min-width: 260px; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 4px; }
-  #schemeBar, #schemePick { display: contents; }
+  #schemeBar, #schemePick, #themePick { display: contents; }
+  #themeBar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+  #schemeBar:not([hidden]) + #themeBar { margin-left: 6px; padding-left: 10px; border-left: 1px solid var(--shell-line); }
   .scheme-label { margin-right: 2px; color: var(--shell-muted); }
   .scheme-current { margin: 0 0 10px; color: var(--accent); font-weight: 600; }
   iframe {
@@ -118,6 +128,7 @@
       </div>
       <div class="frame-right">
         <span id="schemeBar" hidden><span class="scheme-label">方案</span><span class="pick" id="schemePick"></span></span>
+        <span id="themeBar" hidden><span class="scheme-label">主题</span><span class="pick" id="themePick"></span></span>
       </div>
     </div>
     <iframe id="stage" title="被设计的页面" sandbox="allow-scripts"></iframe>
@@ -142,6 +153,9 @@
      header、h1、main、.card、table、button、button.plain、.center、.alert、.bar、dl、.cards。
      终端页面用 terminalCss，不用 css。
    schemes：方案列表。id 用于 html 取值，label 是"方案 A"这样的短名，desc 是方案特点。只有一个方案时只留一项，外壳不显示任何方案切换。
+   themes：主题列表，格式 [{ id, label }]，label 是切换处显示的名字。打开时用第一套，
+     框里页面的根元素会带 data-theme="<id>"，样式可以写 [data-theme="<id>"] body { ... }。
+     只有 0 或 1 套时不显示主题切换。
    pages：要设计的页面，每页一项。
      id、name：页面标识和名字。
      stateLabel：第二组按钮的名字，多步交互写"步骤"，其他情况不写。
@@ -307,11 +321,24 @@ const PROTOTYPE = {
 
     const { schemes, pages } = PROTOTYPE;
     const hasChoice = schemes.length > 1;
+    const themes = PROTOTYPE.themes || [];
+    const hasThemes = themes.length > 1;
+    function checkThemes() {
+      const seen = new Set();
+      themes.forEach((theme, i) => {
+        ['id', 'label'].forEach((field) => {
+          if (!theme[field]) throw new Error(`主题第 ${i + 1} 项缺少 ${field}`);
+        });
+        if (seen.has(theme.id)) throw new Error(`主题 id 重复：${theme.id}`);
+        seen.add(theme.id);
+      });
+    }
+    checkThemes();
     const incomplete = hasChoice && schemes.find((scheme) => !scheme.desc);
     if (incomplete) throw new Error(`${incomplete.label} 缺少 desc`);
     const el = (id) => document.getElementById(id);
     const schemeName = (scheme) => `${scheme.label}：${scheme.desc}`;
-    const current = { scheme: schemes[0], page: pages[0], state: pages[0].states[0] };
+    const current = { scheme: schemes[0], page: pages[0], state: pages[0].states[0], theme: themes[0] };
 
     function pickButtons(box, items, selected, nameOf, onPick) {
       box.replaceChildren(...items.map((item) => {
@@ -323,30 +350,48 @@ const PROTOTYPE = {
       }));
     }
 
+    function pickMenu(box, items, selected, nameOf, onPick) {
+      const menu = document.createElement('select');
+      items.forEach((item) => {
+        const option = document.createElement('option');
+        option.textContent = nameOf(item);
+        menu.append(option);
+      });
+      menu.selectedIndex = items.indexOf(selected);
+      menu.addEventListener('change', () => onPick(items[menu.selectedIndex]));
+      box.replaceChildren(menu);
+    }
+
+    function pickSwitch(box, items, selected, nameOf, onPick) {
+      (items.length >= 4 ? pickMenu : pickButtons)(box, items, selected, nameOf, onPick);
+    }
+
     function differsByScheme(state) {
       return typeof state.html === 'object';
     }
 
-    function frameDoc(page, state, scheme) {
+    function frameDoc(page, state, scheme, theme) {
       const html = differsByScheme(state) ? state.html[scheme.id] : state.html;
       if (html === undefined) throw new Error(`「${page.name} · ${state.name}」缺少${scheme.label} 的内容`);
       const css = page.terminal ? (page.terminalCss?.trim() || TERMINAL_COLOR_CSS) + TERMINAL_LAYOUT_CSS : PROTOTYPE.css?.trim() || DEFAULT_PAGE_CSS;
       const body = page.terminal ? `<pre>${html}</pre>` : html;
-      return `<!doctype html><html><head><meta charset="utf-8"><style>${css}</style></head><body>${body}${FRAME_BRIDGE}</body></html>`;
+      return `<!doctype html><html${theme ? ` data-theme="${theme.id}"` : ''}><head><meta charset="utf-8"><style>${css}</style></head><body>${body}${FRAME_BRIDGE}</body></html>`;
     }
 
-    function select(scheme, page, state) {
-      Object.assign(current, { scheme, page, state });
+    function select(scheme, page, state, theme = current.theme) {
+      Object.assign(current, { scheme, page, state, theme });
       render();
     }
 
     function render() {
-      const { scheme, page, state } = current;
-      const doc = frameDoc(page, state, scheme);
+      const { scheme, page, state, theme } = current;
+      const doc = frameDoc(page, state, scheme, theme);
       el('schemeBar').hidden = !hasChoice;
       el('schemeCurrent').hidden = !hasChoice;
       el('schemeCurrent').textContent = `当前：${schemeName(scheme)}`;
-      pickButtons(el('schemePick'), schemes, scheme, schemeName, (item) => select(item, page, state));
+      el('themeBar').hidden = !hasThemes;
+      pickSwitch(el('schemePick'), schemes, scheme, schemeName, (item) => select(item, page, state));
+      pickSwitch(el('themePick'), themes, theme, (item) => item.label, (item) => select(scheme, page, state, item));
       pickButtons(el('pagePick'), pages, page, (item) => item.name, (item) => select(scheme, item, item.states[0]));
       pickButtons(el('statePick'), page.states, state, (item) => item.name, (item) => select(scheme, page, item));
       el('stateLabel').textContent = page.stateLabel || '状态';
