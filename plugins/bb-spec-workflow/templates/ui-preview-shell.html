@@ -350,8 +350,9 @@ const PROTOTYPE = {
       }));
     }
 
-    function pickMenu(box, items, selected, nameOf, onPick) {
+    function pickMenu(box, items, selected, nameOf, onPick, groupName) {
       const menu = document.createElement('select');
+      menu.setAttribute('aria-label', groupName);
       items.forEach((item) => {
         const option = document.createElement('option');
         option.textContent = nameOf(item);
@@ -359,11 +360,13 @@ const PROTOTYPE = {
       });
       menu.selectedIndex = items.indexOf(selected);
       menu.addEventListener('change', () => onPick(items[menu.selectedIndex]));
+      const hadFocus = [...box.children].includes(document.activeElement);
       box.replaceChildren(menu);
+      if (hadFocus) menu.focus();
     }
 
-    function pickSwitch(box, items, selected, nameOf, onPick) {
-      (items.length >= 4 ? pickMenu : pickButtons)(box, items, selected, nameOf, onPick);
+    function pickSwitch(box, items, selected, nameOf, onPick, groupName) {
+      (items.length >= 4 ? pickMenu : pickButtons)(box, items, selected, nameOf, onPick, groupName);
     }
 
     function differsByScheme(state) {
@@ -390,8 +393,8 @@ const PROTOTYPE = {
       el('schemeCurrent').hidden = !hasChoice;
       el('schemeCurrent').textContent = `当前：${schemeName(scheme)}`;
       el('themeBar').hidden = !hasThemes;
-      pickSwitch(el('schemePick'), schemes, scheme, schemeName, (item) => select(item, page, state));
-      pickSwitch(el('themePick'), themes, theme, (item) => item.label, (item) => select(scheme, page, state, item));
+      pickSwitch(el('schemePick'), schemes, scheme, schemeName, (item) => select(item, page, state), '方案');
+      pickSwitch(el('themePick'), themes, theme, (item) => item.label, (item) => select(scheme, page, state, item), '主题');
       pickButtons(el('pagePick'), pages, page, (item) => item.name, (item) => select(scheme, item, item.states[0]));
       pickButtons(el('statePick'), page.states, state, (item) => item.name, (item) => select(scheme, page, item));
       el('stateLabel').textContent = page.stateLabel || '状态';

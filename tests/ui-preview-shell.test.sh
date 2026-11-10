@@ -86,6 +86,7 @@ class El {
     this.srcdoc = '';
     this._text = '';
   }
+  focus() { this.ownerDocument.activeElement = this; }
   get textContent() { return this.children.length ? this.children.map((c) => c.textContent).join('') : this._text; }
   set textContent(v) { this.children = []; this._text = String(v); }
   get dataset() {
@@ -98,6 +99,8 @@ class El {
   setAttribute(k, v) { this.attributes[k] = String(v); }
   getAttribute(k) { return k in this.attributes ? this.attributes[k] : null; }
   replaceChildren(...ns) {
+    const doc = this.ownerDocument;
+    if (doc && this.children.includes(doc.activeElement)) doc.activeElement = doc.body;
     this.children = ns;
     ns.forEach((n) => { n.parent = this; });
     this._text = '';
@@ -136,18 +139,21 @@ class Doc extends El {
     this.title = '';
     this.byId = {};
     this.documentElement = new El('html');
+    this.body = new El('body');
+    this.activeElement = this.body;
     const markup = html.slice(0, Math.max(html.indexOf('<script'), 0));
     for (const m of markup.matchAll(/<(\w+)([^>]*)>/g)) {
       const id = /\bid="([^"]+)"/.exec(m[2]);
       if (!id) continue;
       const e = new El(m[1]);
       e.id = id[1];
+      e.ownerDocument = this;
       e.hidden = /(?:^|\s)hidden(?=[\s>]|$)/.test(m[2]);
       if (m[1] === 'iframe') e.contentWindow = { __stage: true };
       this.byId[id[1]] = e;
     }
   }
-  createElement(tag) { return new El(tag); }
+  createElement(tag) { const e = new El(tag); e.ownerDocument = this; return e; }
   getElementById(id) { return this.byId[id] || null; }
 }
 
@@ -232,6 +238,7 @@ const loadHtml = (html, media) => {
       srcdoc: $('stage').srcdoc,
       pressed: [api.pressed('schemePick'), api.pressed('pagePick'), api.pressed('statePick')],
     }),
+    activeElement: () => doc.activeElement,
     shellText: () => Object.values(doc.byId).map((e) => e.textContent).join('\n'),
   };
   return api;
@@ -684,7 +691,7 @@ group('错误提示：抛错后能恢复', () => {
   ok(a.srcdoc().includes('P2T1') && !a.srcdoc().includes(ERR_TEXT), '再点别的页面后 srcdoc 恢复');
 });
 
-group('旧写法字段：note、fake、openQuestions 照常显示', () => {
+group('旧写法字段：原型照常显示，note、fake、openQuestions 不显示', () => {
   const MARK = 'LEGACY_MARK';
   const cases = [
     ['状态 note 字符串', (d) => { d.pages[0].states[0].note = MARK; }],
@@ -712,7 +719,9 @@ group('旧写法字段：note、fake、openQuestions 照常显示', () => {
     ok(!a.broken(), `${label}：prototypeBroken 不为真`);
     ok(a.srcdoc().includes('HTML_a') && !a.srcdoc().includes(ERR_TEXT), `${label}：srcdoc 是正常画面，不是错误提示`);
     eq(a.txt('frameTitle'), '页一 · 态一', `${label}：框上方标题`);
+    ok(!a.shellText().includes(MARK) && !a.srcdoc().includes(MARK), `${label}：刚加载时外壳和框里都不显示这些内容`);
     a.pick('schemePick', 1);
+    ok(!a.shellText().includes(MARK) && !a.srcdoc().includes(MARK), `${label}：切到方案 B 后外壳和框里都不显示这些内容`);
     a.pick('pagePick', 1);
     eq(a.errors.length, 0, `${label}：切换后不报错`);
     ok(a.srcdoc().includes('P2T1'), `${label}：切换后画面正常`);
@@ -1114,6 +1123,49 @@ group('主题与方案：下拉菜单切换', () => {
   eq(a.txt('frameTitle'), '页一 · 态一', '换主题后页面和状态不变');
   ok(a.srcdoc().includes('HTML_c'), '换主题后仍是方案 C 的内容');
   eq(a.errors.length, 0, '下拉菜单操作不报错');
+});
+
+group('主题与方案：下拉菜单的无障碍名称', () => {
+  const a = load(mk4(THEMES));
+  eq(selectOf(a, 'schemePick').getAttribute('aria-label'), '方案', '方案下拉菜单 aria-label');
+  eq(selectOf(a, 'themePick').getAttribute('aria-label'), '主题', '主题下拉菜单 aria-label');
+});
+
+group('主题与方案：下拉菜单换项后焦点留在菜单上', () => {
+  [['schemePick', 2], ['themePick', 2]].forEach(([g, i]) => {
+    const a = load(mk4(THEMES));
+    selectOf(a, g).focus();
+    ok(a.activeElement() === selectOf(a, g), `${g}：换项前焦点在菜单上`);
+    choose(a, g, i);
+    eq(a.errors.length, 0, `${g}：换项不报错`);
+    ok(selectOf(a, g) !== null && a.activeElement() === selectOf(a, g), `${g}：换项后焦点仍在该组的下拉菜单上`);
+    eq(chosen(a, g), i, `${g}：换项后选中第 3 项`);
+    choose(a, g, 3);
+    ok(selectOf(a, g) !== null && a.activeElement() === selectOf(a, g), `${g}：接着再换一项焦点仍在菜单上`);
+    eq(chosen(a, g), 3, `${g}：接着选中第 4 项`);
+  });
+  const other = load(mk4(THEMES));
+  selectOf(other, 'themePick').focus();
+  choose(other, 'schemePick', 1);
+  eq(chosen(other, 'schemePick'), 1, '焦点在主题菜单时换方案：方案换了');
+  ok(other.activeElement() === selectOf(other, 'themePick'), '焦点在主题菜单时换方案：焦点仍在主题菜单');
+  const idle = load(mk4(THEMES));
+  eq(idle.activeElement().tagName, 'BODY', '刚加载时焦点不在菜单上');
+  choose(idle, 'schemePick', 1);
+  choose(idle, 'themePick', 1);
+  eq(idle.errors.length, 0, '焦点不在菜单上时换项不报错');
+  eq([chosen(idle, 'schemePick'), chosen(idle, 'themePick')], [1, 1], '焦点不在菜单上时换项照常生效');
+  eq(idle.activeElement().tagName, 'BODY', '焦点不在菜单上时换项不抢焦点');
+});
+
+group('主题：只声明 1 套时不显示主题组，框里仍带主题 id', () => {
+  const a = load(mkT(2, THEMES.slice(0, 1)));
+  ok(a.$('themeBar').hidden === true, '主题组隐藏');
+  ok(a.srcdoc().includes('<html data-theme="dark">'), '网页页面带 data-theme="dark"');
+  a.pick('pagePick', 2);
+  ok(a.srcdoc().includes('<pre>') && a.srcdoc().includes('TERM_LINE_ONE'), '切到了终端页面');
+  ok(a.srcdoc().includes('<html data-theme="dark">'), '终端页面也带 data-theme="dark"');
+  eq(a.errors.length, 0, '不报错');
 });
 
 group('主题与方案：页面、状态始终平铺按钮', () => {
