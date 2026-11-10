@@ -28,11 +28,16 @@ FM="$(awk '/^---[[:space:]]*$/{n++; next} n==1{print} n>=2{exit}' "$PROTO" 2>/de
 if printf '%s\n' "$FM" | grep -qxF 'name: prototype'; then pass; else fail "prototype frontmatter 的 name 应是 prototype"; fi
 if printf '%s\n' "$FM" | grep -qF 'disable-model-invocation'; then fail "prototype frontmatter 不应含 disable-model-invocation"; else pass; fi
 
-if printf '%s\n' "$FM" | grep -qF '左栏切页面和状态、右上角切方案和明暗主题'; then pass; else fail "prototype frontmatter 的 description 应含「左栏切页面和状态、右上角切方案和明暗主题」"; fi
+for t in '左栏切页面和状态' '右上角按需切方案和页面主题' '中间的框只放正式页面'; do
+  if printf '%s\n' "$FM" | grep -qF -- "$t"; then pass; else fail "prototype frontmatter 的 description 应含「${t}」"; fi
+done
+for t in '明暗主题' '底部放说明'; do
+  if printf '%s\n' "$FM" | grep -qF -- "$t"; then fail "prototype frontmatter 的 description 不应含「${t}」"; else pass; fi
+done
 
 echo "[prototype 写明原型做法]"
 for t in '${CLAUDE_PLUGIN_ROOT}/templates/ui-preview-shell.html' 'PROTOTYPE-START' 'PROTOTYPE-END' '外壳一律不改' \
-  '框里禁止放说明或切换控件' '`note`' '`fake`' '`openQuestions`' '`css`' '照实还原' '默认页面样式' \
+  '框里禁止放说明或切换控件' '`css`' '照实还原' '默认页面样式' \
   '`schemes`' '不拆成多个文件' '把没选中的方案删掉' 'terminal: true' 'data-go' 'open <文件路径>' \
   '明确说"可以"' '不写 PRD' '--file' '--compare' '和原型框里的内容逐项对比' '不参与对比' \
   '假数据和假操作' 'ui-compare/' '没跑起来'; do
@@ -44,7 +49,7 @@ for t in '| `/prototype <主题>` |' '| `<主题> --file <路径>` |' '| `--comp
   'scripts/bbspec-paths.sh' '`${CACHE_DIR}/.gitignore`' '会话临时目录' \
   '`${CACHE_DIR}/ui-preview/<YYYY-MM-DD>.<主题>.html`' '文件已存在时直接改它' \
   '不改产品代码' '写了 `css` 后默认页面样式完全不生效' \
-  '外壳的左栏、框上方提示、底部说明不参与对比' '与实际界面不同不算不一致' '- 不一致：' '- 没跑起来：'; do
+  '外壳的左栏和框上方一行不参与对比' '不算不一致' '- 不一致：' '- 没跑起来：'; do
   has prototype "$t"
 done
 if awk '/^## /{sec=$0} /bbspec-paths.sh/{print sec}' "$PROTO" 2>/dev/null | grep -qF '两种模式都先做'; then pass; else fail "prototype 取缓存目录要放在各模式之前"; fi
@@ -101,7 +106,7 @@ done
 echo "[prototype 过一遍 DESIGN.md]"
 for t in '第一步先读 DESIGN.md' '如实记录现状，包括页面框架和组件的写法' '确认前不出原型' '2～3 套' \
   '方案 `html` 开头的 `<style>`' '把选中风格的样式移进 `css`' '选定前不出要设计的页面' \
-  '缺项或不达标' '先改 DESIGN.md' '「例外」表记下哪一项、实际值、用户确认的日期' '逐个标出' '改用 DESIGN.md 里有的'; do
+  '缺项或不达标' '先改 DESIGN.md' '「例外」表记下哪一项、实际值、用户确认的日期' '逐个列出' '改用 DESIGN.md 里有的'; do
   has prototype "$t"
 done
 
@@ -170,8 +175,43 @@ done
 lacks prototype '终端界面直接运行命令看输出'
 lacks prototype '${CACHE_DIR}/DESIGN.draft.md'
 for t in '`revise-` 开头' '不留草稿文件' '原型文件旁边的草稿存在时，后面再出原型以它为准' \
-  '命令行项目移进各终端页的 `terminalCss`' '至少放一条' '用户不同意 → 按源码画，`fake` 写明端口被占用' \
+  '命令行项目移进各终端页的 `terminalCss`' '至少放一条' '端口被占用' \
   '也立即关掉为出原型启动的服务' '占用它的服务是从哪个目录起的' '对比完立即关掉为对比启动的服务并确认端口已不在监听'; do
+  has prototype "$t"
+done
+
+echo "[prototype 全文不含已删除的填写项和旧说明区]"
+for t in '`note`' '`fake`' '`openQuestions`' '底部说明' '只在原型里成立' '底部放说明' '明暗主题'; do
+  lacks prototype "$t"
+done
+for t in 'note' 'fake' 'openQuestions'; do
+  if grep -qF -- "$t" "$PROTO" 2>/dev/null; then fail "prototype 不应含 ${t}"; else pass; fi
+done
+
+echo "[prototype 打开原型时在对话里讲]"
+OPEN_STEP="$(awk '/用 `open <文件路径>`/{on=1} on&&/^9\. /{exit} on' "$PROTO")"
+for t in '同一条回复' '用到了 DESIGN.md 的哪几节' '读了哪些源码文件' '底稿来自哪个地址' \
+  '假数据和假操作' '可能不准' '没有能打开网页的工具' '端口被占用' '服务没跑起来' '还没确认的问题'; do
+  if grep -qF -- "$t" <<<"$OPEN_STEP"; then pass; else fail "打开原型那一步缺「${t}」"; fi
+done
+
+echo "[prototype 规范外样式在对话里逐个列出]"
+for t in '颜色、字号、间距、圆角、阴影或组件样式' '逐个列出' '问用户' '写进 DESIGN.md' '改用 DESIGN.md 里有的' '规范外样式和源码补充在对话里说明'; do
+  has prototype "$t"
+done
+
+echo "[prototype 多方案在对话里讲取舍]"
+for t in '取舍' '选哪个' '`id`' '`label`' '`desc`'; do
+  has prototype "$t"
+done
+
+echo "[prototype 主题按 DESIGN.md 颜色一节声明]"
+for t in '`themes`' '`data-theme="<id>"`' '「颜色」一节' '声明几套' '只写了一套不声明' '照加' '每套主题'; do
+  has prototype "$t"
+done
+
+echo "[prototype 对比一节]"
+for t in '只比布局、文案、每种状态、每个交互操作后的结果' '示例数据' '订单号、人名、金额、数量、日期' '外壳的左栏和框上方一行不参与对比' '多套主题逐套对比'; do
   has prototype "$t"
 done
 

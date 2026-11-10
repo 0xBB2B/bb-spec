@@ -24,12 +24,11 @@ echo "[固定文案]"
 for phrase in \
   "设计说明 · 不属于页面" \
   "这一栏上线后不存在" \
-  "▼ 被设计的页面：只有这个框里的内容要实现" \
-  "这一块上线后不存在" \
-  "这个画面的说明" \
-  "只在原型里成立" \
-  "还没确认的问题"; do
-  if grep -qF -- "$phrase" "$SHELL_HTML"; then pass; else fail "缺少固定文案「$phrase」"; fi
+  "▼ 被设计的页面：只有这个框里的内容要实现"; do
+  if grep -qF -- "$phrase" "$SHELL_HTML"; then pass; else fail "缺少固定文案「${phrase}」"; fi
+done
+for phrase in "这一块上线后不存在" "这个画面的说明" "只在原型里成立" "还没确认的问题"; do
+  if grep -qF -- "$phrase" "$SHELL_HTML"; then fail "不应再有固定文案「${phrase}」"; else pass; fi
 done
 if awk '/<aside/,/<\/aside>/' "$SHELL_HTML" | grep -qE '<h2[ >]'; then fail "左栏里不应有小标题 <h2>：当前方案下面直接是页面和状态切换"; else pass; fi
 
@@ -38,17 +37,18 @@ for pattern in 'http://' 'https://' '<link' '<script[^>]*[[:space:]]src[[:space:
   if grep -qiE -- "$pattern" "$SHELL_HTML"; then fail "出现外部资源引用：$pattern"; else pass; fi
 done
 
-echo "[结构：iframe、底部 dock、填写区标记]"
+echo "[结构：iframe、填写区标记、单套配色]"
 if grep -qE '<iframe[^>]*id="stage"|<iframe[^>]*id='"'"'stage'"'" "$SHELL_HTML"; then pass; else fail "正式页面没有放在 id=stage 的 iframe 里"; fi
-if grep -qF 'max-height: 30vh' "$SHELL_HTML"; then pass; else fail "底部最大高度没有写成 max-height: 30vh"; fi
+if grep -qE 'prefers-color-scheme' "$SHELL_HTML"; then fail "外壳不应有 prefers-color-scheme"; else pass; fi
+if grep -qF '[data-theme="dark"]' "$SHELL_HTML"; then fail "外壳不应有 [data-theme=\"dark\"] 样式块"; else pass; fi
 if [[ "$(grep -cF '/* PROTOTYPE-START' "$SHELL_HTML")" == "1" ]]; then pass; else fail "填写区起点标记应恰好出现一次"; fi
 if [[ "$(grep -cF '/* PROTOTYPE-END */' "$SHELL_HTML")" == "1" ]]; then pass; else fail "填写区终点标记应恰好出现一次"; fi
 
-echo "[外壳里的 14 个元素都写在 HTML 里]"
-for id in schemeBar schemeCurrent schemePick pagePick statePick stateLabel frameTitle stage noteList fakeList openList sideTitle sideVersion dock; do
+echo "[外壳里的元素都写在 HTML 里]"
+for id in schemeBar schemeCurrent schemePick pagePick statePick stateLabel frameTitle stage sideTitle sideVersion; do
   if grep -qE "<[a-z0-9]+[^>]*[[:space:]]id=\"${id}\"" "$SHELL_HTML"; then pass; else fail "HTML 里没有 id=\"${id}\" 的元素"; fi
 done
-for id in schemeBox schemeHint frameScheme; do
+for id in schemeBox schemeHint frameScheme dock noteList fakeList openList themeLight themeDark; do
   if grep -qF "id=\"${id}\"" "$SHELL_HTML"; then fail "HTML 里不应有 id=\"${id}\""; else pass; fi
 done
 
@@ -75,8 +75,6 @@ const group = (name, fn) => {
   try { fn(); } catch (err) { fail++; console.log('  FAIL: 异常：' + (err && err.stack || err)); }
 };
 
-const lineCount = (box) => (box ? box.children.reduce((sum, c) => sum + Math.max(1, Math.ceil(c.textContent.length / 20)), 0) : 0);
-
 class El {
   constructor(tag) {
     this.tagName = String(tag).toUpperCase();
@@ -87,16 +85,8 @@ class El {
     this.hidden = false;
     this.srcdoc = '';
     this._text = '';
-    this.style = {};
-    this.reads = 0;
-    this.measure = null;
   }
-  get offsetHeight() {
-    this.reads++;
-    const fixed = /^(\d+(?:\.\d+)?)px$/.exec(this.style.height || '');
-    if (fixed) return Number(fixed[1]);
-    return this.measure ? this.measure() : 0;
-  }
+  focus() { this.ownerDocument.activeElement = this; }
   get textContent() { return this.children.length ? this.children.map((c) => c.textContent).join('') : this._text; }
   set textContent(v) { this.children = []; this._text = String(v); }
   get dataset() {
@@ -109,6 +99,8 @@ class El {
   setAttribute(k, v) { this.attributes[k] = String(v); }
   getAttribute(k) { return k in this.attributes ? this.attributes[k] : null; }
   replaceChildren(...ns) {
+    const doc = this.ownerDocument;
+    if (doc && this.children.includes(doc.activeElement)) doc.activeElement = doc.body;
     this.children = ns;
     ns.forEach((n) => { n.parent = this; });
     this._text = '';
@@ -117,6 +109,15 @@ class El {
   click() {
     const ev = { type: 'click', target: this, preventDefault() {}, stopPropagation() {} };
     (this.listeners.click || []).forEach((f) => f(ev));
+  }
+  append(...ns) { this.replaceChildren(...this.children, ...ns); }
+  get options() { return this.children.filter((c) => c.tagName === 'OPTION'); }
+  get selectedIndex() { return this._si ?? 0; }
+  set selectedIndex(i) { this._si = Number(i); }
+  change(index) {
+    this.selectedIndex = index;
+    const ev = { type: 'change', target: this, currentTarget: this, preventDefault() {}, stopPropagation() {} };
+    (this.listeners.change || []).forEach((f) => f(ev));
   }
   closest(selector) {
     const parts = selector.split(',').map((s) => s.trim());
@@ -138,21 +139,21 @@ class Doc extends El {
     this.title = '';
     this.byId = {};
     this.documentElement = new El('html');
+    this.body = new El('body');
+    this.activeElement = this.body;
     const markup = html.slice(0, Math.max(html.indexOf('<script'), 0));
     for (const m of markup.matchAll(/<(\w+)([^>]*)>/g)) {
       const id = /\bid="([^"]+)"/.exec(m[2]);
       if (!id) continue;
       const e = new El(m[1]);
       e.id = id[1];
+      e.ownerDocument = this;
       e.hidden = /(?:^|\s)hidden(?=[\s>]|$)/.test(m[2]);
       if (m[1] === 'iframe') e.contentWindow = { __stage: true };
-      if (id[1] === 'dock') {
-        e.measure = () => 40 + 20 * Math.max(...['noteList', 'fakeList', 'openList'].map((n) => lineCount(this.byId[n])));
-      }
       this.byId[id[1]] = e;
     }
   }
-  createElement(tag) { return new El(tag); }
+  createElement(tag) { const e = new El(tag); e.ownerDocument = this; return e; }
   getElementById(id) { return this.byId[id] || null; }
 }
 
@@ -186,6 +187,7 @@ const makeMedia = (initial) => {
     matches: initial,
     media: '(prefers-color-scheme: dark)',
     addEventListener: (type, fn) => { if (type === 'change') subs.push(fn); },
+    listenerCount: () => subs.length,
     set: (next) => {
       mql.matches = next;
       subs.forEach((fn) => fn({ matches: next, media: mql.media }));
@@ -215,14 +217,8 @@ const loadHtml = (html, media) => {
     errors,
     fireError,
     broken: () => ctx.prototypeBroken,
-    resizeCount: () => (L.resize || []).length,
-    resize: () => { try { (L.resize || []).forEach((f) => f({ type: 'resize' })); } catch (err) { raise(err); } },
-    dockHeight: () => (doc.getElementById('dock') ? doc.getElementById('dock').style.height : undefined),
-    dockReads: () => (doc.getElementById('dock') ? doc.getElementById('dock').reads : -1),
     txt: (id) => $(id).textContent,
     theme: () => doc.documentElement.getAttribute('data-theme'),
-    themePressed: () => [$('themeLight').getAttribute('aria-pressed'), $('themeDark').getAttribute('aria-pressed')],
-    texts: (id) => $(id).children.map((c) => c.textContent),
     pick: (g, i) => {
       const b = buttons(g)[i];
       if (!b) throw new Error(`${g} 没有第 ${i} 个按钮（共 ${buttons(g).length} 个）`);
@@ -240,11 +236,10 @@ const loadHtml = (html, media) => {
       barHidden: $('schemeBar').hidden,
       currentHidden: $('schemeCurrent').hidden,
       srcdoc: $('stage').srcdoc,
-      notes: api.texts('noteList'),
-      fakes: api.texts('fakeList'),
-      opens: api.texts('openList'),
       pressed: [api.pressed('schemePick'), api.pressed('pagePick'), api.pressed('statePick')],
     }),
+    activeElement: () => doc.activeElement,
+    shellText: () => Object.values(doc.byId).map((e) => e.textContent).join('\n'),
   };
   return api;
 };
@@ -275,38 +270,68 @@ const elem = (tag, attrs) => {
 
 const FORBIDDEN = ['设计说明', '被设计的页面', '只在原型里成立', '--shell-bg', '--accent',
   'var(--', '--shell-', '--grid', 'ui-monospace', '.tag', '.dock', '.pick'];
-const SAME = '各方案在这个画面上一样。';
 
 const SCH = [
-  { id: 'a', label: '方案 A', desc: '表格', note: 'A取舍' },
-  { id: 'b', label: '方案 B', desc: '卡片', note: 'B取舍' },
-  { id: 'c', label: '方案 C', desc: '列表', note: 'C取舍' },
+  { id: 'a', label: '方案 A', desc: '表格' },
+  { id: 'b', label: '方案 B', desc: '卡片' },
+  { id: 'c', label: '方案 C', desc: '列表' },
 ];
 const schemeLabels = (a) => a.buttons('schemePick').map((b) => b.textContent);
+const THEMES = [
+  { id: 'dark', label: '☾ 暗黑' },
+  { id: 'light', label: '☀ 浅色' },
+  { id: 'soft', label: '◐ 柔和' },
+  { id: 'contrast', label: '◉ 高对比' },
+];
+const findSelect = (e) => {
+  if (e.tagName === 'SELECT') return e;
+  for (const c of e.children) { const f = findSelect(c); if (f) return f; }
+  return null;
+};
+const selectOf = (a, g) => findSelect(a.$(g));
+const optTexts = (a, g) => selectOf(a, g).options.map((o) => o.textContent);
+const chosen = (a, g) => selectOf(a, g).selectedIndex;
+const choose = (a, g, i) => {
+  try { selectOf(a, g).change(i); } catch (err) { a.errors.push(err); a.fireError(err.message); }
+};
+const THEME_TXT = (n) => THEMES.slice(0, n).map((t) => t.label);
+const mkT = (n, themes, over) => mk(n, Object.assign({ themes: themes.map((t) => ({ ...t })) }, over || {}));
+const SCH4 = [
+  { id: 'a', label: '方案 A', desc: '表格' },
+  { id: 'b', label: '方案 B', desc: '卡片' },
+  { id: 'c', label: '方案 C', desc: '紧凑列表' },
+  { id: 'd', label: '方案 D', desc: '看板' },
+];
+const mk4 = (themes) => {
+  const d = mkT(3, themes);
+  d.schemes = SCH4.map((s) => ({ ...s }));
+  d.pages[0].states[0].html = Object.fromEntries(SCH4.map((s) => [s.id, '<p>HTML_' + s.id + '</p>']));
+  return d;
+};
+const themeOf = (srcdoc) => (/<html[^>]*\sdata-theme="([^"]*)"/.exec(srcdoc) || [])[1];
 const mk = (n, over) => {
   const schemes = SCH.slice(0, n).map((scheme) => ({ ...scheme }));
   return Object.assign({
     title: '自定义标题',
     version: 3,
     css: '.CSS_MARK_XYZ{color:#123456}',
-    openQuestions: ['Q1'],
     schemes,
     pages: [
       {
-        id: 'p1', name: '页一', fake: ['F1'], states: [
-          { id: 's1', name: '态一', note: ['N1'], html: Object.fromEntries(schemes.map((s) => [s.id, '<p>HTML_' + s.id + '</p>'])) },
-          { id: 's2', name: '态二', note: ['N2'], html: '<p>SAME</p><a data-go="p2:t2">跳</a>' },
+        id: 'p1', name: '页一', states: [
+          { id: 's1', name: '态一', html: Object.fromEntries(schemes.map((s) => [s.id, '<p>HTML_' + s.id + '</p>'])) },
+          { id: 's2', name: '态二', html: '<p>SAME</p><a data-go="p2:t2">跳</a>' },
         ],
       },
       {
-        id: 'p2', name: '页二', fake: [], states: [
-          { id: 't1', name: '甲', note: ['M1'], html: '<p>P2T1</p>' },
-          { id: 't2', name: '乙', note: ['M2'], html: '<p>P2T2</p>' },
+        id: 'p2', name: '页二', states: [
+          { id: 't1', name: '甲', html: '<p>P2T1</p>' },
+          { id: 't2', name: '乙', html: '<p>P2T2</p>' },
         ],
       },
       {
-        id: 'p3', name: '终端页', fake: ['F3'], stateLabel: '步骤', terminal: true, states: [
-          { id: 'u1', name: '第一步', note: ['U1'], html: 'TERM_LINE_ONE' },
+        id: 'p3', name: '终端页', stateLabel: '步骤', terminal: true, states: [
+          { id: 'u1', name: '第一步', html: 'TERM_LINE_ONE' },
         ],
       },
     ],
@@ -326,24 +351,19 @@ group('默认数据：初始画面', () => {
   eq([a.buttons('schemePick').length, a.buttons('pagePick').length, a.buttons('statePick').length], [2, 3, 4], '按钮数量');
   eq([a.pressed('schemePick'), a.pressed('pagePick'), a.pressed('statePick')],
     [[true, false], [true, false, false], [true, false, false, false]], '选中态 aria-pressed');
-  eq(a.texts('openList')[0], '选方案 A 还是方案 B', '默认数据 openList 第一条');
   ok(a.srcdoc().length > 0, '正式页面写入了 srcdoc');
 });
 
 group('默认数据：方案、页面、状态切换', () => {
   const a = load();
   const before = a.srcdoc();
-  const noteA = a.texts('noteList')[0];
   a.pick('schemePick', 1);
   eq(a.txt('schemeCurrent'), '当前：方案 B：卡片', '切方案后左栏当前方案');
   eq(a.txt('frameTitle'), '订单列表 · 正常', '切方案后页面和状态不变');
   ok(a.srcdoc() !== before, '各方案不同的画面切方案后 srcdoc 变化');
-  ok(a.texts('noteList')[0] !== noteA && a.texts('noteList')[0] !== SAME, '各方案不同的画面第一条是当前方案的取舍');
 
   a.pick('statePick', 1);
-  eq(a.texts('noteList')[0], SAME, '空数据画面（各方案相同）第一条');
   a.pick('schemePick', 0);
-  eq(a.texts('noteList')[0], SAME, '切回方案 A 后仍是各方案一样');
   eq(a.txt('schemeCurrent'), '当前：方案 A：表格', '切回方案 A');
 
   a.pick('statePick', 3);
@@ -369,7 +389,7 @@ group('默认数据：框内跳转', () => {
   viaBtn.pick('pagePick', 1);
   eq(a.txt('frameTitle'), '订单详情 · 正常', '跳转后标题');
   eq(a.txt('schemeCurrent'), '当前：方案 B：卡片', '跳转后方案不变');
-  eq(a.snap(), viaBtn.snap(), '跳转与点按钮结果一致（框、提示、说明三处同步）');
+  eq(a.snap(), viaBtn.snap(), '跳转与点按钮结果一致（框、提示两处同步）');
   const b = load();
   b.pick('schemePick', 1);
   b.pick('statePick', 2);
@@ -388,18 +408,13 @@ group('默认数据：框内跳转', () => {
   eq(b.txt('frameTitle'), '订单详情 · 正常', '来源为 stage.contentWindow 时生效');
 });
 
-group('自定义数据：初始画面与说明', () => {
+group('自定义数据：初始画面', () => {
   const a = load(mk(2));
   eq(a.txt('sideTitle'), '自定义标题', '标题');
   eq(a.txt('sideVersion'), '第 3 版 · 这一栏上线后不存在', '版本');
   eq(a.txt('schemeCurrent'), '当前：方案 A：表格', '左栏当前方案');
   eq(schemeLabels(a), ['方案 A：表格', '方案 B：卡片'], '方案按钮文字');
   eq(a.txt('frameTitle'), '页一 · 态一', '框上方标题');
-  eq(a.texts('noteList')[0], 'A取舍', '说明第一条是当前方案取舍');
-  ok(a.texts('noteList').includes('N1'), '说明含画面自己的说明');
-  eq(a.texts('fakeList'), ['F1'], '只在原型里成立');
-  eq(a.texts('openList')[0], '选方案 A 还是方案 B', '自动生成的问题');
-  ok(a.texts('openList').includes('Q1'), '问题含手写问题');
   ok(a.srcdoc().includes('HTML_a') && !a.srcdoc().includes('HTML_b'), '方案 A 的内容');
   ok(a.srcdoc().includes('CSS_MARK_XYZ'), '普通页面带 PROTOTYPE.css');
 });
@@ -408,9 +423,7 @@ group('自定义数据：切换保持与重置', () => {
   const a = load(mk(2));
   a.pick('schemePick', 1);
   ok(a.srcdoc().includes('HTML_b') && !a.srcdoc().includes('HTML_a'), '方案 B 的内容');
-  eq(a.texts('noteList')[0], 'B取舍', '方案 B 取舍');
   a.pick('statePick', 1);
-  eq(a.texts('noteList')[0], SAME, '相同画面第一条');
   ok(a.srcdoc().includes('SAME'), '相同画面内容');
   a.pick('schemePick', 0);
   eq(a.txt('frameTitle'), '页一 · 态二', '切方案页面和状态不变');
@@ -419,12 +432,9 @@ group('自定义数据：切换保持与重置', () => {
   a.pick('pagePick', 1);
   eq(a.txt('frameTitle'), '页二 · 甲', '切页面回到第一项');
   eq(a.txt('schemeCurrent'), '当前：方案 B：卡片', '切页面方案不变');
-  eq(a.texts('fakeList'), ['无'], '没有假内容时显示无');
-  eq(a.texts('noteList')[0], SAME, '相同画面第一条（页二）');
   eq(a.pressed('pagePick'), [false, true, false], '页面选中态');
   a.pick('pagePick', 0);
   eq(a.txt('frameTitle'), '页一 · 态一', '回到页一');
-  eq(a.texts('fakeList'), ['F1'], '回到页一后假内容恢复');
 });
 
 group('自定义数据：终端页面', () => {
@@ -463,7 +473,6 @@ group('自定义数据：跳转', () => {
   eq(a.pressed('pagePick'), [false, true, false], '跳转后页面选中');
   eq(a.pressed('statePick'), [false, true], '跳转后状态选中');
   ok(a.srcdoc().includes('P2T2'), '跳转后内容');
-  eq(a.texts('noteList'), [SAME, 'M2'], '跳转后说明');
 });
 
 group('方案切换在框上方右侧', () => {
@@ -493,34 +502,16 @@ group('3 个方案', () => {
   const a = load(mk(3));
   eq(schemeLabels(a), ['方案 A：表格', '方案 B：卡片', '方案 C：列表'], '3 个方案按钮文字');
   eq(a.txt('schemeCurrent'), '当前：方案 A：表格', '初始当前方案');
-  eq(a.texts('openList')[0], '选方案 A、方案 B 还是方案 C', '3 个方案的问题');
   a.pick('schemePick', 2);
   eq(a.txt('schemeCurrent'), '当前：方案 C：列表', '切到方案 C 后当前方案');
   eq(a.pressed('schemePick'), [false, false, true], '方案 C 选中');
-  eq(a.texts('noteList')[0], 'C取舍', '方案 C 取舍');
-  eq(a.texts('openList')[0], '选方案 A、方案 B 还是方案 C', '切方案后问题不变');
 });
 
 group('只有 1 个方案', () => {
   const a = load(mk(1));
   ok(a.$('schemeBar').hidden === true, 'schemeBar 隐藏');
   ok(a.$('schemeCurrent').hidden === true, 'schemeCurrent 隐藏');
-  eq(a.texts('noteList'), ['N1'], '说明里没有方案相关内容');
-  eq(a.texts('openList'), ['Q1'], '问题里没有方案相关内容');
-  a.pick('statePick', 1);
-  eq(a.texts('noteList'), ['N2'], '相同画面不写各方案一样');
-  eq(a.texts('openList'), ['Q1'], '问题仍无方案相关内容');
-  const b = load(mk(1, { openQuestions: [] }));
-  b.pick('pagePick', 1);
-  eq(b.texts('fakeList'), ['无'], 'fake 空时显示无');
-  eq(b.texts('openList'), ['无'], 'openQuestions 空时显示无');
-});
-
-group('多方案下问题为空时 fake 仍显示无', () => {
-  const a = load(mk(2, { openQuestions: [] }));
-  a.pick('pagePick', 1);
-  eq(a.texts('fakeList'), ['无'], 'fake 空');
-  eq(a.texts('openList')[0], '选方案 A 还是方案 B', '自动问题仍在');
+  eq(a.errors.length, 0, '1 个方案不报错');
 });
 
 const sweep = (a, label) => {
@@ -591,31 +582,9 @@ group('框内链接不离开页面，不监听 submit', () => {
   ok(!/['"]submit['"]/.test(s), 'srcdoc 里没有 submit 监听');
 });
 
-group('省略的字段', () => {
-  const d = mk(1);
-  delete d.openQuestions;
-  delete d.pages[0].fake;
-  const a = load(d);
-  eq(a.errors.length, 0, '省略 fake、openQuestions 不报错');
-  eq(a.texts('fakeList'), ['无'], '省略 fake 显示无');
-  eq(a.texts('openList'), ['无'], '省略 openQuestions 显示无');
-
-  const n = mk(1);
-  delete n.pages[0].states[0].note;
-  const b = load(n);
-  eq(b.errors.length, 0, '省略 note 不报错');
-  eq(b.texts('noteList'), ['无'], '省略 note 按空处理');
-  b.pick('statePick', 1);
-  eq(b.texts('noteList'), ['N2'], '其他画面说明不受影响');
-
-  const m = mk(2);
-  delete m.pages[0].states[0].note;
-  eq(load(m).texts('noteList'), ['A取舍'], '多方案省略 note 时只剩方案取舍');
-});
-
 const ERR_TEXT = '原型填写有误，这不是正式页面。';
 const ERR_TITLE = '原型填写有误';
-const TEXT_IDS = ['schemeCurrent', 'stateLabel', 'noteList', 'fakeList', 'openList'];
+const TEXT_IDS = ['schemeCurrent', 'stateLabel'];
 const untouched = (a, label) => TEXT_IDS.forEach((id) => eq(a.txt(id), '', `${label}：${id} 在抛错前不应被更新`));
 
 group('错误提示：监听器在填写区之前注册', () => {
@@ -654,13 +623,11 @@ group('错误提示：缺方案内容、省略 html', () => {
   const b = load(c);
   eq(b.errors.length, 0, '当前方案有内容时不报错');
   const current = b.txt('schemeCurrent');
-  const notes = b.texts('noteList');
   b.pick('schemePick', 1);
   eq(b.errors.length, 1, '切到缺内容的方案时抛错');
   ok(b.errors.length === 1 && b.errors[0].message.includes('缺少方案 B 的内容'), '错误信息含缺少方案 B 的内容');
   ok(b.srcdoc().includes(ERR_TEXT), '切换后框里显示固定提示');
   eq(b.txt('schemeCurrent'), current, '抛错前没有更新当前方案');
-  eq(b.texts('noteList'), notes, '抛错前没有更新说明');
 
   const e = mk(2);
   delete e.pages[0].states[0].html;
@@ -724,59 +691,64 @@ group('错误提示：抛错后能恢复', () => {
   ok(a.srcdoc().includes('P2T1') && !a.srcdoc().includes(ERR_TEXT), '再点别的页面后 srcdoc 恢复');
 });
 
-group('加载时校验：fake、note、openQuestions 写了必须是数组', () => {
-  const NOT_ARRAY = '要写成数组';
-  const expectOne = (a, label, parts) => {
-    eq(a.errors.length, 1, `${label}：只有 1 个错误`);
-    const msg = a.errors.length ? a.errors[0].message : '';
-    ok(msg.includes(NOT_ARRAY), `${label}：错误信息含「${NOT_ARRAY}」：${msg}`);
-    parts.forEach((p) => ok(msg.includes(p), `${label}：错误信息含「${p}」：${msg}`));
-    ok(!a.dockHeight(), `${label}：dock.style.height 没有被写`);
-  };
-
-  ['F1', {}, 5].forEach((bad) => {
+group('旧写法字段：原型照常显示，note、fake、openQuestions 不显示', () => {
+  const MARK = 'LEGACY_MARK';
+  const cases = [
+    ['状态 note 字符串', (d) => { d.pages[0].states[0].note = MARK; }],
+    ['状态 note 数组', (d) => { d.pages[0].states[0].note = [MARK]; }],
+    ['状态 note 对象', (d) => { d.pages[0].states[0].note = { m: MARK }; }],
+    ['状态 note 数字', (d) => { d.pages[0].states[0].note = 5; }],
+    ['页面 fake 字符串', (d) => { d.pages[1].fake = MARK; }],
+    ['页面 fake 对象', (d) => { d.pages[1].fake = { m: MARK }; }],
+    ['页面 fake 数字', (d) => { d.pages[1].fake = 5; }],
+    ['页面 fake 数组', (d) => { d.pages[1].fake = [MARK]; }],
+    ['openQuestions 字符串', (d) => { d.openQuestions = MARK; }],
+    ['openQuestions 对象', (d) => { d.openQuestions = { m: MARK }; }],
+    ['openQuestions 数字', (d) => { d.openQuestions = 5; }],
+    ['openQuestions 数组', (d) => { d.openQuestions = [MARK]; }],
+    ['方案 note 字符串', (d) => { d.schemes[1].note = MARK; }],
+    ['方案 note 对象', (d) => { d.schemes[1].note = { m: MARK }; }],
+    ['方案 note 数字', (d) => { d.schemes[1].note = 5; }],
+    ['方案 note 数组', (d) => { d.schemes[1].note = [MARK]; }],
+  ];
+  cases.forEach(([label, build]) => {
     const d = mk(2);
-    d.pages[1].fake = bad;
-    expectOne(load(d), `fake 写成 ${JSON.stringify(bad)}`, ['页二']);
+    build(d);
+    const a = load(d);
+    eq(a.errors.length, 0, `${label}：不报错`);
+    ok(!a.broken(), `${label}：prototypeBroken 不为真`);
+    ok(a.srcdoc().includes('HTML_a') && !a.srcdoc().includes(ERR_TEXT), `${label}：srcdoc 是正常画面，不是错误提示`);
+    eq(a.txt('frameTitle'), '页一 · 态一', `${label}：框上方标题`);
+    ok(!a.shellText().includes(MARK) && !a.srcdoc().includes(MARK), `${label}：刚加载时外壳和框里都不显示这些内容`);
+    a.pick('schemePick', 1);
+    ok(!a.shellText().includes(MARK) && !a.srcdoc().includes(MARK), `${label}：切到方案 B 后外壳和框里都不显示这些内容`);
+    a.pick('pagePick', 1);
+    eq(a.errors.length, 0, `${label}：切换后不报错`);
+    ok(a.srcdoc().includes('P2T1'), `${label}：切换后画面正常`);
+    ok(!a.shellText().includes(MARK) && !a.srcdoc().includes(MARK), `${label}：外壳和框里都不显示这些内容`);
   });
-  ['N1', {}, 5].forEach((bad) => {
-    const d = mk(2);
-    d.pages[0].states[1].note = bad;
-    expectOne(load(d), `note 写成 ${JSON.stringify(bad)}`, ['页一 · 态二']);
-  });
-  ['Q1', {}, 5].forEach((bad) => {
-    expectOne(load(mk(2, { openQuestions: bad })), `openQuestions 写成 ${JSON.stringify(bad)}`, ['openQuestions']);
-  });
-  const lastNote = mk(1);
-  lastNote.pages[1].states[1].note = 'M2';
-  expectOne(load(lastNote), '靠后页面的 note 写成字符串', ['页二 · 乙']);
-
-  const empty = mk(2, { openQuestions: [] });
-  empty.pages[0].fake = [];
-  empty.pages[0].states[0].note = [];
-  eq(load(empty).errors.length, 0, 'fake、note、openQuestions 写成空数组不报错');
 });
 
-group('方案字段漏写', () => {
+group('方案字段：只有 id、label、desc', () => {
   const clone = () => JSON.parse(JSON.stringify(mk(2)));
-  const noNote = clone();
-  delete noNote.schemes[1].note;
-  const a = load(noNote);
-  eq(a.errors.length, 1, '多方案漏写 note 时加载抛错');
-  const am = a.errors.length ? a.errors[0].message : '';
-  ok(am.includes('方案 B') && am.includes('缺少'), `错误信息含方案 label 和缺少：${am}`);
+  const a = load(clone());
+  eq(a.errors.length, 0, '方案只有 id、label、desc 时正常显示');
+  eq(a.txt('frameTitle'), '页一 · 态一', '方案没有 note 时原型照常显示');
 
-  const noDesc = clone();
-  delete noDesc.schemes[0].desc;
-  const b = load(noDesc);
-  eq(b.errors.length, 1, '多方案漏写 desc 时加载抛错');
-  const bm = b.errors.length ? b.errors[0].message : '';
-  ok(bm.includes('方案 A') && bm.includes('缺少'), `错误信息含方案 label 和缺少：${bm}`);
+  [[0, '方案 A'], [1, '方案 B']].forEach(([idx, label]) => {
+    const d = clone();
+    delete d.schemes[idx].desc;
+    const b = load(d);
+    eq(b.errors.length, 1, `多方案 ${label} 漏写 desc 时加载抛错`);
+    const bm = b.errors.length ? b.errors[0].message : '';
+    ok(bm.includes(label) && bm.includes('缺少'), `错误信息含方案 label 和缺少：${bm}`);
+    ok(b.srcdoc().includes(ERR_TITLE) && b.srcdoc().includes(label), `${label} 漏写 desc 时框里显示「${ERR_TITLE}」和 ${label}`);
+  });
 
-  const single = JSON.parse(JSON.stringify(mk(1)));
-  delete single.schemes[0].note;
+  const single = clone();
+  single.schemes = single.schemes.slice(0, 1);
   delete single.schemes[0].desc;
-  eq(load(single).errors.length, 0, '只有 1 个方案时漏写 note、desc 不报错');
+  eq(load(single).errors.length, 0, '只有 1 个方案时漏写 desc 不报错');
 });
 
 group('出错时方案区隐藏', () => {
@@ -812,13 +784,9 @@ group('结构与样式（按区块）', () => {
   ok(!HTML.includes('allow-same-origin'), '文件不含 allow-same-origin');
 
   const aside = (/<aside[\s\S]*?<\/aside>/.exec(HTML) || [''])[0];
-  const dock = (/<section[^>]*class="dock"[\s\S]*?<\/section>/.exec(HTML) || [''])[0];
   ok(aside.includes('设计说明 · 不属于页面'), '左栏有设计说明标签');
   ok(aside.includes('<h3>页面</h3>'), '左栏有页面小标题');
-  ok(dock.includes('设计说明 · 不属于页面'), '底部有设计说明标签');
-  ok(dock.includes('这一块上线后不存在'), '底部有上线后不存在的说明');
-  const order = ['这个画面的说明', '只在原型里成立', '还没确认的问题'].map((p) => dock.indexOf(p));
-  ok(order.every((i, k) => i >= 0 && (k === 0 || i > order[k - 1])), `底部三列标题按顺序出现：${order}`);
+  ['这个画面的说明', '只在原型里成立', '还没确认的问题', '这一块上线后不存在'].forEach((p) => ok(!HTML.includes(p), `外壳全文不含「${p}」`));
 
   const css = (/<style>([\s\S]*?)<\/style>/.exec(HTML) || ['', ''])[1];
   const block = (sel) => [...css.matchAll(new RegExp('(?:^|[\\s,}])' + sel + '\\s*\\{([^}]*)\\}', 'g'))].map((m) => m[1]).join('\n');
@@ -829,11 +797,7 @@ group('结构与样式（按区块）', () => {
   ok(/(?:^|[;\s])color:\s*var\(--accent\)/.test(tagCss), '.tag 文字色是 var(--accent)');
   ok(!/background/.test(tagCss), '.tag 没有背景');
   ok(/outline:\s*1px dashed var\(--accent\)/.test(block('iframe')), 'iframe 有 outline: 1px dashed var(--accent)');
-  const dockCss = block('\\.dock');
-  ok(/border-top:\s*1px dashed var\(--accent\)/.test(dockCss), '.dock 上边 1px 强调色虚线');
-  ok(/max-height:\s*30vh/.test(dockCss), '.dock 有 max-height: 30vh');
-  ok(/overflow-y:\s*auto/.test(dockCss), '.dock 内容多时滚动');
-  ok(!/height:\s*26vh/.test(dockCss) && !/26vh/.test(css), '.dock 没有固定高度');
+  ok(!/\.dock/.test(css), 'CSS 里没有 .dock');
   ok(/\[hidden\]\s*\{\s*display:\s*none\s*!important;?\s*\}/.test(css), '[hidden] 强制隐藏');
   const pressedRule = /([^{}]*aria-pressed="true"[^{}]*)\{([^}]*)\}/.exec(css) || ['', '', ''];
   const pressed = pressedRule[2];
@@ -841,15 +805,19 @@ group('结构与样式（按区块）', () => {
   ok(/background:\s*var\(--pick-bg\)/.test(pressed), '选中按钮背景用 var(--pick-bg)');
   ok(/(?:^|[;\s])color:\s*var\(--pick-text\)/.test(pressed), '选中按钮文字色用 var(--pick-text)');
   ok(/font-weight:\s*(?:600|700|bold)/.test(pressed), '选中按钮字加粗');
-  ok(/\.pick button/.test(pressedRule[1]) && /\.theme button/.test(pressedRule[1]), '主题按钮和左栏切换按钮共用选中样式');
-  const idleRule = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].find((m) => /\.pick button\s*(?:,|$)/.test(m[1].trim()) && /\.theme button/.test(m[1]));
-  ok(idleRule && /background:\s*transparent/.test(idleRule[2]) && /border:\s*1px solid var\(--shell-line\)/.test(idleRule[2]), '主题按钮和左栏切换按钮共用未选中样式：细线框、透明底');
+  const menuRule = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].find((m) => /\.pick select/.test(m[1]));
+  ok(menuRule && /border:\s*1px solid var\(--accent\)/.test(menuRule[2]), '下拉菜单细线框用强调色');
+  ok(menuRule && /background:\s*var\(--shell-bg\)/.test(menuRule[2]), '下拉菜单底色用外壳底色');
+  ok(menuRule && /font:\s*inherit/.test(menuRule[2]), '下拉菜单字体继承');
+  ok(/\.pick button/.test(pressedRule[1]), '左栏切换按钮有选中样式');
+  const idleRule = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].find((m) => /\.pick button\s*(?:,|$)/.test(m[1].trim()));
+  ok(idleRule && /background:\s*transparent/.test(idleRule[2]) && /border:\s*1px solid var\(--shell-line\)/.test(idleRule[2]), '左栏切换按钮未选中样式：细线框、透明底');
   ok(!/border-radius/.test(css), '外壳 CSS 不含 border-radius');
-  ok(/border-left:[^;]*var\(--shell-line\)/.test(block('\\.theme')), '.theme 左边有 var(--shell-line) 竖线');
 
   ok(/min-width:\s*960px/.test(block('body')), 'body 规则块里有 min-width: 960px');
   ok(/grid-template-columns:\s*240px 1fr/.test(block('body')), 'body 规则块里有 grid-template-columns: 240px 1fr');
-  ok(/grid-template-rows:\s*auto minmax\(0, 1fr\) auto/.test(block('main')), 'main 规则块里有 grid-template-rows: auto minmax(0, 1fr) auto');
+  ok(/grid-template-rows:\s*auto minmax\(0, 1fr\)\s*;/.test(block('main')), 'main 规则块里 grid-template-rows 只有两行：auto minmax(0, 1fr)');
+  ok(/padding:\s*0 6px 6px\s*;/.test(block('main')), 'main 下内边距 6px 保留');
   const frameRight = block('\\.frame-right');
   ok(/flex-wrap:\s*wrap/.test(frameRight), '.frame-right 有 flex-wrap: wrap');
   ok(/justify-content:\s*flex-end/.test(frameRight), '.frame-right 有 justify-content: flex-end');
@@ -864,7 +832,8 @@ group('结构与样式（按区块）', () => {
   const at = (needle, from = 0) => HTML.indexOf(needle, from);
   ok(at('<aside') >= 0 && at('<aside') < at('<main>'), '<aside 在 <main> 之前');
   ok(at('class="frame-bar"') >= 0 && at('class="frame-bar"') < at('id="stage"'), 'frame-bar 在 stage 之前');
-  ok(at('id="stage"') >= 0 && at('id="stage"') < at('class="dock"'), 'stage 在 dock 之前');
+  ok(/<iframe[^>]*><\/iframe>\s*<\/main>/.test(HTML), 'stage 是 main 的最后一个子元素：框下面没有说明区');
+  ok(!HTML.includes('class="dock"') && !HTML.includes('id="dock"'), 'HTML 里没有 dock');
   const side = [aside.indexOf('id="sideTitle"'), aside.indexOf('id="schemeCurrent"'), aside.indexOf('id="pagePick"')];
   ok(side.every((i, k) => i >= 0 && (k === 0 || i > side[k - 1])), `左栏里 sideTitle、schemeCurrent、pagePick 依次出现：${side}`);
   ok(!aside.includes('id="schemePick"') && !aside.includes('id="schemeBar"'), '左栏里没有方案按钮');
@@ -876,182 +845,63 @@ group('结构与样式（按区块）', () => {
   ok(leftOrder.every((i, k) => i >= 0 && (k === 0 || i > leftOrder[k - 1])), `.frame-left 里被设计的页面、frameTitle 依次出现：${leftOrder}`);
   const right = HTML.slice(rightAt, at('id="stage"'));
   ok(!right.includes('id="frameTitle"') && !right.includes('被设计的页面'), '.frame-right 里没有 frameTitle 和被设计的页面');
-  const rightOrder = [right.indexOf('id="schemeBar"'), right.indexOf('id="themeLight"')];
-  ok(rightOrder.every((i, k) => i >= 0 && (k === 0 || i > rightOrder[k - 1])), `.frame-right 里 schemeBar 在 themeLight 之前：${rightOrder}`);
+  ok(right.includes('id="schemeBar"'), '.frame-right 里有 schemeBar');
   ok(/id="schemeBar"[^]*?>方案<[^]*?id="schemePick"/.test(right), '#schemeBar 里先是文字「方案」，后面是 #schemePick');
-  const themeAt = right.search(/<[a-z]+[^>]*class="theme"[^>]*>/);
-  const themeEnd = right.indexOf('</span>', themeAt);
-  ok(themeAt >= 0 && themeEnd > themeAt && /^\s*<\/div>/.test(right.slice(themeEnd + '</span>'.length)), '.theme 是 .frame-right 的最后一个子元素');
+  ok(!right.includes('themeLight') && !right.includes('themeDark') && !/class="theme"/.test(right), '.frame-right 里没有明暗按钮');
 });
 
-group('主题：颜色变量', () => {
+group('外壳只有一套配色：CSS', () => {
   const css = (/<style>([\s\S]*?)<\/style>/.exec(HTML) || ['', ''])[1];
-  const vars = (sel) => {
-    const m = new RegExp('(?:^|[\\s,}])' + sel + '\\s*\\{([^}]*)\\}').exec(css);
-    return m ? m[1] : '';
-  };
-  const check = (label, body, want) => {
-    ok(body !== '', label + '：规则块存在');
-    Object.entries(want).forEach(([k, v]) => {
-      const m = new RegExp('(?:^|[;\\s])' + k + ':\\s*([^;]+);').exec(body);
-      eq(m ? m[1].trim() : null, v, label + ' ' + k);
-    });
-  };
-  const light = vars(':root');
-  const dark = vars(':root\\[data-theme="dark"\\]');
-  check('明亮', light, {
-    '--shell-bg': '#d5dae1', '--shell-line': '#b7bfca', '--shell-text': '#1d2633', '--shell-muted': '#4f5b6b',
-    '--accent': '#47607f', '--pick-bg': '#c2cad5', '--pick-text': '#1d2633', '--grid': 'rgba(71, 96, 127, .06)',
-  });
-  check('暗黑', dark, {
+  const roots = [...css.matchAll(/:root[^{]*\{([^}]*)\}/g)];
+  eq(roots.length, 1, 'CSS 里只有一个 :root 规则块');
+  eq((css.match(/--shell-bg\s*:/g) || []).length, 1, '--shell-bg 只定义一次');
+  const body = roots.length ? roots[0][1] : '';
+  const want = {
     '--shell-bg': '#26282c', '--shell-line': '#3a3d43', '--shell-text': '#d4d4d4', '--shell-muted': '#8f949b',
-    '--accent': '#8e9aa8', '--pick-bg': '#33363c', '--pick-text': '#e6e6e6', '--grid': 'rgba(255, 255, 255, .03)',
+    '--accent': '#8e9aa8', '--pick-bg': '#33363c', '--pick-text': '#e6e6e6', '--grid': 'rgba(255,255,255,.03)',
+  };
+  Object.entries(want).forEach(([k, v]) => {
+    const m = new RegExp('(?:^|[;\\s])' + k + ':\\s*([^;]+);').exec(body);
+    eq(m ? m[1].replace(/\s+/g, '') : null, v, k);
   });
-  ok(!/--accent-ink/.test(light), ':root 里没有 --accent-ink');
+  ok(!/prefers-color-scheme/.test(HTML), '文件里没有 prefers-color-scheme');
+  ok(!/data-theme/.test(css), 'CSS 里没有 data-theme 样式块');
 });
 
-group('主题：切换按钮的位置和文字', () => {
-  const rightAt = HTML.indexOf('class="frame-right"');
-  const stageAt = HTML.indexOf('id="stage"');
-  const right = HTML.slice(rightAt, stageAt);
-  const lightAt = right.indexOf('id="themeLight"');
-  const darkAt = right.indexOf('id="themeDark"');
-  ok(rightAt >= 0 && lightAt >= 0 && darkAt > lightAt, `#themeLight、#themeDark 在 .frame-right 里且先明亮后暗黑：${lightAt},${darkAt}`);
-  const wrapAt = right.search(/<[a-z]+[^>]*class="theme"[^>]*>/);
-  ok(wrapAt >= 0 && wrapAt < lightAt, '两个按钮外包一层 class 为 theme 的元素');
-  const tagOf = (id) => (new RegExp('<button[^>]*id="' + id + '"[^>]*>([^<]*)<').exec(right) || ['', '']);
-  eq(tagOf('themeLight')[1].trim(), '☀ 明亮', '明亮按钮文字');
-  eq(tagOf('themeDark')[1].trim(), '☾ 暗黑', '暗黑按钮文字');
-  ok(!/hidden/.test(tagOf('themeLight')[0]) && !/hidden/.test(tagOf('themeDark')[0]), '主题按钮不带 hidden');
-  ok(!/<[a-z]+[^>]*class="theme"[^>]*hidden/.test(right), 'theme 容器不带 hidden');
-  ok(!HTML.includes('localStorage') && !HTML.includes('sessionStorage'), 'HTML 里不出现 localStorage、sessionStorage');
-});
-
-group('主题：打开时按系统外观', () => {
-  const light = load(null, makeMedia(false));
-  eq(light.theme(), 'light', '系统浅色 → light');
-  eq(light.themePressed(), ['true', 'false'], '系统浅色时明亮按钮选中');
-  const dark = load(null, makeMedia(true));
-  eq(dark.theme(), 'dark', '系统深色 → dark');
-  eq(dark.themePressed(), ['false', 'true'], '系统深色时暗黑按钮选中');
-  eq(light.errors.length + dark.errors.length, 0, '加载不报错');
-});
-
-group('主题：没点过按钮时跟随系统', () => {
-  const m = makeMedia(false);
-  const a = load(null, m);
-  m.set(true);
-  eq(a.theme(), 'dark', '系统变深色后跟着变 dark');
-  eq(a.themePressed(), ['false', 'true'], '按钮选中跟着变');
-  m.set(false);
-  eq(a.theme(), 'light', '系统变回浅色后跟着变 light');
-  eq(a.themePressed(), ['true', 'false'], '按钮选中跟着变回');
-});
-
-group('主题：点过按钮后不再跟随系统', () => {
-  const m = makeMedia(false);
-  const a = load(null, m);
-  a.$('themeLight').click();
-  eq(a.theme(), 'light', '点明亮后是 light');
-  m.set(true);
-  eq(a.theme(), 'light', '点过明亮后系统变深色，保持 light');
-  eq(a.themePressed(), ['true', 'false'], '点过明亮后按钮选中不变');
-
-  const m2 = makeMedia(false);
-  const b = load(null, m2);
-  b.$('themeDark').click();
-  eq([b.theme(), b.themePressed()], ['dark', ['false', 'true']], '点暗黑后立即变 dark，选中跟着变');
-  m2.set(true);
-  m2.set(false);
-  eq(b.theme(), 'dark', '点过暗黑后系统怎么变都保持 dark');
-
-  b.$('themeLight').click();
-  eq([b.theme(), b.themePressed()], ['light', ['true', 'false']], '再点明亮能切回 light');
-});
-
-group('主题：切换不影响当前画面', () => {
-  const a = load(mk(3), makeMedia(false));
-  a.pick('schemePick', 1);
-  a.pick('pagePick', 1);
-  a.pick('statePick', 1);
-  const before = a.snap();
-  const heightBefore = a.dockHeight();
-  a.$('themeDark').click();
-  eq(a.theme(), 'dark', '点暗黑后变 dark');
-  eq(a.snap(), before, '方案、页面、状态、frameTitle、srcdoc 与点之前相同');
-  eq(a.dockHeight(), heightBefore, '底部高度不变');
-  a.$('themeLight').click();
-  eq(a.snap(), before, '切回明亮后画面仍与最初相同');
-  eq(a.dockHeight(), heightBefore, '切回明亮后底部高度不变');
-  eq(a.errors.length, 0, '切换不报错');
-});
-
-group('主题：框里的页面两种主题下一样', () => {
-  [['网页画面', null], ['终端画面', 2]].forEach(([name, pageIdx]) => {
-    const open = (dark) => {
-      const a = load(mk(2), makeMedia(dark));
-      if (pageIdx !== null) a.pick('pagePick', pageIdx);
-      return a;
-    };
-    const lightDoc = open(false);
-    const darkDoc = open(true);
-    eq(lightDoc.srcdoc() === darkDoc.srcdoc(), true, name + '：系统浅色与深色打开 srcdoc 相同');
-    ok(lightDoc.srcdoc().length > 0, name + '：srcdoc 不为空');
-    ['--shell-', '--accent'].forEach((w) => ok(!darkDoc.srcdoc().includes(w), `${name}：srcdoc 不含 ${w}`));
-    const before = lightDoc.srcdoc();
-    lightDoc.$('themeDark').click();
-    eq(lightDoc.srcdoc() === before && before === darkDoc.srcdoc(), true, name + '：点按钮切主题后 srcdoc 仍相同');
+group('外壳不随系统外观变化', () => {
+  [[false, '浅色'], [true, '深色']].forEach(([dark, name]) => {
+    const m = makeMedia(dark);
+    const a = load(null, m);
+    eq(a.errors.length, 0, `系统${name}：加载不报错`);
+    eq(a.theme(), null, `系统${name}：根元素没有 data-theme`);
+    m.set(!dark);
+    eq(a.theme(), null, `系统${name}：系统外观变化后根元素仍没有 data-theme`);
+    m.set(dark);
+    eq(a.theme(), null, `系统${name}：系统外观变回后根元素仍没有 data-theme`);
+    eq(m.listenerCount(), 0, `系统${name}：没有注册系统外观 change 监听`);
+    eq(load(mk(2), makeMedia(dark)).theme(), null, `系统${name}：自定义数据根元素没有 data-theme`);
   });
-});
 
-group('主题：填写区语法错误', () => {
-  const m = makeMedia(true);
-  const a = loadHtml(withFill('const PROTOTYPE = 1 2;'), m);
-  eq(a.theme(), 'dark', '语法错误时主题仍按系统深色设为 dark');
-  eq(a.themePressed(), ['false', 'true'], '语法错误时按钮选中状态正确');
-  a.$('themeLight').click();
-  eq([a.theme(), a.themePressed()], ['light', ['true', 'false']], '语法错误时点按钮仍能切换');
-  const b = loadHtml(withFill('const PROTOTYPE = 1 2;'), makeMedia(false));
-  eq(b.theme(), 'light', '语法错误时系统浅色 → light');
-});
+  const old = makeMedia(true);
+  delete old.addEventListener;
+  const o = load(null, old);
+  eq(o.errors.length, 0, 'matchMedia 没有 addEventListener 时不报错');
+  eq(o.theme(), null, 'matchMedia 没有 addEventListener 时根元素没有 data-theme');
 
-group('主题：外壳渲染时报错', () => {
+  [['默认数据', loadHtml(HTML)], ['自定义数据', loadHtml(withData(mk(2)))]].forEach(([name, a]) => {
+    eq(a.theme(), null, name + '：没有 matchMedia 时根元素没有 data-theme');
+    eq(a.errors.length, 0, name + '：没有 matchMedia 时不报错');
+    ok(!a.broken(), name + '：没有 matchMedia 时 prototypeBroken 不为真');
+    ok(a.srcdoc().length > 0, name + '：没有 matchMedia 时照常渲染');
+  });
+
+  const syntax = loadHtml(withFill('const PROTOTYPE = 1 2;'), makeMedia(true));
+  eq(syntax.theme(), null, '填写区语法错误时根元素没有 data-theme');
   const data = mk(2);
   delete data.schemes[1].desc;
-  const a = load(data, makeMedia(true));
-  ok(a.broken(), '方案缺 desc 时外壳报错');
-  eq(a.theme(), 'dark', '外壳报错时主题仍按系统深色设为 dark');
-  a.$('themeLight').click();
-  eq([a.theme(), a.themePressed()], ['light', ['true', 'false']], '外壳报错时点按钮仍能切换');
-});
-
-group('主题：旧浏览器的 matchMedia 没有 addEventListener', () => {
-  const m = makeMedia(true);
-  delete m.addEventListener;
-  const a = load(null, m);
-  eq(a.errors.length, 0, '不报错');
-  ok(!a.broken(), 'prototypeBroken 不为真，原型正常显示');
-  eq(a.theme(), 'dark', '初始主题仍按系统深色设为 dark');
-  a.$('themeLight').click();
-  eq(a.theme(), 'light', '点按钮仍能切换');
-});
-
-group('主题：浏览器没有 matchMedia', () => {
-  [['默认数据', loadHtml(HTML)], ['自定义数据', loadHtml(withData(mk(2)))]].forEach(([name, a]) => {
-    eq(a.theme(), 'light', name + '：data-theme 是 light');
-    eq(a.themePressed(), ['true', 'false'], name + '：明亮按钮选中');
-    eq(a.errors.length, 0, name + '：不报错');
-    ok(!a.broken(), name + '：prototypeBroken 不为真');
-  });
-  const a = loadHtml(HTML);
-  a.$('themeDark').click();
-  eq(a.theme(), 'dark', '没有 matchMedia 时点按钮仍能切换');
-});
-
-group('主题：只有 1 个方案也显示按钮', () => {
-  const a = load(mk(1), makeMedia(false));
-  ok(a.$('themeLight').hidden === false && a.$('themeDark').hidden === false, '1 个方案时主题按钮不隐藏');
-  eq(a.theme(), 'light', '1 个方案时主题照常设置');
+  const bad = load(data, makeMedia(true));
+  ok(bad.broken(), '方案缺 desc 时外壳报错');
+  eq(bad.theme(), null, '外壳报错时根元素没有 data-theme');
 });
 
 const DEFAULT_MARKS = ['.card', '.alert', '#2563eb'];
@@ -1100,189 +950,14 @@ group('框内与外壳隔离：不写 css 的默认样式', () => {
   sweep(load(mk(2, { css: '  \n ' })), 'css只有空白');
 });
 
-group('空列表项不显示圆点', () => {
-  const empty = load(mk(1, { openQuestions: [] }));
-  empty.pick('pagePick', 1);
-  ['fakeList', 'openList'].forEach((id) => {
-    const items = empty.$(id).children;
-    eq(items.map((c) => c.textContent), ['无'], `${id} 空时只有一条「无」`);
-    eq(items[0].style.listStyle, 'none', `${id} 的「无」listStyle 为 none`);
-  });
-  const full = load(mk(1));
-  ['fakeList', 'openList'].forEach((id) => {
-    full.$(id).children.forEach((li) => ok(li.style.listStyle !== 'none', `${id} 有内容时 listStyle 不是 none`));
-  });
-  const multi = load(mk(2, { openQuestions: [] }));
-  multi.pick('pagePick', 1);
-  eq(multi.$('fakeList').children[0].style.listStyle, 'none', '多方案 fake 空时「无」listStyle 为 none');
-  ok(multi.$('openList').children.every((li) => li.style.listStyle !== 'none'), '多方案自动问题那条不是 none');
-});
-
-const expectedDock = (data) => {
-  const a = load(data);
-  let most = 0;
-  const lens = () => ['noteList', 'fakeList', 'openList'].map((id) => lineCount(a.$(id)));
-  for (let i = 0; i < a.buttons('schemePick').length; i++) {
-    a.pick('schemePick', i);
-    for (let j = 0; j < a.buttons('pagePick').length; j++) {
-      a.pick('pagePick', j);
-      for (let k = 0; k < a.buttons('statePick').length; k++) {
-        a.pick('statePick', k);
-        most = Math.max(most, ...lens());
-      }
-    }
-  }
-  return 40 + most * 20 + 'px';
-};
-const longMid = () => {
-  const d = mk(2);
-  d.pages[1].states[0].note = ['长1', '长2', '长3', '长4', '长5'];
-  return d;
-};
-const longFirst = () => {
-  const d = mk(3);
-  d.pages[0].states[0].note = ['头1', '头2', '头3', '头4', '头5', '头6'];
-  return d;
-};
-const longOpen = () => mk(2, { openQuestions: ['Q1', 'Q2', 'Q3', 'Q4', 'Q5', 'Q6'] });
-
-group('底部高度：取所有画面最大值，切换不变', () => {
-  [['最长说明在中间画面', longMid()], ['最长说明在首屏', longFirst()], ['问题列表最长', longOpen()], ['默认数据', null]].forEach(([label, d]) => {
-    const want = expectedDock(d);
-    const a = load(d);
-    eq(a.errors.length, 0, `${label}：不报错`);
-    eq(a.dockHeight(), want, `${label}：加载后 dock.style.height`);
-    ok(/px$/.test(String(a.dockHeight())), `${label}：高度带 px`);
-    const snapNotes = a.texts('noteList');
-    ok(snapNotes.length > 0 && snapNotes[0] !== '无', `${label}：加载后 noteList 有当前画面的说明`);
-    for (let i = 0; i < a.buttons('schemePick').length; i++) {
-      a.pick('schemePick', i);
-      eq(a.dockHeight(), want, `${label}：切到方案 ${i} 后高度不变`);
-    }
-    for (let j = 0; j < a.buttons('pagePick').length; j++) {
-      a.pick('pagePick', j);
-      eq(a.dockHeight(), want, `${label}：切到页面 ${j} 后高度不变`);
-      for (let k = 0; k < a.buttons('statePick').length; k++) {
-        a.pick('statePick', k);
-        eq(a.dockHeight(), want, `${label}：页面 ${j} 切到状态 ${k} 后高度不变`);
-      }
-    }
-    a.post('p2:t2');
-    eq(a.dockHeight(), want, `${label}：框内跳转后高度不变`);
-  });
-});
-
-group('底部高度：加载后说明是当前画面，不是最后量过的画面', () => {
-  const a = load(longMid());
-  eq(a.txt('frameTitle'), '页一 · 态一', '回到首屏');
-  eq(a.texts('noteList'), ['A取舍', 'N1'], '加载后 noteList 是首屏说明');
-  ok(a.dockHeight() !== 40 + 20 * 2 + 'px', '高度是最长画面的，不是首屏的');
-  eq(a.pressed('schemePick'), [true, false], '加载后方案仍是第一个');
-  eq(a.pressed('statePick'), [true, false], '加载后状态仍是第一个');
-  eq(a.texts('fakeList'), ['F1'], '加载后 fakeList 是首屏的');
-  eq(a.texts('openList')[0], '选方案 A 还是方案 B', '加载后 openList 是首屏的');
-  ok(!a.srcdoc().includes('P2T1'), '量高度不改变框里的画面');
-});
-
-const setDock = (a, v) => { if (a.$('dock')) a.$('dock').style.height = v; };
-
-group('底部高度：窗口大小改变时重新计算', () => {
-  const a = load(longMid());
-  const want = expectedDock(longMid());
-  ok(a.resizeCount() >= 1, '注册了 resize 监听');
-  setDock(a, '1px');
-  a.resize();
-  eq(a.errors.length, 0, 'resize 不报错');
-  eq(a.dockHeight(), want, 'resize 后重新算出高度');
-  eq(a.texts('noteList'), ['A取舍', 'N1'], 'resize 后 noteList 仍是首屏说明');
-
-  a.pick('schemePick', 1);
-  a.pick('statePick', 1);
-  const snap = a.snap();
-  setDock(a, '1px');
-  a.resize();
-  eq(a.dockHeight(), want, '切换后 resize 高度仍是最大值');
-  eq(a.snap(), snap, 'resize 后框、标题、说明、选中态都不变');
-  eq(a.texts('noteList')[0], SAME, 'resize 后说明仍是当前画面（相同画面）');
-
-  a.pick('pagePick', 1);
-  a.pick('statePick', 0);
-  const snap2 = a.snap();
-  a.resize();
-  eq(a.snap(), snap2, '长说明画面 resize 后说明不变');
-  eq(a.texts('noteList').slice(-5), ['长1', '长2', '长3', '长4', '长5'], '长说明画面 resize 后说明完整');
-  a.resize();
-  eq(a.snap(), snap2, '连续 resize 结果稳定');
-});
-
-group('底部高度：内容变化后 resize 按新内容重新算', () => {
-  const grown = () => {
-    const d = mk(2);
-    d.pages[0].states[1].note = ['新1', '新2', '新3', '新4', '新5', '新6', '新7', '新8'];
-    return d;
-  };
-  const a = load(mk(2));
-  const before = a.dockHeight();
-  a.run("PROTOTYPE.pages[0].states[1].note = ['新1', '新2', '新3', '新4', '新5', '新6', '新7', '新8']");
-  a.resize();
-  eq(a.errors.length, 0, 'resize 不报错');
-  eq(a.dockHeight(), expectedDock(grown()), '内容变多后 resize，高度按新内容重新算');
-  ok(a.dockHeight() !== before, '高度确实变了');
-  eq(a.texts('noteList'), ['A取舍', 'N1'], 'resize 后 noteList 仍是当前画面');
-});
-
-group('底部高度：遍历所有方案、所有页面的所有状态', () => {
-  const longText = '长'.repeat(100);
-  const baseline = expectedDock(mk(2));
-  const cases = [
-    ['只有第二个方案的取舍特别长', () => { const d = mk(2); d.schemes[1].note = longText; return d; }],
-    ['最长说明在页面的最后一个状态', () => { const d = mk(2); d.pages[1].states[1].note = ['末1', '末2', '末3', '末4', '末5', '末6', '末7']; return d; }],
-    ['最长说明在最后一页的最后一个状态', () => { const d = mk(2); d.pages[2].states[0].note = [longText]; return d; }],
-  ];
-  cases.forEach(([label, build]) => {
-    const want = expectedDock(build());
-    ok(want !== baseline, `${label}：期望高度与基线不同，用例有效`);
-    const a = load(build());
-    eq(a.errors.length, 0, `${label}：不报错`);
-    eq(a.dockHeight(), want, `${label}：加载后高度按最长画面算`);
-    setDock(a, '1px');
-    a.resize();
-    eq(a.dockHeight(), want, `${label}：resize 后高度仍按最长画面算`);
-  });
-});
-
-group('底部高度：首屏出错不计算高度', () => {
-  const d = mk(2);
-  d.pages[0].states[0].html = { b: '<p>only b</p>' };
-  const a = load(d);
-  eq(a.errors.length, 1, '首屏缺内容时 render 抛错');
-  eq(a.dockReads(), 0, '没有读过 dock 的高度');
-  ok(!a.dockHeight(), 'dock.style.height 没有被写');
-  eq(a.texts('noteList'), [], 'noteList 保持空');
-  ok(a.srcdoc().includes(ERR_TEXT), '错误提示没被覆盖');
-  eq(a.txt('frameTitle'), ERR_TITLE, '框上方仍是原型填写有误');
-  a.resize();
-  eq(a.errors.length, 1, '首屏出错后 resize 不再产生错误');
-  eq(a.dockReads(), 0, '首屏出错后 resize 没有读 dock 的高度');
-  ok(!a.dockHeight(), '首屏出错后 resize 没有写 dock.style.height');
-  eq(a.texts('noteList'), [], '首屏出错后 resize，noteList 保持空');
-  ok(a.srcdoc().includes(ERR_TEXT), '首屏出错后 resize，错误提示没被覆盖');
-
-  const bad = loadHtml(withFill('const PROTOTYPE = 1 2;'));
-  eq(bad.dockReads(), 0, '语法错误时没有读过 dock 的高度');
-  ok(!bad.dockHeight(), '语法错误时 dock.style.height 没有被写');
-  eq(bad.texts('noteList'), [], '语法错误时 noteList 保持空');
-  ok(bad.srcdoc().includes(ERR_TEXT), '语法错误时错误提示没被覆盖');
-});
-
 const TERM_CSS = 'body{background:#123456} .ok{color:#abcdef}';
 const mkTerm = (termCss) => {
   const d = mk(2, { css: '.CSS_MARK_XYZ{color:#654321}' });
   d.pages[2].terminalCss = termCss;
   d.pages[2].states[0].html = 'TERM_A <span class="ok">ok</span> <a data-go="p2:t2">跳</a>';
   d.pages.push({
-    id: 'p4', name: '终端页B', fake: [], terminal: true, states: [
-      { id: 'v1', name: '第一步', note: ['V1'], html: 'TERM_B' },
+    id: 'p4', name: '终端页B', terminal: true, states: [
+      { id: 'v1', name: '第一步', html: 'TERM_B' },
     ],
   });
   return d;
@@ -1350,7 +1025,7 @@ group('终端页面：terminalCss 页面仍包在 pre 里，data-go 可用', () 
   eq(a.txt('frameTitle'), '页二 · 乙', '外壳收到 go 后跳转');
 });
 
-group('终端页面：terminalCss 页面在两种主题下 srcdoc 相同', () => {
+group('终端页面：terminalCss 页面不随系统外观变化', () => {
   const open = (dark) => {
     const a = load(mkTerm(TERM_CSS), makeMedia(dark));
     a.pick('pagePick', 2);
@@ -1360,9 +1035,6 @@ group('终端页面：terminalCss 页面在两种主题下 srcdoc 相同', () =>
   const dark = open(true);
   ok(light.srcdoc().includes('#123456'), 'srcdoc 含 terminalCss');
   eq(light.srcdoc() === dark.srcdoc(), true, '系统浅色与深色 srcdoc 相同');
-  const before = light.srcdoc();
-  light.$('themeDark').click();
-  eq(light.srcdoc(), before, '点按钮切主题后 srcdoc 不变');
 });
 
 group('终端页面：terminalCss 页面通过隔离检查', () => {
@@ -1376,7 +1048,246 @@ group('填写区说明：terminalCss 与 css 的文字', () => {
     '照 DESIGN.md「终端界面」和项目实际输出写', '只换配色，80 列宽度、等宽字体和自动换行由外壳固定'].forEach((p) => ok(fill.includes(p), `填写区说明含「${p}」`));
   ['项目没有自己的设计时不写这一项', '终端页面固定用外壳自带的样式'].forEach((p) => ok(!HTML.includes(p), `外壳全文不含「${p}」`));
 });
+group('填写区说明与示例数据：没有 note、fake、openQuestions', () => {
+  const fill = HTML.slice(HTML.indexOf(START), HTML.indexOf(END));
+  ['note', 'fake', 'openQuestions'].forEach((w) => ok(!new RegExp('\\b' + w + '\\b').test(fill), `填写区里搜不到 ${w}`));
+  const a = load();
+  eq(a.errors.length, 0, '示例原型不报错');
+  const keys = (code) => JSON.parse(a.run(code));
+  eq(keys('JSON.stringify(PROTOTYPE.schemes.map((s) => Object.keys(s).sort()))'), [['desc', 'id', 'label'], ['desc', 'id', 'label']], '示例方案只有 id、label、desc');
+  eq(keys("JSON.stringify(PROTOTYPE.pages.some((p) => 'fake' in p))"), false, '示例页面没有 fake');
+  eq(keys("JSON.stringify(PROTOTYPE.pages.some((p) => p.states.some((s) => 'note' in s)))"), false, '示例状态没有 note');
+  eq(keys("JSON.stringify('openQuestions' in PROTOTYPE)"), false, '示例没有 openQuestions');
+  eq(keys('JSON.stringify([PROTOTYPE.pages.length, PROTOTYPE.pages.map((p) => p.states.length), PROTOTYPE.pages.some((p) => p.terminal)])'), [3, [4, 3, 3], true], '示例保留 3 个页面、各自状态和终端页面');
+});
+group('主题与方案：显示规则 0 或 1 个时整组隐藏', () => {
+  const none = load(mk(1));
+  ok(none.$('schemeBar').hidden === true && none.$('themeBar').hidden === true, '1 个方案、没写 themes：两组都隐藏');
+  const empty = load(mkT(1, []));
+  ok(empty.$('schemeBar').hidden === true && empty.$('themeBar').hidden === true, '1 个方案、themes 为空数组：两组都隐藏');
+  const one = load(mkT(1, THEMES.slice(0, 1)));
+  ok(one.$('schemeBar').hidden === true && one.$('themeBar').hidden === true, '1 个方案、1 套主题：两组都隐藏');
+  eq(one.errors.length, 0, '1 套主题不报错');
+  const m1 = load(mkT(2, THEMES.slice(0, 1)));
+  ok(m1.$('schemeBar').hidden === false && m1.$('themeBar').hidden === true, '2 个方案、1 套主题：只有方案组显示');
+  const t2 = load(mkT(1, THEMES.slice(0, 2)));
+  ok(t2.$('schemeBar').hidden === true && t2.$('themeBar').hidden === false, '1 个方案、2 套主题：只有主题组显示');
+  eq(t2.buttons('themePick').length, 2, '只有主题组时是 2 个按钮');
+  ok(/id="themeBar"[^>]*>\s*<span[^>]*>主题<\/span>/.test(HTML), '主题组带「主题」文字');
+  ok(/id="schemeBar"[^>]*>\s*<span[^>]*>方案<\/span>/.test(HTML), '方案组带「方案」文字');
+  ok(load(mk(2)).$('themeBar').hidden === true, '示例没写 themes 时主题组隐藏');
+});
 
+group('主题与方案：2～3 个时平铺按钮', () => {
+  const a = load(mkT(3, THEMES.slice(0, 2)));
+  ok(a.$('schemeBar').hidden === false && a.$('themeBar').hidden === false, '3 个方案、2 套主题：两组都显示');
+  eq(schemeLabels(a), ['方案 A：表格', '方案 B：卡片', '方案 C：列表'], '方案按钮文字是「短名：特点」');
+  eq(a.buttons('themePick').map((b) => b.textContent), THEME_TXT(2), '主题按钮文字等于 label');
+  eq(a.pressed('schemePick'), [true, false, false], '当前方案 aria-pressed');
+  eq(a.pressed('themePick'), [true, false], '当前主题 aria-pressed');
+  eq([selectOf(a, 'schemePick'), selectOf(a, 'themePick')], [null, null], '2～3 个时没有下拉菜单');
+  const b = load(mkT(2, THEMES.slice(0, 3)));
+  eq(b.buttons('themePick').map((x) => x.textContent), THEME_TXT(3), '3 套主题平铺按钮');
+  eq(selectOf(b, 'themePick'), null, '3 套主题没有下拉菜单');
+  b.pick('themePick', 2);
+  eq(b.pressed('themePick'), [false, false, true], '点第 3 个主题后选中项跟着变');
+});
+
+group('主题与方案：4 个及以上时下拉菜单', () => {
+  const a = load(mk4(THEMES));
+  ok(a.$('schemeBar').hidden === false && a.$('themeBar').hidden === false, '4 个方案、4 套主题：两组都显示');
+  ok(selectOf(a, 'schemePick') !== null && selectOf(a, 'themePick') !== null, '两组都是 select');
+  eq([a.buttons('schemePick').length, a.buttons('themePick').length], [0, 0], '下拉菜单时没有平铺按钮');
+  eq(optTexts(a, 'schemePick'), ['方案 A：表格', '方案 B：卡片', '方案 C：紧凑列表', '方案 D：看板'], '方案选项按填写顺序列全部项');
+  eq(optTexts(a, 'themePick'), THEME_TXT(4), '主题选项按填写顺序列全部项');
+  eq([chosen(a, 'schemePick'), chosen(a, 'themePick')], [0, 0], '初始选中第一项');
+
+  const five = load(mkT(1, THEMES.concat([{ id: 'x5', label: '第五套' }])));
+  ok(selectOf(five, 'themePick') !== null, '5 套主题也是下拉菜单');
+  eq(optTexts(five, 'themePick').length, 5, '5 套主题列出 5 项');
+});
+
+group('主题与方案：下拉菜单切换', () => {
+  const a = load(mk4(THEMES));
+  choose(a, 'schemePick', 2);
+  eq(a.txt('schemeCurrent'), '当前：方案 C：紧凑列表', '下拉菜单选方案 C 后左栏当前方案');
+  eq(a.txt('frameTitle'), '页一 · 态一', '选方案 C 后页面和状态不变');
+  ok(a.srcdoc().includes('HTML_c') && !a.srcdoc().includes('HTML_a'), '框里是方案 C 同一页面和状态的内容');
+  eq(chosen(a, 'schemePick'), 2, '收起时显示方案 C');
+  eq(themeOf(a.srcdoc()), 'dark', '换方案后主题不变');
+
+  choose(a, 'themePick', 3);
+  eq(themeOf(a.srcdoc()), 'contrast', '下拉菜单选第 4 套主题后框带该主题 id');
+  eq(chosen(a, 'themePick'), 3, '收起时显示第 4 套主题');
+  eq(a.txt('schemeCurrent'), '当前：方案 C：紧凑列表', '换主题后方案不变');
+  eq(a.txt('frameTitle'), '页一 · 态一', '换主题后页面和状态不变');
+  ok(a.srcdoc().includes('HTML_c'), '换主题后仍是方案 C 的内容');
+  eq(a.errors.length, 0, '下拉菜单操作不报错');
+});
+
+group('主题与方案：下拉菜单的无障碍名称', () => {
+  const a = load(mk4(THEMES));
+  eq(selectOf(a, 'schemePick').getAttribute('aria-label'), '方案', '方案下拉菜单 aria-label');
+  eq(selectOf(a, 'themePick').getAttribute('aria-label'), '主题', '主题下拉菜单 aria-label');
+});
+
+group('主题与方案：下拉菜单换项后焦点留在菜单上', () => {
+  [['schemePick', 2], ['themePick', 2]].forEach(([g, i]) => {
+    const a = load(mk4(THEMES));
+    selectOf(a, g).focus();
+    ok(a.activeElement() === selectOf(a, g), `${g}：换项前焦点在菜单上`);
+    choose(a, g, i);
+    eq(a.errors.length, 0, `${g}：换项不报错`);
+    ok(selectOf(a, g) !== null && a.activeElement() === selectOf(a, g), `${g}：换项后焦点仍在该组的下拉菜单上`);
+    eq(chosen(a, g), i, `${g}：换项后选中第 3 项`);
+    choose(a, g, 3);
+    ok(selectOf(a, g) !== null && a.activeElement() === selectOf(a, g), `${g}：接着再换一项焦点仍在菜单上`);
+    eq(chosen(a, g), 3, `${g}：接着选中第 4 项`);
+  });
+  const other = load(mk4(THEMES));
+  selectOf(other, 'themePick').focus();
+  choose(other, 'schemePick', 1);
+  eq(chosen(other, 'schemePick'), 1, '焦点在主题菜单时换方案：方案换了');
+  ok(other.activeElement() === selectOf(other, 'themePick'), '焦点在主题菜单时换方案：焦点仍在主题菜单');
+  const idle = load(mk4(THEMES));
+  eq(idle.activeElement().tagName, 'BODY', '刚加载时焦点不在菜单上');
+  choose(idle, 'schemePick', 1);
+  choose(idle, 'themePick', 1);
+  eq(idle.errors.length, 0, '焦点不在菜单上时换项不报错');
+  eq([chosen(idle, 'schemePick'), chosen(idle, 'themePick')], [1, 1], '焦点不在菜单上时换项照常生效');
+  eq(idle.activeElement().tagName, 'BODY', '焦点不在菜单上时换项不抢焦点');
+});
+
+group('主题：只声明 1 套时不显示主题组，框里仍带主题 id', () => {
+  const a = load(mkT(2, THEMES.slice(0, 1)));
+  ok(a.$('themeBar').hidden === true, '主题组隐藏');
+  ok(a.srcdoc().includes('<html data-theme="dark">'), '网页页面带 data-theme="dark"');
+  a.pick('pagePick', 2);
+  ok(a.srcdoc().includes('<pre>') && a.srcdoc().includes('TERM_LINE_ONE'), '切到了终端页面');
+  ok(a.srcdoc().includes('<html data-theme="dark">'), '终端页面也带 data-theme="dark"');
+  eq(a.errors.length, 0, '不报错');
+});
+
+group('主题与方案：页面、状态始终平铺按钮', () => {
+  const d = mkT(2, THEMES.slice(0, 2));
+  d.pages.push({ id: 'p4', name: '页四', states: [{ id: 'q1', name: '一', html: '<p>Q</p>' }] });
+  d.pages[0].states = ['1', '2', '3', '4', '5'].map((n) => ({ id: 's' + n, name: '态' + n, html: '<p>X' + n + '</p>' }));
+  const a = load(d);
+  eq(a.errors.length, 0, '4 个页面、5 个状态不报错');
+  eq(a.buttons('pagePick').length, 4, '4 个页面仍是 4 个按钮');
+  eq(a.buttons('statePick').length, 5, '5 个状态仍是 5 个按钮');
+  eq([selectOf(a, 'pagePick'), selectOf(a, 'statePick')], [null, null], '页面和状态没有下拉菜单');
+});
+
+group('主题：打开时用第一项，不看系统外观', () => {
+  const dark = load(mkT(2, THEMES.slice(0, 2)), makeMedia(false));
+  eq(themeOf(dark.srcdoc()), 'dark', '暗黑排第一、系统浅色：框带 data-theme="dark"');
+  ok(dark.srcdoc().includes('<html data-theme="dark">'), 'srcdoc 里是 <html data-theme="dark">');
+  eq(dark.pressed('themePick'), [true, false], '系统浅色时当前主题仍是暗黑');
+  const light = load(mkT(2, [THEMES[1], THEMES[0]]), makeMedia(true));
+  eq(themeOf(light.srcdoc()), 'light', '浅色排第一、系统深色：框带 data-theme="light"');
+  const m = makeMedia(false);
+  const a = load(mkT(2, THEMES.slice(0, 2)), m);
+  m.set(true);
+  eq(themeOf(a.srcdoc()), 'dark', '系统外观变化后主题不变');
+});
+
+group('主题：框里页面根元素带主题 id', () => {
+  const a = load(mkT(2, THEMES.slice(0, 2)));
+  ok(a.srcdoc().includes('<html data-theme="dark">'), '网页页面带 data-theme');
+  a.pick('pagePick', 2);
+  ok(a.srcdoc().includes('<pre>') && a.srcdoc().includes('TERM_LINE_ONE'), '切到了终端页面');
+  ok(a.srcdoc().includes('<html data-theme="dark">'), '终端页面也带 data-theme');
+  a.pick('themePick', 1);
+  ok(a.srcdoc().includes('<html data-theme="light">'), '终端页面切主题后带新主题 id');
+
+  const none = load(mk(2));
+  ok(!none.srcdoc().includes('data-theme'), '没有声明主题：网页页面 srcdoc 不含 data-theme');
+  none.pick('pagePick', 2);
+  ok(!none.srcdoc().includes('data-theme'), '没有声明主题：终端页面 srcdoc 不含 data-theme');
+  ok(!load(mkT(2, [])).srcdoc().includes('data-theme'), 'themes 为空数组：srcdoc 不含 data-theme');
+  ok(!load().srcdoc().includes('data-theme'), '示例原型 srcdoc 不含 data-theme');
+});
+
+group('主题：切换只换主题，其余不变', () => {
+  const a = load(mkT(3, [THEMES[1], THEMES[0]]));
+  a.pick('schemePick', 1);
+  a.pick('pagePick', 1);
+  a.pick('statePick', 1);
+  const before = {
+    title: a.txt('frameTitle'),
+    current: a.txt('schemeCurrent'),
+    pressed: [a.pressed('schemePick'), a.pressed('pagePick'), a.pressed('statePick')],
+  };
+  ok(a.srcdoc().includes('data-theme="light"') && a.srcdoc().includes('P2T2'), '切换前是浅色、页二乙');
+  a.pick('themePick', 1);
+  ok(a.srcdoc().includes('<html data-theme="dark">'), '切到暗黑后 srcdoc 带暗黑标记');
+  eq(a.theme(), null, '切主题后外壳根元素不带主题标记，外壳配色不变');
+  ok(a.srcdoc().includes('P2T2'), '内容不变');
+  eq(a.txt('frameTitle'), before.title, '切主题后框上方标题不变');
+  eq(a.txt('schemeCurrent'), before.current, '切主题后左栏当前方案不变');
+  eq([a.pressed('schemePick'), a.pressed('pagePick'), a.pressed('statePick')], before.pressed, '切主题后方案、页面、状态选中项不变');
+  eq(a.pressed('themePick'), [false, true], '主题选中项跟着变');
+  eq(a.errors.length, 0, '切主题不报错');
+});
+
+group('主题：切方案、页面、状态、data-go 后主题不变', () => {
+  const a = load(mkT(3, [THEMES[1], THEMES[0]]));
+  a.pick('themePick', 1);
+  a.pick('schemePick', 2);
+  eq(themeOf(a.srcdoc()), 'dark', '切方案后仍是暗黑');
+  a.pick('statePick', 1);
+  eq(themeOf(a.srcdoc()), 'dark', '切状态后仍是暗黑');
+  a.pick('pagePick', 1);
+  eq(themeOf(a.srcdoc()), 'dark', '切页面后仍是暗黑');
+  a.pick('pagePick', 0);
+  a.pick('statePick', 1);
+  a.post('p2:t2');
+  eq(a.txt('frameTitle'), '页二 · 乙', 'data-go 跳转生效');
+  eq(themeOf(a.srcdoc()), 'dark', 'data-go 跳转后仍是暗黑');
+  eq(a.pressed('themePick'), [false, true], '主题按钮选中项仍是暗黑');
+});
+
+group('主题：填写有误', () => {
+  const reason = (a) => String(a.srcdoc().split('<br>')[1] || '');
+  const noLabel = load(mkT(2, [THEMES[0], { id: 'light' }]));
+  ok(noLabel.srcdoc().includes('原型填写有误'), '主题缺 label：框里显示「原型填写有误」');
+  ok(reason(noLabel).includes('第 2 项') && reason(noLabel).includes('label'), '主题缺 label：说明第 2 项缺 label');
+  const noId = load(mkT(2, [{ label: '无 id' }, THEMES[1]]));
+  ok(noId.srcdoc().includes('原型填写有误'), '主题缺 id：框里显示「原型填写有误」');
+  ok(reason(noId).includes('第 1 项') && reason(noId).includes('id'), '主题缺 id：说明第 1 项缺 id');
+  const dup = load(mkT(2, [{ id: 'same_id', label: '甲' }, { id: 'same_id', label: '乙' }]));
+  ok(dup.srcdoc().includes('原型填写有误'), '主题 id 重复：框里显示「原型填写有误」');
+  ok(reason(dup).includes('same_id'), '主题 id 重复：出错项含重复的 id');
+  ok(noLabel.broken() && noId.broken() && dup.broken(), '三种出错都走外壳统一的出错画面');
+});
+
+group('主题：外壳结构与竖线样式', () => {
+  const tag = (id) => (new RegExp('<\\w+[^>]*\\sid="' + id + '"[^>]*>').exec(HTML) || [''])[0];
+  ok(tag('themeBar') !== '', 'HTML 里有 id=themeBar 的元素');
+  ok(tag('themePick') !== '', 'HTML 里有 id=themePick 的元素');
+  ok(/\shidden(?=[\s>])/.test(tag('themeBar')), 'themeBar 初始带 hidden');
+  const at = (s) => HTML.indexOf(s);
+  ok(at('id="schemeBar"') > at('frame-right') && at('id="schemeBar"') < at('id="themeBar"') && at('id="themeBar"') < at('id="stage"'),
+    '方案组在前、主题组在后，都在框上方');
+  const themeBar = /id="themeBar"[\s\S]*?id="themePick"/.test(HTML);
+  ok(themeBar, 'themePick 在 themeBar 里面');
+
+  const css = (/<style>([\s\S]*?)<\/style>/.exec(HTML) || ['', ''])[1];
+  const rules = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)]
+    .filter((m) => /border-left:\s*1px\s+solid\s+var\(--shell-line\)/.test(m[2]));
+  ok(rules.length > 0, '样式里有 border-left: 1px solid var(--shell-line) 的竖线规则');
+  ok(rules.every((m) => m[1].includes('#themeBar') && m[1].includes('#schemeBar') && m[1].includes(':not([hidden])')),
+    '竖线只作用于主题组，并且依赖方案组没有隐藏');
+  ok(rules.some((m) => /#schemeBar:not\(\[hidden\]\)\s*\+\s*#themeBar/.test(m[1])), '竖线选择器是 #schemeBar:not([hidden]) + #themeBar');
+});
+
+group('主题：填写区说明', () => {
+  const fill = HTML.slice(HTML.indexOf(START), HTML.indexOf(END));
+  ['themes', 'data-theme', '第一套'].forEach((p) => ok(fill.includes(p), `填写区说明含「${p}」`));
+  const a = load();
+  eq(JSON.parse(a.run("JSON.stringify('themes' in PROTOTYPE)")), false, '示例数据里没有 themes');
+});
 console.log('RESULT ' + pass + ' ' + fail);
 JSEOF
 
