@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.7.0](https://github.com/0xBB2B/bb-spec/compare/v15.6.0...v15.7.0) (2026-11-10)
+
+
+### Features
+
+* **workflow:** 原型外壳固定暗黑、去掉底部说明区，右上角改切页面主题 ([#322](https://github.com/0xBB2B/bb-spec/issues/322)) ([fdaa2f2](https://github.com/0xBB2B/bb-spec/commit/fdaa2f24d13dfa6be8544c6610d7455bccfe3333))
+
 ## [15.6.0](https://github.com/0xBB2B/bb-spec/compare/v15.5.0...v15.6.0) (2026-11-04)
 
 
