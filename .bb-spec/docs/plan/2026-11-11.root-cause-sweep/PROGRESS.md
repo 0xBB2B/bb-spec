@@ -2,10 +2,12 @@
 | 序号 | Plan | 状态 | 完成时间 |
 |---|---|---|---|
 | 01 | 01-same-cause-fix | done | 2026-11-11 |
-| 02 | 02-review-completeness | pending | — |
+| 02 | 02-review-completeness | done | 2026-11-11 |
 | 03 | 03-unrelated-findings | pending | — |
 ## 当前
-准备执行 `02-review-completeness.md`。
+准备执行 `03-unrelated-findings.md`。
+
+02 的审查记录：第一轮审查指出 2 处不合规（exec 自修次数说法打架、git-push 报告格式漏「测试缺口」）、1 个并行时互相改坏的问题和 5 条测试缺口，归因 impl-defect，主 Agent 直接补改并加断言；复查再指出 3 个小缺口和 1 条断言，已补，未再复查，留给推送前的分支自查。
 
 01 的审查记录：第一轮审查指出 2 处实现文字与现有段落矛盾（停下条件、同一次提交与测试子代理输入）和 7 条测试缺口，归因 impl-defect（成品文字没写全，PRD 不用改），自修 1 轮后复查无违规；复查再指出的 2 个小缺口由主 Agent 直接补了一句并加 2 条断言。
 ## 阻塞

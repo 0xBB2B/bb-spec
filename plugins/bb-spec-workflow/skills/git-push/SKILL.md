@@ -1,6 +1,6 @@
 ---
 name: git-push
-description: 推送本地代码到远程并开 PR 全流程——识别仓库→确认分支（worktree 模式自动定位目标分支）→提交未暂存改动（禁 git add .）→同步基线（origin+upstream 双 remote 时先问合并对象、默认 origin/main；分支落后基线则 rebase）→本机装了 ocr 则跑一次 ocr review，Claude 逐条读代码核实后按 🔴/🔶/🔷 列出建议修复项、用户勾选后交 /revise 修→在同步后的代码上跑全量测试→若存在 AGENTS.md、本分支有新增 PRD 或本分支 commit 指向已合并 PRD 则 subagent 比对项目约束、PRD 与 commit 正文的改动说明跑分支规范自查（违规走 /revise 循环复审）→起草 PR 标题（跟随仓库 commit 风格）与 6 段 PR 描述（末尾带 `Requirement:` 标记）→推送→创建 PR→squash 合并并核对基线上的 commit 说明带 `Requirement:`→清理本地与远程。触发：push 一下、提个 PR、代码推上去、准备发 PR、开 PR 前自查、对照规范看分支。跳过：未本地验证完成的功能、main/master 上无新提交。
+description: 推送本地代码到远程并开 PR 全流程——识别仓库→确认分支（worktree 模式自动定位目标分支）→提交未暂存改动（禁 git add .）→同步基线（origin+upstream 双 remote 时先问合并对象、默认 origin/main；分支落后基线则 rebase）→本机装了 ocr 则跑一次 ocr review，Claude 逐条读代码核实后按 🔴/🔶/🔷 列出建议修复项、用户勾选后交 /revise 修→在同步后的代码上跑全量测试→若存在 AGENTS.md、本分支有新增 PRD 或本分支 commit 指向已合并 PRD 则 subagent 比对项目约束、PRD 与 commit 正文的改动说明跑分支规范自查（违规走 /revise 循环复审，测试缺口交 /revise 补上）→起草 PR 标题（跟随仓库 commit 风格）与 6 段 PR 描述（末尾带 `Requirement:` 标记）→推送→创建 PR→squash 合并并核对基线上的 commit 说明带 `Requirement:`→清理本地与远程。触发：push 一下、提个 PR、代码推上去、准备发 PR、开 PR 前自查、对照规范看分支。跳过：未本地验证完成的功能、main/master 上无新提交。
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*), Bash(${CLAUDE_SKILL_DIR}/scripts/*)
 ---
 
@@ -187,12 +187,13 @@ ocr 审了 N 个文件，报了 R 条。逐条读代码核实后：成立 C 条�
 - `merged_prd_dirs`：`merged=` 目录的完整路径（`prd_dir`/<目录名>，无则为空）
 - `diff_summary`：diff 概况（commit 数、规模、审查重点）
 
-审查指令、输出格式（`## 结论 PASS|FAIL` → `## PRD 逐条检查` → `## 违规项` → `## 备注`）、只读约束均由 agent 定义自包含。
+审查指令、输出格式（`## 结论 PASS|FAIL` → `## PRD 逐条检查` → `## 违规项` → `## 测试缺口` → `## 备注`）、只读约束均由 agent 定义自包含。
 
 ### 4.5.2 经 /revise 修复
 
-- PASS → 跳到 4.5.3
-- FAIL → 用 Skill 工具调用 `revise`，把本轮全部违规项（file:line + 违反哪条 + 建议修法）作为参数传入；归因诊断、修复、全量测试、本地 commit 由 revise 闭环，禁止绕过 revise 直接改代码 → revise 完成后重新派 subagent 复审 → ≥ 3 轮仍 FAIL → 停下报告分歧
+- PASS 且「测试缺口」为无 → 跳到 4.5.3
+- PASS 但有测试缺口 → 用 Skill 工具调用 `revise`，把全部测试缺口（约束 + 实现的 file:line）作为参数传入，由 revise 按「处理 Review 结果」在推送前补上；补完进 4.5.3，不用复审
+- FAIL → 用 Skill 工具调用 `revise`，把本轮全部违规项（file:line + 违反哪条 + 建议修法）和全部测试缺口作为参数传入；归因诊断、修复、全量测试、本地 commit 由 revise 闭环，禁止绕过 revise 直接改代码 → revise 完成后重新派 subagent 复审 → ≥ 3 轮仍 FAIL → 停下报告分歧
 
 ### 4.5.3 生成 PR 标题与描述草稿（6 段，≤ 50 行）
 
