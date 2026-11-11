@@ -206,9 +206,11 @@ for t in '## 4.6 无关发现（推送之前问一次）' '修完重跑 4.3 全�
   '进同一个 PR' '→ **无关发现一次问**' '→推送前把无关发现合成一张清单一次问→推送'; do
   has "$GIT_PUSH" "$t"
 done
-n46=$(grep -nF -- '## 4.6' "$PL/$GIT_PUSH" 2>/dev/null | head -1 | cut -d: -f1 || true)
-n5=$(grep -nF -- '## 5. 推送到远程' "$PL/$GIT_PUSH" 2>/dev/null | head -1 | cut -d: -f1 || true)
-if [[ -n "$n46" && -n "$n5" && "$n46" -lt "$n5" ]]; then pass; else fail "git-push 中 ## 4.6 应在 ## 5. 推送到远程 之前（4.6 行=${n46:-无}，5 行=${n5:-无}）"; fi
+c46=$(grep -c -- '^## 4\.6 ' "$PL/$GIT_PUSH" 2>/dev/null || true)
+c5=$(grep -c -- '^## 5\. 推送到远程$' "$PL/$GIT_PUSH" 2>/dev/null || true)
+n46=$(grep -n -- '^## 4\.6 ' "$PL/$GIT_PUSH" 2>/dev/null | head -1 | cut -d: -f1 || true)
+n5=$(grep -n -- '^## 5\. 推送到远程$' "$PL/$GIT_PUSH" 2>/dev/null | head -1 | cut -d: -f1 || true)
+if [[ "$c46" == 1 && "$c5" == 1 && -n "$n46" && -n "$n5" && "$n46" -lt "$n5" ]]; then pass; else fail "git-push 中 ## 4.6 应在 ## 5. 推送到远程 之前（4.6 行=${n46:-无}，5 行=${n5:-无}）"; fi
 
 echo "[无关发现：code-constraints]"
 has "$CC" '记进产出报告的「无关发现」小节'
@@ -267,6 +269,16 @@ has "$GIT_PUSH" '下文说的简报，指 `/git-push` 结束时的那条回复'
 has "$GIT_PUSH" '所有选中的条目进同一个新 PR'
 has "$GIT_PUSH" '"全部处理"的说明改成"开一个新分支修完，进同一个新 PR"'
 has "$GIT_PUSH" '各仓库都走到 4.6 再统一问，问完才推送'
+
+echo "[分支自查后补]"
+for f in "$EXEC" "$REVISE"; do has "$f" '用户在哪天定的'; done
+has "$REVISE" '理由带那段代码的 `文件:行号`'
+has "$REVISE" '要新增设计、或要改变用户原本想要的行为才能修'
+has "$REVISE" '诊断阶段仅三种情况停下：期望行为本身有分歧'
+has "$REVISE" '诊断阶段仅三种情况停下：附「冲突分析简报」时等用户裁决方向'
+has "$REVISE" '它们也补进步骤 2 的表，处理写「不用修」'
+has "$REVISE" '并由主 agent 逐个位置核对'
+has "$EXEC" '只报了测试缺口、没有 ❌ 的，直接按下方「测试缺口当轮补」处理'
 
 echo ""
 echo "通过 ${PASS}，失败 ${FAIL}"

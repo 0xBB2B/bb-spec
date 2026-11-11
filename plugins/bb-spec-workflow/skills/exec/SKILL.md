@@ -103,7 +103,7 @@ git worktree list --porcelain
 
 **新技术守卫**（2a、2b 每次子代理返回后都做）：比对范围是本主题全部 plan 的「新增技术」表合起来。① diff 本步骤对依赖文件和配置文件（如 `go.mod`、`package.json`、`Dockerfile`、`compose.yaml`、`.github/workflows/*`）的改动；② 看子代理报告的「方案问题」里有没有要用表外新技术。新技术的判定按 `version-policy`：官方扩展库（如 `golang.org/x/*`）、代码里直接引用的间接依赖都算。发现表外新技术时，这一步不算完成：先撤回本步骤引入的表外项：依赖文件和配置文件里的这些条目，以及本 plan 文件里引用它们的代码（只撤这些，同组其他 plan 的改动不动），再按 `version-policy` 的新技术清单格式列出、弹窗请用户批准，不进下方「归因」。按 `version-policy` 的「批准方式」处理：用户最终选"同意" → 先补进对应 plan 的「新增技术」表，再重派这一步；用户不要任何新技术 → 令子代理改用标准库 / 项目已在用的技术重跑，做不到则标 blocked 上报。
 
-**2c. Review Agent — PRD 合规**：派 `bb-spec-workflow:prd-reviewer`，prompt 传「业务规则」+「验证方式」+ AGENTS.md 项目级约束（如有）+ 所有变更文件路径；本 plan 改动界面代码且项目有 DESIGN.md 时，再传 DESIGN.md 路径，要求报告里写「DESIGN.md 对照」；项目没有 DESIGN.md 或本 plan 不涉及界面代码时不传。主 Agent 处理：全 ✅ → 进步骤 3；有 ❌ 或 ⚠️ → **先归因，再按根因决定自决还是问用户**——非设计判断自行解决，不打断用户。
+**2c. Review Agent — PRD 合规**：派 `bb-spec-workflow:prd-reviewer`，prompt 传「业务规则」+「验证方式」+ AGENTS.md 项目级约束（如有）+ 所有变更文件路径；本 plan 改动界面代码且项目有 DESIGN.md 时，再传 DESIGN.md 路径，要求报告里写「DESIGN.md 对照」；项目没有 DESIGN.md 或本 plan 不涉及界面代码时不传。主 Agent 处理：全 ✅ → 进步骤 3；有 ❌ 或 ⚠️ → **先归因，再按根因决定自决还是问用户**——非设计判断自行解决，不打断用户（只报了测试缺口、没有 ❌ 的，直接按下方「测试缺口当轮补」处理）。
 
 **归因**：对照 PRD → plan → 实现 → 测试链路，判定根因——prd-defect（本次 PRD 或 plan 写错、写漏、互相矛盾）/ impl-defect（PRD 正确但实现不符）/ requirement-change（用户实际需要与本次 PRD 不同）。
 
