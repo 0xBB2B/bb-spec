@@ -160,7 +160,7 @@ git log -L :<函数>:<文件> -s --format='%h %s%n%b' | grep -e '^[0-9a-f]\{7,40
 
 用户裁决为「保留代码」等于 PRD 写错（prd-defect）：PRD 已合并时同样按「按归因分流」停下转 `/prd`。
 
-**界面预览**：修复会改变用户看到的界面时（改动再小，只换一个按钮文字、一个颜色值也算），进步骤 3 之前先出原型，用户明确说"可以"后再改代码。调用 `Skill bb-spec-workflow:prototype`，参数 `<主题> --file ${CACHE_DIR}/ui-preview/revise-<YYYY-MM-DD>-<主题>.html`（主题 kebab-case），原型画出修好之后的样子。
+**界面预览**：修复会改变用户看到的界面时（改动再小，只换一个按钮文字、一个颜色值也算），进步骤 3 之前先出原型，用户明确说"可以"后再改代码。调用 `Skill bb-spec-workflow:prototype`，参数 `<主题> --file ${CACHE_DIR}/ui-preview/<YYYY-MM-DD>.revise-<主题>.html`（主题 kebab-case），原型画出修好之后的样子。
 
 确认过的原型里框中的内容就是这次的期望行为，外壳不算：要改本分支 PRD 时（3a、3c）写进它的约束和验收，PRD 里不写预览页路径；派 test-engineer、prd-reviewer 时把它作为期望行为传过去。
 

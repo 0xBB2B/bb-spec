@@ -223,15 +223,15 @@ fi
 echo "[prd：步骤 6 搬草稿、7d、简报、不做了、步骤 10 提交清单]"
 if need_file "$PRD"; then
   in_text prd步骤6 '.DESIGN.draft.md' "$(file_section "$PRD" '### 步骤 6' '^### ')"
-  in_text prd步骤6 '草稿存在时一起移过去' "$(file_section "$PRD" '### 步骤 6' '^### ')"
+  in_text prd步骤6 '.DESIGN.md' "$(file_section "$PRD" '### 步骤 6' '^### ')"
   S7D="$(file_section "$PRD" '**7d. DESIGN.md**' '^### |^\*\*7[a-z]\.')"
-  for t in '**7d. DESIGN.md**' '<预览页名>.DESIGN.draft.md' '存在' '改完后的完整文件' '写完删掉草稿'; do
+  for t in '**7d. DESIGN.md**' '<预览页名>.DESIGN.md' '写完删掉它' '<预览页名>.DESIGN.draft.md' '不写入' '存在' '改完后的完整文件'; do
     in_text prd7d "$t" "$S7D"
   done
   S9="$(file_section "$PRD" '### 步骤 9' '^### ')"
   in_text prd简报 '- DESIGN.md：' "$S9"
   QUIT="$(printf '%s\n' "$S9" | grep -F '| 不做了 |')"
-  in_text prd不做了 'DESIGN.md 草稿' "$QUIT"
+  in_text prd不做了 '设计规范临时文件' "$QUIT"
   in_text prd不做了 '本次新建的 DESIGN.md 删掉' "$QUIT"
   in_text prd步骤10 '7d 写入的 DESIGN.md' "$(file_section "$PRD" '### 步骤 10' '^## ')"
 fi
@@ -246,7 +246,7 @@ line_has() {
   if [[ -z "$L" ]]; then fail "${label} 找不到含「${key}」的行"; return; fi
   for t in "$@"; do in_text "$label" "$t" "$L"; done
 }
-line_has prd-7a "$PRD_MD" '**7a. PRD**' '同名的 `.DESIGN.draft.md` 草稿存在时一起改名'
+line_has prd-7a "$PRD_MD" '**7a. PRD**' '.DESIGN.draft.md' '.DESIGN.md'
 line_has prd-需要修改 "$PRD_MD" '| 需要修改 |' '按 7d 再写入一次'
 line_has prd-原则1 "$PRD_MD" '**先对齐再落盘，读过再实施**' '和它的 DESIGN.md 草稿'
 line_has prd-自检 "$PRD_MD" '- [ ] 步骤 0~5 只在' '预览页和它的 DESIGN.md 草稿'
