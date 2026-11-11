@@ -21,16 +21,7 @@ allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 
 **标记的位置**：`Requirement:` 单独占一行，写在 commit 说明末尾。查标记一律在说明全文里找以 `Requirement:` 开头的行，不用 git 的尾注（trailer）解析——GitHub squash 合并会把 `Co-authored-by` 挪到最后单独成段，`Requirement:` 就不在最后一段了，`%(trailers:key=Requirement)` 读不到。
 
-**仓库布局**（所有 skill 共用这一节的定义）：
-
-- **单仓库**：PRD 与代码在同一个 git 仓库，`${DOCS_DIR}` 就在这个仓库里
-- **多仓库工作区**：`${DOCS_DIR}` 所在的 git 仓库（`bbspec-paths.sh` 输出的 `docs_repo`）与代码不在同一个仓库，常见为工作区根目录不是 git 仓库、`docs/` 与各服务各自是独立仓库。此时：
-  - **文档仓库** = `${DOCS_DIR}` 所在仓库；**代码仓库** = 工作区里其他 git 仓库（go.work 的 `use`、pnpm workspace 成员、或根目录下含 `.git` 的子目录）
-  - 涉及 PRD 的 git 命令都在文档仓库里执行（`git -C <文档仓库>`），路径用相对文档仓库根的写法，下文记作 `<PRD 根>`（单仓库时就是 `${DOCS_DIR}/prd`）
-  - 查代码历史的 git 命令（`git log -L`、`git log --grep "Requirement: …"`）在每个相关代码仓库里分别执行
-  - 本次需求涉及的每个仓库（文档仓库 + 改动的代码仓库）都按 git-workflow 开同名功能分支，各自的 commit 都带 `Requirement:` 标记
-
-**本分支 PRD 的判定**（所有 skill 共用这一条）：基线分支（main 或 master）上还没有 `<PRD 根>/<目录>/OVERVIEW.md` = 本分支新增 = 可改；已有 = 已合并 = 冻结。`${CLAUDE_PLUGIN_ROOT}/scripts/branch-prds.sh <基线分支>` 按这条规则列出本分支涉及的 PRD：`new=<目录>` 是本分支新增，`merged=<目录>` 是本分支 commit 的 `Requirement:` 指向的已合并 PRD；不在 `new=` 里的 PRD 都已合并。
+**仓库布局与本分支 PRD 的判定**：PRD 在哪个仓库、可改还是冻结，定义在步骤 0 指到的文件里。
 
 **一条约束放哪**：问"删掉相关功能后这条约束还成立吗？"——还成立 → 项目级，进 AGENTS.md；随功能一起消失 → 功能约束，进本次 PRD。已被某个已激活 skill（如 golang-constraints、database-constraints）覆盖的通用约束，两边都不写。
 
@@ -62,13 +53,23 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/bbspec-paths.sh
 
 输出 bb-spec 各目录的绝对路径（从仓库根往上找 `.bb-spec.yaml`，多仓库工作区的配置在工作区根）：`${DOCS_DIR}` 取 `docs_dir`，后续所有路径基于此值；`${CACHE_DIR}` 取 `cache_dir`，放界面预览页这类临时文件；`docs_repo` 是文档仓库，为空说明还没有文档目录。旧版本留下的 `${DOCS_DIR}/spec/`、`${DOCS_DIR}/prd/.archive/`、根 `plan/INDEX.md` 照常保留、不拦截，除下面的旧术语表外都不读。
 
+读完上面的输出后先读 `references/repo-layout.md`（相对本 skill 目录）：它定义了后面要用的 `<PRD 根>`、文档仓库、代码仓库和本分支 PRD 的判定。
+
 ```bash
 cat AGENTS.md 2>/dev/null                                      # 项目级约束与查询规矩
 cat ${DOCS_DIR}/prd/GLOSSARY.md 2>/dev/null || cat ${DOCS_DIR}/spec/GLOSSARY.md 2>/dev/null  # 术语权威源；没有时读旧版本留在 spec/ 的术语表
 grep -h '^features:' ${DOCS_DIR}/prd/*/OVERVIEW.md 2>/dev/null  # 已有功能名
 ```
 
-**了解相关功能的现状**：有 `ARCHITECTURE.md` 时先读它，按模块地图定位相关模块和目录；再按本次涉及的功能名搜 `features:` 找到相关 PRD 目录，在各代码仓库里用 `git log --grep "Requirement: <目录名>" --name-only` 查出改过的文件，**读这些代码**确认现在的行为（搜不到 PRD 的是接入 bb-spec 之前的老代码，直接在代码里搜）；需要了解当时为什么这样设计时，只读最新那份相关 PRD 的「决策记录」；需求涉及"以前为什么没做 / 为什么不这样做"时，用关键词 `grep -rln '<关键词>' ${DOCS_DIR}/prd/` 找到提到它的 PRD，读命中的「非目标」和「决策记录」。
+**了解相关功能的现状**：有 `ARCHITECTURE.md` 时先读它，按模块地图定位相关模块和目录；再按本次涉及的功能名搜 `features:` 找到相关 PRD 目录，在各代码仓库里用 `git log --grep "Requirement: <目录名>" --name-only` 查出改过的文件，按下面「调查交给子代理」的分流读这些代码，确认现在的行为（搜不到 PRD 的是接入 bb-spec 之前的老代码，同样按下面的分流处理）；需要了解当时为什么这样设计时，只读最新那份相关 PRD 的「决策记录」；需求涉及"以前为什么没做 / 为什么不这样做"时，用关键词 `grep -rln '<关键词>' ${DOCS_DIR}/prd/` 找到提到它的 PRD，读命中的「非目标」和「决策记录」。
+
+**调查交给子代理**：要弄清"系统现在怎么做"或"问题出在哪"时——
+
+- 不知道答案在哪个文件，或预计要读 3 个以上源码文件 → 派 `bb-spec-workflow:code-investigator`，prompt 给出要回答的问题、已知线索（功能名、相关 PRD 目录、报错文字）、项目根路径、细节文件目录 `${CACHE_DIR}/reports/`；主窗口不自己搜索和翻读
+- 已经知道文件和大概位置 → 主窗口自己读那一段（定点读）
+- 留在主窗口的读取：PRD、plan、AGENTS.md 等文档；看 `git diff` 验收子代理的改动；定点读
+- 调查子代理交回的带 `文件:行号` 的结论算本次实际读过的代码，可以直接用于回答和讨论
+- 要写进 PRD 的现状、要据此改代码的根因：先按行号定点读，确认和报告一致才能用；不一致以读到的代码为准，这条结论作废，重新调查这一点
 
 **重叠判定**：
 
@@ -157,26 +158,15 @@ git branch --show-current
 
 ### 步骤 7：落盘
 
-**7a. PRD**：写入 `${DOCS_DIR}/prd/<YYYY-MM-DD>.<主题>/`（主题 kebab-case）——`OVERVIEW.md` + 每个子需求一份 `<序号>-<子需求>.md`（`01-`、`02-`…）。主题和出预览时定的不一样时，把预览页改成和 PRD 目录同名；同名的 `.DESIGN.draft.md`、`.DESIGN.md` 存在的都一起改名。
+把 PRD、术语表、AGENTS.md、DESIGN.md 写到各自的位置。
 
-**7b. GLOSSARY.md**：`${DOCS_DIR}/prd/GLOSSARY.md` 不存在而 `${DOCS_DIR}/spec/GLOSSARY.md` 存在时，先把旧表整份复制过来（旧表不动），表头说明里的「仅 /spec 维护」改成「仅 /prd 维护」；再按术语变更队列增行、并别名、改定义，删除不再被使用的术语；所有定义冲突必须已经用户裁决，禁静默覆盖。
-
-**7c. AGENTS.md**：
-
-- 位置：单仓库放项目根；多仓库工作区放文档仓库根（随文档一起提交——工作区根目录不受 git 管）
-- 不存在 → 按模板新建，路径写成实际的 `${DOCS_DIR}`
-- 已存在 → 「查功能、查问题的规矩」节整节按模板覆盖（这一节由插件维护，旧版本写进去的查法要随插件更新）；「项目约束」节只做本次的增删改；其他内容不动
-- 确保会话启动目录（单仓库为项目根，多仓库为工作区根）的 `CLAUDE.md` 含导入行 `@<AGENTS.md 相对它的路径>`（单仓库为 `@AGENTS.md`，多仓库如 `@docs/AGENTS.md`；Claude Code 只读 CLAUDE.md，靠这一行把 AGENTS.md 一起加载）：没有 CLAUDE.md → 新建只含这一行的文件；有但缺这一行 → 加在文件最前面
-
-**7d. DESIGN.md**：本次预览页旁边同名的 `<预览页名>.DESIGN.md` 存在（用户已同意、改完后的完整文件）→ 把它写到 DESIGN.md 的位置（`bbspec-paths.sh` 输出的 `docs_repo` 根目录，为空时为 `root`），写完删掉它；`<预览页名>.DESIGN.draft.md` 是用户还没同意的，不写入
+走到这一步先读 `references/write-files.md` 和 `references/templates.md`（相对本 skill 目录）。
 
 ### 步骤 8：自检
 
-- [ ] 步骤 0~5 只在 `${CACHE_DIR}/ui-preview/` 写过预览页和它的 DESIGN.md 草稿（预览页旁边的两个设计规范临时文件 `.DESIGN.draft.md`、`.DESIGN.md`），没写别的文件？涉及界面时，预览已获用户明确确认，框里确认过的布局、文案、各种状态都写进了约束和验收，外壳没写成产品功能？
-- [ ] 质疑已完成；OVERVIEW 有背景、目标、非目标、子需求清单、整体验证路径、决策记录；frontmatter 含 name + description（≤ 80 字）+ date + 单行写法的 `features: [a, b]`？
-- [ ] 每份子文档：每条约束可测且在验收里有对应项；每条 P0 有主路径用例；有验证路径；全文无实现方案；没有引用其他文档？
-- [ ] `features:` 复用了已有功能名？新功能名都会列进步骤 9 的简报？
-- [ ] 项目级约束只在 AGENTS.md、功能约束只在 PRD，没有一条写在两处？AGENTS.md 有查询规矩节？CLAUDE.md 已含指向 AGENTS.md 的导入行？
+落盘后按清单逐项自检。
+
+走到这一步先读 `references/write-files.md`（相对本 skill 目录）。
 
 ### 步骤 9：简报 + 弹窗确认
 
@@ -210,108 +200,3 @@ git branch --show-current
 只提交本次涉及的文件（PRD 目录 + GLOSSARY + AGENTS.md + 受 git 管的 CLAUDE.md + 7d 写入的 DESIGN.md；多仓库时在文档仓库提交），message 遵循仓库历史风格（先 `git log --oneline -10`），**末尾单独一行带 `Requirement: <本次 PRD 目录名>`**，**仅本地、不 push**。`/plan` 靠 `git diff <基线分支>...HEAD` 发现本次 PRD，不提交就检测不到。
 
 commit 后**直接调用 `Skill bb-spec-workflow:plan`**。
-
----
-
-## 模板
-
-### `OVERVIEW.md`
-
-```markdown
----
-name: <kebab-case，与目录主题一致>
-description: <一句话，≤ 80 字>
-date: <YYYY-MM-DD>
-features: [<功能名>, ...]  # 必须单行写法，查询规矩按行 grep
----
-
-# <需求标题>
-
-## 背景与问题
-<谁、在什么场景、遇到什么问题、现在怎么应对、痛点在哪。>
-
-## 目标
-- <可衡量的目标>
-
-## 非目标
-- <明确不做的事>
-
-## 子需求清单
-| 序号 | 子需求 | 解决的子问题 | 优先级 |
-|---|---|---|---|
-| 01 | [<子需求>](01-<子需求>.md) | <一句话> | P0 |
-
-## 依赖与交付顺序
-<如 01 → {02, 03 可并行}；只有一个子需求写"单一子需求，无依赖"。>
-
-## 整体验证路径
-1. <操作 → 可判定结果>
-
-## 决策记录
-- <关键取舍：选了什么、为什么；被否决的方向及理由；质疑环节的结论>
-```
-
-### 子需求 `<序号>-<子需求>.md`
-
-```markdown
----
-name: <kebab-case，与文件名一致>
-description: <一句话，≤ 80 字>
-date: <YYYY-MM-DD>
----
-
-# <子需求标题>
-
-## 用户故事
-### P0：作为 <角色>，我想要 <能力>，以便 <价值>
-
-**用例（主路径）**
-- 场景：<具体人物在具体情境下>
-- 操作：<一步步做了什么，含具体输入 / 数据>
-- 预期：<可判定的具体结果>
-
-**用例（边界 / 异常，按需）**
-- 场景 / 操作 / 预期 同上
-
-## 约束
-<每条可测：什么输入 → 什么结果；每条在「验收」里有对应项。>
-- <约束 1>
-
-## 验收
-- [ ] <可验证项，与约束一一对应>
-
-## 验证路径
-1. <操作 → 可判定结果>
-```
-
-### `GLOSSARY.md`
-
-```markdown
-# 术语表
-
-> 全项目术语唯一权威源，仅 /prd 维护。跨语言 / 跨文档以英文锚点对齐；别名只登记实际用过的语言写法。
-
-| 锚点 | 定义 | 别名 |
-|---|---|---|
-| order | 用户提交购买意图后生成的待履约交易单据 | 简体「订单」；繁體「訂單」；日本語「注文」 |
-```
-
-### `AGENTS.md`
-
-```markdown
-# AGENTS.md
-
-## 查功能、查问题的规矩
-> 本节由 /prd 按 bb-spec 插件模板整节维护，手改会被覆盖；项目自己的规矩写进「项目约束」。
-
-1. 先读代码再回答：凡是"系统现在怎么做"的结论，必须来自本次实际读过的代码，并给出 `文件:行号`；还没读到代码就说"还没确认"，不许猜。
-2. 按功能找代码：有 `ARCHITECTURE.md` 先读它，按模块地图找到相关模块和目录；再用 `grep -l '^features:.*<功能名>' <DOCS_DIR>/prd/*/OVERVIEW.md` 找到相关需求目录，再在每个代码仓库里用 `git log --grep "Requirement: <目录名>" --name-only` 查出改过的文件。
-3. 查为什么：在该文件所在的仓库里执行 `git log -L :<函数名>:<文件> -s --format='%h %s%n%b' | grep -e '^[0-9a-f]\{7,40\} ' -e '^Requirement:'` 列出改过这个函数的 commit 和各自的 `Requirement` 行，最新的在前；按函数名报 "no match"（如缩进的类方法）时，先读文件确认行号，改用 `git log -L <起始行>,<结束行>:<文件>`。读最新那个 commit 的 `Requirement` 指向的 PRD「决策记录」和 commit 说明正文（squash 合并的 commit 可能有多行 `Requirement`，逐个读）；更早的 PRD 只在需要追溯时才读。commit 没有 `Requirement` 标记的是接入 bb-spec 之前的老代码，没有对应 PRD，只读 commit 说明；查不到原因就如实说"查不到"。
-4. 查为什么没做：问"以前为什么没做 X、为什么不这样设计"时，执行 `grep -rln '<关键词>' <DOCS_DIR>/prd/` 找到提到它的 PRD，读「非目标」和「决策记录」；搜不到就如实说"没有记录"。
-5. PRD 和代码不一致时以代码为准，并在回答里指出哪里不一致。
-6. 改代码前按第 3 条查清设计原因，改动不能违背；确实要改设计，新需求走 `/prd`、修正走 `/revise`。
-7. 每个 commit 说明末尾单独一行带 `Requirement: <PRD 目录名>`；和任何需求都无关的改动写 `Requirement: none`，并在正文写一句原因。多仓库时每个仓库的 commit 都要带。
-
-## 项目约束
-- <约束>（原因：<一句话>）
-```

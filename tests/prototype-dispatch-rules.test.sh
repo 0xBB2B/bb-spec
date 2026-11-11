@@ -14,27 +14,46 @@ FAIL=0
 pass() { PASS=$((PASS + 1)); }
 fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 
+skill_scope() {
+  case "$1" in
+    */skills/git-push/SKILL.md|*/skills/prd/SKILL.md|*/skills/revise/SKILL.md) dirname "$1" ;;
+    *) printf '%s\n' "$1" ;;
+  esac
+}
+
+skill_cat() {
+  cat "$1" || return
+  case "$1" in
+    */skills/git-push/SKILL.md|*/skills/prd/SKILL.md|*/skills/revise/SKILL.md)
+      local r
+      for r in "$(dirname "$1")"/references/*.md; do
+        if [ -f "$r" ]; then cat "$r"; fi
+      done ;;
+  esac
+  return 0
+}
+
 in_file() {
   local label="$1" file="$2" text="$3"
-  if grep -qF -- "$text" "$file" 2>/dev/null; then pass; else fail "${label} 缺少：${text}"; fi
+  if grep -rqF -- "$text" "$(skill_scope "$file")" 2>/dev/null; then pass; else fail "${label} 缺少：${text}"; fi
 }
 
 not_in_file() {
   local label="$1" file="$2" text="$3"
-  if grep -qF -- "$text" "$file" 2>/dev/null; then fail "${label} 不应含：${text}"; else pass; fi
+  if grep -rqF -- "$text" "$(skill_scope "$file")" 2>/dev/null; then fail "${label} 不应含：${text}"; else pass; fi
 }
 
 in_text() {
   local label="$1" text="$2" body="$3"
-  if printf '%s\n' "$body" | grep -qF -- "$text"; then pass; else fail "${label} 缺少：${text}"; fi
+  if printf '%s\n' "$body" | grep -F -- "$text" >/dev/null; then pass; else fail "${label} 缺少：${text}"; fi
 }
 
 file_section() {
-  awk -v start="$2" -v stop="$3" '
+  skill_cat "$1" 2>/dev/null | awk -v start="$2" -v stop="$3" '
     found && $0 ~ stop { exit }
     index($0, start) == 1 { found = 1 }
     found { print }
-  ' "$1" 2>/dev/null || true
+  ' || true
 }
 
 has() { local t; for t in "$@"; do in_file prototype "$PROTO" "$t"; done; }
@@ -80,7 +99,7 @@ echo "[做法只在子代理定义里]"
 lacks 'PROTOTYPE-START' 'WCAG' '取证顺序' 'terminalCss'
 
 echo "[plugin.json]"
-in_file plugin.json "$PLUGIN" '6 个编排 subagent'
+in_file plugin.json "$PLUGIN" '8 个编排 subagent'
 
 echo "[revise 的原型文件名]"
 in_file revise "$REVISE" '--file ${CACHE_DIR}/ui-preview/<YYYY-MM-DD>.revise-<主题>.html'
@@ -92,7 +111,7 @@ for t in '<预览页名>.DESIGN.md' '写完删掉它' '<预览页名>.DESIGN.dra
   in_text prd7d "$t" "$S7D"
 done
 S6="$(file_section "$PRD" '### 步骤 6' '^### ')"
-L7A="$(grep -F -- '**7a. PRD**' "$PRD" 2>/dev/null | head -n1 || true)"
+L7A="$(skill_cat "$PRD" 2>/dev/null | grep -F -- '**7a. PRD**' | head -n1 || true)"
 for t in '.DESIGN.draft.md' '.DESIGN.md'; do
   in_text prd步骤6 "$t" "$S6"
   in_text prd7a "$t" "$L7A"

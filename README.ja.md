@@ -146,8 +146,8 @@
 
 **同梱されるもの**
 
-- **6 個のオーケストレーションサブエージェント**(上記ステージに駆動される):`test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer` / `prototype-designer`
-- **3 つの受動 hook**(自動発動):main コミットブロック、依存バージョンセルフチェック、バックグラウンドスクリプトの完了待ち
+- **8 個のオーケストレーションサブエージェント**(上記ステージに駆動される):`test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer` / `prototype-designer` / `code-investigator` / `script-runner`
+- **3 つの受動 hook**(自動発動):main コミットブロック、依存バージョンセルフチェック、バックグラウンドスクリプトをポーリングしない
 
 ---
 
@@ -195,7 +195,7 @@ BB-Spec は**4 つの独立インストール可能なサブ plugin** に分割 
 | サブ plugin | 何が手に入るか | インストールコマンド |
 |---|---|---|
 | **bb-spec-core** _(推奨ベース)_ | TDD / バージョンポリシー / Git 規律 + 3 つの受動 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(コア機能)_ | prd → plan → exec → doc-update → revise → git-push(+ 任意 test-webview / test-api e2e)、git-clone ワンショット初期化 + 6 サブエージェント | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(コア機能)_ | prd → plan → exec → doc-update → revise → git-push(+ 任意 test-webview / test-api e2e)、git-clone ワンショット初期化 + 8 サブエージェント | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / 認証 / 認可 / 可観測性 / サービスガバナンス / 設定制約 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun スタック & エンジニアリング規約 | `/plugin install bb-spec-frontend@0xbb2b` |
 
@@ -256,7 +256,7 @@ claude plugin update bb-spec-workflow@0xbb2b   # ターミナルから特定の�
 |---|---|---|---|
 | `git-workflow-guard` | bb-spec-core | PreToolUse(Bash) | `main` / `master` ブランチでの `git commit` をブロック;他の git フロー動作(ブランチ作成 / push / worktree / merge / PR)は通過させ git-workflow 規律とリアルタイム git ステータスを注入 |
 | `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | 依存ファイル編集後に「公式最新版を先に確認」セルフチェックリマインダを注入し、未承認の新技術は取り消してリストを出し承認を求めるよう促す |
-| `background-script-wait` | bb-spec-core | Stop | このセッションで未通知の実行中バックグラウンドコマンドを見つけたとき 1 回だけ通知:Claude は終了するスクリプトをフォアグラウンドのループで待ち、常駐サービスは待たない |
+| `background-script-wait` | bb-spec-core | Stop | このセッションで未通知の実行中バックグラウンドコマンドを見つけたとき 1 回だけ通知:Claude はループで待たずにそのままターンを終え、以降この種のスクリプトはスクリプト実行サブエージェントに任せ、常駐サービスは待たない |
 ---
 
 ## 🧪 テスト
@@ -294,7 +294,7 @@ base_dir: my/bb  # → my/bb/docs/{prd,plan,test}/ と my/bb/.cache/ ; ./ を指
 | シナリオ | スイッチ |
 |---|---|
 | 一時的に main commit を許可 | `bb-spec-core` を一時的に無効化 |
-| バックグラウンドスクリプト待ちの通知をスキップ | `bb-spec-core` を一時的に無効化 |
+| バックグラウンドスクリプトの通知をスキップ | `bb-spec-core` を一時的に無効化 |
 
 ---
 

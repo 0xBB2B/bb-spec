@@ -145,8 +145,8 @@
 
 **附帶產物**
 
-- **6 個編排 subagent**(被上述環節驅動):`test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer` / `prototype-designer`
-- **3 個被動 hook**(自動生效):攔截 main commit、相依版本自檢、等背景腳本跑完
+- **8 個編排 subagent**(被上述環節驅動):`test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer` / `prototype-designer` / `code-investigator` / `script-runner`
+- **3 個被動 hook**(自動生效):攔截 main commit、相依版本自檢、背景腳本不循環等待
 
 ---
 
@@ -194,7 +194,7 @@ BB-Spec 拆成**四個可獨立安裝的子 plugin**——只裝你需要的約�
 | 子 plugin | 裝了得到什麼 | 安裝命令 |
 |---|---|---|
 | **bb-spec-core** _(推薦基座)_ | TDD / 版本策略 / Git 紀律 + 3 個被動 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(核心功能)_ | prd → plan → exec → doc-update → revise → git-push(+ 可選 test-webview / test-api e2e)、git-clone 一次性初始化 + 6 個 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(核心功能)_ | prd → plan → exec → doc-update → revise → git-push(+ 可選 test-webview / test-api e2e)、git-clone 一次性初始化 + 8 個 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / 資料庫 / 認證 / 授權 / 可觀測性 / 服務治理 / 設定約束 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun 技術棧與工程約定 | `/plugin install bb-spec-frontend@0xbb2b` |
 
@@ -255,7 +255,7 @@ claude plugin update bb-spec-workflow@0xbb2b   # 在終端機裡更新某個子 
 |---|---|---|---|
 | `git-workflow-guard` | bb-spec-core | PreToolUse(Bash) | 攔截 `main` / `master` 分支的 `git commit`;其餘 git 流程動作(開分支 / push / worktree / merge / PR)放行並注入 git-workflow 紀律與即時 git 狀態 |
 | `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | 編輯相依檔案後注入「先查官方最新版」自檢提示,並提醒未核准的新技術要撤回、先列清單請使用者核准 |
-| `background-script-wait` | bb-spec-core | Stop | 發現本會話沒提示過的執行中背景命令時提示一次:Claude 用前景迴圈等完會結束的腳本,常駐服務不等 |
+| `background-script-wait` | bb-spec-core | Stop | 發現本會話沒提示過的執行中背景命令時提示一次:Claude 不迴圈等待、直接結束回合,之後這類腳本交給跑腳本的子代理,常駐服務不等 |
 ---
 
 ## 🧪 測試
@@ -293,7 +293,7 @@ base_dir: my/bb  # → my/bb/docs/{prd,plan,test}/ 與 my/bb/.cache/;填 ./ 則�
 | 場景 | 開關 |
 |---|---|
 | 暫時允許 main commit | 暫時停用 `bb-spec-core` |
-| 跳過背景腳本等待提示 | 暫時停用 `bb-spec-core` |
+| 跳過背景腳本提示 | 暫時停用 `bb-spec-core` |
 
 ---
 

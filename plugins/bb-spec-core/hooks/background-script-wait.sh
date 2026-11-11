@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Stop：回合结束时若有第一次见到的后台 shell 命令，提示 Claude 先等自结束的脚本跑完。
+# Stop：回合结束时若有第一次见到的后台 shell 命令，提示 Claude 不要循环等待。
 
 set -uo pipefail
 
@@ -35,7 +35,7 @@ OUTPUT=$(jq -n --argjson tasks "$NEW" '
    | map("- \(.value.id): \($c[.key])")) as $lines
   | {hookSpecificOutput: {hookEventName: "Stop", additionalContext:
       (["后台命令还在运行："] + $lines + [
-        "会自己结束的脚本（测试、构建、审查）：用前台 Bash 循环等它结束，每次最多等 2 分钟，没结束就再等一次，看完结果再结束回合。",
+        "会自己结束的脚本（测试、构建、审查）：不要循环等待，直接结束回合，它结束时系统会通知你；之后这类脚本交给跑脚本的子代理启动。",
         "常驻服务（dev server、watch、tail -f）：不用等。全部是常驻服务时，直接结束回合。"
       ] | join("\n"))}}' 2>/dev/null) || exit 0
 

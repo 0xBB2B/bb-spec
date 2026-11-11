@@ -42,7 +42,7 @@ echo "[version-policy 的 frontmatter]"
 FM="$(awk '/^---[[:space:]]*$/{n++; next} n==1{print} n>=2{exit}' "$VP" 2>/dev/null || true)"
 DESC="$(printf '%s\n' "$FM" | grep '^description:' || true)"
 for t in '新技术' '插件默认栈和用户点名的也一样'; do
-  if printf '%s\n' "$DESC" | grep -qF -- "$t"; then pass; else fail "version-policy 的 description 缺少：${t}"; fi
+  if printf '%s\n' "$DESC" | grep -F -- "$t" >/dev/null; then pass; else fail "version-policy 的 description 缺少：${t}"; fi
 done
 
 echo "[version-policy 不含的说法]"

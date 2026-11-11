@@ -26,12 +26,12 @@ hasall() {
 echo "[frontmatter]"
 FM="$(awk '/^---[[:space:]]*$/{n++; next} n==1{print} n>=2{exit}' "$AGENT" 2>/dev/null || true)"
 for line in 'name: prototype-designer' 'model: fable' 'agent-type: general-purpose'; do
-  if printf '%s\n' "$FM" | grep -qxF -- "$line"; then pass; else fail "frontmatter 缺少：${line}"; fi
+  if printf '%s\n' "$FM" | grep -xF -- "$line" >/dev/null; then pass; else fail "frontmatter 缺少：${line}"; fi
 done
-if printf '%s\n' "$FM" | grep -qE '^[[:space:]]*inputs:'; then pass; else fail "frontmatter 缺少 inputs"; fi
+if printf '%s\n' "$FM" | grep -E '^[[:space:]]*inputs:' >/dev/null; then pass; else fail "frontmatter 缺少 inputs"; fi
 INPUTS="$(printf '%s\n' "$FM" | awk '/^[[:space:]]*inputs:/{on=1; next} on{print}')"
 for key in mode topic prototype_file caller requirement design_md_path design_draft_path templates_dir screenshots_dir resume_note; do
-  if printf '%s\n' "$INPUTS" | grep -qE "^[[:space:]]+- ${key}([[:space:]]|$)"; then pass; else fail "inputs 缺少：${key}"; fi
+  if printf '%s\n' "$INPUTS" | grep -E "^[[:space:]]+- ${key}([[:space:]]|$)" >/dev/null; then pass; else fail "inputs 缺少：${key}"; fi
 done
 
 echo "[报告]"
@@ -102,10 +102,10 @@ else
   fail "「原型文件已存在，接着改」和「先读已有的原型文件和 DESIGN.md」应在同一行或相邻 3 行内"
 fi
 
-if section '## 确认内容清单' | grep -qF -- '收到"用户已确认"后'; then pass; else fail "「## 确认内容清单」一节应含：收到\"用户已确认\"后"; fi
+if section '## 确认内容清单' | grep -F -- '收到"用户已确认"后' >/dev/null; then pass; else fail "「## 确认内容清单」一节应含：收到\"用户已确认\"后"; fi
 
 lacks '回到调用方继续'
-if section '## 出原型' | grep -qF -- '缓存目录'; then fail "「## 出原型」一节不应含：缓存目录"; else pass; fi
+if section '## 出原型' | grep -F -- '缓存目录' >/dev/null; then fail "「## 出原型」一节不应含：缓存目录"; else pass; fi
 
 echo "[两个设计规范临时文件]"
 hasall '.DESIGN.md' '启动服务、运行命令或安装依赖' '会改动哪些文件' \

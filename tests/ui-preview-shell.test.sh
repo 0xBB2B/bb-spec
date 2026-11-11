@@ -30,7 +30,7 @@ done
 for phrase in "这一块上线后不存在" "这个画面的说明" "只在原型里成立" "还没确认的问题"; do
   if grep -qF -- "$phrase" "$SHELL_HTML"; then fail "不应再有固定文案「${phrase}」"; else pass; fi
 done
-if awk '/<aside/,/<\/aside>/' "$SHELL_HTML" | grep -qE '<h2[ >]'; then fail "左栏里不应有小标题 <h2>：当前方案下面直接是页面和状态切换"; else pass; fi
+if awk '/<aside/,/<\/aside>/' "$SHELL_HTML" | grep -E '<h2[ >]' >/dev/null; then fail "左栏里不应有小标题 <h2>：当前方案下面直接是页面和状态切换"; else pass; fi
 
 echo "[单文件、不联网、不引用外部资源]"
 for pattern in 'http://' 'https://' '<link' '<script[^>]*[[:space:]]src[[:space:]]*=' '@import'; do
