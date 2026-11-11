@@ -1,5 +1,16 @@
 # Changelog
 
+## [15.8.0](https://github.com/0xBB2B/bb-spec/compare/v15.7.0...v15.8.0) (2026-11-11)
+
+
+### Features
+
+* **exec:** 实现重试和自修上限提到 2 次，次数记进进度文件、续接后接着数 ([#328](https://github.com/0xBB2B/bb-spec/issues/328)) ([e558011](https://github.com/0xBB2B/bb-spec/commit/e5580117a9e11977df099d2bfc8c0a4b7649bf92))
+* **git-push:** ocr 审查的"修哪些"弹窗默认全部修复，选项按范围从大到小排 ([#327](https://github.com/0xBB2B/bb-spec/issues/327)) ([6981e15](https://github.com/0xBB2B/bb-spec/commit/6981e1512b7452d333a93104b2a62c264f441aae))
+* **workflow:** 压缩主窗口上下文——报告限长、调查和跑脚本交给子代理、skill 正文瘦身 ([#329](https://github.com/0xBB2B/bb-spec/issues/329)) ([d03266f](https://github.com/0xBB2B/bb-spec/commit/d03266f1ce5f4b7320be28e6605e6319cc6d75ec))
+* **workflow:** 原型交给子代理做，新建或修改 DESIGN.md 时画成展示页确认 ([#326](https://github.com/0xBB2B/bb-spec/issues/326)) ([5ae59ba](https://github.com/0xBB2B/bb-spec/commit/5ae59ba84b6e563d39b2cd80b1c3a1f66f5dd279))
+* **workflow:** 同一个根因一次查全、一次修完 ([#324](https://github.com/0xBB2B/bb-spec/issues/324)) ([0562f40](https://github.com/0xBB2B/bb-spec/commit/0562f40cf7b57d7efcb0be711837985943971f36))
+
 ## [15.7.0](https://github.com/0xBB2B/bb-spec/compare/v15.6.0...v15.7.0) (2026-11-10)
 
 
