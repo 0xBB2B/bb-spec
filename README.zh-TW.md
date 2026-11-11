@@ -49,7 +49,7 @@
 | 命令 | 做什麼 | 何時用 |
 |---|---|---|
 | `/prd` | 質疑→釐清→拆解,落盤 PRD + AGENTS.md 後請你讀完確認一次,核可就自動跑 plan → exec → doc-update | 新需求開工、要改已合併功能的行為 |
-| `/prototype` | 先讀專案根的 DESIGN.md(沒有就起草),照專案整體介面畫出改動所在的整個頁面,用統一的藍圖外殼出 HTML 原型,改到你說「可以」;`/prd`、`/revise` 改介面時自動呼叫 | 想先看樣子,不走完整需求流程 |
+| `/prototype` | 先讀專案根的 DESIGN.md(沒有就起草),照專案整體介面畫出改動所在的整個頁面,派原型子代理用統一的藍圖外殼出 HTML 原型(主對話只派工和傳話),新建或修改 DESIGN.md 時先畫一頁「設計規範」給你確認,改到你說「可以」;`/prd`、`/revise` 改介面時自動呼叫 | 想先看樣子,不走完整需求流程 |
 | `/revise` | 按根因診斷→定向修正→回歸驗證,修完自動跑 doc-update | 有 bug、結果和預期不符 |
 | `/git-push` | pre-review 自查 + 推送 + 開 PR | 準備提 PR |
 | `/exec` | 從斷點接著執行 plan | 中斷或 `/clear` 之後 |
@@ -145,7 +145,7 @@
 
 **附帶產物**
 
-- **5 個編排 subagent**(被上述環節驅動):`test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer`
+- **6 個編排 subagent**(被上述環節驅動):`test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer` / `prototype-designer`
 - **3 個被動 hook**(自動生效):攔截 main commit、相依版本自檢、等背景腳本跑完
 
 ---
@@ -194,7 +194,7 @@ BB-Spec 拆成**四個可獨立安裝的子 plugin**——只裝你需要的約�
 | 子 plugin | 裝了得到什麼 | 安裝命令 |
 |---|---|---|
 | **bb-spec-core** _(推薦基座)_ | TDD / 版本策略 / Git 紀律 + 3 個被動 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(核心功能)_ | prd → plan → exec → doc-update → revise → git-push(+ 可選 test-webview / test-api e2e)、git-clone 一次性初始化 + 5 個 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(核心功能)_ | prd → plan → exec → doc-update → revise → git-push(+ 可選 test-webview / test-api e2e)、git-clone 一次性初始化 + 6 個 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / 資料庫 / 認證 / 授權 / 可觀測性 / 服務治理 / 設定約束 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun 技術棧與工程約定 | `/plugin install bb-spec-frontend@0xbb2b` |
 

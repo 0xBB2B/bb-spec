@@ -49,7 +49,7 @@
 | 명령 | 무엇을 하는가 | 언제 사용 |
 |---|---|---|
 | `/prd` | 질의→명확화→분해, PRD + AGENTS.md를 작성한 뒤 읽고 한 번 승인하면 plan → exec → doc-update를 자동 실행 | 새 요구사항 착수 시, 머지된 기능의 동작을 바꿀 때 |
-| `/prototype` | 먼저 프로젝트 루트의 DESIGN.md를 읽고(없으면 초안 작성), 변경이 있는 페이지 전체를 프로젝트대로 그려 공통 블루프린트 외곽으로 HTML 프로토타입을 만들고 승인될 때까지 수정. `/prd`·`/revise`가 UI 변경 시 자동 호출 | 요구사항 흐름 없이 먼저 화면을 보고 싶을 때 |
+| `/prototype` | 먼저 프로젝트 루트의 DESIGN.md를 읽고(없으면 초안 작성), 변경이 있는 페이지 전체를 프로젝트대로 그려 프로토타입 subagent에 맡겨 공통 블루프린트 외곽으로 HTML 프로토타입을 만들고(메인 대화는 작업 지시와 전달만 담당), DESIGN.md를 새로 만들거나 수정할 때는 먼저 「디자인 규범」 페이지를 그려 확인받고, 승인될 때까지 수정. `/prd`·`/revise`가 UI 변경 시 자동 호출 | 요구사항 흐름 없이 먼저 화면을 보고 싶을 때 |
 | `/revise` | 근본 원인 진단→표적 수정→회귀 검증, 완료 후 doc-update 자동 실행 | 버그나 기대와 다른 결과가 나왔을 때 |
 | `/git-push` | pre-review 자가 점검 + push + PR 생성 | PR을 올릴 때 |
 | `/exec` | 중단된 지점부터 plan 실행 재개 | 중단이나 `/clear` 이후 |
@@ -146,7 +146,7 @@
 
 **동봉되는 것**
 
-- **5개 오케스트레이션 subagent**(위 단계에 의해 구동): `test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer`
+- **6개 오케스트레이션 subagent**(위 단계에 의해 구동): `test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer` / `prototype-designer`
 - **3개 수동 hook**(자동 발동): main 커밋 차단, 의존성 버전 자가 점검, 백그라운드 스크립트 완료 대기
 
 ---
@@ -195,7 +195,7 @@ BB-Spec은 **4개의 독립 설치 가능한 서브 plugin**으로 분할 ——
 | 서브 plugin | 무엇을 얻는가 | 설치 명령 |
 |---|---|---|
 | **bb-spec-core** _(권장 베이스)_ | TDD / 버전 정책 / Git 규율 + 3개 수동 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(핵심 기능)_ | prd → plan → exec → doc-update → revise → git-push(+ 선택 test-webview / test-api e2e), git-clone 일회성 초기화 + 5개 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(핵심 기능)_ | prd → plan → exec → doc-update → revise → git-push(+ 선택 test-webview / test-api e2e), git-clone 일회성 초기화 + 6개 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / 인증 / 인가 / 가관측성 / 서비스 거버넌스 / 설정 제약 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun 스택 & 엔지니어링 규약 | `/plugin install bb-spec-frontend@0xbb2b` |
 

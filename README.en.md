@@ -49,7 +49,7 @@ The 6 commands you type day to day:
 | Command | What it does | When |
 |---|---|---|
 | `/prd` | Challenge → clarify → break down; writes the PRD + AGENTS.md, you read and approve once, then it auto-runs plan → exec → doc-update | New requirement, or changing how a merged feature behaves |
-| `/prototype` | Read the project-root DESIGN.md first (draft one if missing), draw the whole page around the change to match the project, build an HTML prototype in the shared blueprint shell and iterate until you approve it; `/prd` and `/revise` call it for UI changes | You want to see a design first, without the full requirement flow |
+| `/prototype` | Read the project-root DESIGN.md first (draft one if missing), draw the whole page around the change to match the project, dispatch the prototype subagent to build an HTML prototype in the shared blueprint shell (the main conversation only dispatches and relays), show a drawn "design spec" page for your approval whenever DESIGN.md is created or changed, and iterate until you approve it; `/prd` and `/revise` call it for UI changes | You want to see a design first, without the full requirement flow |
 | `/revise` | Diagnose by root cause → targeted fix → regression check, then auto-runs doc-update | A bug, or results that don't match expectations |
 | `/git-push` | pre-review self-check + push + open PR | Ready to open a PR |
 | `/exec` | Resume the plan from where it stopped | After an interruption or `/clear` |
@@ -146,7 +146,7 @@ First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.
 
 **Ships with**
 
-- **5 orchestration subagents** driven by the stages above: `test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer`
+- **6 orchestration subagents** driven by the stages above: `test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer` / `prototype-designer`
 - **3 passive hooks** (automatic): block main commit, dependency version self-check, wait for background scripts to finish
 
 ---
@@ -195,7 +195,7 @@ Then install whichever layers you want:
 | Sub-plugin | What it gives you | Command |
 |---|---|---|
 | **bb-spec-core** _(recommended base)_ | TDD / version-policy / git-workflow discipline + 3 passive hooks | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(core)_ | prd → plan → exec → doc-update → revise → git-push (+ opt test-webview / test-api e2e), git-clone one-shot init + 5 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(core)_ | prd → plan → exec → doc-update → revise → git-push (+ opt test-webview / test-api e2e), git-clone one-shot init + 6 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / authN / authZ / observability / service / config constraints | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun stack & engineering conventions | `/plugin install bb-spec-frontend@0xbb2b` |
 

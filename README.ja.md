@@ -49,7 +49,7 @@
 | コマンド | 何をするか | いつ使うか |
 |---|---|---|
 | `/prd` | 質疑→明確化→分解、PRD + AGENTS.md を書き出して読んだうえで 1 回承認すると、plan → exec → doc-update を自動実行 | 新規要件の着手時、マージ済み機能の振る舞いを変える時 |
-| `/prototype` | まずプロジェクトルートの DESIGN.md を読み(無ければ起草)、変更箇所を含むページ全体をプロジェクトどおりに描き、共通のブループリント外枠で HTML プロトタイプを作り、承認されるまで修正。`/prd`・`/revise` が UI 変更時に自動で呼び出す | 要件フローを通さず、まず見た目を確認したい時 |
+| `/prototype` | まずプロジェクトルートの DESIGN.md を読み(無ければ起草)、変更箇所を含むページ全体をプロジェクトどおりに描き、プロトタイプ用サブエージェントに依頼して共通のブループリント外枠で HTML プロトタイプを作り(メインの会話は依頼と伝達のみ)、DESIGN.md を新規作成・変更する時はまず「デザイン規約」ページを描いて確認を取り、承認されるまで修正。`/prd`・`/revise` が UI 変更時に自動で呼び出す | 要件フローを通さず、まず見た目を確認したい時 |
 | `/revise` | 根本原因で診断→的を絞った修正→回帰検証、完了後に doc-update を自動実行 | バグや期待と異なる結果が出た時 |
 | `/git-push` | pre-review セルフチェック + push + PR 作成 | PR を出す時 |
 | `/exec` | 中断箇所から plan の実行を再開 | 中断や `/clear` の後 |
@@ -146,7 +146,7 @@
 
 **同梱されるもの**
 
-- **5 個のオーケストレーションサブエージェント**(上記ステージに駆動される):`test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer`
+- **6 個のオーケストレーションサブエージェント**(上記ステージに駆動される):`test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer` / `prototype-designer`
 - **3 つの受動 hook**(自動発動):main コミットブロック、依存バージョンセルフチェック、バックグラウンドスクリプトの完了待ち
 
 ---
@@ -195,7 +195,7 @@ BB-Spec は**4 つの独立インストール可能なサブ plugin** に分割 
 | サブ plugin | 何が手に入るか | インストールコマンド |
 |---|---|---|
 | **bb-spec-core** _(推奨ベース)_ | TDD / バージョンポリシー / Git 規律 + 3 つの受動 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(コア機能)_ | prd → plan → exec → doc-update → revise → git-push(+ 任意 test-webview / test-api e2e)、git-clone ワンショット初期化 + 5 サブエージェント | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(コア機能)_ | prd → plan → exec → doc-update → revise → git-push(+ 任意 test-webview / test-api e2e)、git-clone ワンショット初期化 + 6 サブエージェント | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / 認証 / 認可 / 可観測性 / サービスガバナンス / 設定制約 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun スタック & エンジニアリング規約 | `/plugin install bb-spec-frontend@0xbb2b` |
 
