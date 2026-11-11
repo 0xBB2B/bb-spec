@@ -97,13 +97,13 @@ allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 4. **文档同步**：调用 `Skill bb-spec-workflow:doc-update`，参数 `--tail`，让本分支 PRD 与 README、AGENTS.md 等文档追平代码；已合并的 PRD 不碰
 5. **本地 commit**：先 `git branch --show-current` 确认分支（**在 main 上则跳过**并提示按 git-workflow 先建分支），只提交本次涉及文件（PRD / plan / 实现 / 测试 + doc-update 收尾改动 + 本次经用户同意新建或改过的 DESIGN.md；多仓库时各仓库分别提交，每个 commit 都带标记），message 遵循仓库历史风格（先 `git log --oneline -10`）、不硬编码类型前缀；**正文写清修订原因（改前什么行为、改后什么行为、为什么改）**；本次没改 PRD 而有取舍时再写「决策」段（改了 PRD 的取舍记在它的「决策记录」里，commit 正文写一份就重复了）：选了什么、否掉了哪些做法及理由、由谁在哪天定的（按核心原则 7 收集）；末尾单独一行带 `Requirement: <相关 PRD 目录名>`（修已合并功能写原需求目录；找不到相关 PRD 写 `none`）；**仅本地、不自动 push**
 
-收尾时删掉 `${CACHE_DIR}/reports/` 下本次产生的细节文件。
-
 ### 步骤 5：完成简报
 
 输出修订完成简报。
 
 走到这一步先读 `references/brief.md`（相对本 skill 目录）。
+
+写完简报后删掉 `${CACHE_DIR}/reports/` 下本次产生的细节文件。
 
 ### 无关发现
 

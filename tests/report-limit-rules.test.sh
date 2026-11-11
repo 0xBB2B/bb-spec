@@ -62,11 +62,17 @@ section_text() {
 }
 
 has_after_rc() {
-  section_text "$1" "$2" "${4:-}" | grep -qF -- "$3"
+  section_text "$1" "$2" "${4:-}" | grep -F -- "$3" >/dev/null
 }
 
 has_after() {
   if has_after_rc "$1" "$2" "$3"; then pass; else fail "${1} 中「${2}」这一节缺少：${3}"; fi
+}
+
+lacks_after() {
+  local body
+  if ! body="$(section_text "$1" "$2")"; then fail "读不到 ${1} 中「${2}」这一节"; return; fi
+  if printf '%s\n' "$body" | grep -F -- "$3" >/dev/null; then fail "${1} 中「${2}」这一节不应含：${3}"; else pass; fi
 }
 
 line_of() {
@@ -151,10 +157,27 @@ lacks "$AG/webview-test-runner.md" '- steps:'
 
 echo "[流程收尾步骤里删细节文件]"
 has_after "$SK/test-webview/SKILL.md" '### 步骤 6' '细节文件'
-has_after "$SK/revise/SKILL.md" '### 步骤 4' '删掉 `${CACHE_DIR}/reports/` 下本次产生的细节文件'
+has_after "$SK/revise/SKILL.md" '### 步骤 5' '删掉 `${CACHE_DIR}/reports/` 下本次产生的细节文件'
+lacks_after "$SK/revise/SKILL.md" '### 步骤 4' '删掉 `${CACHE_DIR}/reports/` 下本次产生的细节文件'
 has_after "$SK/git-push/SKILL.md" '## 4.5' '删掉 `${CACHE_DIR}/reports/` 下本次产生的细节文件'
 lacks "$SK/git-push/SKILL.md" '自查通过（PASS）后，删掉'
 has "$SK/git-push/SKILL.md" '自查结束后（不管结论是 PASS 还是 FAIL）'
+
+echo "[prototype-designer：报告长度]"
+PD="$AG/prototype-designer.md"
+for t in '## 报告长度' 'reports_dir' \
+  '没有待用户确认的问题：报告不超过 800 字符' '有待用户确认的问题：报告不超过 3,000 字符' \
+  '字符数按报告正文算，标点和空白都算' '细节文件：<完整路径>' '没有细节可写时不建文件' \
+  '{reports_dir} 为空时不建细节文件' '确认内容清单不算在上限内'; do
+  has "$PD" "$t"
+done
+lacks "$PD" '为空时用'
+before "$PD" '## 报告长度' '## 安全基线'
+
+echo "[prototype：子代理报告处理]"
+for t in '**子代理报告**' '${CACHE_DIR}/reports/' '报告超过上限照常使用，不退回重写' '删掉本次产生的细节文件'; do
+  has "$SK/prototype/SKILL.md" "$t"
+done
 
 echo "[辅助函数自检]"
 T="$(mktemp -d)"

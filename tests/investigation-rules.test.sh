@@ -75,9 +75,9 @@ roster_rc() {
   local readme="$1" agents_dir="$2" n="$3" line name
   line="$(grep -F 'test-engineer' "$readme" 2>/dev/null | grep -F -m1 'impl-engineer' || true)"
   [ -n "$line" ] || return 1
-  printf '%s\n' "$line" | grep -qE "(^|[^0-9])${n}[^0-9]{0,16}(subagent|サブエージェント)" || return 1
+  printf '%s\n' "$line" | grep -E "(^|[^0-9])${n}[^0-9]{0,16}(subagent|サブエージェント)" >/dev/null || return 1
   while IFS= read -r name; do
-    printf '%s\n' "$line" | grep -qF -- "$name" || return 1
+    printf '%s\n' "$line" | grep -F -- "$name" >/dev/null || return 1
   done < <(agent_names "$agents_dir")
 }
 

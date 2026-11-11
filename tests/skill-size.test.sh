@@ -121,7 +121,7 @@ done
 
 echo "[revise 正文保留每次必走的内容]"
 has_skill revise '流程归属判定'
-has_skill revise '收尾时删掉 `${CACHE_DIR}/reports/` 下本次产生的细节文件'
+has_skill revise '写完简报后删掉 `${CACHE_DIR}/reports/` 下本次产生的细节文件'
 
 echo "[fix-by-type.md 讲信息隔离]"
 fbt="$SK/revise/references/fix-by-type.md"
