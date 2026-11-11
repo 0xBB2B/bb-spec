@@ -67,15 +67,36 @@ for t in '或调查子代理本次交回的带 `文件:行号` 的结论' '还�
   has_root AGENTS.md "$t"
 done
 
-echo "[子代理数量与目录文件数一致]"
-N="$(ls "$PL"/bb-spec-workflow/agents/*.md | wc -l | tr -d ' ')"
-has bb-spec-workflow/.claude-plugin/plugin.json "${N} 个编排 subagent"
-has_root .claude-plugin/marketplace.json "${N} 个编排 subagent"
+agent_names() {
+  find "$1" -maxdepth 1 -name '*.md' 2>/dev/null | sed 's|.*/||; s|\.md$||' | sort || true
+}
 
-echo "[五份 README 列出 code-investigator 且数量一致]"
+roster_rc() {
+  local readme="$1" agents_dir="$2" n="$3" line name
+  line="$(grep -F 'test-engineer' "$readme" 2>/dev/null | grep -F -m1 'impl-engineer' || true)"
+  [ -n "$line" ] || return 1
+  printf '%s\n' "$line" | grep -qE "(^|[^0-9])${n}[^0-9]{0,16}(subagent|サブエージェント)" || return 1
+  while IFS= read -r name; do
+    printf '%s\n' "$line" | grep -qF -- "$name" || return 1
+  done < <(agent_names "$agents_dir")
+}
+
+echo "[子代理数量与目录文件数一致]"
+AGENTS_DIR="$PL/bb-spec-workflow/agents"
+N="$(agent_names "$AGENTS_DIR" | wc -l | tr -d ' ')"
+if [ "$N" -eq 0 ]; then
+  fail "agents 目录不存在或为空：${AGENTS_DIR}"
+else
+  has bb-spec-workflow/.claude-plugin/plugin.json "${N} 个编排 subagent"
+  has_root .claude-plugin/marketplace.json "${N} 个编排 subagent"
+fi
+
+echo "[五份 README 列出 code-investigator 且名单与数量一致]"
 for r in README.md README.en.md README.ja.md README.ko.md README.zh-TW.md; do
   has_root "$r" 'code-investigator'
-  if grep -qE "(^|[^0-9])${N}[^0-9]{0,16}(subagent|サブエージェント)" "$ROOT/$r" 2>/dev/null; then pass; else fail "${r} 的子代理数量不是 ${N}"; fi
+  if [ "$N" -gt 0 ]; then
+    if roster_rc "$ROOT/$r" "$AGENTS_DIR" "$N"; then pass; else fail "${r} 的子代理名单行缺少数量 ${N} 或缺少某个子代理名字"; fi
+  fi
 done
 
 echo "[细节文件目录与 reports_dir]"
@@ -93,6 +114,40 @@ has "$SK/revise/SKILL.md" '调查子代理交回的位置算读过'
 has "$SK/revise/SKILL.md" '或调查子代理交回的结论'
 lacks "$SK/prd/SKILL.md" '直接在代码里搜）'
 has "$SK/prd/SKILL.md" '同样按下面的分流处理'
+
+echo "[辅助函数自检]"
+T="$(mktemp -d)"
+trap 'rm -rf "$T"' EXIT
+mkdir -p "$T/agents"
+touch "$T/agents/test-engineer.md" "$T/agents/impl-engineer.md" "$T/agents/code-investigator.md"
+
+expect() {
+  local want="$1" desc="$2" rc=0
+  shift 2
+  "$@" || rc=$?
+  if { [ "$want" = ok ] && [ "$rc" -eq 0 ]; } || { [ "$want" = bad ] && [ "$rc" -ne 0 ]; }; then pass; else fail "自检：${desc}"; fi
+}
+
+printf '%s\n' '共 3 个 subagent：test-engineer、impl-engineer、code-investigator' > "$T/ok.md"
+printf '%s\n' '共 3 个 subagent：test-engineer、impl-engineer' > "$T/missing-name.md"
+printf '%s\n' '共 4 个 subagent：test-engineer、impl-engineer、code-investigator' > "$T/wrong-n.md"
+printf '%s\n' '共 13 个 subagent：test-engineer、impl-engineer、code-investigator' > "$T/digit-n.md"
+printf '%s\n' '3 个 subagent，code-investigator' 'test-engineer 在这一行' > "$T/no-roster.md"
+printf '%s\n' '3 サブエージェント：test-engineer、impl-engineer、code-investigator' > "$T/ja.md"
+expect ok "名单行名字和数量齐全应通过" roster_rc "$T/ok.md" "$T/agents" 3
+expect bad "名单行少一个名字应失败" roster_rc "$T/missing-name.md" "$T/agents" 3
+expect bad "名单行数量不对应失败" roster_rc "$T/wrong-n.md" "$T/agents" 3
+expect bad "数量只是更大数字的一部分应失败" roster_rc "$T/digit-n.md" "$T/agents" 3
+expect bad "没有同时含两个名字的行应失败" roster_rc "$T/no-roster.md" "$T/agents" 3
+expect ok "日文写法应通过" roster_rc "$T/ja.md" "$T/agents" 3
+printf '%s\n' '**7 个编排 subagent**（第 3 版）：test-engineer、impl-engineer、code-investigator' > "$T/trap-n.md"
+expect bad "数量后面跟的不是 subagent 应失败" roster_rc "$T/trap-n.md" "$T/agents" 3
+printf '%s\n' '3 agents：test-engineer、impl-engineer、code-investigator' > "$T/other-word.md"
+expect bad "数量后面是别的词应失败" roster_rc "$T/other-word.md" "$T/agents" 3
+printf '%s\n' '3 エージェント：test-engineer、impl-engineer、code-investigator' > "$T/ja-bad.md"
+expect bad "日文缺少サブエージェント应失败" roster_rc "$T/ja-bad.md" "$T/agents" 3
+expect bad "不存在的 README 应失败" roster_rc "$T/none.md" "$T/agents" 3
+expect ok "不存在的 agents 目录得到 0 个名字" test "$(agent_names "$T/nope" | wc -l | tr -d ' ')" -eq 0
 
 echo
 echo "通过：${PASS}，失败：${FAIL}"

@@ -45,24 +45,43 @@ lacks() {
   esac
 }
 
+section_text() {
+  local path="${3:-$PL}/$1" heading="$2" body r
+  body="$(awk -v h="$heading" '
+    BEGIN { n = 0; while (substr(h, n + 1, 1) == "#") n++ }
+    /^```/ { fence = !fence; if (found) print; next }
+    !fence && found && match($0, /^#+ /) && RLENGTH - 1 <= n { exit }
+    !fence && index($0, h) == 1 { found = 1 }
+    found { print }
+  ' "$path" 2>/dev/null || true)"
+  [ -n "$body" ] || return 1
+  printf '%s\n' "$body"
+  while IFS= read -r r; do
+    if [ -f "$(dirname "$path")/$r" ]; then cat "$(dirname "$path")/$r"; fi
+  done < <(printf '%s\n' "$body" | grep -o 'references/[A-Za-z0-9_.-]*\.md' | sort -u || true)
+}
+
+has_after_rc() {
+  section_text "$1" "$2" "${4:-}" | grep -qF -- "$3"
+}
+
 has_after() {
-  local file="$1" heading="$2" text="$3"
-  if skill_cat "$PL/$file" 2>/dev/null | awk -v h="$heading" 'found { print } index($0, h) == 1 { found = 1 }' | grep -F -- "$text" >/dev/null; then
-    pass
-  else
-    fail "${file} 中「${heading}」之后缺少：${text}"
-  fi
+  if has_after_rc "$1" "$2" "$3"; then pass; else fail "${1} 中「${2}」这一节缺少：${3}"; fi
 }
 
 line_of() {
-  grep -nF -- "$2" "$PL/$1" 2>/dev/null | head -1 | cut -d: -f1 || true
+  awk -v h="$2" 'index($0, h) == 1 { print NR; exit }' "${3:-$PL}/$1" 2>/dev/null || true
+}
+
+before_rc() {
+  local a b
+  a="$(line_of "$1" "$2" "${4:-}")"
+  b="$(line_of "$1" "$3" "${4:-}")"
+  [ -n "$a" ] && [ -n "$b" ] && [ "$a" -lt "$b" ]
 }
 
 before() {
-  local file="$1" first="$2" second="$3" a b
-  a="$(line_of "$file" "$first")"
-  b="$(line_of "$file" "$second")"
-  if [ -n "$a" ] && [ -n "$b" ] && [ "$a" -lt "$b" ]; then pass; else fail "${file} 中「${first}」应出现在「${second}」之前"; fi
+  if before_rc "$1" "$2" "$3"; then pass; else fail "${1} 中标题「${2}」应出现在标题「${3}」之前"; fi
 }
 
 AG=bb-spec-workflow/agents
@@ -136,6 +155,48 @@ has_after "$SK/revise/SKILL.md" '### 步骤 4' '删掉 `${CACHE_DIR}/reports/` �
 has_after "$SK/git-push/SKILL.md" '## 4.5' '删掉 `${CACHE_DIR}/reports/` 下本次产生的细节文件'
 lacks "$SK/git-push/SKILL.md" '自查通过（PASS）后，删掉'
 has "$SK/git-push/SKILL.md" '自查结束后（不管结论是 PASS 还是 FAIL）'
+
+echo "[辅助函数自检]"
+T="$(mktemp -d)"
+trap 'rm -rf "$T"' EXIT
+mkdir -p "$T/$SK/revise/references" "$T/$AG"
+
+expect() {
+  local want="$1" desc="$2" rc=0
+  shift 2
+  "$@" || rc=$?
+  if { [ "$want" = ok ] && [ "$rc" -eq 0 ]; } || { [ "$want" = bad ] && [ "$rc" -ne 0 ]; }; then pass; else fail "自检：${desc}"; fi
+}
+
+REV="$SK/revise/SKILL.md"
+DEL='删掉 `${CACHE_DIR}/reports/` 下本次产生的细节文件'
+printf '%s\n' '### 步骤 4' "$DEL" '### 步骤 5' '收尾' > "$T/$REV"
+expect ok "删除句在步骤 4 一节内应通过" has_after_rc "$REV" '### 步骤 4' "$DEL" "$T"
+printf '%s\n' '### 步骤 4' '收尾' '### 步骤 5' "$DEL" > "$T/$REV"
+expect bad "删除句挪到下一节应失败" has_after_rc "$REV" '### 步骤 4' "$DEL" "$T"
+printf '%s\n' '### 步骤 5' "$DEL" > "$T/$REV"
+expect bad "找不到标题应失败" has_after_rc "$REV" '### 步骤 4' "$DEL" "$T"
+
+printf '%s\n' '### 步骤 4' '走到这一步先读 `references/a.md`' '### 步骤 5' > "$T/$REV"
+printf '%s\n' "$DEL" > "$T/$SK/revise/references/a.md"
+printf '%s\n' '无关' > "$T/$SK/revise/references/b.md"
+expect ok "这一节提到的 references 文件内容算在范围内" has_after_rc "$REV" '### 步骤 4' "$DEL" "$T"
+printf '%s\n' '### 步骤 4' '走到这一步先读 `references/b.md`' '### 步骤 5' > "$T/$REV"
+expect bad "这一节没提到的 references 文件不算" has_after_rc "$REV" '### 步骤 4' "$DEL" "$T"
+
+printf '%s\n' '### 步骤 4' '收尾' > "$T/$REV"
+printf '%s\n' "$DEL" > "$T/$SK/revise/references/c.md"
+expect bad "最后一节没提到的 references 文件里有删除句应失败" has_after_rc "$REV" '### 步骤 4' "$DEL" "$T"
+printf '%s\n' '### 步骤 4' '```bash' '# 注释' '```' "$DEL" '### 步骤 5' > "$T/$REV"
+expect ok "代码块里的注释行不结束这一节" has_after_rc "$REV" '### 步骤 4' "$DEL" "$T"
+
+A="$AG/x.md"
+printf '%s\n' '前言 提到 ## 安全基线 字样' '## 报告长度' '正文' '## 安全基线' '正文' > "$T/$A"
+expect ok "正文里含标题字样的句子不干扰标题顺序" before_rc "$A" '## 报告长度' '## 安全基线' "$T"
+printf '%s\n' '## 安全基线' '## 报告长度' > "$T/$A"
+expect bad "标题顺序反了应失败" before_rc "$A" '## 报告长度' '## 安全基线' "$T"
+printf '%s\n' '前言 提到 ## 安全基线 字样' '## 报告长度' > "$T/$A"
+expect bad "只有正文提到、没有标题行应失败" before_rc "$A" '## 报告长度' '## 安全基线' "$T"
 
 echo
 echo "通过：${PASS}，失败：${FAIL}"
