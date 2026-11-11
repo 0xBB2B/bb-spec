@@ -167,6 +167,107 @@ has "$GIT_PUSH" '测试缺口交 /revise 补上'
 has "$PRD_REVIEWER" '调用了出问题的那段代码、会受同一缺陷影响的位置；别处独立写的同样错误写法'
 has "$PRD_REVIEWER" '  - 同类位置：写法同上一条'
 
+TEST_ENGINEER=bb-spec-workflow/agents/test-engineer.md
+
+echo "[无关发现：exec、revise、git-push 共有]"
+for f in "$EXEC" "$REVISE" "$GIT_PUSH"; do
+  for t in '上面 N 条无关发现，处理哪些？' \
+    '选项依次是"全部处理"（说明：在当前分支修完，进同一个 PR）、"都不处理"（说明：留在简报的待解决里）' \
+    '| # | 位置 | 问题 | 不处理的后果 | 估计用时 |' \
+    '**能在当前分支修的**' '**要另开需求的**' \
+    '本会话里已经问过的条目不再问' '只问新的'; do
+    has "$f" "$t"
+  done
+done
+
+echo "[无关发现：exec、revise 共有]"
+for f in "$EXEC" "$REVISE"; do
+  for t in '**发现时只记不改**' '标"未验证"并写怎么验证' \
+    '两段都为空 → 简报写「无关发现：无」，不弹窗' '只有「要另开需求的」有内容 → 不弹窗' \
+    '不新开分支' '标明要走 `/prd`' '- 无关发现：<见下方清单 / 无>'; do
+    has "$f" "$t"
+  done
+done
+
+echo "[无关发现：exec]"
+for t in '## 无关发现' '⑥ 输出完成简报 ⑦ 按下方「无关发现」弹窗' \
+  '一次全部交 `Skill bb-spec-workflow:revise`'; do
+  has "$EXEC" "$t"
+done
+
+echo "[无关发现：revise]"
+for t in '### 无关发现' '**被 `/exec`、`/git-push` 调用时**' '不是用户直接输入的' \
+  '本流程不弹窗' '**用户直接调用时弹一次窗**'; do
+  has "$REVISE" "$t"
+done
+
+echo "[无关发现：git-push]"
+for t in '## 4.6 无关发现（推送之前问一次）' '修完重跑 4.3 全量测试' '**合并之后才发现的**' \
+  '进同一个 PR' '→ **无关发现一次问**' '→推送前把无关发现合成一张清单一次问→推送'; do
+  has "$GIT_PUSH" "$t"
+done
+n46=$(grep -nF -- '## 4.6' "$PL/$GIT_PUSH" 2>/dev/null | head -1 | cut -d: -f1 || true)
+n5=$(grep -nF -- '## 5. 推送到远程' "$PL/$GIT_PUSH" 2>/dev/null | head -1 | cut -d: -f1 || true)
+if [[ -n "$n46" && -n "$n5" && "$n46" -lt "$n5" ]]; then pass; else fail "git-push 中 ## 4.6 应在 ## 5. 推送到远程 之前（4.6 行=${n46:-无}，5 行=${n5:-无}）"; fi
+
+echo "[无关发现：code-constraints]"
+has "$CC" '记进产出报告的「无关发现」小节'
+has "$CC" '由派工方收尾时合成清单一次问用户'
+lacks "$CC" '提出后续单独处理'
+lacks "$CC" '列清单写入产出报告，经用户批准后再清'
+
+echo "[无关发现：子代理报告小节]"
+has "$IMPL" '### 无关发现（无则写"无"）'
+has "$TEST_ENGINEER" '### 无关发现（无则写"无"）'
+has "$PRD_REVIEWER" '## 无关发现（无则写"无"）'
+
+echo "[审查后补：无关发现的边界、多仓库、弹窗后的记录]"
+for f in "$EXEC" "$REVISE"; do
+  has "$f" '同根因位置和 Review 报告的「同类位置」不算'
+  has "$f" '能在当前分支修的：修代码错误、清过期内容、改不准的文档。要另开需求的：要新增功能，或要改变已有功能的行为'
+  has "$f" '用户在「其他」里填编号（如 `1,3`）时只取这几条'
+  has "$f" '弹窗之后把它们补进完成简报的「待解决」'
+  has "$f" '收尾把无关发现合成一张清单一次问'
+done
+has "$EXEC" '改按下方「全部完成」收尾，只在第 ⑦ 步弹窗'
+has "$REVISE" '跟在完成简报后面'
+for t in '还没验证的推测标"未验证"并写怎么验证' \
+  '能在当前分支修的：修代码错误、清过期内容、改不准的文档。要另开需求的：要新增功能，或要改变已有功能的行为' \
+  '多仓库时把各仓库的无关发现合成一张清单，只问一次' \
+  '把选中的条目一次全部传入' \
+  '修完重跑 4.3 全量测试和 4.5 分支自查' \
+  '重新生成 PR 草稿（含 `Requirement:` 行）' \
+  '在 `/git-push` 结束时的回复里列进「待解决」' \
+  '步骤 8 清理完之后' \
+  '修完再运行一次 `/git-push`' \
+  '4.6 的无关发现各仓库合成一张清单只问一次'; do
+  has "$GIT_PUSH" "$t"
+done
+lacks "$GIT_PUSH" '写进最后的总结'
+
+echo "[无关的安全 / 鲁棒性 / 性能问题也只记不改]"
+has "$CC" '唯一例外是本次改动涉及的代码里的安全性 / 鲁棒性 / 性能修复'
+has "$CC" '和本次问题无关的安全性 / 鲁棒性 / 性能问题同样记进「无关发现」'
+lacks "$CC" '唯一例外是安全性 / 鲁棒性 / 性能修复'
+for f in "$EXEC" "$REVISE" "$GIT_PUSH"; do has "$f" '无关的安全性、鲁棒性、性能问题也算'; done
+
+echo "[复查后补：边界、断点续接、合并后的选项]"
+PLAN=bb-spec-workflow/skills/plan/SKILL.md
+has "$CC" '本次改动涉及的代码里的安全性 / 鲁棒性 / 性能问题按 R3.3 处理'
+for f in "$EXEC" "$REVISE"; do
+  has "$f" '子代理和 Review 报告「无关发现」小节里的都算'
+  lacks "$f" 'Review 报告里的都算'
+done
+has "$EXEC" '记的同时写进 PROGRESS.md 的「无关发现」区'
+has "$EXEC" '收尾删 plan 目录前先读出来'
+has "$EXEC" '## 无关发现（发现一条记一条）'
+has "$PLAN" '## 无关发现（发现一条记一条）'
+has "$GIT_PUSH" '用户在「其他」里填编号（如 `1,3`）时只取这几条'
+has "$GIT_PUSH" '下文说的简报，指 `/git-push` 结束时的那条回复'
+has "$GIT_PUSH" '所有选中的条目进同一个新 PR'
+has "$GIT_PUSH" '"全部处理"的说明改成"开一个新分支修完，进同一个新 PR"'
+has "$GIT_PUSH" '各仓库都走到 4.6 再统一问，问完才推送'
+
 echo ""
 echo "通过 ${PASS}，失败 ${FAIL}"
 [[ "$FAIL" -eq 0 ]]
