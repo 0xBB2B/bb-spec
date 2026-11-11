@@ -67,9 +67,9 @@ git rev-list --count HEAD..<基线>   # > 0 即基线已领先、分支落后
 
 ## 4.2 ocr 审查（仅当本机装了 ocr）
 
-放在全量测试之前：这一步修掉的代码，接着就被 4.3 的全量测试覆盖。
+本机装了 ocr 时，在全量测试之前对本分支改动跑一次 ocr 审查，逐条读代码核实、分 🔴/🔶/🔷 列出，用户勾选要修的后交 `/revise` 修；没装 ocr 就跳过。
 
-`command -v ocr` 失败 → 输出「未安装 ocr，跳过第 4.2 步」，进 4.3。是否进入只看本机装没装 ocr，与 AGENTS.md、PRD 无关。
+走到这一步先读 `references/ocr-review.md`（相对本 skill 目录）。
 
 ### 运行（只跑一次）
 
@@ -80,7 +80,7 @@ ocr review --from <基线> --to <当前分支> --format json --audience agent \
 
 - `<基线>` 用步骤 4 选定的基线，不写死 `main`：ocr 审的是 `merge-base(from, to)..to`，rebase 之后正好是本分支自己的改动
 - `<cache_dir>` 取 `${CLAUDE_PLUGIN_ROOT}/scripts/bbspec-paths.sh` 输出的 `cache_dir`；`<branch>` 中的 `/` 替换为 `__`。写入前确认 `<cache_dir>/.gitignore` 存在且内容为单行 `*`，不存在则连目录一并创建
-- 用 Bash 的 `run_in_background` 运行，再用前台 Bash 循环等 ocr 进程退出（不看输出文件是否出现），每次前台调用最多等 2 分钟，没退出就再等一次：一次审查可能超过 10 分钟，直接前台运行会被超时掐断
+- 派 `bb-spec-workflow:script-runner` 跑 ocr，`extract` 写审查结果文件 `<cache_dir>/ocr/<branch>.json` 的路径，输出文件目录 `${CACHE_DIR}/reports/`；审查结果文件的路径随报告交回，主窗口再照 `references/ocr-review.md` 里的规则逐条读代码核实
 
 | 结果 | 处理 |
 |---|---|
@@ -91,66 +91,16 @@ ocr review --from <基线> --to <当前分支> --format json --audience agent \
 
 `status` 为 `partial`（部分文件超时或超预算没审完，退出码仍为 0）时照常处理 `comments`，并在总结行后注明哪些文件没审到（取自 `warnings`）。
 
-### 核实与定级
-
-逐条读 ocr 指向的代码（`path:start_line-end_line`）、它的调用方和相关的检查代码，判断成立与否：
-
-- **成立**：能给出 `文件:行号` 证明问题存在，并确认现有代码没有防住
-- **不成立**：拿不出代码证据，或已有防护；ocr 的原话不算证据
-
-成立的条目定级：
-
-- 🔴 真实场景会触发，后果是崩溃、数据错乱或安全漏洞
-- 🔶 会触发，但后果有限（如单个请求失败），或只在少见条件下出现
-- 🔷 几乎碰不到，或只影响可读性
-
-### 输出
-
-终端宽度有限，把四个详细字段塞进一张大表会每列只剩几个字宽，所以先给总表、再每条一张竖表：
-
-```markdown
-ocr 审了 N 个文件，报了 R 条。逐条读代码核实后：成立 C 条（🔴 a · 🔶 b · 🔷 c），不成立 D 条。
-
-**建议修复**（按优先级排序）
-
-| # | 级 | 问题 | 位置 |
-|---|---|---|---|
-| 1 | 🔴 | <≤ 20 字> | <文件:行号> |
-
-**#1 🔴 <问题>** `<文件:行号>`
-
-| 项目 | 内容 |
-|---|---|
-| 审查证据 | <读到的代码事实，带 文件:行号> |
-| 实际后果 | <触发后会怎样> |
-| 现实情况 | <触发条件、常不常见、有没有被防住>。例：<谁、做了什么、走到哪一行、出了什么事> |
-| 如何修复 | <修复方向> |
-
-**不建议修**（误报或不值得修，回复编号可拉回去修）
-
-| # | ocr 原话 | 位置 | 不修的理由（证据） |
-|---|---|---|---|
-| A | <ocr 的说法> | <文件:行号> | <防护或理由，带 文件:行号>。例：<为什么碰不到> |
-```
-
-- 建议修复按 🔴 → 🔶 → 🔷 排序，编号 1、2、3…；不建议修编号 A、B、C…
-- 不成立的条目为 0 时省略「不建议修」表
-
-### 用户勾选
-
-成立的条目为 0 → 不提问，输出总结行与「不建议修」表，跳到「收尾」。
-
-否则用 AskUserQuestion 问「ocr 核实后建议修 C 条（🔴 a · 🔶 b · 🔷 c），修哪些？」，选项依次为：全部修复（Recommended）/ 只修重点 / 只修核心 / 全不修复。每个选项修的范围：「全部修复」是「建议修复」表里的全部条目，「只修重点」是其中的 🔴 和 🔶，「只修核心」是其中的 🔴，「全不修复」一条也不修；四个选项都不含「不建议修」表里的条目。前三个选项名后面带全角括号，括号里按 🔴🔶🔷 的顺序写这个选项这次实际会修到的等级的图标，这次没有出现的等级不写：三级都有时是「全部修复（🔴🔶🔷）」「只修重点（🔴🔶）」「只修核心（🔴）」，没有 🔷 时第一项是「全部修复（🔴🔶）」。去掉选项按下面的顺序判断：某个选项这次一条都修不到（如没有 🔴 时的「只修核心」），去掉它；「只修重点」和「只修核心」修的范围相同（只有 🔴 和 🔷 时），去掉「只修重点」；剩下的选项里，某个选项和排在它前面的选项修的范围相同（如没有 🔷 时的「只修重点」），去掉它。「全不修复」始终保留，Recommended 标在剩下的第一个选项上，写在等级括号后面，如「全部修复（🔴🔶🔷）(Recommended)」。用户选「其他」时按输入的编号取（如 `1,3,A`，可含「不建议修」表的字母编号）。
-
-### 修复
-
-选「全不修复」→ 跳到「收尾」。否则用 Skill 工具调用 `revise`，把选中项一次全部传入，每条带位置、审查证据、实际后果、现实情况、如何修复；归因诊断、修复、全量测试、本地 commit 由 revise 闭环，禁止绕过 revise 直接改代码。修完不再重跑 ocr，由 4.3 全量测试与 4.5 自查把关。
-
-### 收尾
-
-删除本次的 `<cache_dir>/ocr/<branch>.json`（存在时），进 4.3。
-
 ## 4.3 跑全量测试
+
+**跑脚本**：会自己结束的脚本（测试、构建、类型检查、审查）——
+
+- 预计 2 分钟内能跑完 → 主窗口用前台 Bash 直接跑
+- 预计超过 2 分钟，或拿不准 → 派 `bb-spec-workflow:script-runner`，prompt 给出命令、工作目录、要摘取的内容、输出文件目录 `${CACHE_DIR}/reports/`
+- 主窗口不执行循环等待脚本结束的命令；子代理等待期间做不依赖这次结果的事，没有可做的就结束回合，报告交回后继续
+- 常驻服务（dev server、watch、`tail -f`）由主窗口自己用后台方式启动
+
+全量测试按上面「跑脚本」分流。
 
 测试放在同步基线之后跑：本分支改动和基线新改动各自都能通过，叠加后仍可能失败，只有在 rebase 后的代码上测才算数，也只需测一次。
 
@@ -159,88 +109,17 @@ ocr 审了 N 个文件，报了 R 条。逐条读代码核实后：成立 C 条�
 
 ## 4.5 分支规范自查与 PR 草稿（pre-review）
 
-### 前置探测
+仓库根有 `AGENTS.md`、本分支有新增 PRD 或本分支 commit 指向已合并 PRD 时，派 `pre-reviewer` 子代理自查，违规交 `/revise` 修；最后起草 PR 标题和 6 段描述（末尾带 `Requirement:` 行）。
 
-运行 `${CLAUDE_PLUGIN_ROOT}/scripts/bbspec-paths.sh`，输出的 `docs_repo` 是文档仓库：与当前仓库相同为单仓库，不同为多仓库工作区。再运行 `${CLAUDE_PLUGIN_ROOT}/scripts/branch-prds.sh <基线>`。探测三类规范来源：
+走到这一步先读 `references/pre-review.md`（相对本 skill 目录）。
 
-1. **项目约束**：文档仓库根（单仓库即仓库根）的 `AGENTS.md`
-2. **本分支 PRD**：`branch-prds.sh` 输出的 `new=` 行（基线上还没有 = 本分支新增）
-3. **已合并 PRD**：`branch-prds.sh` 输出的 `merged=` 行，即本分支 commit 的 `Requirement:` 指向、基线上已有的 PRD——本分支在改已合并的功能，期望行为写在 commit 正文里
-
-任一存在 → 进入自查；三者都不存在 → 跳过 4.5.1、4.5.2，直接进 4.5.3 写 PR 草稿。
-
-### 核心原则
-
-1. 以规范为准，不以习惯为准
-2. 直修不商量（规范本身冲突或缺失时才停下问）
-3. 循环到通过（最多 3 轮）
-4. PR 草稿整体 ≤ 50 行
-
-### 4.5.1 派 subagent review
-
-`Agent`（`subagent_type: bb-spec-workflow:pre-reviewer`，模型由 agent 定义指定），prompt 传入：
-- `repo_path`：仓库绝对路径
-- `base_branch`：比对基线分支
-- `agents_md`：仓库根 AGENTS.md 路径（不存在则为空）
-- `prd_dirs`：`new=` 目录的完整路径（`prd_dir`/<目录名>，无则为空）
-- `change_notes`：`git log <基线>..HEAD --format='%h %s%n%b'` 的输出
-- `merged_prd_dirs`：`merged=` 目录的完整路径（`prd_dir`/<目录名>，无则为空）
-- `diff_summary`：diff 概况（commit 数、规模、审查重点）
-
-审查指令、输出格式（`## 结论 PASS|FAIL` → `## PRD 逐条检查` → `## 违规项` → `## 测试缺口` → `## 备注`）、只读约束均由 agent 定义自包含。
-
-### 4.5.2 经 /revise 修复
-
-- PASS 且「测试缺口」为无 → 跳到 4.5.3
-- PASS 但有测试缺口 → 用 Skill 工具调用 `revise`，把全部测试缺口（约束 + 实现的 file:line）作为参数传入，由 revise 按「处理 Review 结果」在推送前补上；补完进 4.5.3，不用复审
-- FAIL → 用 Skill 工具调用 `revise`，把本轮全部违规项（file:line + 违反哪条 + 建议修法）和全部测试缺口作为参数传入；归因诊断、修复、全量测试、本地 commit 由 revise 闭环，禁止绕过 revise 直接改代码 → revise 完成后重新派 subagent 复审 → ≥ 3 轮仍 FAIL → 停下报告分歧
-
-### 4.5.3 生成 PR 标题与描述草稿（6 段，≤ 50 行）
-
-squash 合并后，基线上只留一个 commit：标题就是 PR 标题，正文就是 PR 描述，分支上各个 commit 的说明都不进基线。所以：
-
-- **标题**：≤ 70 字，跟随基线上的 commit 风格（先 `git log --oneline -20 <基线>`）。基线用 `feat(scope): …` / `fix(scope): …` 这类格式时，标题必须是这个格式；破坏性变更在冒号前加 `!`，并在描述末尾写 `BREAKING CHANGE:` 行
-- **描述**：写分支最终做成了什么，中途推翻的做法不写。分支 commit 正文里写了改前 / 改后 / 为什么的，按最终结果汇总进「需求」「方案」「结果」。分支 commit 正文里的「决策」段（没改 PRD 的修复把取舍只记在这里）最终仍有效的，写进「方案」，保留选了什么、否掉了哪些做法及理由、由谁在哪天定的，否则 squash 后基线上就找不到这些决定
-
-```markdown
-## 背景
-## 需求
-## 方案
-## 结果
-## 测试
-## 规范
-
-BREAKING CHANGE: <影响范围与迁移办法；不是破坏性变更时删掉这一行>
-Requirement: <目录名，多个用逗号分隔；没有写 none>
-```
-
-「规范」段写本次涉及的 PRD 目录与相关项目约束（无则写"无"）；跳过了 4.5.1、4.5.2 时注明「未跑分支规范自查」。
-
-最后一行 `Requirement:` 标记必须保留，目录名取 4.5 前置探测里 `branch-prds.sh` 输出的全部 `new=` 与 `merged=` 目录名，用逗号分隔；一个都没有写 `none`。分支在改已合并的功能时，commit 里写的是已合并 PRD 的目录名，squash 后基线上只剩这一行，漏写就查不回那份 PRD。多仓库工作区每个仓库的 PR 都带，代码仓库的 PR 写文档仓库里的 PRD 目录名。
-
-标题与描述直接作为步骤 6 的 `--title`、`--body`。
+**子代理报告**：派工 prompt 里给出细节文件目录 `${CACHE_DIR}/reports/`（`${CACHE_DIR}` 取 `bbspec-paths.sh` 输出的 `cache_dir`）。报告超过上限照常使用，不退回重写。需要报告里没有的细节时，按「细节文件」路径只读需要的那一段，不整份读入。收尾时删掉本次产生的细节文件。
 
 ## 4.6 无关发现（推送之前问一次）
 
-本次 `/git-push` 过程中新冒出来的无关发现（和本分支要解决的问题不是同一个根因的问题）合成一张清单：ocr 核实时看到的、分支自查「备注」里规范没覆盖的问题、被调用的 `/revise` 交回的都算，无关的安全性、鲁棒性、性能问题也算。本会话里已经问过的条目不再问。下文说的简报，指 `/git-push` 结束时的那条回复。每条写位置（`文件:行号`）、一句话问题、不处理的后果、估计用时，还没验证的推测标"未验证"并写怎么验证。多仓库时把各仓库的无关发现合成一张清单，只问一次，位置前写明仓库。清单分两段——能在当前分支修的：修代码错误、清过期内容、改不准的文档。要另开需求的：要新增功能，或要改变已有功能的行为：
+推送之前，把本次过程中冒出来的无关发现合成一张清单，用 AskUserQuestion 问一次处理哪些。
 
-````
-## 无关发现
-**能在当前分支修的**
-| # | 位置 | 问题 | 不处理的后果 | 估计用时 |
-|---|---|---|---|---|
-| 1 | <文件:行号> | <一句话> | <一句话> | <如 10 分钟> |
-
-**要另开需求的**
-- <文件:行号> <一句话问题> — <为什么要另开需求>
-````
-
-- 「能在当前分支修的」为空 → 不弹窗，进步骤 5；「要另开需求的」在 `/git-push` 结束时的回复里列进「待解决」，标明要走 `/prd`
-- 不为空 → 用 AskUserQuestion 问「上面 N 条无关发现，处理哪些？」，选项依次是"全部处理"（说明：在当前分支修完，进同一个 PR）、"都不处理"（说明：留在简报的待解决里）；用户在「其他」里填编号（如 `1,3`）时只取这几条
-- 选了处理 → 用 Skill 工具调用 `revise`，把选中的条目一次全部传入（说明是 `/git-push` 推送前调用）；修完重跑 4.3 全量测试和 4.5 分支自查，都通过后按 4.5.3 重新生成 PR 草稿（含 `Requirement:` 行），再进步骤 5。revise 交回新的无关发现时再问一次，只问新的
-- 没选中的在 `/git-push` 结束时的回复里列进「待解决」，逐条带位置
-
-**合并之后才发现的**：步骤 7、8 里新发现的无关问题，等步骤 8 清理完之后合成一张清单一次问；选中的按 git-workflow 开一个新分支，一次全部交 `/revise` 修，修完再运行一次 `/git-push`，所有选中的条目进同一个新 PR；这次弹窗"全部处理"的说明改成"开一个新分支修完，进同一个新 PR"。revise 交回新的无关发现时再问一次，只问新的。
+走到这一步先读 `references/unrelated-findings.md`（相对本 skill 目录）。
 
 ## 5. 推送到远程
 
@@ -248,89 +127,21 @@ Requirement: <目录名，多个用逗号分隔；没有写 none>
 
 ## 6. 创建 PR
 
-根据 `git remote get-url origin` 判断平台（github → `gh`，gitlab → `glab`）。合并对象沿用步骤 4 选定的 base repo：
+按 `origin` 的地址判断平台（GitHub 用 `gh`，GitLab 用 `glab`），向步骤 4 选定的合并对象创建 PR，创建后提醒用户核对仓库的 squash 合并设置。
 
-- **base 为 origin** → `gh pr create` 显式带 `--repo <origin 的 owner/repo>`。fork 的 clone 里 gh 默认把 PR 开到 parent 仓库（upstream），不显式指定会开错地方。
-- **base 为 upstream** → `--repo <upstream 的 owner/repo>`；且步骤 7 所有 `gh pr view/merge/close` 同样显式带该 `--repo`，步骤 8 的 `git pull` 源换成 `upstream main`（拉完可再 `git push origin main` 同步 fork）。GitLab 对应 `glab mr create --target-project`。
-
-### 创建
-
-- 标题、body 用 4.5.3 的草稿
-- PR 创建后提醒用户核对仓库合并设置：只允许 squash 合并，平台默认的 squash 说明用 PR 标题和描述。有人在网页上点合并时用的是这个默认说明，设成别的 `Requirement:` 行会丢：
-  - GitHub：Settings → General → Pull Requests 只勾「Allow squash merging」，取消「Allow merge commits」和「Allow rebase merging」，「Allow squash merging」的默认说明选「Default to pull request title and description」；Settings → Rules → Rulesets 里作用于主分支的规则集，「Require a pull request before merging」的「Allowed merge methods」也只留 Squash——两处都放行 squash 才能合并
-  - GitLab：Settings → Merge requests 的 Merge method 选「Fast-forward merge」（选 Merge commit 会在 squash commit 之外再多一个合并 commit），「Squash commits when merging」选「Require」，「Squash commit message template」填 `%{title}`、空一行、`%{description}`
+走到这一步先读 `references/create-pr.md`（相对本 skill 目录）。
 
 ## 7. 处理 PR
 
-**worktree 模式铁律**：步骤 2 标记为 worktree 模式时，本步所有 `gh pr merge` / `gh pr close` **一律去掉 `--delete-branch`**（GitLab：`--remove-source-branch`）。原因：gh 在合并/关闭成功后会立即试图删本地分支，但分支被 worktree 占用必失败（gh 报非零退出码——而服务端合并实际已完成）。本地与远程分支删除统一交给步骤 8 在 `worktree remove` 之后做。
+PR 创建后让用户选自动合并、已合并或关闭；合并是否完成只认 `pr-status.sh` 输出的 `state=merged`，合并后核对基线上的 commit 说明带 `Requirement:`。
 
-合并时把 4.5.3 的标题和描述显式传给平台：不传时平台用仓库默认的 squash 说明，可能只有标题，`Requirement:` 行就丢了。选自动合并时，先把描述写进 `<cache_dir>/pr/<branch>.md`（`<cache_dir>` 与 `<branch>` 的取法、`.gitignore` 的检查同 4.2），GitLab 另写一份 `<branch>.squash.md`，内容为标题、空一行、描述。
-
-创建后用 AskUserQuestion 让用户选（除非已显式声明）：
-
-1. **自动合并**：`gh pr merge <n> --squash --subject "<PR 标题> (#<n>)" --body-file <描述文件> --auto --delete-branch`（GitLab：`glab mr merge <n> --squash --squash-message "$(cat <squash 说明文件>)" --auto-merge --remove-source-branch`；worktree 模式去掉删分支 flag）
-2. **已合并**：直接进入「合并结果核验」
-3. **关闭 PR**：`gh pr close --delete-branch` → 清理（worktree 模式同样去 `--delete-branch`；GitLab：`glab mr close <n>`，它没有删分支的参数，分支由步骤 8 删）
-
-**`--auto` 被拒**（仓库未开启 auto-merge，报 `Auto merge is not allowed` / `enablePullRequestAutoMerge`）→ 降级为不带 `--auto` 的 `gh pr merge <n> --squash --subject "<PR 标题> (#<n>)" --body-file <描述文件> --delete-branch` 重试（worktree 模式同样去 `--delete-branch`）。GitLab 不降级重试：MR 没有流水线时 glab 本来就直接合并；glab 报 `Cannot perform merge action` 说明流水线失败或被取消，按「未合并排查」的 CI 失败处理。用 `--auto-merge=false` 重试会在项目没开「Pipelines must succeed」时把 CI 失败的 MR 直接合并。
-
-### 合并结果核验（唯一完成判据，所有合并路径必经）
-
-**铁律：合并是否完成，只认 `${CLAUDE_SKILL_DIR}/scripts/pr-status.sh <n> <base remote>` 输出的 `state=merged`。`gh pr merge` / `glab mr merge` 的 stdout 与退出码一律不作数**——它可能只表示「已加入自动合并队列」，也可能在 auto 不可用时报错而根本没合并。脚本按 remote 地址选 gh / glab，把两边的状态归成同一套值，输出 `state`、`merge_commit`、`blocker` 三行。执行任何合并动作后，**必须**运行它再下结论：
-
-- `state=merged` → 进入「核对 squash 说明」
-- `state=open` → **尚未合并：禁止进入清理、禁止宣告完成**，按下方「未合并排查」处理后重试合并并重新核验
-- `state=closed`（未合并）→ 提醒用户选择
-
-### 未合并排查（state=open）
-
-按同一次输出的 `blocker` 处理：
-
-- **`conflict`**（有冲突，GitLab 也包括要求先 rebase）→ `git rebase <基线>`（步骤 4 选定）：机械性冲突自行解决 + `--force-with-lease` 重推；业务性冲突停下报告。重推后平台异步重算能否合并，需等 `blocker` 不再是 `computing` / `conflict` 再重试合并
-- **`computing`**（平台还在计算，常见于刚 push / rebase 后）→ 短暂轮询后重查，勿据此误判为冲突
-- **`ci_running`** → 告知用户挂起、跳过清理
-- **`ci_failed`** → 取消自动合并 → 拉失败日志 → 机械性失败（lint/format/lockfile）自行修复后重设；业务性失败停下报告
-- **`none`**（平台认为可以合并）→ 自动合并还在排队时等它完成；不在排队就重试合并
-- **`other:<原始状态>`**（如 GitHub 的 `BEHIND`、`UNSTABLE`，GitLab 的 `not_approved`、`draft_status`）→ 把原始状态报告给用户，停下等处理
-- **合并方式被拒**（`gh pr merge` 报不允许 squash 合并）→ 仓库常规设置和主分支规则集都限制合并方式，任一处不放行 squash 都会被拒。分别查 `gh repo view <owner>/<repo> --json squashMergeAllowed` 与 `gh api repos/<owner>/<repo>/rules/branches/<基线分支名> --jq '.[] | select(.type=="pull_request") | .parameters.allowed_merge_methods'`，把不放行的那处报给用户；改仓库设置须经用户同意，改完重试合并
-
-### 核对 squash 说明
-
-合并进基线的 commit 取 `pr-status.sh` 输出的 `merge_commit`。`git fetch <base remote>` 后读 `git log -1 --format=%B <哈希> | grep '^Requirement:'`：
-
-- 有 → 进步骤 8
-- 没有 → 告诉用户「合并进基线的 commit 说明里没有 `Requirement:` 行，以后查代码历史时这次改动连不回 PRD」，请用户按步骤 6 的设置提醒检查平台设置；不拦清理，进步骤 8
-- 取不到哈希 → 报告「没能核对 squash 说明」，进步骤 8
-
-核对完删除步骤 7 写的描述文件（存在时）。
+走到这一步先读 `references/handle-pr.md`（相对本 skill 目录）。
 
 ## 8. 合并后清理（按步骤 2 的模式分流）
 
-### 普通模式（直接切分支）
+合并后清理本地与远程分支，普通模式和 worktree 模式的命令不同。
 
-```bash
-git checkout main && git pull origin main
-git rev-parse --abbrev-ref HEAD   # 确认在 main
-git branch -D <branch>            # 用 -D：squash 合并在基线上生成新 commit，分支上的 commit 不在基线里，-d 会拒绝
-# 探测远程分支是否存在再删
-git ls-remote --exit-code --heads origin <branch> && git push origin --delete <branch>
-git fetch -p                      # 裁剪远程引用
-```
-
-### worktree 模式
-
-主仓库本就停在 main，**禁止在 worktree 内 `git checkout main`**（该分支被主仓库占用，会报错）。改为先回主仓库、移除 worktree、再删分支：
-
-```bash
-WT="$(git rev-parse --show-toplevel)"           # 当前 worktree 路径（移除前先取）
-cd "$(git rev-parse --git-common-dir)/.." && pwd # 回到主仓库根（已在 main）
-git pull origin main
-git worktree remove "$WT"                        # 有未提交改动会拒绝——此时应已 commit+push
-git branch -D <branch>                           # worktree 移除后才能删其分支
-# 探测远程分支是否存在再删
-git ls-remote --exit-code --heads origin <branch> && git push origin --delete <branch>
-git fetch -p && git worktree prune               # 裁剪远程引用 + worktree 元数据
-```
+走到这一步先读 `references/cleanup.md`（相对本 skill 目录）。
 
 ## 多仓库处理
 

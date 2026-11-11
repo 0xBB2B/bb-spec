@@ -23,13 +23,30 @@ allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 
 ## Agent 定义
 
-三个 Agent 通过 plugin 注册的 `subagent_type` 派工，数据通过 `prompt` 传入：
+以下 Agent 通过 plugin 注册的 `subagent_type` 派工，数据通过 `prompt` 传入：
 
 | Agent | subagent_type | 角色 |
 |---|---|---|
 | Test Agent | `bb-spec-workflow:test-engineer` | 测试工程师：只读 PRD 约束写测试 |
 | Impl Agent | `bb-spec-workflow:impl-engineer` | 实现工程师：只看测试写实现 |
 | Review Agent | `bb-spec-workflow:prd-reviewer` | 合规审查者：对照 PRD 约束与验收检查产出 |
+| 调查 Agent | `bb-spec-workflow:code-investigator` | 代码调查者：替主窗口搜索和翻读代码，交回带 `文件:行号` 的结论 |
+| 脚本 Agent | `bb-spec-workflow:script-runner` | 脚本执行者：启动并等完会自己结束的脚本，交回几行结论和输出文件路径 |
+
+**跑脚本**：会自己结束的脚本（测试、构建、类型检查、审查）——
+
+- 预计 2 分钟内能跑完 → 主窗口用前台 Bash 直接跑
+- 预计超过 2 分钟，或拿不准 → 派 `bb-spec-workflow:script-runner`，prompt 给出命令、工作目录、要摘取的内容、输出文件目录 `${CACHE_DIR}/reports/`
+- 主窗口不执行循环等待脚本结束的命令；子代理等待期间做不依赖这次结果的事，没有可做的就结束回合，报告交回后继续
+- 常驻服务（dev server、watch、`tail -f`）由主窗口自己用后台方式启动
+
+**调查交给子代理**：要弄清"系统现在怎么做"或"问题出在哪"时——
+
+- 不知道答案在哪个文件，或预计要读 3 个以上源码文件 → 派 `bb-spec-workflow:code-investigator`，prompt 给出要回答的问题、已知线索（功能名、相关 PRD 目录、报错文字）、项目根路径、细节文件目录 `${CACHE_DIR}/reports/`；主窗口不自己搜索和翻读
+- 已经知道文件和大概位置 → 主窗口自己读那一段（定点读）
+- 留在主窗口的读取：PRD、plan、AGENTS.md 等文档；看 `git diff` 验收子代理的改动；定点读
+- 调查子代理交回的带 `文件:行号` 的结论算本次实际读过的代码，可以直接用于回答和讨论
+- 要写进 PRD 的现状、要据此改代码的根因：先按行号定点读，确认和报告一致才能用；不一致以读到的代码为准，这条结论作废，重新调查这一点
 
 **信息隔离矩阵**：
 
@@ -47,6 +64,8 @@ allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 | 项目测试惯例 | ✅ | ❌ | ❌ |
 | Test Agent 写的测试文件 | — | ✅ | ✅ |
 | Impl Agent 写的代码 | — | — | ✅ |
+
+**子代理报告**：派工 prompt 里给出细节文件目录 `${CACHE_DIR}/reports/`（`${CACHE_DIR}` 取 `bbspec-paths.sh` 输出的 `cache_dir`）。报告超过上限照常使用，不退回重写。需要报告里没有的细节时，按「细节文件」路径只读需要的那一段，不整份读入。收尾时删掉本次产生的细节文件。
 
 ## 工作流
 
@@ -132,7 +151,7 @@ Review 只报了测试缺口、没有 ❌ 时，直接按本段补，不进归�
 
 - **单个 plan 模式**：当前 plan 完成即停，输出完成简报，再按下方「无关发现」弹窗；若它是本主题最后一个未完成的 plan，改按下方「全部完成」收尾，只在第 ⑦ 步弹窗
 - **全部执行 + 还有后续组**：并行组须**整组结束**（含阻塞项）后再回步骤 2 推进下一组——下一组可能依赖本组产出
-- **全部执行 + 全部完成**：① 运行全量测试确认无回归 ② 界面对比（见下方）③ 调用 `Skill bb-spec-workflow:doc-update`，参数 `--tail`（收尾模式：让本次 PRD 与 README、AGENTS.md 等文档追平实际交付，其他 PRD 不碰）④ 先读出 PROGRESS.md「重试与自修」「无关发现」两区，再 `git rm -r` 删除本主题 plan 目录（多仓库时在文档仓库执行）——plan 内联复述了 PRD，留着会和 PRD 重复，历史靠 git 追溯 ⑤ 把 doc-update 改动与 plan 删除做一次本地 commit（守卫同步骤 3）⑥ 输出完成简报 ⑦ 按下方「无关发现」弹窗
+- **全部执行 + 全部完成**：① 运行全量测试确认无回归（按上面「跑脚本」分流） ② 界面对比（见下方）③ 调用 `Skill bb-spec-workflow:doc-update`，参数 `--tail`（收尾模式：让本次 PRD 与 README、AGENTS.md 等文档追平实际交付，其他 PRD 不碰）④ 先读出 PROGRESS.md「重试与自修」「无关发现」两区，再 `git rm -r` 删除本主题 plan 目录（多仓库时在文档仓库执行）——plan 内联复述了 PRD，留着会和 PRD 重复，历史靠 git 追溯。再删除 `${CACHE_DIR}/reports/` 下本次产生的细节文件 ⑤ 把 doc-update 改动与 plan 删除做一次本地 commit（守卫同步骤 3）⑥ 输出完成简报 ⑦ 按下方「无关发现」弹窗
 
 **界面对比**：`${CACHE_DIR}/ui-preview/<本次 PRD 目录名>.html` 存在，说明 `/prd` 阶段用户确认过一份界面预览。这时调用 `Skill bb-spec-workflow:prototype`，参数 `--compare <预览页路径>`，按返回结果处理：
 

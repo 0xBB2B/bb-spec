@@ -10,15 +10,22 @@ FAIL=0
 pass() { PASS=$((PASS + 1)); }
 fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 
+skill_scope() {
+  case "$1" in
+    */skills/git-push/SKILL.md|*/skills/prd/SKILL.md|*/skills/revise/SKILL.md) dirname "$1" ;;
+    *) printf '%s\n' "$1" ;;
+  esac
+}
+
 has() {
   local file="$1" text="$2"
-  if grep -qF -- "$text" "$WF/$file" 2>/dev/null; then pass; else fail "${file} 缺少：${text}"; fi
+  if grep -rqF -- "$text" "$(skill_scope "$WF/$file")" 2>/dev/null; then pass; else fail "${file} 缺少：${text}"; fi
 }
 
 lacks() {
   local file="$1" text="$2"
   local rc=0
-  grep -qF -- "$text" "$WF/$file" 2>/dev/null || rc=$?
+  grep -rqF -- "$text" "$(skill_scope "$WF/$file")" 2>/dev/null || rc=$?
   case "$rc" in
     0) fail "${file} 不应含：${text}" ;;
     1) pass ;;

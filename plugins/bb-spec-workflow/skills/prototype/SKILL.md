@@ -30,6 +30,8 @@ allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 - 子代理不能直接问用户，要问的事都写在报告的「待用户确认的问题」里，由主对话转给用户
 - 子代理派不出去（Agent 工具报错、找不到这个子代理，比如账号用不了 `fable` 模型）时停下，把报错原文告诉用户，由用户决定怎么办，不自己接手出原型或对比
 
+**子代理报告**：派工说明里给出细节文件目录 `${CACHE_DIR}/reports/`（`${CACHE_DIR}` 取 `bbspec-paths.sh` 输出的 `cache_dir`）。报告超过上限照常使用，不退回重写。需要报告里没有的细节时，按「细节文件」路径只读需要的那一段，不整份读入。
+
 ## 出原型
 
 1. 确定文件位置。调用方给了 `--file` 就用它，否则是 `${CACHE_DIR}/ui-preview/<YYYY-MM-DD>.<主题>.html`（主题 kebab-case）
@@ -41,7 +43,7 @@ allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
    - 需求结论：这次要设计的界面、调用方已经和用户确认的内容，对应 `requirement`。用户的原话照抄，不改写
    - 路径：DESIGN.md 应在的完整路径（`bbspec-paths.sh` 输出的 `docs_repo` 的根目录，`docs_repo` 为空时取 `root`），对应 `design_md_path`；设计规范草稿的完整路径（原型文件名的 `.html` 换成 `.DESIGN.draft.md`），对应 `design_draft_path`。原型文件旁边已有 `.DESIGN.draft.md` 或 `.DESIGN.md` 时，在这一项里写明已有的是哪个：旁边有哪个临时文件就写哪个的路径
 
-   6 项之外，再附上模板目录 `${CLAUDE_PLUGIN_ROOT}/templates` 的完整路径，对应 `templates_dir`（里面有外壳模板 `${CLAUDE_PLUGIN_ROOT}/templates/ui-preview-shell.html` 和 DESIGN.md 模板 `${CLAUDE_PLUGIN_ROOT}/templates/DESIGN.md`）
+   6 项之外，再附上模板目录 `${CLAUDE_PLUGIN_ROOT}/templates` 的完整路径，对应 `templates_dir`（里面有外壳模板 `${CLAUDE_PLUGIN_ROOT}/templates/ui-preview-shell.html` 和 DESIGN.md 模板 `${CLAUDE_PLUGIN_ROOT}/templates/DESIGN.md`），以及细节文件目录 `${CACHE_DIR}/reports/` 的完整路径，对应 `reports_dir`
 3. 原型文件已存在时，派工说明里再写一句"原型文件已存在，接着改"，并把用户的原话照抄进去，对应 `resume_note`
 4. 派 `bb-spec-workflow:prototype-designer`，等它交回报告
 5. 每轮收到报告，按下面处理：
@@ -61,6 +63,8 @@ allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 - 单独运行（`/prototype <主题>`）：告诉用户原型文件路径，到此结束。不写 PRD，不改产品代码
 - 被 `/prd`、`/revise` 调用（`<主题> --file <路径>`）：把确认内容清单和原型文件路径交给调用方，回到调用方继续。`/prd` 照清单写约束和验收，`/revise` 把清单当作期望行为
 
+这一步做完后删掉本次产生的细节文件（`${CACHE_DIR}/reports/` 下）。
+
 ## 对比（--compare）
 
 1. 写派工说明，必须写全 3 项，缺一项就先补齐再派：
@@ -70,3 +74,5 @@ allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 2. 每次新派一个原型子代理，不复用出原型的那个
 3. 需要跑项目、运行命令时，子代理会把完整命令、出处、端口占用情况写进「待用户确认的问题」，主对话照「出原型」第 5 步转给用户、传回答复。答复发不到原来的子代理时，新派一个原型子代理，3 项之外附上用户的答复，对应 `resume_note`
 4. 子代理交回「一致」「不一致」「没跑起来」三种结果之一，把结果原样交给调用方，后续怎么处理由调用方决定
+
+这一步做完后删掉本次产生的细节文件（`${CACHE_DIR}/reports/` 下）。

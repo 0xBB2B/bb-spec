@@ -22,7 +22,7 @@ section() {
 
 in_text() {
   local label="$1" text="$2" body="$3"
-  if printf '%s\n' "$body" | grep -qF -- "$text"; then pass; else fail "${label} 缺少：${text}"; fi
+  if printf '%s\n' "$body" | grep -F -- "$text" >/dev/null; then pass; else fail "${label} 缺少：${text}"; fi
 }
 
 summary() {
@@ -66,11 +66,11 @@ echo "[颜色一节]"
 COLOR="$(section '## 2. 颜色' '^## ')"
 in_text 颜色 '浅色' "$COLOR"
 in_text 颜色 '深色' "$COLOR"
-if printf '%s\n' "$COLOR" | grep -E '^\|' | grep -F '浅色' | grep -qF '深色'; then pass; else fail "颜色一节的表头应同一行含 浅色 和 深色"; fi
+if printf '%s\n' "$COLOR" | grep -E '^\|' | grep -F '浅色' | grep -F '深色' >/dev/null; then pass; else fail "颜色一节的表头应同一行含 浅色 和 深色"; fi
 for t in primary on-primary background surface text text-muted border border-strong danger; do
   in_text 颜色 "| $t |" "$COLOR"
 done
-if printf '%s\n' "$COLOR" | grep -F '| border-strong |' | grep -qF '3:1'; then pass; else fail "border-strong 一行应写明对比度至少 3:1"; fi
+if printf '%s\n' "$COLOR" | grep -F '| border-strong |' | grep -F '3:1' >/dev/null; then pass; else fail "border-strong 一行应写明对比度至少 3:1"; fi
 
 echo "[圆角一节]"
 in_text 圆角 '全圆角' "$(section '## 5. 圆角、边框、阴影' '^## ')"
@@ -85,7 +85,7 @@ for c in 按钮 输入框 表格 卡片 弹窗 提示条; do
     pass
     SUB="$(section "### $c" '^#{1,3} ' | tail -n +2)"
     for s in 默认 悬停 按下 禁用 聚焦; do
-      if printf '%s\n' "$SUB" | grep -qF -- "| $s |" && printf '%s\n' "$SUB" | grep -q -- "^| $s |"; then pass; else fail "${c} 缺少以 | ${s} | 开头的行"; fi
+      if printf '%s\n' "$SUB" | grep -F -- "| $s |" >/dev/null && printf '%s\n' "$SUB" | grep -- "^| $s |" >/dev/null; then pass; else fail "${c} 缺少以 | ${s} | 开头的行"; fi
     done
   else
     fail "第 7 节组件里缺少三级标题：### $c"
@@ -125,32 +125,44 @@ in_text 组件开头 'modal-header' "$S7_HEAD"
 in_text 按钮写法 '主按钮、次按钮各写一份' "$(section '### 按钮' '^#{1,3} ')"
 for c in 按钮 输入框 表格 卡片 弹窗 提示条; do
   SUB="$(section "### $c" '^#{1,3} ' | tail -n +2)"
-  if printf '%s\n' "$SUB" | grep -q -- '^- 写法：'; then pass; else fail "${c} 缺少以 - 写法： 开头的行"; fi
+  if printf '%s\n' "$SUB" | grep -- '^- 写法：' >/dev/null; then pass; else fail "${c} 缺少以 - 写法： 开头的行"; fi
 done
 
 echo "[页面框架表]"
 LAYOUT="$(section '## 6. 布局与断点' '^## ')"
-if printf '%s\n' "$LAYOUT" | grep -E '^\|' | grep -F '位置和尺寸' | grep -F '写法（HTML 结构和类名）' | grep -qF '不同断点下怎么变'; then pass; else fail "布局一节的表头应同一行含 位置和尺寸、写法（HTML 结构和类名）、不同断点下怎么变"; fi
+if printf '%s\n' "$LAYOUT" | grep -E '^\|' | grep -F '位置和尺寸' | grep -F '写法（HTML 结构和类名）' | grep -F '不同断点下怎么变' >/dev/null; then pass; else fail "布局一节的表头应同一行含 位置和尺寸、写法（HTML 结构和类名）、不同断点下怎么变"; fi
 in_text 布局 '不适用：<原因>' "$LAYOUT"
 in_text 布局 '页面框架写法' "$LAYOUT"
 for r in 顶栏 侧边栏 导航; do
-  if printf '%s\n' "$LAYOUT" | grep -q -- "^| $r |"; then pass; else fail "布局一节缺少以 | ${r} | 开头的行"; fi
+  if printf '%s\n' "$LAYOUT" | grep -- "^| $r |" >/dev/null; then pass; else fail "布局一节缺少以 | ${r} | 开头的行"; fi
 done
 
 echo "[无障碍例外表]"
 A11Y="$(section '## 9. 无障碍' '^## ')"
 in_text 无障碍 '例外' "$A11Y"
-if printf '%s\n' "$A11Y" | grep -E '^\|' | grep -F '| 项 |' | grep -F '实际值' | grep -qF '用户确认日期'; then pass; else fail "无障碍一节的例外表头应同一行含 项、实际值、用户确认日期"; fi
+if printf '%s\n' "$A11Y" | grep -E '^\|' | grep -F '| 项 |' | grep -F '实际值' | grep -F '用户确认日期' >/dev/null; then pass; else fail "无障碍一节的例外表头应同一行含 项、实际值、用户确认日期"; fi
+
+skill_cat() {
+  cat "$1" || return
+  case "$1" in
+    */skills/git-push/SKILL.md|*/skills/prd/SKILL.md|*/skills/revise/SKILL.md)
+      local r
+      for r in "$(dirname "$1")"/references/*.md; do
+        if [ -f "$r" ]; then cat "$r"; fi
+      done ;;
+  esac
+  return 0
+}
 
 WF="$ROOT/plugins/bb-spec-workflow"
 
 # 取文件 $1 里以 $2 开头的行到下一个匹配 $3 的行之间的内容（含起始行）；读不到文件时返回空
 file_section() {
-  awk -v start="$2" -v stop="$3" '
+  skill_cat "$1" 2>/dev/null | awk -v start="$2" -v stop="$3" '
     found && $0 ~ stop { exit }
     index($0, start) == 1 { found = 1 }
     found { print }
-  ' "$1" 2>/dev/null || true
+  ' || true
 }
 
 frontmatter() {
@@ -186,10 +198,10 @@ if need_file "$REVISE"; then
   done
   RULES="$(file_section "$REVISE" '## Agent 隔离规则' '^## [^A]')"
   for row in '| Impl Agent |' '| Review Agent |'; do
-    if printf '%s\n' "$RULES" | grep -F -- "$row" | grep -qF 'DESIGN.md'; then pass; else fail "revise 隔离规则表 ${row} 一行缺少：DESIGN.md"; fi
+    if printf '%s\n' "$RULES" | grep -F -- "$row" | grep -F 'DESIGN.md' >/dev/null; then pass; else fail "revise 隔离规则表 ${row} 一行缺少：DESIGN.md"; fi
   done
   S4="$(file_section "$REVISE" '### 步骤 4' '^### ')"
-  if printf '%s\n' "$S4" | grep -E '^5\. ' | grep -qF '本次经用户同意新建或改过的 DESIGN.md'; then pass; else fail "revise 步骤 4 第 5 条缺少：本次经用户同意新建或改过的 DESIGN.md"; fi
+  if printf '%s\n' "$S4" | grep -E '^5\. ' | grep -F '本次经用户同意新建或改过的 DESIGN.md' >/dev/null; then pass; else fail "revise 步骤 4 第 5 条缺少：本次经用户同意新建或改过的 DESIGN.md"; fi
 fi
 
 echo "[impl-engineer：inputs 和正文]"
@@ -213,7 +225,7 @@ echo "[doc-update：名单、C 类、核对条目和选项]"
 if need_file "$DOCUP"; then
   in_text doc-update-description 'DESIGN.md' "$(frontmatter "$DOCUP" | grep '^description:')"
   ALL="$(cat "$DOCUP")"
-  if printf '%s\n' "$ALL" | grep -F 'CONTRIBUTING.md' | grep -F 'ARCHITECTURE.md' | grep -qF 'DESIGN.md'; then pass; else fail "doc-update 名单行应同时含 CONTRIBUTING.md、ARCHITECTURE.md、DESIGN.md"; fi
+  if printf '%s\n' "$ALL" | grep -F 'CONTRIBUTING.md' | grep -F 'ARCHITECTURE.md' | grep -F 'DESIGN.md' >/dev/null; then pass; else fail "doc-update 名单行应同时含 CONTRIBUTING.md、ARCHITECTURE.md、DESIGN.md"; fi
   in_text doc-update-C类 'DESIGN.md 对不上' "$(file_section "$DOCUP" '## 四类发现' '^---|^## [^四]' | grep -F 'code-violation')"
   for t in 'DESIGN.md 核对' '改项目约束或 DESIGN.md' '选之前两边都不改'; do
     in_text doc-update "$t" "$ALL"
@@ -242,7 +254,7 @@ PRD_MD="$W/skills/prd/SKILL.md"; DU="$W/skills/doc-update/SKILL.md"; REV="$W/ski
 EXEC_MD="$W/skills/exec/SKILL.md"; RVW="$W/agents/prd-reviewer.md"; IMPL="$W/agents/impl-engineer.md"
 line_has() {
   local label="$1" file="$2" key="$3"; shift 3
-  local L; L="$(grep -F -- "$key" "$file" 2>/dev/null | head -n1 || true)"
+  local L; L="$(skill_cat "$file" 2>/dev/null | grep -F -- "$key" | head -n1 || true)"
   if [[ -z "$L" ]]; then fail "${label} 找不到含「${key}」的行"; return; fi
   for t in "$@"; do in_text "$label" "$t" "$L"; done
 }

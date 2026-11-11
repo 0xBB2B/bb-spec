@@ -10,15 +10,34 @@ FAIL=0
 pass() { PASS=$((PASS + 1)); }
 fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 
+skill_scope() {
+  case "$1" in
+    */skills/git-push/SKILL.md|*/skills/prd/SKILL.md|*/skills/revise/SKILL.md) dirname "$1" ;;
+    *) printf '%s\n' "$1" ;;
+  esac
+}
+
+skill_cat() {
+  cat "$1" || return
+  case "$1" in
+    */skills/git-push/SKILL.md|*/skills/prd/SKILL.md|*/skills/revise/SKILL.md)
+      local r
+      for r in "$(dirname "$1")"/references/*.md; do
+        if [ -f "$r" ]; then cat "$r"; fi
+      done ;;
+  esac
+  return 0
+}
+
 has() {
   local file="$1" text="$2"
-  if grep -qF -- "$text" "$PL/$file" 2>/dev/null; then pass; else fail "${file} 缺少：${text}"; fi
+  if grep -rqF -- "$text" "$(skill_scope "$PL/$file")" 2>/dev/null; then pass; else fail "${file} 缺少：${text}"; fi
 }
 
 lacks() {
   local file="$1" text="$2"
   local rc=0
-  grep -qF -- "$text" "$PL/$file" 2>/dev/null || rc=$?
+  grep -rqF -- "$text" "$(skill_scope "$PL/$file")" 2>/dev/null || rc=$?
   case "$rc" in
     0) fail "${file} 不应含：${text}" ;;
     1) pass ;;
@@ -206,10 +225,10 @@ for t in '## 4.6 无关发现（推送之前问一次）' '修完重跑 4.3 全�
   '进同一个 PR' '→ **无关发现一次问**' '→推送前把无关发现合成一张清单一次问→推送'; do
   has "$GIT_PUSH" "$t"
 done
-c46=$(grep -c -- '^## 4\.6 ' "$PL/$GIT_PUSH" 2>/dev/null || true)
-c5=$(grep -c -- '^## 5\. 推送到远程$' "$PL/$GIT_PUSH" 2>/dev/null || true)
-n46=$(grep -n -- '^## 4\.6 ' "$PL/$GIT_PUSH" 2>/dev/null | head -1 | cut -d: -f1 || true)
-n5=$(grep -n -- '^## 5\. 推送到远程$' "$PL/$GIT_PUSH" 2>/dev/null | head -1 | cut -d: -f1 || true)
+c46=$(skill_cat "$PL/$GIT_PUSH" 2>/dev/null | grep -c -- '^## 4\.6 ' || true)
+c5=$(skill_cat "$PL/$GIT_PUSH" 2>/dev/null | grep -c -- '^## 5\. 推送到远程$' || true)
+n46=$(skill_cat "$PL/$GIT_PUSH" 2>/dev/null | grep -n -- '^## 4\.6 ' | head -1 | cut -d: -f1 || true)
+n5=$(skill_cat "$PL/$GIT_PUSH" 2>/dev/null | grep -n -- '^## 5\. 推送到远程$' | head -1 | cut -d: -f1 || true)
 if [[ "$c46" == 1 && "$c5" == 1 && -n "$n46" && -n "$n5" && "$n46" -lt "$n5" ]]; then pass; else fail "git-push 中 ## 4.6 应在 ## 5. 推送到远程 之前（4.6 行=${n46:-无}，5 行=${n5:-无}）"; fi
 
 echo "[无关发现：code-constraints]"

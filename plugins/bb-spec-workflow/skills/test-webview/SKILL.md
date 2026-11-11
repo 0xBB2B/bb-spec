@@ -81,6 +81,9 @@ UI 验证用例的生成与覆盖完整性都由本 skill 独占负责。
 - `mcp_family`：`${MCP_FAMILY}`（playwright | chrome-devtools）
 - `project_context`：技术栈一句话（供选择器 / 等待策略参考）
 - `screenshots_dir`：`${CACHE_DIR}/webview-shots/`（截图统一落此；派发首个用例前已按步骤 0 缓存约定确保该目录与 `.cache/.gitignore` 就位）
+- `reports_dir`：`${CACHE_DIR}/reports/`
+
+**子代理报告**：派工 prompt 里给出细节文件目录 `${CACHE_DIR}/reports/`。步骤 6 清理时删掉本次产生的细节文件。
 
 subagent 返回结构化 verdict：`{ caseId, category, status: pass|fail|error, failedStep, evidence, screenshots[] }`（`skipped` 由主 agent 在依赖闸门处赋予，不派发）。主 agent 只把 verdict 摘要记入内存，**不回读** MCP 交互细节。
 
@@ -113,6 +116,8 @@ subagent 返回结构化 verdict：`{ caseId, category, status: pass|fail|error,
 - **有失败 / 错误**（跳过项是其上游失败的连带，修好上游后重跑即可恢复）→ 用 `AskUserQuestion` 询问是否 `/revise` 修复。用户同意 → 用 Skill 工具调用 `revise`，把失败用例的**标题 / `target` / 失败步骤 / evidence / 截图**作为输入传入，由 revise 诊断归因（PRD / impl / 需求哪层）并闭环修复；本 skill 不自行改代码。
 
 ### 步骤 6：清理（无条件执行）
+
+同时删掉 `${CACHE_DIR}/reports/` 下本次产生的细节文件。
 
 无论通过、失败还是中断，都执行环境清理：用记忆的 `down` 命令（缺省 `docker compose down -v`）拆容器 + 删数据卷，保证下次拉起干净。
 

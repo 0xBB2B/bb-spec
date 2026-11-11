@@ -146,8 +146,8 @@
 
 **동봉되는 것**
 
-- **6개 오케스트레이션 subagent**(위 단계에 의해 구동): `test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer` / `prototype-designer`
-- **3개 수동 hook**(자동 발동): main 커밋 차단, 의존성 버전 자가 점검, 백그라운드 스크립트 완료 대기
+- **8개 오케스트레이션 subagent**(위 단계에 의해 구동): `test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer` / `prototype-designer` / `code-investigator` / `script-runner`
+- **3개 수동 hook**(자동 발동): main 커밋 차단, 의존성 버전 자가 점검, 백그라운드 스크립트 폴링 안 함
 
 ---
 
@@ -195,7 +195,7 @@ BB-Spec은 **4개의 독립 설치 가능한 서브 plugin**으로 분할 ——
 | 서브 plugin | 무엇을 얻는가 | 설치 명령 |
 |---|---|---|
 | **bb-spec-core** _(권장 베이스)_ | TDD / 버전 정책 / Git 규율 + 3개 수동 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(핵심 기능)_ | prd → plan → exec → doc-update → revise → git-push(+ 선택 test-webview / test-api e2e), git-clone 일회성 초기화 + 6개 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(핵심 기능)_ | prd → plan → exec → doc-update → revise → git-push(+ 선택 test-webview / test-api e2e), git-clone 일회성 초기화 + 8개 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / 인증 / 인가 / 가관측성 / 서비스 거버넌스 / 설정 제약 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun 스택 & 엔지니어링 규약 | `/plugin install bb-spec-frontend@0xbb2b` |
 
@@ -256,7 +256,7 @@ claude plugin update bb-spec-workflow@0xbb2b   # 터미널에서 특정 서브 p
 |---|---|---|---|
 | `git-workflow-guard` | bb-spec-core | PreToolUse(Bash) | `main` / `master` 브랜치의 `git commit` 차단; 다른 git 흐름 동작(브랜치 생성 / push / worktree / merge / PR)은 통과시키고 git-workflow 규율과 실시간 git 상태 주입 |
 | `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | 의존성 파일 편집 후 "공식 최신 버전 먼저 확인" 자가 점검 리마인더 주입, 승인되지 않은 새 기술은 되돌리고 목록을 만들어 승인을 받도록 안내 |
-| `background-script-wait` | bb-spec-core | Stop | 이 세션에서 아직 알리지 않은 실행 중 백그라운드 명령을 발견하면 한 번 알림:Claude는 끝나는 스크립트는 포그라운드 루프로 기다리고, 상주 서비스는 기다리지 않음 |
+| `background-script-wait` | bb-spec-core | Stop | 이 세션에서 아직 알리지 않은 실행 중 백그라운드 명령을 발견하면 한 번 알림:Claude는 루프로 기다리지 않고 바로 턴을 끝내며, 이후 이런 스크립트는 스크립트 실행 subagent에 맡기고, 상주 서비스는 기다리지 않음 |
 ---
 
 ## 🧪 테스트
@@ -294,7 +294,7 @@ base_dir: my/bb  # → my/bb/docs/{prd,plan,test}/ 와 my/bb/.cache/ ; ./을 지
 | 시나리오 | 스위치 |
 |---|---|
 | 일시적으로 main commit 허용 | `bb-spec-core`를 일시적으로 비활성화 |
-| 백그라운드 스크립트 대기 알림 건너뛰기 | `bb-spec-core`를 일시적으로 비활성화 |
+| 백그라운드 스크립트 알림 건너뛰기 | `bb-spec-core`를 일시적으로 비활성화 |
 
 ---
 

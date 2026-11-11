@@ -145,8 +145,8 @@
 
 **附带产物**
 
-- **6 个编排 subagent**(被上述环节驱动):`test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer` / `prototype-designer`
-- **3 个被动 hook**(自动生效):拦截 main commit、依赖版本自检、等后台脚本跑完
+- **8 个编排 subagent**(被上述环节驱动):`test-engineer` / `impl-engineer` / `prd-reviewer` / `webview-test-runner` / `pre-reviewer` / `prototype-designer` / `code-investigator` / `script-runner`
+- **3 个被动 hook**(自动生效):拦截 main commit、依赖版本自检、后台脚本不循环等待
 
 ---
 
@@ -194,7 +194,7 @@ BB-Spec 拆成**四个可独立安装的子 plugin**——只装你需要的约�
 | 子 plugin | 装了得到什么 | 安装命令 |
 |---|---|---|
 | **bb-spec-core** _(推荐基座)_ | TDD / 版本策略 / Git 纪律 + 3 个被动 hook | `/plugin install bb-spec-core@0xbb2b` |
-| **bb-spec-workflow** _(核心功能)_ | prd → plan → exec → doc-update → revise → git-push(+ 可选 test-webview / test-api e2e)、git-clone 一次性初始化 + 6 个 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
+| **bb-spec-workflow** _(核心功能)_ | prd → plan → exec → doc-update → revise → git-push(+ 可选 test-webview / test-api e2e)、git-clone 一次性初始化 + 8 个 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / 数据库 / 认证 / 授权 / 可观测性 / 服务治理 / 配置约束 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun 技术栈与工程约定 | `/plugin install bb-spec-frontend@0xbb2b` |
 
@@ -255,7 +255,7 @@ claude plugin update bb-spec-workflow@0xbb2b   # 在终端里更新某个子 plu
 |---|---|---|---|
 | `git-workflow-guard` | bb-spec-core | PreToolUse(Bash) | 拦截 `main` / `master` 分支的 `git commit`;其余 git 流程动作(开分支 / push / worktree / merge / PR)放行并注入 git-workflow 纪律与实时 git 状态 |
 | `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | 编辑依赖文件后注入「先查官方最新版」自检提示,并提醒没批准的新技术要撤回、先列清单请用户批准 |
-| `background-script-wait` | bb-spec-core | Stop | 发现本会话没提示过的运行中后台命令时提示一次:Claude 用前台循环等完会结束的脚本,常驻服务不等 |
+| `background-script-wait` | bb-spec-core | Stop | 发现本会话没提示过的运行中后台命令时提示一次:Claude 不循环等待、直接结束回合,之后这类脚本交给跑脚本的子代理,常驻服务不等 |
 ---
 
 ## 🧪 测试
@@ -293,7 +293,7 @@ base_dir: my/bb  # → my/bb/docs/{prd,plan,test}/ 与 my/bb/.cache/;填 ./ 则�
 | 场景 | 开关 |
 |---|---|
 | 临时允许 main commit | 临时禁用 `bb-spec-core` |
-| 跳过后台脚本等待提示 | 临时禁用 `bb-spec-core` |
+| 跳过后台脚本提示 | 临时禁用 `bb-spec-core` |
 
 ---
 

@@ -36,14 +36,14 @@ AGENT="$ROOT/plugins/bb-spec-workflow/agents/prototype-designer.md"
 
 echo "[prototype 的 frontmatter]"
 FM="$(awk '/^---[[:space:]]*$/{n++; next} n==1{print} n>=2{exit}' "$PROTO" 2>/dev/null || true)"
-if printf '%s\n' "$FM" | grep -qxF 'name: prototype'; then pass; else fail "prototype frontmatter 的 name 应是 prototype"; fi
-if printf '%s\n' "$FM" | grep -qF 'disable-model-invocation'; then fail "prototype frontmatter 不应含 disable-model-invocation"; else pass; fi
+if printf '%s\n' "$FM" | grep -xF 'name: prototype' >/dev/null; then pass; else fail "prototype frontmatter 的 name 应是 prototype"; fi
+if printf '%s\n' "$FM" | grep -F 'disable-model-invocation' >/dev/null; then fail "prototype frontmatter 不应含 disable-model-invocation"; else pass; fi
 
 for t in '左栏切页面和状态' '右上角按需切方案和页面主题' '中间的框只放正式页面'; do
-  if printf '%s\n' "$FM" | grep -qF -- "$t"; then pass; else fail "prototype frontmatter 的 description 应含「${t}」"; fi
+  if printf '%s\n' "$FM" | grep -F -- "$t" >/dev/null; then pass; else fail "prototype frontmatter 的 description 应含「${t}」"; fi
 done
 for t in '明暗主题' '底部放说明'; do
-  if printf '%s\n' "$FM" | grep -qF -- "$t"; then fail "prototype frontmatter 的 description 不应含「${t}」"; else pass; fi
+  if printf '%s\n' "$FM" | grep -F -- "$t" >/dev/null; then fail "prototype frontmatter 的 description 不应含「${t}」"; else pass; fi
 done
 
 echo "[prototype 写明原型做法]"
@@ -68,7 +68,7 @@ for t in '文件已存在时直接改它' '不改产品代码' '写了 `css` 后
   '外壳的左栏和框上方一行不参与对比' '不算不一致' '- 不一致：' '- 没跑起来：'; do
   has_agent "$t"
 done
-if awk '/^## /{sec=$0} /bbspec-paths.sh/{print sec}' "$PROTO" 2>/dev/null | grep -qF '两种模式都先做'; then pass; else fail "prototype 取缓存目录要放在各模式之前"; fi
+if awk '/^## /{sec=$0} /bbspec-paths.sh/{print sec}' "$PROTO" 2>/dev/null | grep -F '两种模式都先做' >/dev/null; then pass; else fail "prototype 取缓存目录要放在各模式之前"; fi
 
 echo "[prototype 给了文件时取缓存目录的写法和顺序]"
 T_FILE='给了 `--file` 或 `--compare`、且这个文件在 `ui-preview/` 目录下的，`${CACHE_DIR}` 改取这个 `ui-preview/` 的上一级'
@@ -91,7 +91,7 @@ fi
 
 echo "[prototype 的 description 写明先读 DESIGN.md 和取证]"
 for t in '先读项目根目录的 DESIGN.md' '改动所在的整个页面' '缺的只读对应源码' '源码定不下来才问用户要不要跑服务'; do
-  if printf '%s\n' "$FM" | grep -qF -- "$t"; then pass; else fail "prototype frontmatter 的 description 应含「${t}」"; fi
+  if printf '%s\n' "$FM" | grep -F -- "$t" >/dev/null; then pass; else fail "prototype frontmatter 的 description 应含「${t}」"; fi
 done
 
 echo "[prototype 的 DESIGN.md 两节在出原型之前]"

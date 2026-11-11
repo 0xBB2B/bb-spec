@@ -30,7 +30,7 @@ if (cd "$COPY/policy" && bash tests/new-tech-policy.test.sh >"$COPY/policy.out" 
 else
   pass
 fi
-if grep -F '读不到' "$COPY/policy.out" | grep -qF 'vue-constraints'; then pass; else fail "输出应有同时含 读不到 和 vue-constraints 的行"; fi
+if grep -F '读不到' "$COPY/policy.out" | grep -F 'vue-constraints' >/dev/null; then pass; else fail "输出应有同时含 读不到 和 vue-constraints 的行"; fi
 
 echo "[workflow：删掉 plan]"
 copy_repo "$COPY/workflow"
@@ -40,7 +40,7 @@ if (cd "$COPY/workflow" && bash tests/new-tech-workflow.test.sh >"$COPY/workflow
 else
   pass
 fi
-if grep -F '读不到' "$COPY/workflow.out" | grep -qF 'plan/SKILL.md'; then pass; else fail "输出应有同时含 读不到 和 plan/SKILL.md 的行"; fi
+if grep -F '读不到' "$COPY/workflow.out" | grep -F 'plan/SKILL.md' >/dev/null; then pass; else fail "输出应有同时含 读不到 和 plan/SKILL.md 的行"; fi
 
 echo "[正常仓库]"
 copy_repo "$COPY/ok"

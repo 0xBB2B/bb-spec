@@ -12,13 +12,13 @@ fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 
 has() {
   local text="$1"
-  if grep -qF -- "$text" "$GIT_PUSH" 2>/dev/null; then pass; else fail "git-push/SKILL.md 缺少：${text}"; fi
+  if grep -rqF -- "$text" "$(dirname "$GIT_PUSH")" 2>/dev/null; then pass; else fail "git-push/SKILL.md 缺少：${text}"; fi
 }
 
 lacks() {
   local text="$1"
   local rc=0
-  grep -qF -- "$text" "$GIT_PUSH" 2>/dev/null || rc=$?
+  grep -rqF -- "$text" "$(dirname "$GIT_PUSH")" 2>/dev/null || rc=$?
   case "$rc" in
     0) fail "git-push/SKILL.md 不应含：${text}" ;;
     1) pass ;;

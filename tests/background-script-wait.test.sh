@@ -45,7 +45,7 @@ expected() {
   printf '后台命令还在运行：\n'
   local l
   for l in "$@"; do printf '%s\n' "$l"; done
-  printf '会自己结束的脚本（测试、构建、审查）：用前台 Bash 循环等它结束，每次最多等 2 分钟，没结束就再等一次，看完结果再结束回合。\n'
+  printf '会自己结束的脚本（测试、构建、审查）：不要循环等待，直接结束回合，它结束时系统会通知你；之后这类脚本交给跑脚本的子代理启动。\n'
   printf '常驻服务（dev server、watch、tail -f）：不用等。全部是常驻服务时，直接结束回合。\n'
 }
 
@@ -217,10 +217,11 @@ if jq -e '[.hooks.Stop[]?.hooks[]?.command // empty | select(contains("backgroun
 if jq -e '[.hooks.SubagentStop[]?.hooks[]?.command // empty | select(contains("background-script-wait.sh"))] | length == 0' "$HOOKS_JSON" >/dev/null 2>&1; then pass; else fail "SubagentStop 下不应注册 background-script-wait.sh"; fi
 
 echo "[说明文档同步]"
-GIT_PUSH_SKILL="$ROOT/plugins/bb-spec-workflow/skills/git-push/SKILL.md"
-if grep -qF "每次前台调用最多等 2 分钟" "$GIT_PUSH_SKILL"; then pass; else fail "git-push SKILL 应写明每次前台调用最多等 2 分钟"; fi
-if grep -qF "循环等 ocr 进程退出" "$GIT_PUSH_SKILL"; then pass; else fail "git-push SKILL 应等 ocr 进程退出"; fi
-if grep -qF "等完成通知" "$GIT_PUSH_SKILL"; then fail "git-push SKILL 不应再靠等完成通知"; else pass; fi
+GIT_PUSH_SKILL="$ROOT/plugins/bb-spec-workflow/skills/git-push"
+if grep -rqF "bb-spec-workflow:script-runner" "$GIT_PUSH_SKILL"; then pass; else fail "git-push SKILL 应交给 bb-spec-workflow:script-runner"; fi
+if grep -rqF "每次前台调用最多等 2 分钟" "$GIT_PUSH_SKILL"; then fail "git-push SKILL 不应再写每次前台调用最多等 2 分钟"; else pass; fi
+if grep -rqF "循环等 ocr 进程退出" "$GIT_PUSH_SKILL"; then fail "git-push SKILL 不应再循环等 ocr 进程退出"; else pass; fi
+if grep -rqF "等完成通知" "$GIT_PUSH_SKILL"; then fail "git-push SKILL 不应再靠等完成通知"; else pass; fi
 
 for f in "$ROOT/plugins/bb-spec-core/.claude-plugin/plugin.json" "$ROOT/.claude-plugin/marketplace.json"; do
   if grep -qF "background-script-wait" "$f"; then pass; else fail "$f 应提到 background-script-wait"; fi
@@ -239,15 +240,15 @@ check_readme() {
   local items
   items="$(LINE="$list_line" python3 -c 'import os, re; print(len(re.split("、|, ", os.environ["LINE"].split("):", 1)[1])))')"
   if [[ "$items" == "3" ]]; then pass; else fail "$file 被动 hook 列表实际应有 3 项，现在是 $items 项"; fi
-  if grep -F '**bb-spec-core**' "$ROOT/$file" | grep -qF "$core"; then pass; else fail "$file bb-spec-core 钩子数量应为 $core"; fi
+  if grep -F '**bb-spec-core**' "$ROOT/$file" | grep -F "$core" >/dev/null; then pass; else fail "$file bb-spec-core 钩子数量应为 $core"; fi
   if grep -qF "$stale_row" "$ROOT/$file"; then fail "$file 开关速查仍有 Stop 自检行"; else pass; fi
   if grep -qF "$new_row" "$ROOT/$file"; then pass; else fail "$file 开关速查应有 $new_row"; fi
 }
-check_readme README.md "被动 hook**" "Stop 四项自检" "等后台脚本跑完" "3 个被动 hook" "3 个被动 hook" "跳过 Stop 自检" "跳过后台脚本等待提示"
-check_readme README.zh-TW.md "被動 hook**" "Stop 四項自檢" "等背景腳本跑完" "3 個被動 hook" "3 個被動 hook" "跳過 Stop 自檢" "跳過背景腳本等待提示"
-check_readme README.en.md "passive hooks**" "Stop four-point self-check" "wait for background scripts to finish" "3 passive hooks" "3 passive hooks" "Skip the Stop self-check" "Skip the background-script wait prompt"
-check_readme README.ja.md "受動 hook**" "Stop 時の 4 項目セルフチェック" "バックグラウンドスクリプトの完了待ち" "3 つの受動 hook" "3 つの受動 hook" "Stop セルフチェックをスキップ" "バックグラウンドスクリプト待ちの通知をスキップ"
-check_readme README.ko.md "수동 hook**" "Stop 시 4항목 자가 점검" "백그라운드 스크립트 완료 대기" "3개 수동 hook" "3개 수동 hook" "Stop 자가 점검 건너뛰기" "백그라운드 스크립트 대기 알림 건너뛰기"
+check_readme README.md "被动 hook**" "Stop 四项自检" "后台脚本不循环等待" "3 个被动 hook" "3 个被动 hook" "跳过 Stop 自检" "跳过后台脚本提示"
+check_readme README.zh-TW.md "被動 hook**" "Stop 四項自檢" "背景腳本不循環等待" "3 個被動 hook" "3 個被動 hook" "跳過 Stop 自檢" "跳過背景腳本提示"
+check_readme README.en.md "passive hooks**" "Stop four-point self-check" "no polling for background scripts" "3 passive hooks" "3 passive hooks" "Skip the Stop self-check" "Skip the background-script prompt"
+check_readme README.ja.md "受動 hook**" "Stop 時の 4 項目セルフチェック" "バックグラウンドスクリプトをポーリングしない" "3 つの受動 hook" "3 つの受動 hook" "Stop セルフチェックをスキップ" "バックグラウンドスクリプトの通知をスキップ"
+check_readme README.ko.md "수동 hook**" "Stop 시 4항목 자가 점검" "백그라운드 스크립트 폴링 안 함" "3개 수동 hook" "3개 수동 hook" "Stop 자가 점검 건너뛰기" "백그라운드 스크립트 알림 건너뛰기"
 
 echo ""
 echo "通过 ${PASS}，失败 ${FAIL}"
