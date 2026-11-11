@@ -106,6 +106,7 @@ First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.
   - *Test* agent reads PRD constraints only, writes failing tests (Red)
   - *Impl* agent **never sees the PRD**, only the tests + function list, so it can't quietly "teach to intent"; new tech capped by the plan's approved new-tech table
   - *Review* agent checks against the PRD acceptance criteria and AGENTS.md plus a robustness/security pass, read-only
+  - Each problem *Review* reports comes with the same problem elsewhere in the repo; confirmed ones are fixed in the same round, and the test gaps it points out are filled in the same round
   - Progress written to `PROGRESS.md` after every step — **token-exhausted runs resume losslessly**
   - If the plan turns out to be wrong mid-implementation, it stops and lets you pick: change the code / change this PRD / pause; small changes are made in place, big ones go back to `/prd` for re-approval
   - When everything is done, auto-runs `/doc-update` in tail mode so this PRD and docs like README mirror what was actually delivered
@@ -126,6 +127,8 @@ First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.
   - First reads the code to confirm current behavior and traces back to the relevant PRD via `git log -L`, then classifies the deviation's **root cause** into one of three: *PRD defect*, *impl drift*, *requirement change*
   - When the requirement changed (*PRD defect*, *requirement change*): only this branch's PRD is edited, with an entry in its decision log; if the PRD is merged or there is none, it stops and hands off to `/prd` for a new PRD
   - Bugs, security and robustness issues (*impl drift*) are fixed here even when the PRD is merged; the reason and the trade-offs (what was chosen, what was rejected, and why) go into the commit body
+  - Once the root cause is found, searches for every other place the same root cause affects (callers and copies of the same mistake), lists them, and fixes them in the same round as the one you reported; stops to ask only when one of them needs your call
+  - Unrelated problems noticed along the way are recorded, not touched: `/exec` and `/revise` at wrap-up and `/git-push` before pushing each put them in one list and ask once; the ones you pick are fixed on the current branch and land in the same PR
   - Every review finding that needs fixing funnels through here
   - Auto-runs `/doc-update` in tail mode after the fix
 
