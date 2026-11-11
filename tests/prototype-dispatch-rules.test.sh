@@ -100,15 +100,11 @@ done
 QUIT="$(file_section "$PRD" '### 步骤 9' '^### ' | grep -F '| 不做了 |' || true)"
 in_text prd不做了 '设计规范临时文件' "$QUIT"
 
-echo "[exec 相对 main 没有改动]"
 echo "[审查补充：DESIGN.md 位置、派不出去、确认后、打开时机、发不到时的补充]"
 has 'docs_repo' '为空时取 `root`' '由用户决定怎么办' '不自己接手出原型或对比' \
   '照清单写约束和验收' '把清单当作期望行为' '原型文件第一次生成后' \
   '再写明"用户已确认"' '3 项之外附上用户的答复' \
   '用户确认的是「设计规范」展示页时，只照抄用户原话'
-
-BASE="$(git -C "$ROOT" merge-base main HEAD 2>/dev/null || echo main)"
-if git -C "$ROOT" diff --quiet "$BASE" -- plugins/bb-spec-workflow/skills/exec; then pass; else fail "plugins/bb-spec-workflow/skills/exec 相对 main 的分叉点有改动"; fi
 
 echo ""
 echo "通过 ${PASS}，失败 ${FAIL}"

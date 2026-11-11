@@ -6,8 +6,9 @@
      --ds-text-2 次要文字色、--ds-border 控件边框色、--ds-accent 主色。
    - 对比框和标签的颜色是固定的，不要改。 */
 
-// 按 WCAG 相对亮度公式算两个 #RRGGBB 颜色的对比度，返回保留一位小数的字符串
+// 按 WCAG 相对亮度公式算两个 #RRGGBB 颜色的对比度，不是这个格式会抛错，返回保留一位小数的字符串
 const dsLum = (hex) => {
+  if (!/^#[0-9a-fA-F]{6}$/.test(hex)) throw new Error(`dsContrast 只接受 #RRGGBB 格式的颜色，收到：${hex}`);
   const c = [1, 3, 5]
     .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
     .map((x) => (x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4));

@@ -175,9 +175,10 @@ for t in '调用方是 `prd` 时' '完整内容先存成 `.DESIGN.draft.md`' \
   '需要跑项目时，同样先列出完整命令和出处' '对比完立即关掉' '用户不同意时返回「没跑起来」'; do
   has_agent "$t"
 done
-P1="$(text_pos "$AGENT" '1. **DESIGN.md**：')"
-P2="$(text_pos "$AGENT" '2. **源码**：')"
-P3="$(text_pos "$AGENT" '3. **问用户要不要跑**：')"
+EVID_SEC="$(awk '/^## 取证顺序/{on=1; next} /^## /{on=0} on' "$AGENT" 2>/dev/null || true)"
+P1="$(grep -nF -- '1. **DESIGN.md**：' <<<"$EVID_SEC" | head -n1 | cut -d: -f1 || true)"
+P2="$(grep -nF -- '2. **源码**：' <<<"$EVID_SEC" | head -n1 | cut -d: -f1 || true)"
+P3="$(grep -nF -- '3. **问用户要不要跑**：' <<<"$EVID_SEC" | head -n1 | cut -d: -f1 || true)"
 if [[ -n "$P1" && -n "$P2" && -n "$P3" && "$P1" -lt "$P2" && "$P2" -lt "$P3" ]]; then pass; else fail "取证顺序应依次是 DESIGN.md、源码、问用户要不要跑：${P1:-无} ${P2:-无} ${P3:-无}"; fi
 lacks_agent '把实际界面跑起来，和原型框里的内容逐项对比'
 for t in '这次的原型确认后删掉草稿' \
@@ -196,10 +197,7 @@ for t in '命令行项目移进各终端页的 `terminalCss`' '至少放一条' 
 done
 
 echo "[prototype 全文不含已删除的填写项和旧说明区]"
-for t in '`note`' '`fake`' '`openQuestions`' '底部说明' '只在原型里成立' '底部放说明' '明暗主题'; do
-  lacks_agent "$t"
-done
-for t in 'fake' 'openQuestions'; do
+for t in '`note`' 'fake' 'openQuestions' '底部说明' '只在原型里成立' '底部放说明' '明暗主题'; do
   lacks_agent "$t"
 done
 

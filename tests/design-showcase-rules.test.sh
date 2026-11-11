@@ -34,22 +34,46 @@ has_in 模板 "$JS" 'dsContrast' 'dsTag' 'dsPair' 'dsWhy' 'DS_CSS' 'DS_TERMINAL_
   '#D97706' '#6366F1' '#FDE68A' '#422006' '#BBF7D0' '#052E16' '#C7D2FE' '#1E1B4B' \
   '现状 · 不达标' '建议 · 本页按这个画' '改之前' '改之后'
 
-if command -v node >/dev/null 2>&1; then
-  if node --check "$JS" 2>/dev/null; then pass; else fail "node --check 应通过：${JS#"$ROOT"/}"; fi
-  contrast() {
-    node -e '
-      const src = require("fs").readFileSync(process.argv[1], "utf8");
-      const f = new Function(src + "; return dsContrast(" + process.argv[2] + ", " + process.argv[3] + ");");
-      process.stdout.write(String(f()));
-    ' "$JS" "\"$1\"" "\"$2\"" 2>/dev/null || true
-  }
-  GOT="$(contrast '#94A3B8' '#FFFFFF')"
-  if [[ "$GOT" == "2.6" ]]; then pass; else fail "dsContrast('#94A3B8', '#FFFFFF') 应得 2.6，实际：${GOT:-无输出}"; fi
-  GOT="$(contrast '#475569' '#FFFFFF')"
-  if [[ "$GOT" == "7.6" ]]; then pass; else fail "dsContrast('#475569', '#FFFFFF') 应得 7.6，实际：${GOT:-无输出}"; fi
-else
-  echo "  没有 node，跳过 node --check 和 dsContrast 的计算检查"
+if ! command -v node >/dev/null 2>&1; then
+  echo "ERROR: 本机没有 node，模板的语法和对比度检查无法运行"
+  exit 1
 fi
+if node --check "$JS" 2>/dev/null; then pass; else fail "node --check 应通过：${JS#"$ROOT"/}"; fi
+
+contrast() {
+  node -e '
+    const src = require("fs").readFileSync(process.argv[1], "utf8");
+    const f = new Function("a", "b", src + "; return dsContrast(a, b);");
+    try { process.stdout.write("OK:" + String(f(process.argv[2], process.argv[3]))); }
+    catch (e) { process.stdout.write("ERR:" + e.message); }
+  ' "$JS" "$1" "$2" 2>/dev/null || true
+}
+
+expect_value() {
+  local a="$1" b="$2" want="$3" got
+  got="$(contrast "$a" "$b")"
+  if [[ "$got" == "OK:${want}" ]]; then pass; else fail "dsContrast('${a}', '${b}') 应得 ${want}，实际：${got:-无输出}"; fi
+}
+
+expect_throw() {
+  local a="$1" b="$2" bad="$3" got
+  got="$(contrast "$a" "$b")"
+  if [[ "$got" != ERR:* ]]; then fail "dsContrast('${a}', '${b}') 应抛错，实际：${got:-无输出}"; return; fi
+  if [[ "$got" == *'#RRGGBB'* ]]; then pass; else fail "dsContrast('${a}', '${b}') 的错误信息应含 #RRGGBB：${got}"; fi
+  if [[ -n "$bad" ]]; then
+    if [[ "$got" == *"$bad"* ]]; then pass; else fail "dsContrast('${a}', '${b}') 的错误信息应含收到的值 ${bad}：${got}"; fi
+  fi
+}
+
+expect_value '#94A3B8' '#FFFFFF' 2.6
+expect_value '#475569' '#FFFFFF' 7.6
+expect_value '#FFFFFF' '#000000' 21.0
+expect_value '#ffffff' '#000000' 21.0
+expect_throw '#fff' '#000000' '#fff'
+expect_throw 'rgb(255,255,255)' '#000000' 'rgb(255,255,255)'
+expect_throw '#ffffff80' '#000000' '#ffffff80'
+expect_throw '' '#000000' ''
+expect_throw '#FFFFFF' '#000' '#000'
 
 echo "[子代理定义：展示页一节的位置]"
 sec_line() { grep -nxF -- "$1" "$AGENT" 2>/dev/null | head -n1 | cut -d: -f1 || true; }
@@ -79,6 +103,7 @@ has_in 子代理定义 "$AGENT" \
   '不随项目配色和主题变化' \
   '颜色、符号、表格、进度条' '对终端背景的对比度' 'DS_TERMINAL_CSS' \
   '不画「布局与断点」和「无障碍」两节' \
+  '颜色先换算成 #RRGGBB 再传给 `dsContrast`' \
   '草稿先存到原型文件旁边' '草稿和展示页一起改' '把草稿改名成 `.DESIGN.md`' '由 `/prd` 落盘 PRD 时写入项目' \
   '写成项目的 DESIGN.md，删掉草稿' '「设计规范」一页从原型里删掉' '这次的原型确认后删掉草稿'
 lacks_in 子代理定义 "$AGENT" '风格样张' '还没确认的草稿只贴在对话里' '草稿只留在对话里'
