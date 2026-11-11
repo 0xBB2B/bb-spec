@@ -86,7 +86,7 @@ const dsPair = (kind, title, before, after, side = { bg: '#FFFFFF', fg: '#0F172A
 const dsWhy = (text) => `<p class="ds-why">${text}</p>`;
 
 const DS_CSS = `
-.ds-page{max-width:1040px;margin:0 auto;padding:24px}
+.ds-page{max-width:1040px;margin:0 auto;padding:24px;color:var(--ds-text)}
 .ds-summary{margin-top:16px;padding:12px 16px;border-radius:8px;background:var(--ds-surface);border:1px solid var(--ds-divider)}
 .ds-summary-bad{border:2px dashed #D97706}
 .ds-summary-chg{border:2px dashed #6366F1}
