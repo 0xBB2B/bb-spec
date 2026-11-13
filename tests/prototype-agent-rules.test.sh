@@ -122,6 +122,13 @@ lacks 'AskUserQuestion'
 lacks 'open <文件路径>'
 lacks '${CLAUDE_PLUGIN_ROOT}'
 
+echo "[打开时机]"
+hasall '需要用户看页面：是 / 否（compare 模式不写这一行）' '写在细节文件那一行之后' \
+  '这一轮请用户看展示页' '这一轮请用户在几个方案里选一个' '页面已经画完' \
+  '不用看页面就能回答' 'compare 模式的报告不写这一行' '「需要用户看页面」一行'
+hasall '这一轮没有展示页、要设计的页面也还没画完' '"是"和"否"的情况同时符合时填"是"'
+lacks '要不要把源码补充内容写进 DESIGN.md'
+
 echo ""
 echo "通过 ${PASS}，失败 ${FAIL}"
 [[ "$FAIL" -eq 0 ]]
