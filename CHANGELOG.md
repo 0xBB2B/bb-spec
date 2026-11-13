@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.9.0](https://github.com/0xBB2B/bb-spec/compare/v15.8.0...v15.9.0) (2026-11-13)
+
+
+### Features
+
+* **prototype:** 原型只在要用户看页面时打开浏览器，同一文件只打开一次 ([#330](https://github.com/0xBB2B/bb-spec/issues/330)) ([3878835](https://github.com/0xBB2B/bb-spec/commit/38788355b342892199f6567c7ffb8a5b6432fe7b))
+
 ## [15.8.0](https://github.com/0xBB2B/bb-spec/compare/v15.7.0...v15.8.0) (2026-11-11)
 
 
