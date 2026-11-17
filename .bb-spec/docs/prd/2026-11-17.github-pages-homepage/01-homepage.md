@@ -100,6 +100,7 @@ date: 2026-11-17
 - 点任一终端窗口的「复制」/`Copy` → 剪贴板写入三行安装命令（行与行之间用换行分隔，不带 `❯`）；按钮文字变成「已复制」/`Copied`，1.6 秒后变回。写剪贴板失败时按钮文字保持「复制」/`Copy` 不变，页面不报错。
 - `在 GitHub 上查看`/`View on GitHub`、顶栏 `[GitHub]`、页脚 `GitHub` → `https://github.com/0xBB2B/bb-spec`。
 - 页脚 `Releases` → `https://github.com/0xBB2B/bb-spec/releases`。
+- 页脚 `MIT License` → `https://github.com/0xBB2B/bb-spec/blob/main/LICENSE`。
 - `完整说明在 README →` 和页脚 `README`：中文时 → `https://github.com/0xBB2B/bb-spec#readme`；英文时 → `https://github.com/0xBB2B/bb-spec/blob/main/README.en.md`。
 - 鼠标移到主按钮上 → 背景变浅橙 `#E1937A`；按下 → 深橙 `#D25D37`。鼠标移到次按钮上 → 边框变亮、背景变成面板色。鼠标移到子插件表某一行 → 这一行背景变成面板色。
 - 用键盘 Tab 聚焦到任何可点的元素 → 出现 2px 蓝色描边。
@@ -125,7 +126,7 @@ date: 2026-11-17
 - [ ] 关闭脚本时页面显示完整中文内容。
 - [ ] 顶栏三个页内链接、标题区「安装」按钮、顶栏 `bb-spec` 跳到正确位置，区块标题不被顶栏遮挡。
 - [ ] 点「复制」后剪贴板内容是三行命令、无 `❯`；按钮变「已复制」/`Copied`，1.6 秒后复原；写剪贴板失败时按钮文字不变、无报错。
-- [ ] GitHub、Releases、README 链接按语言指向约束里的地址。
+- [ ] GitHub、Releases、README、MIT License 链接按语言指向约束里的地址。
 - [ ] 主按钮悬停 `#E1937A`、按下 `#D25D37`；次按钮悬停边框变亮、背景变面板色；表格行悬停背景变面板色。
 - [ ] 键盘 Tab 聚焦时出现 2px 蓝色描边。
 - [ ] 开启"减少动态效果"后光标不闪、无悬停过渡、页内跳转无平滑滚动。

@@ -341,6 +341,7 @@ const COMMANDS_EXPECTED = [
 ];
 const TITLE = { zh: 'bb-spec — PRD 驱动的 Claude Code 流水线', en: 'bb-spec — A PRD-driven Claude Code pipeline' };
 const URL_GH = 'https://github.com/0xBB2B/bb-spec';
+const URL_LICENSE = 'https://github.com/0xBB2B/bb-spec/blob/main/LICENSE';
 const URL_REL = 'https://github.com/0xBB2B/bb-spec/releases';
 const URL_README = { zh: 'https://github.com/0xBB2B/bb-spec#readme', en: 'https://github.com/0xBB2B/bb-spec/blob/main/README.en.md' };
 
@@ -392,6 +393,9 @@ const main = async () => {
     const hrefs = staticDoc.all.filter((e) => e.tag === 'a').map((e) => e.getAttribute('href'));
     ok(hrefs.filter((h) => h === URL_GH).length >= 3, '指向 GitHub 的链接应至少 3 处（顶栏、按钮、页脚）');
     ok(hrefs.includes(URL_REL), '缺少 Releases 链接');
+    const mit = staticDoc.all.filter((e) => e.tag === 'a' && e.textContent.trim() === 'MIT License');
+    ok(mit.length >= 1, '缺少文字为 MIT License 的链接');
+    ok(mit.every((e) => e.getAttribute('href') === URL_LICENSE), `MIT License 链接 href 应为 ${URL_LICENSE}，实际 ${JSON.stringify(mit.map((e) => e.getAttribute('href')))}`);
     ok(hrefs.filter((h) => h === URL_README.zh).length >= 2, '静态中文 README 链接应至少 2 处（导语、页脚）');
     ok(/<link[^>]*rel\s*=\s*["']stylesheet["'][^>]*href\s*=\s*["']style\.css["']|<link[^>]*href\s*=\s*["']style\.css["'][^>]*rel\s*=\s*["']stylesheet["']/i.test(HTML), '缺少 <link rel="stylesheet" href="style.css">');
     ok(/<script[^>]*\bsrc\s*=\s*["']app\.js["'][^>]*\bdefer\b|<script[^>]*\bdefer\b[^>]*\bsrc\s*=\s*["']app\.js["']/i.test(HTML), '缺少 <script src="app.js" defer>');
