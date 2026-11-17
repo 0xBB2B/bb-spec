@@ -1,6 +1,6 @@
 ---
 name: prd
-description: 新需求的唯一入口——质疑→澄清→拆解，对话阶段只读对齐（涉及界面时先出 HTML 预览页请用户确认），对齐后落盘 PRD（.bb-spec/docs/prd/<日期>.<主题>/，写「为什么」与可测的约束和验收；本分支内可改、合并后冻结）与项目级约束（项目根 AGENTS.md，含"先读代码再回答"的查询规矩），弹窗请用户读完 PRD、确认通过后自动依次运行 /plan → /exec（/exec 收尾自动 /doc-update）；之后每个 commit 带 `Requirement: <PRD 目录名>` 标记，代码经 git 可反查回 PRD。触发：/prd、新需求、新增功能、改已合并功能或老代码的行为（再小也算，例如把超时从 120 秒改成 600 秒、把按钮文字从'提交'改成'保存'）、头脑风暴需求、写个 PRD、需求拆解。跳过：修 bug、安全或鲁棒性问题、改本分支还没合并的 PRD（→/revise）、纯技术方案讨论。
+description: 新需求的唯一入口——质疑→澄清→拆解，对话阶段只读对齐（涉及界面时先出 HTML 预览页请用户确认），对齐后落盘 PRD（.bb-spec/docs/prd/<日期>.<主题>/，写「为什么」与可测的约束和验收；本分支内可改、合并后冻结）与项目级约束（项目根 AGENTS.md，含"先读代码再回答"的查询规矩），弹窗请用户读完 PRD、确认通过后自动依次运行 /plan → /exec（/exec 收尾自动 /doc-update）；之后每个 commit 带 `Requirement: <PRD 目录名>` 标记，代码经 git 可反查回 PRD。触发：/prd、新需求、新增功能、改已合并功能或老代码的行为（再小也算，例如把超时从 120 秒改成 600 秒、把按钮文字从'提交'改成'保存'）、头脑风暴需求、写个 PRD、把别人写的需求文档整理成 PRD、需求拆解。跳过：修 bug、安全或鲁棒性问题、改本分支还没合并的 PRD（→/revise）、纯技术方案讨论。
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*)
 ---
 
@@ -54,6 +54,8 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/bbspec-paths.sh
 输出 bb-spec 各目录的绝对路径（从仓库根往上找 `.bb-spec.yaml`，多仓库工作区的配置在工作区根）：`${DOCS_DIR}` 取 `docs_dir`，后续所有路径基于此值；`${CACHE_DIR}` 取 `cache_dir`，放界面预览页这类临时文件；`docs_repo` 是文档仓库，为空说明还没有文档目录。旧版本留下的 `${DOCS_DIR}/spec/`、`${DOCS_DIR}/prd/.archive/`、根 `plan/INDEX.md` 照常保留、不拦截，除下面的旧术语表外都不读。
 
 读完上面的输出后先读 `references/repo-layout.md`（相对本 skill 目录）：它定义了后面要用的 `<PRD 根>`、文档仓库、代码仓库和本分支 PRD 的判定。
+
+参数里带了要整理的需求文档（本地文件路径或网页链接）时是导入模式：走到这一步先读 `references/source-import.md`（相对本 skill 目录），步骤 0、1、3、4、7、8 照它多做。
 
 ```bash
 cat AGENTS.md 2>/dev/null                                      # 项目级约束与查询规矩
