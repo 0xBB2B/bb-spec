@@ -21,7 +21,7 @@ date: 2026-11-17
 ## 约束
 以下约束对五份 README（`README.md` 简体中文、`README.en.md`、`README.zh-TW.md`、`README.ja.md`、`README.ko.md`）同样适用，五份用各自语言写同样的内容、同样的章节顺序。
 
-- **开头**：横幅、标题、标语、徽章、语言切换行保留；徽章行加一个指向 `https://0xbb2b.github.io/bb-spec/` 的主页徽章；徽章之后、第一个正文章节之前，有一个「它解决什么问题」章节（各语言用各自的标题），内容是三条差异点：三 Agent 隔离执行、磁盘文档作为唯一交接物、代码 ⇄ PRD 经 git 双向可查。
+- **开头**：横幅、标题、标语、徽章、语言切换行保留；徽章行加一个指向 `https://bb-spec.0xbb.me/` 的主页徽章；徽章之后、第一个正文章节之前，有一个「它解决什么问题」章节（各语言用各自的标题），内容是三条差异点：三 Agent 隔离执行、磁盘文档作为唯一交接物、代码 ⇄ PRD 经 git 双向可查。
 - **差异点只写一处**：「设计渊源」章节保留借鉴对比表，原来表后的「BB-Spec 自己的取舍」三条移到开头，「设计渊源」里不再重复这三条。
 - **安装只写一处**：每份 README 里 `/plugin marketplace add 0xBB2B/bb-spec` 只出现一次；四个子插件的安装命令、`~/.claude/settings.json` 手动配置都在同一个安装章节里。快速开始引导读者去这个安装章节，日常 6 条命令表保留。
 - **阶段一览折叠细节**：每个命令（`/git-clone`、`/prd`、`/plan`、`/exec`、`/doc-update`、`/git-push`、`/revise`、`/test-webview`、`/test-api`）在折叠块之外最多 3 条要点；其余原有要点放进这个命令下方的可展开折叠块（`<details>`），一条都不删。
@@ -32,7 +32,7 @@ date: 2026-11-17
 - **现有测试通过**：`tests/*.sh` 和 `tests/validate.sh` 全部通过（其中有检查 README 里 hook 表、被动 hook 列表、开关速查、子代理名单的用例）。
 
 ## 验收
-- [ ] 五份 README 徽章行都有指向 `https://0xbb2b.github.io/bb-spec/` 的主页徽章。
+- [ ] 五份 README 徽章行都有指向 `https://bb-spec.0xbb.me/` 的主页徽章。
 - [ ] 五份 README 第一个正文章节是「它解决什么问题」（各语言标题），含三条差异点；「设计渊源」里没有这三条。
 - [ ] 五份 README 中 `/plugin marketplace add 0xBB2B/bb-spec` 各只出现一次，安装命令和 settings.json 示例在同一章节。
 - [ ] 阶段一览每个命令折叠块外最多 3 条要点，其余在 `<details>` 内。

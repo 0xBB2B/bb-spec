@@ -413,6 +413,16 @@ const main = async () => {
   group('样式关键值', () => {
     for (const v of ['#0D1117', '#D97757', '#58A6FF', '#E1937A', '#D25D37']) ok(CSS.toLowerCase().includes(v.toLowerCase()), `style.css 缺少色值 ${v}`);
     ok(/@media\s*\(\s*max-width\s*:\s*640px\s*\)/i.test(CSS), 'style.css 缺少 @media (max-width: 640px)');
+    const mq = /@media\s*\(\s*max-width\s*:\s*960px\s*\)\s*\{/i.exec(CSS);
+    ok(mq !== null, 'style.css 缺少 @media (max-width: 960px)');
+    if (mq) {
+      let depth = 1, i = mq.index + mq[0].length;
+      while (i < CSS.length && depth > 0) { if (CSS[i] === '{') depth++; else if (CSS[i] === '}') depth--; i++; }
+      const block = CSS.slice(mq.index + mq[0].length, i - 1);
+      ok(staticDoc.querySelectorAll('.legend').length >= 1 && staticDoc.querySelectorAll('.pipe').length === 1, 'index.html 里应有 .legend 图例和唯一的 .pipe 流水线容器');
+      ok(/\.legend\s*\{[^}]*display\s*:\s*none/.test(block), '960px 媒体查询内应隐藏 .legend（display: none）');
+      ok(/\.pipe\s*\{[^}]*(grid-template-columns\s*:\s*(minmax\(\s*0\s*,\s*1fr\s*\)|1fr)\s*[;}]|flex-direction\s*:\s*column)/.test(block), '960px 媒体查询内 .pipe 应改为单列');
+    }
     ok(/prefers-reduced-motion/.test(CSS), 'style.css 缺少 prefers-reduced-motion');
     ok(/:focus-visible/.test(CSS), 'style.css 缺少 :focus-visible');
   });

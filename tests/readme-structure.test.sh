@@ -16,7 +16,7 @@ from pathlib import Path
 root = Path(sys.argv[1])
 FILES = ["README.md", "README.en.md", "README.zh-TW.md", "README.ja.md", "README.ko.md"]
 EMOJIS = ["✨", "📦", "🚀", "🔁", "🧩", "🔄", "🪝", "🛠", "💡", "🧪", "⬆", "📜"]
-HOME = "https://0xbb2b.github.io/bb-spec/"
+HOME = "https://bb-spec.0xbb.me/"
 ZH_TITLES = ["**三 Agent 隔离执行**", "**磁盘文档作为唯一交接物**", "**代码 ⇄ PRD 经 git 双向可查**"]
 SWITCH = {
     "README.md": "跳过后台脚本提示",
@@ -111,6 +111,7 @@ for f, (lines, info, secs) in data.items():
     top = "\n".join(lines[:first_h2])
     check(re.search(r'<a href="' + re.escape(HOME) + r'"[^>]*>\s*<img', top) is not None,
           f"{f}: 文件开头没有指向 {HOME} 的主页徽章")
+    check("0xbb2b.github.io" not in "\n".join(lines), f"{f}: 仍出现旧主页地址 0xbb2b.github.io")
 
 out("GROUP", "二级标题 emoji 顺序")
 seqs = {}

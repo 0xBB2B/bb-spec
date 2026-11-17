@@ -18,7 +18,7 @@ features: [homepage]
 项目没有自己的网站，想把 bb-spec 介绍给别人时只能甩一个仓库链接。
 
 ## 目标
-- 打开 `https://0xbb2b.github.io/bb-spec/` 就能在一屏多一点的篇幅里看懂三件事：bb-spec 解决什么问题、流水线怎么走、怎么安装。
+- 打开 `https://bb-spec.0xbb.me/` 就能在一屏多一点的篇幅里看懂三件事：bb-spec 解决什么问题、流水线怎么走、怎么安装。
 - 主页内容一合并到 main 就自动上线，不需要人手动发布。
 - 五份 README 开头先讲清"是什么、为什么、怎么装"，同一件事只写一处，细节可以展开看但不挡路。
 
@@ -26,7 +26,6 @@ features: [homepage]
 - 主页只有一页，不做文档站、博客、搜索、版本号展示，也不把 README 全文搬到主页；更多细节用链接指回 GitHub 上的 README。
 - 主页只做中文、英文两种语言；繁體中文、日本語、한국어只有 README，没有主页。
 - 主页只有深色一套配色，不做明亮主题和主题切换。
-- 不用自定义域名，用 GitHub 默认的 `0xbb2b.github.io/bb-spec`。
 - 不做访问统计，不加任何第三方脚本。
 - README 改版只调整结构和写法，不删除任何功能说明、命令或链接。
 
@@ -46,7 +45,7 @@ features: [homepage]
 3. 把浏览器窗口缩到 390px 宽 → 页面没有横向滚动条，流水线变成竖排，三个面板上下排。
 4. 跑 `bash tests/validate.sh` 和 `tests/*.sh` → 全部通过。
 5. 打开五份 README → 开头紧跟着「它解决什么问题」和主页链接；`/plugin marketplace add 0xBB2B/bb-spec` 在每份里只出现一次；顶部导航每个链接都能跳到对应章节。
-6. 在仓库设置里把 Pages 的来源设为 GitHub Actions，PR squash 合并到 main → Actions 里出现一次部署运行并成功；打开 `https://0xbb2b.github.io/bb-spec/` 看到和第 1 步一样的主页。
+6. 在仓库设置里把 Pages 的来源设为 GitHub Actions，PR squash 合并到 main → Actions 里出现一次部署运行并成功；打开 `https://bb-spec.0xbb.me/` 看到和第 1 步一样的主页。
 7. 之后再合并一个只改 `plugins/` 下文件的 PR → 没有新的部署运行，主页保持不变。
 
 ## 决策记录
@@ -62,3 +61,5 @@ features: [homepage]
 - **README 压缩「阶段一览」时把细节放进可展开的折叠块，不删内容**（用户 2026-11-17 勾选"压缩阶段一览"）。README 是功能说明的完整来源，删掉的细节在别处找不到。
 - **本次 commit 类型用 `docs`**。主页、部署 workflow、`DESIGN.md`、README 都不随插件交付，不改变插件对使用者的行为，按 `CLAUDE.md` 的规定用 `docs`，合并后不发新版本。
 - **「已复制」期间切换语言，按钮保持「已复制」并换成新语言，满 1.6 秒才复原**（用户 2026-11-17 在 /exec 收尾的无关发现清单中选中修复，并确认预览）。原先 PRD 没写这种情况，实现会在切语言时立即把按钮改回「复制」，比 1.6 秒早。否掉了"切语言时立即复原"：用户刚点完复制就看不到成功提示。
+- **主页地址用自定义域名 `https://bb-spec.0xbb.me/`**（用户 2026-11-17 在 /git-push 推送前确认）。仓库 Pages 设置里已配好这个域名并强制 https，`https://0xbb2b.github.io/bb-spec/` 会 301 跳到它。否掉了"文档继续写 github.io 地址、靠跳转"：PRD 和 README 写的地址应和线上实际地址一致。
+- **窗口宽 641～960px 时流水线也竖排、隐藏图例**（用户 2026-11-17 在 /git-push 推送前选择让 PRD 追平 `DESIGN.md` 和代码）。`DESIGN.md` 布局与断点一节规定 ≤960px 竖排，原 PRD 只写了 ≤640px，两份文档不一致。

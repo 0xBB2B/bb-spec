@@ -18,7 +18,7 @@
   <a href="https://github.com/0xBB2B/bb-spec/stargazers"><img src="https://img.shields.io/github/stars/0xBB2B/bb-spec?style=for-the-badge&color=yellow&logo=github" alt="GitHub Stars" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License" /></a>
   <a href="https://docs.anthropic.com/en/docs/claude-code/overview"><img src="https://img.shields.io/badge/Claude%20Code-Plugin-D97757?style=for-the-badge&logo=anthropic&logoColor=white" alt="Claude Code Plugin" /></a>
-  <a href="https://0xbb2b.github.io/bb-spec/"><img src="https://img.shields.io/badge/Homepage-0xbb2b.github.io%2Fbb--spec-D97757?style=for-the-badge" alt="ホームページ" /></a>
+  <a href="https://bb-spec.0xbb.me/"><img src="https://img.shields.io/badge/Homepage-bb--spec.0xbb.me-D97757?style=for-the-badge" alt="ホームページ" /></a>
 </p>
 
 <p align="center">
