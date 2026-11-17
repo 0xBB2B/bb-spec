@@ -187,13 +187,12 @@ for f in data:
 
 out("GROUP", "快速开始指向安装章节")
 for f, (lines, info, secs) in data.items():
-    install = next((a for a, b, c, d in [(t, e, i, j) for t, e, i, j in secs] if b == "📦"), None)
+    install_line = next((i for t, e, i, j in secs if e == "📦"), None)
     quick = sec(f, "🚀")
-    if install is None or quick is None:
+    if install_line is None or quick is None:
         check(False, f"{f}: 缺少 📦 或 🚀 章节")
         continue
     amap = anchor_map(info)
-    install_line = next(i for t, e, i, j in secs if e == "📦")
     target = amap[install_line]
     quick_text = "\n".join(l for _, l, o in outside_code(quick) if o)
     links = re.findall(r"\]\(#([^)]*)\)", quick_text) + re.findall(r'href="#([^"]*)"', quick_text)

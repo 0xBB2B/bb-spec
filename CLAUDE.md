@@ -8,14 +8,14 @@
 
 - **feat**：任何新增 / 增强 / 约束硬化（使用者视角可感知的正向变化）
 - **fix**：修复 bug、纠正错误信息、回滚不当行为
-- **docs**：仓库自身的说明文档与开发约定（根 `README.md` / `README.en.md` / `LICENSE` / `CLAUDE.md` / 贡献指南等），前提是改动**不改变任何插件交付给使用者的行为或约束**
+- **docs**：仓库自身的说明文档与开发约定（根 `README.md` / `README.en.md` / `LICENSE` / `CLAUDE.md` / 贡献指南、`site/` 介绍主页及其部署配置 `.github/workflows/pages.yml` 等），前提是改动**不改变任何插件交付给使用者的行为或约束**
 
 禁用 `chore:` / `refactor:` / `style:` / `test:` / `perf:` / `ci:` / `build:` 等其它类型。
 
 **为什么这样分**：本项目用 release-please 自动发版——`feat`(minor) / `fix`(patch) / `!`(major) 触发版本 bump 并进 CHANGELOG，`docs` 既不 bump 也不进 CHANGELOG。
 
 - **产品本体**——`SKILL.md`、`agents/*.md`、`hooks/*`、`plugin.json` / `marketplace.json`、PRD / AGENTS.md 等文档约定——**即便是 Markdown**，改了也会改变插件对使用者的行为或约束，**必须**用 `feat` / `fix`（要 bump + 可追溯）。
-- **说明文档与开发约定**——仓库根 README、`CLAUDE.md`、贡献指南等不随插件交付的内容——改了不影响插件行为，用 `docs`（不该让一次 README 措辞调整或开发约定更新就 bump 版本号）。
+- **说明文档与开发约定**——仓库根 README、`CLAUDE.md`、贡献指南、`site/` 介绍主页及其部署配置等不随插件交付的内容——改了不影响插件行为，用 `docs`（不该让一次 README 措辞调整或开发约定更新就 bump 版本号）。
 
 **判断标准一句话**：改动会不会改变插件交付给使用者的行为 / 约束？会 → `feat` / `fix`；不会、且只是仓库说明 / 开发约定 → `docs`。纯配置 / 纯测试改动若服务于某项功能或修复，仍归 `feat` / `fix`。
 
