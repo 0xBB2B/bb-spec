@@ -84,8 +84,9 @@ for t in '**子代理报告**' '**调查交给子代理**' '**跑脚本**'; do h
 skill_section() {
   awk -v start="$2" '
     BEGIN { n = 0; while (substr(start, n + 1, 1) == "#") n++ }
-    found && match($0, /^#+ /) && RLENGTH - 1 <= n { exit }
-    index($0, start) == 1 { found = 1 }
+    /^```/ { match($0, /^`+/); k = RLENGTH; if (!fence) fence = k; else if (k >= fence && $0 ~ /^`+[ \t]*$/) fence = 0; if (found) print; next }
+    !fence && found && match($0, /^#+ /) && RLENGTH - 1 <= n { exit }
+    !fence && index($0, start) == 1 { found = 1 }
     found { print }
   ' "$SK/$1/SKILL.md" 2>/dev/null || true
 }

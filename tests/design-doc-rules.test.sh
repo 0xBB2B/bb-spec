@@ -14,8 +14,9 @@ fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 # 取以 $1 开头的标题行到下一个匹配 $2 的标题行之间的内容（含起始标题行）
 section() {
   awk -v start="$1" -v stop="$2" '
-    found && $0 ~ stop { exit }
-    index($0, start) == 1 { found = 1 }
+    /^```/ { match($0, /^`+/); k = RLENGTH; if (!fence) fence = k; else if (k >= fence && $0 ~ /^`+[ \t]*$/) fence = 0; if (found) print; next }
+    !fence && found && $0 ~ stop { exit }
+    !fence && index($0, start) == 1 { found = 1 }
     found { print }
   ' "$DOC" 2>/dev/null || true
 }
@@ -57,7 +58,7 @@ for h in "${HEADINGS[@]}"; do
 done
 
 echo "[开头的写法要求]"
-HEAD="$(awk '/^## /{exit} {print}' "$DOC")"
+HEAD="$(awk '/^```/ { match($0, /^`+/); k = RLENGTH; if (!fence) fence = k; else if (k >= fence && $0 ~ /^`+[ \t]*$/) fence = 0; print; next } !fence && /^## /{exit} {print}' "$DOC")"
 for t in '不适用' '原因' '4.5:1' '3:1' '24px' '18.66px' '4 的倍数' '9999px' '形容词' 'px、ms' '按用途命名'; do
   in_text 开头 "$t" "$HEAD"
 done
@@ -159,8 +160,9 @@ WF="$ROOT/plugins/bb-spec-workflow"
 # 取文件 $1 里以 $2 开头的行到下一个匹配 $3 的行之间的内容（含起始行）；读不到文件时返回空
 file_section() {
   skill_cat "$1" 2>/dev/null | awk -v start="$2" -v stop="$3" '
-    found && $0 ~ stop { exit }
-    index($0, start) == 1 { found = 1 }
+    /^```/ { match($0, /^`+/); k = RLENGTH; if (!fence) fence = k; else if (k >= fence && $0 ~ /^`+[ \t]*$/) fence = 0; if (found) print; next }
+    !fence && found && $0 ~ stop { exit }
+    !fence && index($0, start) == 1 { found = 1 }
     found { print }
   ' || true
 }

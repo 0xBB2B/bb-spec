@@ -49,7 +49,7 @@ section_text() {
   local path="${3:-$PL}/$1" heading="$2" body r
   body="$(awk -v h="$heading" '
     BEGIN { n = 0; while (substr(h, n + 1, 1) == "#") n++ }
-    /^```/ { fence = !fence; if (found) print; next }
+    /^```/ { match($0, /^`+/); k = RLENGTH; if (!fence) fence = k; else if (k >= fence && $0 ~ /^`+[ \t]*$/) fence = 0; if (found) print; next }
     !fence && found && match($0, /^#+ /) && RLENGTH - 1 <= n { exit }
     !fence && index($0, h) == 1 { found = 1 }
     found { print }

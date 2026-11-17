@@ -81,7 +81,7 @@ hasall 'PROTOTYPE-START' 'PROTOTYPE-END' '外壳一律不改' '框里禁止放�
   '{templates_dir}/ui-preview-shell.html' '{templates_dir}/DESIGN.md'
 
 section() {
-  awk -v h="$1" 'index($0, h) == 1 {on=1; next} /^## /{on=0} on' "$AGENT" 2>/dev/null || true
+  awk -v h="$1" '/^```/ { match($0, /^`+/); k = RLENGTH; if (!fence) fence = k; else if (k >= fence && $0 ~ /^`+[ \t]*$/) fence = 0; if (on) print; next } !fence && index($0, h) == 1 {on=1; next} !fence && /^## /{on=0} on' "$AGENT" 2>/dev/null || true
 }
 
 line_of() {

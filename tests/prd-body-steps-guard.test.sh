@@ -107,6 +107,32 @@ PY2
 if run_size "$d"; then fail "步骤 1 标题被删应退出非 0"; else pass; fi
 if grep -qF '找不到标题：### 步骤 1：意图定性' "$d/out.txt"; then pass; else fail "输出应含 找不到标题：### 步骤 1：意图定性"; fi
 
+echo "[场景 7：步骤 2 小节里先有代码块（含 # 注释行），之后出现先读提示]"
+d="$(new_copy s7)"
+python3 - "$d/plugins/bb-spec-workflow/skills/prd/SKILL.md" "$H3" <<'PY3'
+import sys
+p, h3 = sys.argv[1:3]
+lines = open(p, encoding="utf-8").read().split("\n")
+b = next(k for k, l in enumerate(lines) if l.startswith(h3))
+lines[b:b] = ["```bash", "# 注释", "```", "走到这一步先读 `references/repo-layout.md`（相对本 skill 目录）。", ""]
+open(p, "w", encoding="utf-8").write("\n".join(lines))
+PY3
+if run_size "$d"; then fail "代码块之后的先读提示应让 skill-size 退出非 0"; else pass; fi
+if grep -qF "「${H2}」一节不应出现：走到这一步先读" "$d/out.txt"; then pass; else fail "输出应含 步骤 2 不应出现：走到这一步先读（代码块里的 # 注释不能截断小节）"; fi
+
+echo "[场景 8：步骤 2 小节里先有嵌套代码块（外层四个反引号，内层有 # 注释行），之后出现先读提示]"
+d="$(new_copy s8)"
+python3 - "$d/plugins/bb-spec-workflow/skills/prd/SKILL.md" "$H3" <<'PY4'
+import sys
+p, h3 = sys.argv[1:3]
+lines = open(p, encoding="utf-8").read().split("\n")
+b = next(k for k, l in enumerate(lines) if l.startswith(h3))
+lines[b:b] = ["````markdown", "```bash", "# 注释", "```", "````", "走到这一步先读 `references/repo-layout.md`（相对本 skill 目录）。", ""]
+open(p, "w", encoding="utf-8").write("\n".join(lines))
+PY4
+if run_size "$d"; then fail "嵌套代码块之后的先读提示应让 skill-size 退出非 0"; else pass; fi
+if grep -qF "「${H2}」一节不应出现：走到这一步先读" "$d/out.txt"; then pass; else fail "输出应含 步骤 2 不应出现：走到这一步先读（嵌套代码块里的 # 注释不能截断小节）"; fi
+
 echo ""
 echo "通过 ${PASS}，失败 ${FAIL}"
 [[ "$FAIL" -eq 0 ]]

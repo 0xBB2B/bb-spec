@@ -50,8 +50,9 @@ in_text() {
 
 file_section() {
   skill_cat "$1" 2>/dev/null | awk -v start="$2" -v stop="$3" '
-    found && $0 ~ stop { exit }
-    index($0, start) == 1 { found = 1 }
+    /^```/ { match($0, /^`+/); k = RLENGTH; if (!fence) fence = k; else if (k >= fence && $0 ~ /^`+[ \t]*$/) fence = 0; if (found) print; next }
+    !fence && found && $0 ~ stop { exit }
+    !fence && index($0, start) == 1 { found = 1 }
     found { print }
   ' || true
 }

@@ -68,7 +68,7 @@ for t in '文件已存在时直接改它' '不改产品代码' '写了 `css` 后
   '外壳的左栏和框上方一行不参与对比' '不算不一致' '- 不一致：' '- 没跑起来：'; do
   has_agent "$t"
 done
-if awk '/^## /{sec=$0} /bbspec-paths.sh/{print sec}' "$PROTO" 2>/dev/null | grep -F '两种模式都先做' >/dev/null; then pass; else fail "prototype 取缓存目录要放在各模式之前"; fi
+if awk '/^```/ { match($0, /^`+/); k = RLENGTH; if (!fence) fence = k; else if (k >= fence && $0 ~ /^`+[ \t]*$/) fence = 0; if ($0 ~ /bbspec-paths.sh/) print sec; next } !fence && /^## /{sec=$0} /bbspec-paths.sh/{print sec}' "$PROTO" 2>/dev/null | grep -F '两种模式都先做' >/dev/null; then pass; else fail "prototype 取缓存目录要放在各模式之前"; fi
 
 echo "[prototype 给了文件时取缓存目录的写法和顺序]"
 T_FILE='给了 `--file` 或 `--compare`、且这个文件在 `ui-preview/` 目录下的，`${CACHE_DIR}` 改取这个 `ui-preview/` 的上一级'
@@ -175,7 +175,7 @@ for t in '调用方是 `prd` 时' '完整内容先存成 `.DESIGN.draft.md`' \
   '需要跑项目时，同样先列出完整命令和出处' '对比完立即关掉' '用户不同意时返回「没跑起来」'; do
   has_agent "$t"
 done
-EVID_SEC="$(awk '/^## 取证顺序/{on=1; next} /^## /{on=0} on' "$AGENT" 2>/dev/null || true)"
+EVID_SEC="$(awk '/^```/ { match($0, /^`+/); k = RLENGTH; if (!fence) fence = k; else if (k >= fence && $0 ~ /^`+[ \t]*$/) fence = 0; if (on) print; next } !fence && /^## 取证顺序/{on=1; next} !fence && /^## /{on=0} on' "$AGENT" 2>/dev/null || true)"
 P1="$(grep -nF -- '1. **DESIGN.md**：' <<<"$EVID_SEC" | head -n1 | cut -d: -f1 || true)"
 P2="$(grep -nF -- '2. **源码**：' <<<"$EVID_SEC" | head -n1 | cut -d: -f1 || true)"
 P3="$(grep -nF -- '3. **问用户要不要跑**：' <<<"$EVID_SEC" | head -n1 | cut -d: -f1 || true)"
@@ -202,7 +202,7 @@ for t in '`note`' 'fake' 'openQuestions' '底部说明' '只在原型里成立' 
 done
 
 echo "[prototype 出原型第 8 步在报告里写依据和不准之处]"
-OPEN_STEP="$(awk '/^8\. 原型文件写好后交回报告/{on=1} on&&/^9\. /{exit} on' "$AGENT" 2>/dev/null || true)"
+OPEN_STEP="$(awk '/^```/ { match($0, /^`+/); k = RLENGTH; if (!fence) fence = k; else if (k >= fence && $0 ~ /^`+[ \t]*$/) fence = 0; if (on) print; next } !fence && /^8\. 原型文件写好后交回报告/{on=1} !fence && on&&/^9\. /{exit} on' "$AGENT" 2>/dev/null || true)"
 for t in '用到了 DESIGN.md 的哪几节' '读了哪些源码文件' '底稿来自哪个地址' \
   '假数据和假操作' '可能不准' '没有能打开网页的工具' '端口被占用' '服务没跑起来' '还没确认的问题'; do
   if grep -qF -- "$t" <<<"$OPEN_STEP"; then pass; else fail "出原型第 8 步缺「${t}」"; fi

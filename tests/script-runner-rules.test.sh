@@ -80,7 +80,7 @@ done
 
 section_has() {
   local file="$1" head="$2" text="$3" body
-  body="$(skill_cat "$PL/$file" 2>/dev/null | awk -v h="$head" 'index($0, h) == 1 { on = 1; next } on && /^## / { exit } on' || true)"
+  body="$(skill_cat "$PL/$file" 2>/dev/null | awk -v h="$head" '/^```/ { match($0, /^`+/); k = RLENGTH; if (!fence) fence = k; else if (k >= fence && $0 ~ /^`+[ \t]*$/) fence = 0; if (on) print; next } !fence && index($0, h) == 1 { on = 1; next } !fence && on && /^## / { exit } on' || true)"
   if grep -qF -- "$text" <<<"$body"; then pass; else fail "${file} 的「${head}」节缺少：${text}"; fi
 }
 
