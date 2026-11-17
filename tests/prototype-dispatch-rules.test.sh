@@ -116,7 +116,7 @@ for t in '.DESIGN.draft.md' '.DESIGN.md'; do
   in_text prd步骤6 "$t" "$S6"
   in_text prd7a "$t" "$L7A"
 done
-QUIT="$(file_section "$PRD" '### 步骤 9' '^### ' | grep -F '| 不做了 |' || true)"
+QUIT="$(file_section "$PRD" '**步骤 9：简报 + 弹窗确认**' '^### |^[*][*]' | grep -F '| 不做了 |' || true)"
 in_text prd不做了 '设计规范临时文件' "$QUIT"
 
 echo "[审查补充：DESIGN.md 位置、派不出去、确认后、打开时机、发不到时的补充]"

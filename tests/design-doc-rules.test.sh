@@ -240,7 +240,7 @@ if need_file "$PRD"; then
   for t in '**7d. DESIGN.md**' '<预览页名>.DESIGN.md' '写完删掉它' '<预览页名>.DESIGN.draft.md' '不写入' '存在' '改完后的完整文件'; do
     in_text prd7d "$t" "$S7D"
   done
-  S9="$(file_section "$PRD" '### 步骤 9' '^### ')"
+  S9="$(file_section "$PRD" '**步骤 9：简报 + 弹窗确认**' '^### |^[*][*]')"
   in_text prd简报 '- DESIGN.md：' "$S9"
   QUIT="$(printf '%s\n' "$S9" | grep -F '| 不做了 |')"
   in_text prd不做了 '设计规范临时文件' "$QUIT"
