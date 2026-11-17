@@ -104,7 +104,13 @@ for ev in pull_request workflow_dispatch release schedule; do
 done
 
 echo "[权限]"
-expect "顶层 permissions 三项" "$(yq "$PAGES" kv permissions)" "contents=read,id-token=write,pages=write"
+expect "顶层 permissions 只有 contents: read" "$(yq "$PAGES" kv permissions)" "contents=read"
+BUILD_EFFECTIVE="$(yq "$PAGES" kv permissions),$(yq "$PAGES" kv jobs/build/permissions)"
+for perm in pages=write id-token=write; do
+  if [[ ",${BUILD_EFFECTIVE}," == *",${perm},"* ]]; then fail "build 的有效权限含 ${perm}"; else pass; fi
+done
+DEPLOY_PERMS="$(yq "$PAGES" kv jobs/deploy/permissions)"
+if [[ "$DEPLOY_PERMS" == "id-token=write,pages=write" || "$DEPLOY_PERMS" == "contents=read,id-token=write,pages=write" ]]; then pass; else fail "deploy 自己的 permissions：期望 pages/id-token 为 write（contents 只能 read），实际 [${DEPLOY_PERMS}]"; fi
 if grep -Eq 'contents:[[:space:]]*write' "$PAGES"; then fail "pages.yml 含 contents: write"; else pass; fi
 
 echo "[并发]"
