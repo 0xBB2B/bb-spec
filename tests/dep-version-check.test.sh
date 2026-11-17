@@ -35,7 +35,7 @@ assert_ctx_has() {
   local name="$1" ctx want
   ctx="$(ctx_of)"
   shift
-  if [[ "$RC" -ne 0 ]]; then fail "${name}（退出码=$RC）"; return; fi
+  if [[ "$RC" -ne 0 ]]; then fail "${name}（退出码=${RC}）"; return; fi
   for want in "$@"; do
     if [[ "$ctx" == *"$want"* ]]; then pass; else fail "${name} 应含「${want}」（实际=${ctx:0:120}）"; fi
   done
@@ -43,7 +43,7 @@ assert_ctx_has() {
 
 echo "[改 package.json]"
 run "$(mkin Edit /p/package.json)"
-if [[ "$RC" -eq 0 ]]; then pass; else fail "退出码应为 0（实际=$RC）"; fi
+if [[ "$RC" -eq 0 ]]; then pass; else fail "退出码应为 0（实际=${RC}）"; fi
 if jq -e . <<<"$OUT" >/dev/null 2>&1; then pass; else fail "输出应是合法 JSON"; fi
 if [[ "$(jq -r '.hookSpecificOutput.hookEventName // empty' <<<"$OUT" 2>/dev/null || true)" == "PostToolUse" ]]; then pass; else fail "hookEventName 应为 PostToolUse"; fi
 assert_ctx_has "package.json 提示" "立刻撤回这次改动" "新技术清单" "请用户批准" "官方渠道"

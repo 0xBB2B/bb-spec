@@ -42,3 +42,4 @@
 | import-table | 导入模式下步骤 3 请用户逐行确认的表，每行是一条原文条目的出处、要点、核查结论和建议去向，按原文章节分批、每批最多 5 行 | 简体「总表」 |
 | source-mapping | 写在 PRD 的 OVERVIEW「决策记录」里的表，记录每条原文条目最后的去向（写成约束、写进非目标、删除、另开 PRD）和原因 | 简体「原文对照表」 |
 | constraint-skill | bb-spec 插件里按技术栈生效、写着开发规矩的 skill，如 `database-constraints`、`api-design`、`golang-constraints` | 简体「约束类 skill」 |
+| homepage | bb-spec 在 GitHub Pages 上的单页产品介绍站，地址 `https://bb-spec.0xbb.me/`，中英双语 | 简体「主页」「介绍主页」 |
