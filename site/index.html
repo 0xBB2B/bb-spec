@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bb-spec — PRD 驱动的 Claude Code 流水线</title>
+<link rel="stylesheet" href="style.css">
+<script src="app.js" defer></script>
+</head>
+<body id="top">
+<header class="top"><div class="top-in">
+  <a class="logo" href="#top"><b>●</b> bb-spec</a>
+  <nav class="nav">
+    <a class="in" href="#problem" data-i18n="nav.problem">[解决什么]</a>
+    <a class="in" href="#pipeline" data-i18n="nav.pipeline">[流水线]</a>
+    <a class="in" href="#install" data-i18n="nav.install">[安装]</a>
+    <a href="https://github.com/0xBB2B/bb-spec" data-i18n="nav.github">[GitHub]</a>
+  </nav>
+  <div class="lang" role="group" aria-label="语言 / Language"><button type="button" class="lang-btn" data-lang="zh" aria-pressed="true">中文</button><button type="button" class="lang-btn" data-lang="en" aria-pressed="false">English</button></div>
+</div></header>
+<main class="main">
+  <p class="comment" data-i18n="kicker"># Claude Code 插件</p>
+  <h1><span class="p">&gt;</span> <span data-i18n="tag">一条 PRD 驱动的 Claude Code 流水线，把模糊需求一路带到可交付的代码。</span><span class="cursor" aria-hidden="true"></span></h1>
+  <p class="lead" data-i18n="sub">每个阶段可追溯、可断点恢复、经对抗验证。</p>
+  <div class="cta"><a class="btn btn-primary" href="#install" data-i18n="ctaInstall">安装</a><a class="btn" href="https://github.com/0xBB2B/bb-spec" data-i18n="ctaGithub">在 GitHub 上查看</a></div>
+  <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>claude</span><button type="button" class="copy" data-copy data-i18n="copy">复制</button></div><pre><span class="p">❯</span> /plugin marketplace add 0xBB2B/bb-spec
+<span class="p">❯</span> /plugin install bb-spec-core@0xbb2b
+<span class="p">❯</span> /plugin install bb-spec-workflow@0xbb2b</pre></div>
+  <section class="sec" id="problem">
+    <h2><span class="h">##</span> <span data-i18n="problemTitle">它解决什么问题</span></h2>
+    <p class="sec-lead" data-i18n="problemLead">每次交接物都是磁盘上的文档，不是会话里的临时记忆。所以它能断点续、能换 AI 接手、能逐级追溯。</p>
+    <div class="grid3">
+      <article class="pane"><h3><span>01</span> <span data-i18n="problems.0.0">三 Agent 隔离执行</span></h3><p data-i18n="problems.0.1">写实现的 Agent 看不到 PRD，只看测试，没法“照着意图蒙混”。测试、实现、审查由互相看不见的三方分别完成。</p></article>
+      <article class="pane"><h3><span>02</span> <span data-i18n="problems.1.0">磁盘文档是唯一交接物</span></h3><p data-i18n="problems.1.1">每个阶段交接的是文件，不是会话记忆。跨会话、/clear 之后，甚至换一个模型接手，都能无损续接。</p></article>
+      <article class="pane"><h3><span>03</span> <span data-i18n="problems.2.0">代码和 PRD 经 git 双向可查</span></h3><p data-i18n="problems.2.1">代码是唯一事实来源，PRD 只写为什么。每个 commit 带需求标记，从功能能找到代码，从函数能查回当时的需求与取舍。</p></article>
+    </div>
+  </section>
+  <section class="sec" id="pipeline">
+    <h2><span class="h">##</span> <span data-i18n="pipeTitle">流水线怎么走</span></h2>
+    <p class="sec-lead" data-i18n="pipeLead">你读完 PRD 批准一次，/plan、/exec、/doc-update 自动接着跑；/git-push 由你手动触发。</p>
+    <div class="pipe">
+      <div class="node"><code data-i18n="stages.0.0">/prd</code><span class="role" data-i18n="stages.0.1">做什么</span><p data-i18n="stages.0.2">质疑、澄清、拆解，落盘 PRD，请你读完确认。</p><span class="badge" data-i18n="once">唯一一次批准</span></div>
+      <div class="conn auto"><span>↓ <span data-i18n="auto">自动衔接</span></span></div>
+      <div class="node"><code data-i18n="stages.1.0">/plan</code><span class="role" data-i18n="stages.1.1">怎么做</span><p data-i18n="stages.1.2">把 PRD 变成函数级实施计划。只有要引入新技术时才停下问你。</p></div>
+      <div class="conn auto"><span>↓ <span data-i18n="auto">自动衔接</span></span></div>
+      <div class="node"><code data-i18n="stages.2.0">/exec</code><span class="role" data-i18n="stages.2.1">Red → Green → Review</span><p data-i18n="stages.2.2">三个互相隔离的 Agent 依次写测试、写实现、做审查。进度写进 PROGRESS.md，中断后能接着跑。</p></div>
+      <div class="conn auto"><span>↓ <span data-i18n="auto">自动衔接</span></span></div>
+      <div class="node"><code data-i18n="stages.3.0">/doc-update</code><span class="role" data-i18n="stages.3.1">文档追平代码</span><p data-i18n="stages.3.2">代码是事实，让本次 PRD 和 README 等文档追平实际交付。</p></div>
+      <div class="conn manual"><span>↓ <span data-i18n="manual">由你手动触发</span></span></div>
+      <div class="node"><code data-i18n="stages.4.0">/git-push</code><span class="role" data-i18n="stages.4.1">pre-review + 开 PR</span><p data-i18n="stages.4.2">分支规范自查，推送，开 PR。</p></div>
+    </div>
+    <p class="legend"><span class="lg auto"><i></i><span data-i18n="auto">自动衔接</span></span><span class="lg manual"><i></i><span data-i18n="manual">由你手动触发</span></span></p>
+    <p class="note" data-i18n="revise">/revise 随时介入：有 bug 或结果和预期不符时，按根因诊断、定向修正、回归验证。</p>
+  </section>
+  <section class="sec" id="install">
+    <h2><span class="h">##</span> <span data-i18n="installTitle">安装</span></h2>
+    <p class="sec-lead" data-i18n="installLead">在 Claude Code 里执行这三行：</p>
+    <div class="win"><div class="win-bar"><i></i><i></i><i></i><span>claude</span><button type="button" class="copy" data-copy data-i18n="copy">复制</button></div><pre><span class="p">❯</span> /plugin marketplace add 0xBB2B/bb-spec
+<span class="p">❯</span> /plugin install bb-spec-core@0xbb2b
+<span class="p">❯</span> /plugin install bb-spec-workflow@0xbb2b</pre></div>
+    <p class="note" data-i18n="installNote">这两个子插件给你纪律和工作流。后端、前端的技术栈约束按需再装。</p>
+    <table>
+      <thead><tr><th data-i18n="th.0">子插件</th><th data-i18n="th.1">装了得到什么</th></tr></thead>
+      <tbody>
+        <tr><td><code>bb-spec-core</code> <span class="badge" data-i18n="plugins.0.1">推荐基座</span></td><td data-i18n="plugins.0.2">TDD / 版本策略 / Git 纪律，加 3 个被动 hook</td></tr>
+        <tr><td><code>bb-spec-workflow</code> <span class="badge" data-i18n="plugins.1.1">核心功能</span></td><td data-i18n="plugins.1.2">prd → plan → exec → doc-update → revise → git-push，加 8 个 subagent</td></tr>
+        <tr><td><code>bb-spec-backend</code></td><td data-i18n="plugins.2.2">Go / REST API / 数据库 / 认证 / 授权 / 可观测性 / 服务治理 / 配置约束</td></tr>
+        <tr><td><code>bb-spec-frontend</code></td><td data-i18n="plugins.3.2">Vue 3 + TS + Vite + Tailwind + bun 技术栈与工程约定</td></tr>
+      </tbody>
+    </table>
+    <p class="more"><a href="https://github.com/0xBB2B/bb-spec#readme" data-readme data-i18n="more">完整说明在 README →</a></p>
+  </section>
+</main>
+<footer class="foot"><div class="foot-in"><a href="https://github.com/0xBB2B/bb-spec/blob/main/LICENSE">MIT License</a><a href="https://github.com/0xBB2B/bb-spec">GitHub</a><a href="https://github.com/0xBB2B/bb-spec/releases">Releases</a><a href="https://github.com/0xBB2B/bb-spec#readme" data-readme>README</a></div></footer>
+</body>
+</html>
