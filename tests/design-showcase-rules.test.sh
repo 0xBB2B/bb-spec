@@ -12,6 +12,7 @@ FAIL=0
 
 pass() { PASS=$((PASS + 1)); }
 fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
+source "$(dirname "$0")/lib/md.sh"
 
 has_in() {
   local label="$1" file="$2"; shift 2
@@ -76,7 +77,7 @@ expect_throw '' '#000000' ''
 expect_throw '#FFFFFF' '#000' '#000'
 
 echo "[子代理定义：展示页一节的位置]"
-sec_line() { grep -nxF -- "$1" "$AGENT" 2>/dev/null | head -n1 | cut -d: -f1 || true; }
+sec_line() { md_line "$AGENT" "$1" exact; }
 L_DESIGN="$(sec_line '## 设计规范（DESIGN.md）')"
 L_SHOW="$(sec_line '## 设计规范展示页')"
 L_EVID="$(sec_line '## 取证顺序')"

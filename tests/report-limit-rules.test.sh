@@ -9,6 +9,7 @@ FAIL=0
 
 pass() { PASS=$((PASS + 1)); }
 fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
+source "$(dirname "$0")/lib/md.sh"
 
 skill_scope() {
   case "$1" in
@@ -47,13 +48,7 @@ lacks() {
 
 section_text() {
   local path="${3:-$PL}/$1" heading="$2" body r
-  body="$(awk -v h="$heading" '
-    BEGIN { n = 0; while (substr(h, n + 1, 1) == "#") n++ }
-    /^```/ { match($0, /^`+/); k = RLENGTH; if (!fence) fence = k; else if (k >= fence && $0 ~ /^`+[ \t]*$/) fence = 0; if (found) print; next }
-    !fence && found && match($0, /^#+ /) && RLENGTH - 1 <= n { exit }
-    !fence && index($0, h) == 1 { found = 1 }
-    found { print }
-  ' "$path" 2>/dev/null || true)"
+  body="$(md_section "$path" "$heading")"
   [ -n "$body" ] || return 1
   printf '%s\n' "$body"
   while IFS= read -r r; do
@@ -76,7 +71,7 @@ lacks_after() {
 }
 
 line_of() {
-  awk -v h="$2" '/^```/ { match($0, /^`+/); k = RLENGTH; if (!fence) fence = k; else if (k >= fence && $0 ~ /^`+[ \t]*$/) fence = 0; next } !fence && index($0, h) == 1 { print NR; exit }' "${3:-$PL}/$1" 2>/dev/null || true
+  md_line "${3:-$PL}/$1" "$2"
 }
 
 before_rc() {

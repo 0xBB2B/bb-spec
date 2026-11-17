@@ -13,6 +13,7 @@ FAIL=0
 
 pass() { PASS=$((PASS + 1)); }
 fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
+source "$(dirname "$0")/lib/md.sh"
 
 skill_scope() {
   case "$1" in
@@ -49,12 +50,7 @@ in_text() {
 }
 
 file_section() {
-  skill_cat "$1" 2>/dev/null | awk -v start="$2" -v stop="$3" '
-    /^```/ { match($0, /^`+/); k = RLENGTH; if (!fence) fence = k; else if (k >= fence && $0 ~ /^`+[ \t]*$/) fence = 0; if (found) print; next }
-    !fence && found && $0 ~ stop { exit }
-    !fence && index($0, start) == 1 { found = 1 }
-    found { print }
-  ' || true
+  skill_cat "$1" 2>/dev/null | md_section - "$2" "$3" || true
 }
 
 has() { local t; for t in "$@"; do in_file prototype "$PROTO" "$t"; done; }

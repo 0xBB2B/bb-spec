@@ -22,6 +22,7 @@ new_copy() {
   local dst="$TMP/$1" s
   mkdir -p "$dst/tests" "$dst/plugins/bb-spec-workflow/skills"
   cp "$ROOT/tests/skill-size.test.sh" "$dst/tests/"
+  if [[ -d "$ROOT/tests/lib" ]]; then cp -R "$ROOT/tests/lib" "$dst/tests/"; fi
   for s in git-push prd revise; do
     cp -R "$ROOT/plugins/bb-spec-workflow/skills/$s" "$dst/plugins/bb-spec-workflow/skills/"
   done

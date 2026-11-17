@@ -10,6 +10,7 @@ FAIL=0
 
 pass() { PASS=$((PASS + 1)); }
 fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
+source "$(dirname "$0")/lib/md.sh"
 
 SKILLS=(git-push prd revise)
 
@@ -82,13 +83,7 @@ for t in '**子代理报告**' '**调查交给子代理**' '**跑脚本**'; do h
 
 # 只读 SKILL.md：从以 $2 开头的标题行到下一个同级或更高级标题之前（不含）
 skill_section() {
-  awk -v start="$2" '
-    BEGIN { n = 0; while (substr(start, n + 1, 1) == "#") n++ }
-    /^```/ { match($0, /^`+/); k = RLENGTH; if (!fence) fence = k; else if (k >= fence && $0 ~ /^`+[ \t]*$/) fence = 0; if (found) print; next }
-    !fence && found && match($0, /^#+ /) && RLENGTH - 1 <= n { exit }
-    !fence && index($0, start) == 1 { found = 1 }
-    found { print }
-  ' "$SK/$1/SKILL.md" 2>/dev/null || true
+  md_section "$SK/$1/SKILL.md" "$2"
 }
 
 section_has() {

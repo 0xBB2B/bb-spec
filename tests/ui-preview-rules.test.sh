@@ -10,6 +10,7 @@ FAIL=0
 
 pass() { PASS=$((PASS + 1)); }
 fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
+source "$(dirname "$0")/lib/md.sh"
 
 has() {
   local skill="$1" text="$2"
@@ -68,7 +69,7 @@ for t in '文件已存在时直接改它' '不改产品代码' '写了 `css` 后
   '外壳的左栏和框上方一行不参与对比' '不算不一致' '- 不一致：' '- 没跑起来：'; do
   has_agent "$t"
 done
-if awk '/^```/ { match($0, /^`+/); k = RLENGTH; if (!fence) fence = k; else if (k >= fence && $0 ~ /^`+[ \t]*$/) fence = 0; if ($0 ~ /bbspec-paths.sh/) print sec; next } !fence && /^## /{sec=$0} /bbspec-paths.sh/{print sec}' "$PROTO" 2>/dev/null | grep -F '两种模式都先做' >/dev/null; then pass; else fail "prototype 取缓存目录要放在各模式之前"; fi
+if awk "$MD_CB_AWK"' !cb && /^## /{sec=$0} /bbspec-paths.sh/{print sec}' "$PROTO" 2>/dev/null | grep -F '两种模式都先做' >/dev/null; then pass; else fail "prototype 取缓存目录要放在各模式之前"; fi
 
 echo "[prototype 给了文件时取缓存目录的写法和顺序]"
 T_FILE='给了 `--file` 或 `--compare`、且这个文件在 `ui-preview/` 目录下的，`${CACHE_DIR}` 改取这个 `ui-preview/` 的上一级'
@@ -95,7 +96,7 @@ for t in '先读项目根目录的 DESIGN.md' '改动所在的整个页面' '缺
 done
 
 echo "[prototype 的 DESIGN.md 两节在出原型之前]"
-sec_line() { awk -v h="$1" '/^```/ { match($0, /^`+/); k = RLENGTH; if (!fence) fence = k; else if (k >= fence && $0 ~ /^`+[ \t]*$/) fence = 0; next } !fence && $0 == h { print NR; exit }' "$AGENT" 2>/dev/null || true; }
+sec_line() { md_line "$AGENT" "$1" exact; }
 L_DESIGN="$(sec_line '## 设计规范（DESIGN.md）')"
 L_EVID="$(sec_line '## 取证顺序')"
 L_PROTO="$(sec_line '## 出原型')"
@@ -151,8 +152,8 @@ for t in 'DESIGN.md「终端界面」' '实际运行命令看输出' 'terminalCs
 done
 
 echo "[prototype 出原型第 1 条先过 DESIGN.md]"
-L_FIRST="$(grep -n '^1\. 按「设计规范（DESIGN.md）」先过一遍 DESIGN.md' "$AGENT" 2>/dev/null | head -n1 | cut -d: -f1 || true)"
-L_PLACE="$(grep -n '^[0-9][0-9]*\. 确定文件位置' "$AGENT" 2>/dev/null | head -n1 | cut -d: -f1 || true)"
+L_FIRST="$(md_grep_n "$AGENT" '^1\. 按「设计规范（DESIGN.md）」先过一遍 DESIGN.md' | head -n1 | cut -d: -f1 || true)"
+L_PLACE="$(md_grep_n "$AGENT" '^[0-9][0-9]*\. 确定文件位置' | head -n1 | cut -d: -f1 || true)"
 if [[ -n "$L_FIRST" && -n "$L_PLACE" && -n "$L_PROTO" && "$L_FIRST" -gt "$L_PROTO" && "$L_FIRST" -lt "$L_PLACE" ]]; then
   pass
 else
@@ -175,10 +176,10 @@ for t in '调用方是 `prd` 时' '完整内容先存成 `.DESIGN.draft.md`' \
   '需要跑项目时，同样先列出完整命令和出处' '对比完立即关掉' '用户不同意时返回「没跑起来」'; do
   has_agent "$t"
 done
-EVID_SEC="$(awk '/^```/ { match($0, /^`+/); k = RLENGTH; if (!fence) fence = k; else if (k >= fence && $0 ~ /^`+[ \t]*$/) fence = 0; if (on) print; next } !fence && /^## 取证顺序/{on=1; next} !fence && /^## /{on=0} on' "$AGENT" 2>/dev/null || true)"
-P1="$(grep -nF -- '1. **DESIGN.md**：' <<<"$EVID_SEC" | head -n1 | cut -d: -f1 || true)"
-P2="$(grep -nF -- '2. **源码**：' <<<"$EVID_SEC" | head -n1 | cut -d: -f1 || true)"
-P3="$(grep -nF -- '3. **问用户要不要跑**：' <<<"$EVID_SEC" | head -n1 | cut -d: -f1 || true)"
+EVID_SEC="$(md_section "$AGENT" '## 取证顺序' '^## ' | tail -n +2)"
+P1="$(md_grep_n - '1\. \*\*DESIGN\.md\*\*：' <<<"$EVID_SEC" | head -n1 | cut -d: -f1 || true)"
+P2="$(md_grep_n - '2\. \*\*源码\*\*：' <<<"$EVID_SEC" | head -n1 | cut -d: -f1 || true)"
+P3="$(md_grep_n - '3\. \*\*问用户要不要跑\*\*：' <<<"$EVID_SEC" | head -n1 | cut -d: -f1 || true)"
 if [[ -n "$P1" && -n "$P2" && -n "$P3" && "$P1" -lt "$P2" && "$P2" -lt "$P3" ]]; then pass; else fail "取证顺序应依次是 DESIGN.md、源码、问用户要不要跑：${P1:-无} ${P2:-无} ${P3:-无}"; fi
 lacks_agent '把实际界面跑起来，和原型框里的内容逐项对比'
 for t in '这次的原型确认后删掉草稿' \
@@ -202,7 +203,7 @@ for t in '`note`' 'fake' 'openQuestions' '底部说明' '只在原型里成立' 
 done
 
 echo "[prototype 出原型第 8 步在报告里写依据和不准之处]"
-OPEN_STEP="$(awk '/^```/ { match($0, /^`+/); k = RLENGTH; if (!fence) fence = k; else if (k >= fence && $0 ~ /^`+[ \t]*$/) fence = 0; if (on) print; next } !fence && /^8\. 原型文件写好后交回报告/{on=1} !fence && on&&/^9\. /{exit} on' "$AGENT" 2>/dev/null || true)"
+OPEN_STEP="$(md_section "$AGENT" '8. 原型文件写好后交回报告' '^9\. ')"
 for t in '用到了 DESIGN.md 的哪几节' '读了哪些源码文件' '底稿来自哪个地址' \
   '假数据和假操作' '可能不准' '没有能打开网页的工具' '端口被占用' '服务没跑起来' '还没确认的问题'; do
   if grep -qF -- "$t" <<<"$OPEN_STEP"; then pass; else fail "出原型第 8 步缺「${t}」"; fi

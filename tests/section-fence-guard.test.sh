@@ -158,6 +158,28 @@ d="$(new_copy s13)"
 inject_before "$d/$WF/skills/git-push/SKILL.md" '## 4.6 ' nested '## 5. 推送到远程'
 check fix-scope-rules-标题计数 "$d" fix-scope-rules
 
+echo "[场景 14：design-showcase-rules 找标题行号，代码块里的「## 取证顺序」副本放在设计规范之前]"
+d="$(new_copy s14)"
+inject_before "$d/$WF/agents/prototype-designer.md" '## 设计规范（DESIGN.md）' '' '## 取证顺序'
+check design-showcase-rules-标题行号 "$d" design-showcase-rules
+
+echo "[场景 15：design-doc-rules 找模板标题行号，嵌套代码块里的标题副本放在「## 7. 组件」之前]"
+d="$(new_copy s15)"
+inject_before "$d/$WF/templates/DESIGN.md" '## 2. 颜色' '' '## 3. 字体与字号'
+inject_before "$d/$WF/templates/DESIGN.md" '## 7. 组件' nested '## 8. 动效'
+inject_before "$d/$WF/templates/DESIGN.md" '## 7. 组件' '' '### 按钮'
+check design-doc-rules-模板标题行号 "$d" design-doc-rules
+
+echo "[场景 16：ui-preview-rules 找步骤行，代码块里的第 1 条副本放在「## 出原型」之前]"
+d="$(new_copy s16)"
+inject_before "$d/$WF/agents/prototype-designer.md" '## 出原型' '' '1. 按「设计规范（DESIGN.md）」先过一遍 DESIGN.md'
+check ui-preview-rules-步骤行 "$d" ui-preview-rules
+
+echo "[场景 17：ui-preview-rules 在取证顺序里找编号条目，嵌套代码块里的第 3 条副本放在第 1 条之前]"
+d="$(new_copy s17)"
+inject_before "$d/$WF/agents/prototype-designer.md" '1. **DESIGN.md**：' nested '3. **问用户要不要跑**：'
+check ui-preview-rules-编号条目 "$d" ui-preview-rules
+
 echo ""
 echo "通过 ${PASS}，失败 ${FAIL}"
 [[ "$FAIL" -eq 0 ]]
