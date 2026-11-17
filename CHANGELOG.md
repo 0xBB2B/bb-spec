@@ -1,5 +1,13 @@
 # Changelog
 
+## [15.10.0](https://github.com/0xBB2B/bb-spec/compare/v15.9.0...v15.10.0) (2026-11-17)
+
+
+### Features
+
+* **prd:** /prd 导入别人写的需求文档，逐条核查、逐条对齐再整理成 PRD ([#332](https://github.com/0xBB2B/bb-spec/issues/332)) ([566d1b7](https://github.com/0xBB2B/bb-spec/commit/566d1b7079dc598596ac998291f9454ed8cc4c5a))
+* **prd:** 正文腾出空间，去掉 references 文件数上限改查步骤 0~5 留正文，规则测试统一认代码块 ([#334](https://github.com/0xBB2B/bb-spec/issues/334)) ([9303ff8](https://github.com/0xBB2B/bb-spec/commit/9303ff88206dc413d20b7e353ebc0ca48363b325))
+
 ## [15.9.0](https://github.com/0xBB2B/bb-spec/compare/v15.8.0...v15.9.0) (2026-11-13)
 
 
