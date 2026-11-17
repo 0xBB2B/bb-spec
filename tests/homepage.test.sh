@@ -609,6 +609,44 @@ const main = async () => {
       }
     }
 
+    {
+      const c = boot({ languages: ['zh-CN'] });
+      const [b0, b1] = c.doc.querySelectorAll('[data-copy]');
+      if (!b0 || !b1) ok(false, '两个复制按钮：缺少 [data-copy]');
+      else {
+        click(c, b0); await flush();
+        c.advance(1000);
+        click(c, b1); await flush();
+        c.advance(600);
+        eq([b0.textContent, b1.textContent], ['复制', '已复制'], '两个复制按钮：距第一次 1600ms 时各自文字');
+        c.advance(1000);
+        eq([b0.textContent, b1.textContent], ['复制', '复制'], '两个复制按钮：距第二次 1600ms 时各自文字');
+      }
+    }
+
+    for (const [from, to, fromLangs, doneNew, idleNew] of [['zh', 'en', ['zh-CN'], 'Copied', 'Copy'], ['en', 'zh', ['en-US'], '已复制', '复制']]) {
+      const tag = `${from}→${to}`;
+      const sw = boot({ languages: fromLangs });
+      const [b0, b1] = sw.doc.querySelectorAll('[data-copy]');
+      const toBtn = sw.doc.querySelectorAll(`[data-lang="${to}"]`)[0];
+      if (!b0 || !b1 || !toBtn) { ok(false, `${tag}：缺少 [data-copy] 或 [data-lang="${to}"]`); continue; }
+      click(sw, b0); await flush();
+      sw.advance(500);
+      click(sw, toBtn); await flush();
+      eq(b0.textContent, doneNew, `${tag}：显示已复制时切语言，该按钮文字`);
+      eq(b1.textContent, idleNew, `${tag}：显示已复制时切语言，另一个复制按钮文字`);
+      sw.advance(1099);
+      eq(b0.textContent, doneNew, `${tag}：距点击 1599ms 仍应为「${doneNew}」`);
+      sw.advance(1);
+      eq(b0.textContent, idleNew, `${tag}：距点击满 1600ms 应为「${idleNew}」`);
+      eq(b1.textContent, idleNew, `${tag}：满 1600ms 后另一个复制按钮文字`);
+
+      const fresh = boot({ languages: fromLangs });
+      const fb = fresh.doc.querySelectorAll('[data-copy]');
+      click(fresh, fresh.doc.querySelectorAll(`[data-lang="${to}"]`)[0]);
+      eq(fb.map((e) => e.textContent), [idleNew, idleNew], `${tag}：没点过复制时切语言，两个复制按钮文字`);
+    }
+
     for (const storage of ['methods-throw', 'getter-throw']) {
       const d = boot({ languages: ['en-US'], storage });
       const zh = d.doc.querySelectorAll('[data-lang="zh"]');

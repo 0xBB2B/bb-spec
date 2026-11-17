@@ -112,7 +112,8 @@ function applyLang(lang) {
   currentLang = lang;
   const copy = COPY[lang];
   document.querySelectorAll('[data-i18n]').forEach((el) => {
-    el.textContent = el.getAttribute('data-i18n').split('.').reduce((o, k) => o[k], copy);
+    const key = el.copied ? 'copied' : el.getAttribute('data-i18n');
+    el.textContent = key.split('.').reduce((o, k) => o[k], copy);
   });
   document.querySelectorAll('[data-readme]').forEach((a) => a.setAttribute('href', copy.readme));
   document.querySelectorAll('[data-lang]').forEach((b) => b.setAttribute('aria-pressed', String(b.getAttribute('data-lang') === lang)));
@@ -123,9 +124,13 @@ function applyLang(lang) {
 function copyCommands(button) {
   if (!navigator.clipboard) return;
   navigator.clipboard.writeText(COMMANDS.join('\n')).then(() => {
+    button.copied = true;
     button.textContent = COPY[currentLang].copied;
     clearTimeout(button.resetTimer);
-    button.resetTimer = setTimeout(() => { button.textContent = COPY[currentLang].copy; }, COPIED_RESET_MS);
+    button.resetTimer = setTimeout(() => {
+      button.copied = false;
+      button.textContent = COPY[currentLang].copy;
+    }, COPIED_RESET_MS);
   }, () => {});
 }
 
