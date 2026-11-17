@@ -95,7 +95,7 @@ for t in '先读项目根目录的 DESIGN.md' '改动所在的整个页面' '缺
 done
 
 echo "[prototype 的 DESIGN.md 两节在出原型之前]"
-sec_line() { grep -nxF -- "$1" "$AGENT" 2>/dev/null | head -n1 | cut -d: -f1 || true; }
+sec_line() { awk -v h="$1" '/^```/ { match($0, /^`+/); k = RLENGTH; if (!fence) fence = k; else if (k >= fence && $0 ~ /^`+[ \t]*$/) fence = 0; next } !fence && $0 == h { print NR; exit }' "$AGENT" 2>/dev/null || true; }
 L_DESIGN="$(sec_line '## 设计规范（DESIGN.md）')"
 L_EVID="$(sec_line '## 取证顺序')"
 L_PROTO="$(sec_line '## 出原型')"

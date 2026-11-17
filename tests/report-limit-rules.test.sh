@@ -76,7 +76,7 @@ lacks_after() {
 }
 
 line_of() {
-  awk -v h="$2" 'index($0, h) == 1 { print NR; exit }' "${3:-$PL}/$1" 2>/dev/null || true
+  awk -v h="$2" '/^```/ { match($0, /^`+/); k = RLENGTH; if (!fence) fence = k; else if (k >= fence && $0 ~ /^`+[ \t]*$/) fence = 0; next } !fence && index($0, h) == 1 { print NR; exit }' "${3:-$PL}/$1" 2>/dev/null || true
 }
 
 before_rc() {

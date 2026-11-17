@@ -41,6 +41,21 @@ open(p, "w", encoding="utf-8").write("\n".join(lines))
 PY
 }
 
+# 在文件 $1 里第一个以 $2 开头的行前面插入一个代码块，块里放 $4 这一行（$3 非空时用嵌套代码块）
+inject_before() {
+  python3 - "$1" "$2" "${3:-}" "$4" <<'PY'
+import sys
+p, prefix, nested, text = sys.argv[1:5]
+lines = open(p, encoding="utf-8").read().split("\n")
+i = next(k for k, l in enumerate(lines) if l.startswith(prefix))
+block = ["```", text, "```"]
+if nested:
+    block = ["````markdown", "```bash", text, "```", "````"]
+lines[i:i] = block
+open(p, "w", encoding="utf-8").write("\n".join(lines))
+PY
+}
+
 # 在文件末尾追加一个代码块，块里有一行假的起始标题和一句本不该出现的话
 append_fake_start() {
   printf '\n```\n%s\n%s\n```\n' "$2" "$3" >>"$1"
@@ -58,7 +73,7 @@ check() {
     pass
   else
     fail "${label}：代码块里的行被当成了结束行"
-    sed 's/^/    /' "$dst/out.txt" | head -n 20
+    grep -F 'FAIL' "$dst/out.txt" | sed 's/^/    /' | head -n 20
   fi
 }
 
@@ -126,6 +141,22 @@ echo "[场景 10：ui-preview-rules 的第 8 步开头放含 9. 编号行的代�
 d="$(new_copy s10)"
 inject_fence "$d/$WF/agents/prototype-designer.md" '8. 原型文件写好后交回报告'
 check ui-preview-rules-第8步 "$d" ui-preview-rules
+
+echo "[场景 11：report-limit-rules 比较标题先后，代码块里的后一个标题副本放在前一个标题之前]"
+d="$(new_copy s11)"
+inject_before "$d/$WF/agents/test-engineer.md" '## 报告长度' '' '## 安全基线'
+inject_before "$d/$WF/agents/prototype-designer.md" '## 报告长度' '' '## 安全基线'
+check report-limit-rules-标题先后 "$d" report-limit-rules
+
+echo "[场景 12：ui-preview-rules 找标题行号，代码块里的「## 出原型」副本放在设计规范之前]"
+d="$(new_copy s12)"
+inject_before "$d/$WF/agents/prototype-designer.md" '## 设计规范（DESIGN.md）' '' '## 出原型'
+check ui-preview-rules-标题行号 "$d" ui-preview-rules
+
+echo "[场景 13：fix-scope-rules 统计标题，嵌套代码块里的「## 5. 推送到远程」副本放在 4.6 之前]"
+d="$(new_copy s13)"
+inject_before "$d/$WF/skills/git-push/SKILL.md" '## 4.6 ' nested '## 5. 推送到远程'
+check fix-scope-rules-标题计数 "$d" fix-scope-rules
 
 echo ""
 echo "通过 ${PASS}，失败 ${FAIL}"

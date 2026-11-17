@@ -225,10 +225,11 @@ for t in '## 4.6 无关发现（推送之前问一次）' '修完重跑 4.3 全�
   '进同一个 PR' '→ **无关发现一次问**' '→推送前把无关发现合成一张清单一次问→推送'; do
   has "$GIT_PUSH" "$t"
 done
-c46=$(skill_cat "$PL/$GIT_PUSH" 2>/dev/null | grep -c -- '^## 4\.6 ' || true)
-c5=$(skill_cat "$PL/$GIT_PUSH" 2>/dev/null | grep -c -- '^## 5\. 推送到远程$' || true)
-n46=$(skill_cat "$PL/$GIT_PUSH" 2>/dev/null | grep -n -- '^## 4\.6 ' | head -1 | cut -d: -f1 || true)
-n5=$(skill_cat "$PL/$GIT_PUSH" 2>/dev/null | grep -n -- '^## 5\. 推送到远程$' | head -1 | cut -d: -f1 || true)
+GP_BODY="$(skill_cat "$PL/$GIT_PUSH" 2>/dev/null | awk '/^```/ { match($0, /^`+/); k = RLENGTH; if (!fence) fence = k; else if (k >= fence && $0 ~ /^`+[ \t]*$/) fence = 0; print ""; next } fence { print ""; next } { print }' || true)"
+c46=$(printf '%s\n' "$GP_BODY" | grep -c -- '^## 4\.6 ' || true)
+c5=$(printf '%s\n' "$GP_BODY" | grep -c -- '^## 5\. 推送到远程$' || true)
+n46=$(printf '%s\n' "$GP_BODY" | grep -n -- '^## 4\.6 ' | head -1 | cut -d: -f1 || true)
+n5=$(printf '%s\n' "$GP_BODY" | grep -n -- '^## 5\. 推送到远程$' | head -1 | cut -d: -f1 || true)
 if [[ "$c46" == 1 && "$c5" == 1 && -n "$n46" && -n "$n5" && "$n46" -lt "$n5" ]]; then pass; else fail "git-push 中 ## 4.6 应在 ## 5. 推送到远程 之前（4.6 行=${n46:-无}，5 行=${n5:-无}）"; fi
 
 echo "[无关发现：code-constraints]"
