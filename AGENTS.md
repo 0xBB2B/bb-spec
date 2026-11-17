@@ -12,3 +12,4 @@
 7. 每个 commit 说明末尾单独一行带 `Requirement: <PRD 目录名>`；和任何需求都无关的改动写 `Requirement: none`，并在正文写一句原因。多仓库时每个仓库的 commit 都要带。
 
 ## 项目约束
+- 五份 README（`README.md`、`README.en.md`、`README.zh-TW.md`、`README.ja.md`、`README.ko.md`）章节结构和内容保持一致，改其中一份时，其余四份在同一次改动里一起改。（原因：五种语言的读者看到的说明要相同，分开改迟早会有语言版本落后。）
