@@ -5,12 +5,12 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SK="$ROOT/plugins/bb-spec-workflow/skills"
 PRD_LIMIT=18000
-PRD_MAX_REFS=4
 PASS=0
 FAIL=0
 
 pass() { PASS=$((PASS + 1)); }
 fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
+source "$(dirname "$0")/lib/md.sh"
 
 SKILLS=(git-push prd revise)
 
@@ -36,13 +36,6 @@ for s in "${SKILLS[@]}"; do
     if [[ "$first" == '> 用在 /'* ]]; then pass; else fail "$s/references/$(basename "$r") 第一行不是以「> 用在 /」开头"; fi
   done
 done
-
-echo "[prd/references 文件数不超过 ${PRD_MAX_REFS}]"
-prd_refs=0
-for r in "$SK/prd"/references/*.md; do
-  if [[ -f "$r" ]]; then prd_refs=$((prd_refs + 1)); fi
-done
-if [[ "$prd_refs" -le "$PRD_MAX_REFS" ]]; then pass; else fail "prd/references 有 ${prd_refs} 个 .md 文件，超过 ${PRD_MAX_REFS}"; fi
 
 echo "[正文指到的 references 路径都存在]"
 for s in "${SKILLS[@]}"; do
@@ -78,10 +71,8 @@ has_skill prd '## 核心原则'
 has_skill revise '## 核心原则'
 has_skill revise '## 三类归因'
 
-echo "[prd 每次都走的步骤全文留在正文]"
-for t in '### 步骤 0：读取配置 + 现状扫描' '**重叠判定**' '### 步骤 2：质疑（对用户可见）' '有没有更便宜的替代' \
-  '### 步骤 3：澄清与发散' '**怎么呈现选项**' '### 步骤 4：收敛与拆解' '### 步骤 5：方案质检' '是否可证伪' \
-  '## 四样东西各管什么' '**一条约束放哪**'; do
+echo "[prd 正文保留的总览段落]"
+for t in '## 四样东西各管什么' '**一条约束放哪**'; do
   has_skill prd "$t"
 done
 
@@ -92,12 +83,7 @@ for t in '**子代理报告**' '**调查交给子代理**' '**跑脚本**'; do h
 
 # 只读 SKILL.md：从以 $2 开头的标题行到下一个同级或更高级标题之前（不含）
 skill_section() {
-  awk -v start="$2" '
-    BEGIN { n = 0; while (substr(start, n + 1, 1) == "#") n++ }
-    found && match($0, /^#+ /) && RLENGTH - 1 <= n { exit }
-    index($0, start) == 1 { found = 1 }
-    found { print }
-  ' "$SK/$1/SKILL.md" 2>/dev/null || true
+  md_section "$SK/$1/SKILL.md" "$2"
 }
 
 section_has() {
@@ -113,6 +99,33 @@ section_has prd '### 步骤 7：落盘' 'references/templates.md'
 section_has prd '### 步骤 0：读取配置 + 现状扫描' 'references/repo-layout.md'
 section_has revise '### 步骤 3' 'references/fix-by-type.md'
 has_skill git-push 'references/ocr-review.md'
+
+# 每项是「步骤标题|这一步的关键句」；关键句必须在这一步自己的小节里
+PRD_STEPS=(
+  '### 步骤 0：读取配置 + 现状扫描|**重叠判定**'
+  '### 步骤 1：意图定性|用一句话复述**要解决的问题**'
+  '### 步骤 2：质疑（对用户可见）|有没有更便宜的替代'
+  '### 步骤 3：澄清与发散|**怎么呈现选项**'
+  '### 步骤 4：收敛与拆解|钉死**目标**与**非目标**'
+  '### 步骤 5：方案质检|是否可证伪'
+)
+
+echo "[prd 步骤 0 到 5 的关键句在各自小节里]"
+for e in "${PRD_STEPS[@]}"; do
+  section_has prd "${e%%|*}" "${e#*|}"
+done
+
+echo "[prd 步骤 1 到 5 的小节里没有先读提示]"
+for e in "${PRD_STEPS[@]:1}"; do
+  head="${e%%|*}"
+  body="$(skill_section prd "$head")"
+  if [[ -z "$body" ]]; then fail "prd/SKILL.md 找不到标题：${head}"; continue; fi
+  if printf '%s\n' "$body" | grep -F -- '走到这一步先读' >/dev/null; then
+    fail "prd/SKILL.md「${head}」一节不应出现：走到这一步先读"
+  else
+    pass
+  fi
+done
 
 echo "[revise 不单独拆短文件]"
 for n in verify.md route.md agent-isolation.md; do

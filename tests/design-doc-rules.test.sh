@@ -10,14 +10,11 @@ FAIL=0
 
 pass() { PASS=$((PASS + 1)); }
 fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
+source "$(dirname "$0")/lib/md.sh"
 
 # 取以 $1 开头的标题行到下一个匹配 $2 的标题行之间的内容（含起始标题行）
 section() {
-  awk -v start="$1" -v stop="$2" '
-    found && $0 ~ stop { exit }
-    index($0, start) == 1 { found = 1 }
-    found { print }
-  ' "$DOC" 2>/dev/null || true
+  md_section "$DOC" "$1" "$2"
 }
 
 in_text() {
@@ -45,7 +42,7 @@ HEADINGS=('## 1. 风格定位' '## 2. 颜色' '## 3. 字体与字号' '## 4. 间
   '## 6. 布局与断点' '## 7. 组件' '## 8. 动效' '## 9. 无障碍' '## 10. 终端界面')
 PREV=0
 for h in "${HEADINGS[@]}"; do
-  N="$(grep -nxF -- "$h" "$DOC" | head -n1 | cut -d: -f1 || true)"
+  N="$(md_line "$DOC" "$h" exact)"
   if [[ -z "$N" ]]; then
     fail "缺少标题：$h"
   elif [[ "$N" -le "$PREV" ]]; then
@@ -57,7 +54,7 @@ for h in "${HEADINGS[@]}"; do
 done
 
 echo "[开头的写法要求]"
-HEAD="$(awk '/^## /{exit} {print}' "$DOC")"
+HEAD="$(awk "$MD_CB_AWK"' !cb && /^## /{exit} {print}' "$DOC")"
 for t in '不适用' '原因' '4.5:1' '3:1' '24px' '18.66px' '4 的倍数' '9999px' '形容词' 'px、ms' '按用途命名'; do
   in_text 开头 "$t" "$HEAD"
 done
@@ -76,11 +73,11 @@ echo "[圆角一节]"
 in_text 圆角 '全圆角' "$(section '## 5. 圆角、边框、阴影' '^## ')"
 
 echo "[组件一节的 6 种组件和 5 种状态]"
-S7="$(grep -nxF -- '## 7. 组件' "$DOC" | head -n1 | cut -d: -f1 || true)"
-S8="$(grep -nxF -- '## 8. 动效' "$DOC" | head -n1 | cut -d: -f1 || true)"
+S7="$(md_line "$DOC" '## 7. 组件' exact)"
+S8="$(md_line "$DOC" '## 8. 动效' exact)"
 in_text 组件开头 '不适用' "$(section '## 7. 组件' '^### ')"
 for c in 按钮 输入框 表格 卡片 弹窗 提示条; do
-  N="$(grep -nxF -- "### $c" "$DOC" | head -n1 | cut -d: -f1 || true)"
+  N="$(md_line "$DOC" "### $c" exact)"
   if [[ -n "$N" && -n "$S7" && -n "$S8" && "$N" -gt "$S7" && "$N" -lt "$S8" ]]; then
     pass
     SUB="$(section "### $c" '^#{1,3} ' | tail -n +2)"
@@ -158,11 +155,7 @@ WF="$ROOT/plugins/bb-spec-workflow"
 
 # 取文件 $1 里以 $2 开头的行到下一个匹配 $3 的行之间的内容（含起始行）；读不到文件时返回空
 file_section() {
-  skill_cat "$1" 2>/dev/null | awk -v start="$2" -v stop="$3" '
-    found && $0 ~ stop { exit }
-    index($0, start) == 1 { found = 1 }
-    found { print }
-  ' || true
+  skill_cat "$1" 2>/dev/null | md_section - "$2" "$3" || true
 }
 
 frontmatter() {
@@ -201,7 +194,7 @@ if need_file "$REVISE"; then
     if printf '%s\n' "$RULES" | grep -F -- "$row" | grep -F 'DESIGN.md' >/dev/null; then pass; else fail "revise 隔离规则表 ${row} 一行缺少：DESIGN.md"; fi
   done
   S4="$(file_section "$REVISE" '### 步骤 4' '^### ')"
-  if printf '%s\n' "$S4" | grep -E '^5\. ' | grep -F '本次经用户同意新建或改过的 DESIGN.md' >/dev/null; then pass; else fail "revise 步骤 4 第 5 条缺少：本次经用户同意新建或改过的 DESIGN.md"; fi
+  if printf '%s\n' "$S4" | md_grep_n - '^5\. ' | grep -F '本次经用户同意新建或改过的 DESIGN.md' >/dev/null; then pass; else fail "revise 步骤 4 第 5 条缺少：本次经用户同意新建或改过的 DESIGN.md"; fi
 fi
 
 echo "[impl-engineer：inputs 和正文]"
@@ -240,7 +233,7 @@ if need_file "$PRD"; then
   for t in '**7d. DESIGN.md**' '<预览页名>.DESIGN.md' '写完删掉它' '<预览页名>.DESIGN.draft.md' '不写入' '存在' '改完后的完整文件'; do
     in_text prd7d "$t" "$S7D"
   done
-  S9="$(file_section "$PRD" '### 步骤 9' '^### ')"
+  S9="$(file_section "$PRD" '**步骤 9：简报 + 弹窗确认**' '^### |^[*][*]')"
   in_text prd简报 '- DESIGN.md：' "$S9"
   QUIT="$(printf '%s\n' "$S9" | grep -F '| 不做了 |')"
   in_text prd不做了 '设计规范临时文件' "$QUIT"

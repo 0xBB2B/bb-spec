@@ -9,6 +9,7 @@ FAIL=0
 
 pass() { PASS=$((PASS + 1)); }
 fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
+source "$(dirname "$0")/lib/md.sh"
 
 # ─── 辅助：提取 frontmatter 字段值（首次匹配）───
 # 单进程 awk 实现：禁用 sed | grep -m1/-q 管道——grep 提前退出会让 sed 吃 SIGPIPE，
@@ -152,7 +153,7 @@ for pdir in "$PLUGINS_DIR"/*/; do
         general-purpose|codex:codex-rescue) pass ;;
         *) fail "agent-type='$agent_type' 不在允许列表" ;;
       esac
-      if grep -q '^## 安全基线' "$f"; then pass; else fail "缺少 '## 安全基线' 段落"; fi
+      if [[ -n "$(md_grep_n "$f" '^## 安全基线')" ]]; then pass; else fail "缺少 '## 安全基线' 段落"; fi
     done
   fi
 

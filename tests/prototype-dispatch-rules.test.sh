@@ -13,6 +13,7 @@ FAIL=0
 
 pass() { PASS=$((PASS + 1)); }
 fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
+source "$(dirname "$0")/lib/md.sh"
 
 skill_scope() {
   case "$1" in
@@ -49,11 +50,7 @@ in_text() {
 }
 
 file_section() {
-  skill_cat "$1" 2>/dev/null | awk -v start="$2" -v stop="$3" '
-    found && $0 ~ stop { exit }
-    index($0, start) == 1 { found = 1 }
-    found { print }
-  ' || true
+  skill_cat "$1" 2>/dev/null | md_section - "$2" "$3" || true
 }
 
 has() { local t; for t in "$@"; do in_file prototype "$PROTO" "$t"; done; }
@@ -116,7 +113,7 @@ for t in '.DESIGN.draft.md' '.DESIGN.md'; do
   in_text prd步骤6 "$t" "$S6"
   in_text prd7a "$t" "$L7A"
 done
-QUIT="$(file_section "$PRD" '### 步骤 9' '^### ' | grep -F '| 不做了 |' || true)"
+QUIT="$(file_section "$PRD" '**步骤 9：简报 + 弹窗确认**' '^### |^[*][*]' | grep -F '| 不做了 |' || true)"
 in_text prd不做了 '设计规范临时文件' "$QUIT"
 
 echo "[审查补充：DESIGN.md 位置、派不出去、确认后、打开时机、发不到时的补充]"
