@@ -71,7 +71,7 @@ echo "[对比派工说明]"
 has '必须写全 3 项' '截图目录的完整路径' '${CACHE_DIR}/ui-compare/<日期>.<主题>/'
 
 echo "[转报告]"
-has '原样给用户看' '待用户确认的问题' 'show-prototype.sh <原型文件路径>'
+has '原样给用户看' '待用户确认的问题' 'open <原型文件路径>'
 
 echo "[传话]"
 has 'SendMessage' '同一个原型子代理' '不改写原话'
@@ -128,10 +128,10 @@ has '"一轮"指从用户发一条消息，到主对话把结果交还给用户�
   '子代理交回确认内容清单的那一轮：不展示' \
   '「需要用户看页面」是"否"：不展示' \
   '出原型模式下最后一份报告里没有这一行：按"是"处理' \
-  '运行 `${CLAUDE_PLUGIN_ROOT}/scripts/show-prototype.sh <原型文件路径>` 展示原型' \
+  '执行 `open <原型文件路径>`，在浏览器里新开一个标签页展示原型' \
   '传回答复，不展示原型'
 lacks '提醒用户刷新' '提醒刷新' '已经对这个原型文件执行过 `open`' '换了新的原型子代理也不重新计数' \
-  '原型文件第一次生成后' '写了原型文件）'
+  '原型文件第一次生成后' '写了原型文件）' 'show-prototype.sh' '刷新'
 if sed -n '2,/^---$/p' "$PROTO" | grep -Fxq 'allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*), Bash(stat -f %m *)'; then pass; else fail "prototype frontmatter allowed-tools 缺少 stat 放行"; fi
 
 echo ""
