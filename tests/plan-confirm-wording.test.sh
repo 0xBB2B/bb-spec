@@ -2,7 +2,7 @@
 # /prd 确认弹窗、五份 README、流水线图、插件描述里的批准说法一致，旧说法清除
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 PASS=0
 FAIL=0
 

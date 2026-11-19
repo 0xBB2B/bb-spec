@@ -2,10 +2,12 @@
 # plan 技术变更确认规则校验：有技术变更先简报再弹窗确认、没有则先 commit 再运行 /exec；impl-engineer 把数据格式列入成品定义
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 WF="$ROOT/plugins/bb-spec-workflow"
 PASS=0
 FAIL=0
+
+source "$(dirname "$0")/lib/md.sh"
 
 pass() { PASS=$((PASS + 1)); }
 fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
@@ -78,6 +80,60 @@ done
 for t in '6. 改完后没有技术变更了 → 进步骤 9' '本轮改过 PRD 时'; do lacks "$PLAN" "$t"; done
 n="$(grep -c '^description: 读本分支 PRD' "$WF/$PLAN" 2>/dev/null || true)"
 if [[ "$n" == 1 ]]; then pass; else fail "plan/SKILL.md 里技能描述应只出现 1 次（frontmatter），实际 ${n} 次"; fi
+
+echo "[plan：按节断言，提交和调用 /exec 只在步骤 9，确认只在步骤 8]"
+S7="$(md_section "$WF/$PLAN" '### 步骤 7：判定技术变更')"
+S8="$(md_section "$WF/$PLAN" '### 步骤 8：技术变更清单 + 弹窗确认')"
+S9="$(md_section "$WF/$PLAN" '### 步骤 9：本地 commit + 自动执行')"
+
+sec_has() {
+  local name="$1" body="$2" text="$3"
+  if [[ -z "$body" ]]; then fail "${name} 截不到"; return; fi
+  if grep -qF -- "$text" <<<"$body"; then pass; else fail "${name} 缺少：${text}"; fi
+}
+
+sec_lacks() {
+  local name="$1" body="$2" text="$3"
+  if [[ -z "$body" ]]; then fail "${name} 截不到"; return; fi
+  if grep -qF -- "$text" <<<"$body"; then fail "${name} 不应含：${text}"; else pass; fi
+}
+
+for t in 'Skill bb-spec-workflow:exec' 'git commit' 'git add' 'git branch --show-current'; do
+  sec_lacks "步骤 7" "$S7" "$t"
+done
+for t in '没有技术变更 → 跳过步骤 8，进步骤 9' '有技术变更 → 进步骤 8'; do
+  sec_has "步骤 7" "$S7" "$t"
+done
+for t in '这一步不 commit plan、不运行' \
+  '用户选「已阅读，通过并执行」之前，不 commit plan、不运行' \
+  '重新输出简报、重新弹窗' 'header 写「技术变更」'; do
+  sec_has "步骤 8" "$S8" "$t"
+done
+for t in 'git branch --show-current' '仅本地不自动 push' 'Skill bb-spec-workflow:exec' 'git commit' 'git add'; do
+  sec_lacks "步骤 8" "$S8" "$t"
+done
+for t in 'git branch --show-current' '仅本地不自动 push' 'Skill bb-spec-workflow:exec' '- 技术变更清单：无'; do
+  sec_has "步骤 9" "$S9" "$t"
+done
+
+sec_line() {
+  grep -nF -- "$2" <<<"$1" | head -1 | cut -d: -f1 || true
+}
+
+sec_order() {
+  local name="$1" body="$2"; shift 2
+  local prev=0 cur t
+  for t in "$@"; do
+    cur="$(sec_line "$body" "$t")"
+    if [[ -z "$cur" ]]; then fail "${name} 找不到：${t}"; return; fi
+    if (( cur <= prev )); then fail "${name} 顺序不对：${t}（第 ${cur} 行）应在上一项之后"; return; fi
+    prev="$cur"
+  done
+  pass
+}
+
+sec_order "步骤 8" "$S8" '## Plan 完成简报' 'header 写「技术变更」'
+sec_order "步骤 9" "$S9" 'git branch --show-current' '- 技术变更清单：无' '直接调用 `Skill bb-spec-workflow:exec`'
 
 echo "[impl-engineer：成品定义含数据格式]"
 has "$IMPL" '（SQL DDL/API 契约/数据格式/配置的最终内容）'
