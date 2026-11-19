@@ -62,7 +62,7 @@ BB-Spec 拆成**四个可独立安装的子 plugin**——只装你需要的约�
 
 | 子 plugin | 装了得到什么 | 安装命令 |
 |---|---|---|
-| **bb-spec-core** _(推荐基座)_ | TDD / 版本策略 / Git 纪律 + 3 个被动 hook | `/plugin install bb-spec-core@0xbb2b` |
+| **bb-spec-core** _(推荐基座)_ | TDD / 版本策略 / Git 纪律 / 代码纪律 + 3 个被动 hook | `/plugin install bb-spec-core@0xbb2b` |
 | **bb-spec-workflow** _(核心功能)_ | prd → plan → exec → doc-update → revise → git-push(+ 可选 test-webview / test-api e2e)、git-clone 一次性初始化 + 8 个 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / 数据库 / 认证 / 授权 / 可观测性 / 服务治理 / 配置约束 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun 技术栈与工程约定 | `/plugin install bb-spec-frontend@0xbb2b` |
@@ -243,6 +243,7 @@ BB-Spec 拆成**四个可独立安装的子 plugin**——只装你需要的约�
 - **`tdd-workflow`** — Red-Green-Refactor 纪律,覆盖增 / 改 / 删三场景标准流程
 - **`version-policy`** — 标准库优先,引入项目里原来没有的新技术(库、框架、语言、数据库、中间件、工具、镜像、CI Action、外部服务)前逐项列出用途和为什么非它不可,用户批准后才能用,插件默认栈和用户点名的也一样(`/plan` 阶段批准的「新增技术」表视为已批准);钉版本前先查依赖官方最新版,禁凭训练记忆
 - **`git-workflow`** — 分支决策、阶段性 commit、六段式 PR 描述、合并后清理
+- **`code-constraints`** — 代码纪律:默认不写注释、只在原因看不出来时写;禁未要求的功能、抽象和防御;只改必须改的代码
 
 ### bb-spec-backend — 后端技术框架约束
 
@@ -282,7 +283,7 @@ claude plugin update bb-spec-workflow@0xbb2b   # 在终端里更新某个子 plu
 | Hook | 所属子 plugin | 触发时机 | 作用 |
 |---|---|---|---|
 | `git-workflow-guard` | bb-spec-core | PreToolUse(Bash) | 拦截 `main` / `master` 分支的 `git commit`;其余 git 流程动作(开分支 / push / worktree / merge / PR)放行并注入 git-workflow 纪律与实时 git 状态 |
-| `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | 编辑依赖文件后注入「先查官方最新版」自检提示,并提醒没批准的新技术要撤回、先列清单请用户批准 |
+| `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit\|MultiEdit) | 编辑依赖文件后注入「先查官方最新版」自检提示,并提醒没批准的新技术要撤回、先列清单请用户批准 |
 | `background-script-wait` | bb-spec-core | Stop | 发现本会话没提示过的运行中后台命令时提示一次:Claude 不循环等待、直接结束回合,之后这类脚本交给跑脚本的子代理,常驻服务不等 |
 
 ### ⚙️ Hook 开关速查

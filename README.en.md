@@ -62,7 +62,7 @@ Then install whichever layers you want:
 
 | Sub-plugin | What it gives you | Command |
 |---|---|---|
-| **bb-spec-core** _(recommended base)_ | TDD / version-policy / git-workflow discipline + 3 passive hooks | `/plugin install bb-spec-core@0xbb2b` |
+| **bb-spec-core** _(recommended base)_ | TDD / version-policy / git-workflow / code discipline + 3 passive hooks | `/plugin install bb-spec-core@0xbb2b` |
 | **bb-spec-workflow** _(core)_ | prd → plan → exec → doc-update → revise → git-push (+ opt test-webview / test-api e2e), git-clone one-shot init + 8 subagents | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / authN / authZ / observability / service / config constraints | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun stack & engineering conventions | `/plugin install bb-spec-frontend@0xbb2b` |
@@ -244,6 +244,7 @@ These feed rules into the pipeline above — install only the layers you need.
 - **`tdd-workflow`** — Red-Green-Refactor discipline with standard flows for the add / modify / delete scenarios
 - **`version-policy`** — Standard library first — before bringing in any tech the project doesn't already use (libraries, frameworks, languages, databases, middleware, tools, images, CI Actions, external services), list each item with its purpose and why nothing else will do, and use it only after user approval, plugin defaults and user-named picks included (the new-tech table approved during `/plan` counts); check a dependency's official latest version before pinning it; never trust training memory
 - **`git-workflow`** — Branch decisions, incremental commits, the six-section PR description, post-merge cleanup
+- **`code-constraints`** — Code discipline: no comments by default, only when the reason is not obvious; no unrequested features, abstractions or defenses; change only what must change
 
 ### bb-spec-backend — backend stack constraints
 
@@ -283,7 +284,7 @@ Each hook ships with the sub-plugin that owns its concern — install that plugi
 | Hook | Sub-plugin | Trigger | Effect |
 |---|---|---|---|
 | `git-workflow-guard` | bb-spec-core | PreToolUse(Bash) | Blocks `git commit` on `main` / `master`; for other git flow actions (branch / push / worktree / merge / PR) allows them through and injects the git-workflow discipline plus live git status |
-| `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | After editing a dependency file, injects a "check the official latest version first" reminder, plus a reminder to revert any unapproved new tech and list it for approval first |
+| `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit\|MultiEdit) | After editing a dependency file, injects a "check the official latest version first" reminder, plus a reminder to revert any unapproved new tech and list it for approval first |
 | `background-script-wait` | bb-spec-core | Stop | When a running background command not yet flagged in this session is found, prompts once: Claude does not loop-wait and ends its turn directly, after which such scripts go to the script-runner subagent, and long-running services are not waited for |
 
 ### ⚙️ Hook switch cheat sheet

@@ -62,7 +62,7 @@ BB-Spec は**4 つの独立インストール可能なサブ plugin** に分割 
 
 | サブ plugin | 何が手に入るか | インストールコマンド |
 |---|---|---|
-| **bb-spec-core** _(推奨ベース)_ | TDD / バージョンポリシー / Git 規律 + 3 つの受動 hook | `/plugin install bb-spec-core@0xbb2b` |
+| **bb-spec-core** _(推奨ベース)_ | TDD / バージョンポリシー / Git 規律 / コード規律 + 3 つの受動 hook | `/plugin install bb-spec-core@0xbb2b` |
 | **bb-spec-workflow** _(コア機能)_ | prd → plan → exec → doc-update → revise → git-push(+ 任意 test-webview / test-api e2e)、git-clone ワンショット初期化 + 8 サブエージェント | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / 認証 / 認可 / 可観測性 / サービスガバナンス / 設定制約 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun スタック & エンジニアリング規約 | `/plugin install bb-spec-frontend@0xbb2b` |
@@ -244,6 +244,7 @@ BB-Spec は**4 つの独立インストール可能なサブ plugin** に分割 
 - **`tdd-workflow`** — Red-Green-Refactor 規律、追加 / 修正 / 削除 3 シナリオの標準フローをカバー
 - **`version-policy`** — 標準ライブラリ優先、プロジェクトにまだない新技術(ライブラリ、フレームワーク、言語、データベース、ミドルウェア、ツール、イメージ、CI Action、外部サービス)を導入する前に、項目ごとに用途とそれでなければならない理由を挙げ、ユーザー承認後にのみ使用、プラグインのデフォルトスタックやユーザー指名のものも同様(`/plan` 段階で承認された「新規技術」表は承認済みとみなす);バージョン固定前に依存の公式最新版を確認、訓練記憶に頼ることを禁止
 - **`git-workflow`** — ブランチ決定、段階的 commit、6 セクション PR 説明、マージ後クリーンアップ
+- **`code-constraints`** — コード規律:コメントは原則書かず、理由が読み取れない時だけ書く;求められていない機能・抽象化・防御を禁止;変える必要のあるコードだけ変える
 
 ### bb-spec-backend — バックエンドスタック制約
 
@@ -283,7 +284,7 @@ claude plugin update bb-spec-workflow@0xbb2b   # ターミナルから特定の�
 | Hook | 所属サブ plugin | トリガータイミング | 効果 |
 |---|---|---|---|
 | `git-workflow-guard` | bb-spec-core | PreToolUse(Bash) | `main` / `master` ブランチでの `git commit` をブロック;他の git フロー動作(ブランチ作成 / push / worktree / merge / PR)は通過させ git-workflow 規律とリアルタイム git ステータスを注入 |
-| `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | 依存ファイル編集後に「公式最新版を先に確認」セルフチェックリマインダを注入し、未承認の新技術は取り消してリストを出し承認を求めるよう促す |
+| `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit\|MultiEdit) | 依存ファイル編集後に「公式最新版を先に確認」セルフチェックリマインダを注入し、未承認の新技術は取り消してリストを出し承認を求めるよう促す |
 | `background-script-wait` | bb-spec-core | Stop | このセッションで未通知の実行中バックグラウンドコマンドを見つけたとき 1 回だけ通知:Claude はループで待たずにそのままターンを終え、以降この種のスクリプトはスクリプト実行サブエージェントに任せ、常駐サービスは待たない |
 
 ### ⚙️ Hook スイッチ早見表
