@@ -26,7 +26,7 @@ bb-spec 是一套 Claude Code 插件：用 PRD 驱动"需求 → 计划 → 实�
 
 ## 关键流程
 ### 新需求交付
-`/prd`（`skills/prd`：澄清后写 PRD）→ `/plan`（`skills/plan`：写函数级 plan）→ `/exec`（`skills/exec`：派 `test-engineer` → `impl-engineer` → `prd-reviewer`）→ `/doc-update --tail`（`skills/doc-update`）→ 用户手动 `/git-push`（`skills/git-push`：自查用 `pre-reviewer`，合并状态用 `scripts/pr-status.sh`）
+`/prd`（`skills/prd`：澄清后写 PRD）→ `/plan`（`skills/plan`：写函数级 plan）→ `/exec`（`skills/exec`：派 `test-engineer` → `impl-engineer` → `prd-reviewer`）→ `/doc-update --tail`（`skills/doc-update`）→ 用户手动 `/git-push`（`skills/git-push`：自查用 `pre-reviewer`，合并状态用 `skills/git-push/scripts/pr-status.sh`）
 
 ### 修正
 `/revise`（`skills/revise`：归因后同样派三个子代理）→ `/doc-update --tail`
