@@ -30,7 +30,7 @@ date: 2026-11-19
 4. 项目根 DESIGN.md 第 7 节「组件」：「流水线图」里没有关于第一个节点小标签的那一行；「表格」里有一行「子插件名后面的标签 `<span class="badge">`：1px primary 边框、primary 文字、圆角 4px、内边距 0 8px、12px/20px；全站只有这里用标签」。
 5. `/prd` 确认弹窗「已阅读，通过并执行」的说明：「提交 PRD，然后自动跑 /plan → /exec → /doc-update；要引入新技术时先问你，plan 里新增或修改表结构、接口、数据格式、配置时再请你确认一次，遇到设计判断时也会停下问你」。弹窗问题、另外两个选项和各选项的后续行为不变。
 6. 五份 README（简体、繁体、英、日、韩）里介绍 `/prd`、`/plan` 和流水线图的地方，都写成"PRD 批准需求；新技术先问；plan 有表结构、接口、数据格式、配置的新增或修改时再确认一次，其余自动跑完"，五份内容一致。
-7. marketplace 和 plugin.json 的插件描述不再用"一次批准"概括 `/prd`，改成和约束 6 一致的说法。
+7. marketplace 和 plugin.json 的插件描述用和约束 6 一致的说法概括 `/prd` 和 `/plan`：用户批准需求；新技术、技术变更先请用户确认。
 8. 在插件文件（`plugins/`）、五份 README、`site/`、DESIGN.md、marketplace 和 plugin.json 的描述里搜「只批准一次」「只批准这一次」「唯一一次批准」「一次批准」「批准一次」「approve once」「the only approval」「只有要引入新技术时才停下」「只在需要引入新技术时停下」「Stops only when new tech」及其他三种语言 README 里的同义说法，均无命中（已合并的 PRD 不在搜索范围内）。
 
 ## 验收
