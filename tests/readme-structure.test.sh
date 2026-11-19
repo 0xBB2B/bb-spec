@@ -2,7 +2,7 @@
 # 五份 README 的章节结构、主页徽章、顶部导航锚点和阶段一览格式校验
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 PASS=0
 FAIL=0
 

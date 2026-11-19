@@ -2,7 +2,7 @@
 # bbspec-paths.sh 行为校验：配置查找顺序、base_dir 解析、多仓库工作区、$HOME 截止
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 SCRIPT="$ROOT/plugins/bb-spec-workflow/scripts/bbspec-paths.sh"
 PASS=0
 FAIL=0

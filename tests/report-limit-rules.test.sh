@@ -2,7 +2,7 @@
 # 子代理报告长度上限规则校验：五个子代理定义写明上限与细节文件，四个流程 SKILL 写明给目录、用报告、收尾清理
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 PL="$ROOT/plugins"
 PASS=0
 FAIL=0

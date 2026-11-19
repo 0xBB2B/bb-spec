@@ -2,7 +2,7 @@
 # show-prototype.sh 行为校验：已开标签页刷新、未开则新开、出错回退、参数校验、只查在运行的浏览器
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 SCRIPT="$ROOT/plugins/bb-spec-workflow/scripts/show-prototype.sh"
 PASS=0
 FAIL=0

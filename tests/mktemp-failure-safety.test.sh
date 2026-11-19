@@ -2,7 +2,7 @@
 # 测试脚本在 mktemp 失败时必须直接退出，不能把当前目录当临时目录删掉
 set -uo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 SELF="$(basename "$0")"
 PASS=0
 FAIL=0

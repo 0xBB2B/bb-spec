@@ -2,7 +2,7 @@
 # site/ 主页校验：静态中文内容、无外部资源、样式关键值、双语文案、语言选择、切换与复制行为（假 DOM + vm）
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 SITE="$ROOT/site"
 PASS=0
 FAIL=0

@@ -2,7 +2,7 @@
 # 原型子代理定义校验：prototype-designer.md 含固定做法文本
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 AGENT="$ROOT/plugins/bb-spec-workflow/agents/prototype-designer.md"
 PASS=0
 FAIL=0

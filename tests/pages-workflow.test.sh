@@ -2,7 +2,7 @@
 # pages.yml 部署主页工作流的触发器、权限、并发、发布范围校验
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 PAGES="$ROOT/.github/workflows/pages.yml"
 CI="$ROOT/.github/workflows/ci.yml"
 RELEASE="$ROOT/.github/workflows/release-please.yml"

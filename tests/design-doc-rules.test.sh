@@ -2,7 +2,7 @@
 # DESIGN.md 模板结构，以及各规程对 DESIGN.md 的读取、传递、草稿和核对规则
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 REL="plugins/bb-spec-workflow/templates/DESIGN.md"
 DOC="$ROOT/$REL"
 PASS=0

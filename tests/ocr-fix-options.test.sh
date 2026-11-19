@@ -2,7 +2,7 @@
 # ocr 核实后的修复选项规则校验：git-push 的四个选项名、范围、等级图标、去选项规则和选「全不修复」的去向
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 GIT_PUSH="$ROOT/plugins/bb-spec-workflow/skills/git-push/SKILL.md"
 PASS=0
 FAIL=0

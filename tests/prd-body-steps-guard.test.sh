@@ -2,7 +2,7 @@
 # 守护 skill-size 测试：prd 步骤 0 到 5 搬出正文时必须被拦住，references 文件数不受限
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 PASS=0
 FAIL=0
 

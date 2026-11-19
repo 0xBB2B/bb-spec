@@ -2,7 +2,7 @@
 # branch-prds.sh 行为校验：本分支新增 PRD、commit 指向的已合并 PRD、多仓库工作区
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 SCRIPT="$ROOT/plugins/bb-spec-workflow/scripts/branch-prds.sh"
 PASS=0
 FAIL=0

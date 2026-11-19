@@ -2,7 +2,7 @@
 # git-workflow-guard.sh 行为校验：cd/-C 目录推导、保守回退、状态注入锚点、既有拦截回归
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 HOOK="$ROOT/plugins/bb-spec-core/hooks/git-workflow-guard.sh"
 PASS=0
 FAIL=0

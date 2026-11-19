@@ -2,7 +2,7 @@
 # dep-version-check.sh 行为校验：新技术批准提示、非依赖文件静默、无 jq 静默放行
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 HOOK="$ROOT/plugins/bb-spec-core/hooks/dep-version-check.sh"
 BASH_BIN="$(command -v bash)"
 PASS=0

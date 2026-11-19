@@ -2,7 +2,7 @@
 # 新技术审批规则校验：version-policy 写明清单与批准流程，golang-constraints、vue-constraints 只调用它
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 VP="$ROOT/plugins/bb-spec-core/skills/version-policy/SKILL.md"
 GO="$ROOT/plugins/bb-spec-backend/skills/golang-constraints/SKILL.md"
 VUE="$ROOT/plugins/bb-spec-frontend/skills/vue-constraints/SKILL.md"

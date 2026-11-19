@@ -2,7 +2,7 @@
 # /prototype 派子代理的规则校验：prototype 规程只派工和传话，prd/revise 的文件名和临时文件说明，exec 不变
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 WF="$ROOT/plugins/bb-spec-workflow"
 PROTO="$WF/skills/prototype/SKILL.md"
 PLUGIN="$WF/.claude-plugin/plugin.json"

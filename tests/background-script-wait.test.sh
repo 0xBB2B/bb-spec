@@ -2,7 +2,7 @@
 # background-script-wait.sh 行为校验：新命令提示、去重、截断、异常静默放行
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 HOOK="$ROOT/plugins/bb-spec-core/hooks/background-script-wait.sh"
 HOOKS_JSON="$ROOT/plugins/bb-spec-core/hooks/hooks.json"
 BASH_BIN="$(command -v bash)"
