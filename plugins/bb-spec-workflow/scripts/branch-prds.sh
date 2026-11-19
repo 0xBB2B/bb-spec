@@ -7,7 +7,7 @@ set -euo pipefail
 
 BASE_REF="${1:?用法：branch-prds.sh <基线> [目录]}"
 SELF_DIR=$(CDPATH= cd -- "$(dirname "$0")" >/dev/null && pwd)
-[ $# -gt 1 ] && cd "$2"
+[ $# -gt 1 ] && CDPATH= cd -- "$2" >/dev/null
 
 PATHS=$("$SELF_DIR/bbspec-paths.sh")
 DOCS_REPO=$(sed -n 's/^docs_repo=//p' <<<"$PATHS")

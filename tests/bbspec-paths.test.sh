@@ -152,6 +152,11 @@ printf 'base_dir: a/../b\n' > "$R/.bb-spec.yaml"
 out=$(run "$R")
 expect "$out" base_dir "$R/a/../b"
 
+echo "[导出 CDPATH 且参数为相对路径 → 输出与不设 CDPATH 相同]"
+plain=$(cd "$FIXROOT" && env -u CDPATH bash "$SCRIPT" single 2>&1) || fail "无 CDPATH 相对目录调用退出码非 0"
+out=$(cd "$FIXROOT" && CDPATH=".:/tmp" bash "$SCRIPT" single 2>&1) || fail "CDPATH 下相对目录调用退出码非 0"
+if [[ "$out" == "$plain" ]]; then pass; else fail "CDPATH 下相对目录输出不同：预期 [$plain]，实际 [$out]"; fi
+
 echo ""
 echo "==============================="
 echo "通过: $PASS  |  失败: $FAIL"

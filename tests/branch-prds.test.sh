@@ -157,6 +157,11 @@ want=$(printf 'new=2026-10-19.new\nmerged=2026-01-01.old')
 out=$(cd "$ROOT/plugins/bb-spec-workflow" && CDPATH=".:/tmp" bash scripts/branch-prds.sh main "$R" 2>&1) || fail "CDPATH 下相对路径调用退出码非 0"
 expect_out "$out" "$want" "CDPATH 下相对路径输出"
 
+echo "[导出 CDPATH 且第二个参数为相对路径 → 输出与不设 CDPATH 相同]"
+plain=$(cd "$FIXROOT" && env -u CDPATH bash "$SCRIPT" main single 2>&1) || fail "无 CDPATH 相对目录调用退出码非 0"
+out=$(cd "$FIXROOT" && CDPATH=".:/tmp" bash "$SCRIPT" main single 2>&1) || fail "CDPATH 下相对目录调用退出码非 0"
+expect_out "$out" "$plain" "CDPATH 下相对目录输出"
+
 echo ""
 echo "==============================="
 echo "通过: $PASS  |  失败: $FAIL"
