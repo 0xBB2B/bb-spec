@@ -90,5 +90,16 @@ for t in 只批准这一次 只批准一次 唯一一次批准 一次批准 批�
   lacks_in "$t" "${SCOPE[@]}"
 done
 
+echo "[DESIGN.md：标签只在表格一节]"
+source "$(dirname "$0")/lib/md.sh"
+PIPE="$(md_section "$ROOT/DESIGN.md" '### 流水线图')"
+TABLE="$(md_section "$ROOT/DESIGN.md" '### 表格')"
+if [[ -z "$TABLE" ]]; then fail "DESIGN.md「表格」一节截不到"
+elif grep -qF -- '子插件名后面的标签 `<span class="badge">`：1px primary 边框、primary 文字、圆角 4px、内边距 0 8px、12px/20px；全站只有这里用标签' <<<"$TABLE"; then pass
+else fail "DESIGN.md「表格」一节缺少标签规格"; fi
+if [[ -z "$PIPE" ]]; then fail "DESIGN.md「流水线图」一节截不到"
+elif grep -qF -- 'badge' <<<"$PIPE"; then fail "DESIGN.md「流水线图」一节不应含 badge"
+else pass; fi
+
 echo "通过 ${PASS}，失败 ${FAIL}"
 [[ "$FAIL" -eq 0 ]]

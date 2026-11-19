@@ -98,6 +98,7 @@ sec_lacks() {
   if grep -qF -- "$text" <<<"$body"; then fail "${name} 不应含：${text}"; else pass; fi
 }
 
+sec_has "步骤 7" "$S7" '只改函数逻辑不算'
 for t in 'Skill bb-spec-workflow:exec' 'git commit' 'git add' 'git branch --show-current'; do
   sec_lacks "步骤 7" "$S7" "$t"
 done
@@ -115,6 +116,9 @@ done
 for t in 'git branch --show-current' '仅本地不自动 push' 'Skill bb-spec-workflow:exec' '- 技术变更清单：无'; do
   sec_has "步骤 9" "$S9" "$t"
 done
+
+sec_has "步骤 8" "$S8" '  - <每份 plan 的完整路径> — <一句话描述>'
+sec_has "步骤 9" "$S9" '  - <每份 plan 的完整路径> — <一句话描述>'
 
 sec_line() {
   grep -nF -- "$2" <<<"$1" | head -1 | cut -d: -f1 || true
