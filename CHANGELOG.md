@@ -1,5 +1,18 @@
 # Changelog
 
+## [15.11.0](https://github.com/0xBB2B/bb-spec/compare/v15.10.0...v15.11.0) (2026-11-19)
+
+
+### Features
+
+* **plan:** /plan 有技术变更时先列清单请用户确认，成品定义加数据格式 ([#339](https://github.com/0xBB2B/bb-spec/issues/339)) ([9498365](https://github.com/0xBB2B/bb-spec/commit/949836552134080332153210f656537f46210192))
+* **prototype:** 每轮改完原型后在交还前用 open 打开一次最新版本 ([#336](https://github.com/0xBB2B/bb-spec/issues/336)) ([4f8e2d7](https://github.com/0xBB2B/bb-spec/commit/4f8e2d7411347334d1a047d1c4e1b4df8522b2e8))
+
+
+### Bug Fixes
+
+* **core:** 新建 ARCHITECTURE.md，README 与插件描述补上 code-constraints ([#338](https://github.com/0xBB2B/bb-spec/issues/338)) ([767fe4a](https://github.com/0xBB2B/bb-spec/commit/767fe4a43d3c9956033db0e86573d98e7a7946dc))
+
 ## [15.10.0](https://github.com/0xBB2B/bb-spec/compare/v15.9.0...v15.10.0) (2026-11-17)
 
 
