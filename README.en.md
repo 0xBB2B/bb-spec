@@ -97,7 +97,7 @@ The 6 commands you type day to day:
 
 | Command | What it does | When |
 |---|---|---|
-| `/prd` | Challenge → clarify → break down; writes the PRD + AGENTS.md, you read and approve once, then it auto-runs plan → exec → doc-update | New requirement, or changing how a merged feature behaves |
+| `/prd` | Challenge → clarify → break down; writes the PRD + AGENTS.md for you to read and approve the requirement, then it auto-runs plan → exec → doc-update, pausing for your confirmation on new tech or plan tech changes | New requirement, or changing how a merged feature behaves |
 | `/prototype` | Read the project-root DESIGN.md first (draft one if missing), draw the whole page around the change to match the project, dispatch the prototype subagent to build an HTML prototype in the shared blueprint shell (the main conversation only dispatches and relays), show a drawn "design spec" page for your approval whenever DESIGN.md is created or changed, and iterate until you approve it; `/prd` and `/revise` call it for UI changes | You want to see a design first, without the full requirement flow |
 | `/revise` | Diagnose by root cause → targeted fix → regression check, then auto-runs doc-update | A bug, or results that don't match expectations |
 | `/git-push` | pre-review self-check + push + open PR | Ready to open a PR |
@@ -115,9 +115,9 @@ First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.
    │
  /prd ══► /plan ══► /exec ══► /doc-update ──► /git-push
  what     how       Red→Green docs sync       pre-review+open PR
- (the only approval) →Review
+                     →Review
 
- ══► chained automatically (stops only for new tech or design calls)
+ ══► chained automatically (pauses for new tech, plan tech changes, or design calls)
  ──► triggered by you
 
  (opt) /test-webview · /test-api — an extra check before the PR:
@@ -142,7 +142,7 @@ First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.
   </details>
 
 - **`/prd`** — The single entry point for new requirements. Answers **"what to build, and why."** Changing how a merged feature or pre-bb-spec code behaves also starts here, however small (e.g. raising a timeout from 120 to 600 seconds, or changing a button label from "Submit" to "Save"): a new PRD records the trade-offs.
-  - Challenge first ("not worth building" is a valid outcome) → progressive clarification → breakdown, alignment is **read-only**, and when the requirement touches a UI an HTML preview page is shown for you to confirm first; once the PRD is written a prompt asks you to read and confirm it, you **approve once**, then `/plan` → `/exec` → `/doc-update` run on their own
+  - Challenge first ("not worth building" is a valid outcome) → progressive clarification → breakdown, alignment is **read-only**, and when the requirement touches a UI an HTML preview page is shown for you to confirm first; once the PRD is written a prompt asks you to read it and **approve the requirement**, then `/plan` → `/exec` → `/doc-update` run on their own; new tech is confirmed with you first, and any new or changed table schema, API, data format or config in the plan is confirmed once more
   - Writes the **PRD** (`docs/prd/<date>.<topic>/`: background, goals, non-goals, user stories, testable constraints and acceptance criteria, decision log) and **AGENTS.md** (constraints that apply to the whole project, e.g. "no generics")
   - Every later commit carries a `Requirement: <PRD dir name>` trailer: `git log -L :function:file` lists the requirements that touched a function, and the matching PRD's decision log tells you why it was built that way
   <details><summary>More details</summary>
@@ -154,8 +154,8 @@ First-time setup: `/git-clone` (pull a remote project locally + write `.bb-spec.
   </details>
 
 - **`/plan`** — PRD → self-contained, **function-level** plan. Answers **"how to build it."**
-  - One independent problem per file, down to function names and responsibilities; declarative artifacts (DDL / API contracts / config) are **inlined in final form** for exec to write verbatim
-  - Auto-invoked by `/prd` and hands off straight to `/exec`; it stops only when **new tech** is needed, listing each item with its reasons for a single approval, and that approval counts as the authorization version-policy requires
+  - One independent problem per file, down to function names and responsibilities; declarative artifacts (DDL / API contracts / data formats / config) are **inlined in final form** for exec to write verbatim
+  - Auto-invoked by `/prd`; when **new tech** is needed it stops before writing the plan, listing each item with its reasons in one prompt for your approval, and that approval counts as the authorization version-policy requires; when the plan adds or changes a table schema, API, data format or config (a tech change), it lists the tech changes (each with a `file:line` pointing at the final-form definition) for you to confirm before running `/exec`, and with no tech change it runs `/exec` straight away
   <details><summary>More details</summary>
 
   - Plans exist only while executing — `/exec` deletes them once everything is done, so they never duplicate the PRD

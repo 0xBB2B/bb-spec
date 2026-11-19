@@ -59,7 +59,7 @@ for t in '「新增技术」表' '没有这张表就一项都不能引入' '方�
 for t in '新增第三方库' '装清单外依赖'; do lacks "$IMPL" "$t"; done
 
 echo "[prd 确认弹窗说明]"
-has "$PRD" '需要引入新技术或遇到设计判断时停下问你'
+has "$PRD" '要引入新技术时先问你，plan 里新增或修改表结构、接口、数据格式、配置时再请你确认一次，遇到设计判断时也会停下问你'
 lacks "$PRD" '需要新增第三方依赖'
 
 TEST=agents/test-engineer.md

@@ -3,9 +3,9 @@
 |---|---|---|---|
 | 01 | plan-skill-confirm | done | 2026-11-19 |
 | 02 | homepage-wording | done | 2026-11-19 |
-| 03 | docs-wording | pending | — |
+| 03 | docs-wording | done | 2026-11-19 |
 ## 当前
-准备执行 `03-docs-wording.md`。
+全部完成，收尾中。
 ## 阻塞
 （无）
 ## 重试与自修（每次记一条）
