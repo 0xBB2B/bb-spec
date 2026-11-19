@@ -62,7 +62,7 @@ BB-Spec은 **4개의 독립 설치 가능한 서브 plugin**으로 분할 ——
 
 | 서브 plugin | 무엇을 얻는가 | 설치 명령 |
 |---|---|---|
-| **bb-spec-core** _(권장 베이스)_ | TDD / 버전 정책 / Git 규율 + 3개 수동 hook | `/plugin install bb-spec-core@0xbb2b` |
+| **bb-spec-core** _(권장 베이스)_ | TDD / 버전 정책 / Git 규율 / 코드 규율 + 3개 수동 hook | `/plugin install bb-spec-core@0xbb2b` |
 | **bb-spec-workflow** _(핵심 기능)_ | prd → plan → exec → doc-update → revise → git-push(+ 선택 test-webview / test-api e2e), git-clone 일회성 초기화 + 8개 subagent | `/plugin install bb-spec-workflow@0xbb2b` |
 | **bb-spec-backend** | Go / REST API / DB / 인증 / 인가 / 가관측성 / 서비스 거버넌스 / 설정 제약 | `/plugin install bb-spec-backend@0xbb2b` |
 | **bb-spec-frontend** | Vue 3 + TS + Vite + Tailwind + bun 스택 & 엔지니어링 규약 | `/plugin install bb-spec-frontend@0xbb2b` |
@@ -244,6 +244,7 @@ BB-Spec은 **4개의 독립 설치 가능한 서브 plugin**으로 분할 ——
 - **`tdd-workflow`** — Red-Green-Refactor 규율, 추가 / 수정 / 삭제 3 시나리오 표준 흐름 커버
 - **`version-policy`** — 표준 라이브러리 우선, 프로젝트에 아직 없는 새 기술(라이브러리, 프레임워크, 언어, 데이터베이스, 미들웨어, 도구, 이미지, CI Action, 외부 서비스)을 도입하기 전에 항목별로 용도와 꼭 그것이어야 하는 이유를 나열하고 사용자 승인 후에만 사용, 플러그인 기본 스택과 사용자가 지정한 것도 동일(`/plan` 단계에서 승인된 '신규 기술' 표는 승인된 것으로 간주); 버전 고정 전 의존성의 공식 최신 버전 확인, 훈련 기억에 의존 금지
 - **`git-workflow`** — 브랜치 결정, 단계적 commit, 6개 섹션 PR 설명, 머지 후 정리
+- **`code-constraints`** — 코드 규율: 기본적으로 주석을 쓰지 않고 이유가 드러나지 않을 때만 작성; 요청하지 않은 기능·추상화·방어 금지; 꼭 바꿔야 할 코드만 변경
 
 ### bb-spec-backend — 백엔드 스택 제약
 
@@ -283,7 +284,7 @@ claude plugin update bb-spec-workflow@0xbb2b   # 터미널에서 특정 서브 p
 | Hook | 소속 서브 plugin | 트리거 시점 | 효과 |
 |---|---|---|---|
 | `git-workflow-guard` | bb-spec-core | PreToolUse(Bash) | `main` / `master` 브랜치의 `git commit` 차단; 다른 git 흐름 동작(브랜치 생성 / push / worktree / merge / PR)은 통과시키고 git-workflow 규율과 실시간 git 상태 주입 |
-| `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit) | 의존성 파일 편집 후 "공식 최신 버전 먼저 확인" 자가 점검 리마인더 주입, 승인되지 않은 새 기술은 되돌리고 목록을 만들어 승인을 받도록 안내 |
+| `dep-version-check` | bb-spec-core | PostToolUse(Write\|Edit\|MultiEdit) | 의존성 파일 편집 후 "공식 최신 버전 먼저 확인" 자가 점검 리마인더 주입, 승인되지 않은 새 기술은 되돌리고 목록을 만들어 승인을 받도록 안내 |
 | `background-script-wait` | bb-spec-core | Stop | 이 세션에서 아직 알리지 않은 실행 중 백그라운드 명령을 발견하면 한 번 알림:Claude는 루프로 기다리지 않고 바로 턴을 끝내며, 이후 이런 스크립트는 스크립트 실행 subagent에 맡기고, 상주 서비스는 기다리지 않음 |
 
 ### ⚙️ Hook 스위치 치트시트
