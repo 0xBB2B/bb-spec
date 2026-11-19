@@ -2,7 +2,7 @@
 name: prototype
 description: 界面原型的唯一规程——出原型和对比都派原型子代理做，主对话只派工和传话，先读项目根目录的 DESIGN.md（没有就起草、不达标就先补齐，都经用户确认，新建和修改都画成展示页给用户看），按 DESIGN.md 画出改动所在的整个页面，缺的只读对应源码，源码定不下来才问用户要不要跑服务；用统一的蓝图外壳出 HTML 原型：左栏切页面和状态、右上角按需切方案和页面主题、中间的框只放正式页面，多方案放同一份原型切换，改到用户明确说"可以"；也负责做完后拿实际界面和原型对比。触发：/prototype、做个原型、出个界面预览；/prd、/revise 要出原型时调用；/exec、/revise 收尾时用 --compare 调用。跳过：改动不影响用户看到的界面。
 argument-hint: <主题> [--file <原型文件路径>] | --compare <原型文件路径>
-allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*), Bash(stat -f %m *)
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*), Bash(stat -f %m *), Bash(open *)
 ---
 
 # 界面原型

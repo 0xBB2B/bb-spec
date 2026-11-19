@@ -132,7 +132,7 @@ has '"一轮"指从用户发一条消息，到主对话把结果交还给用户�
   '传回答复，不展示原型'
 lacks '提醒用户刷新' '提醒刷新' '已经对这个原型文件执行过 `open`' '换了新的原型子代理也不重新计数' \
   '原型文件第一次生成后' '写了原型文件）' 'show-prototype.sh' '刷新'
-if sed -n '2,/^---$/p' "$PROTO" | grep -Fxq 'allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*), Bash(stat -f %m *)'; then pass; else fail "prototype frontmatter allowed-tools 缺少 stat 放行"; fi
+if sed -n '2,/^---$/p' "$PROTO" | grep -Fxq 'allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*), Bash(stat -f %m *), Bash(open *)'; then pass; else fail "prototype frontmatter allowed-tools 缺少 stat、open 放行"; fi
 
 echo ""
 echo "通过 ${PASS}，失败 ${FAIL}"
