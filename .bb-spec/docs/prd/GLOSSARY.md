@@ -43,3 +43,5 @@
 | source-mapping | 写在 PRD 的 OVERVIEW「决策记录」里的表，记录每条原文条目最后的去向（写成约束、写进非目标、删除、另开 PRD）和原因 | 简体「原文对照表」 |
 | constraint-skill | bb-spec 插件里按技术栈生效、写着开发规矩的 skill，如 `database-constraints`、`api-design`、`golang-constraints` | 简体「约束类 skill」 |
 | homepage | bb-spec 在 GitHub Pages 上的单页产品介绍站，地址 `https://bb-spec.0xbb.me/`，中英双语 | 简体「主页」「介绍主页」 |
+| artifact-definition | plan 文档里放表结构 SQL、接口定义、数据格式、配置文件完整内容的一段，标题为「成品定义」；`/exec` 原样写进项目，不改写 | 简体「成品定义」 |
+| tech-change | plan 新增或修改的表（表结构及其迁移）、接口（含路径、参数和返回格式）、数据格式（程序读写的文件格式、消息格式等）、配置（配置文件和配置项）；只改函数逻辑不算，新技术另走写 plan 前的新技术弹窗 | 简体「技术变更」「技术变更清单」 |

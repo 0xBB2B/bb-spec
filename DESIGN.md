@@ -121,7 +121,6 @@
 
 - 写法和样子：`.pipe` 里 5 个 `.node`（背景 surface，1px border-strong，圆角 4px，内边距 12px；命令颜色 info，角色颜色 primary，说明 12px/20px text-muted）；节点之间 `.conn`：自动衔接是 primary 色双线箭头，手动触发是 text 色虚线箭头；下面有图例
 - 页面宽度 960px 及以下：节点改成一列，箭头换成一行文字"↓ 自动衔接"或"↓ 由你手动触发"，颜色不变
-- 第一个节点带"唯一一次批准"标签 `<span class="badge">`：1px primary 边框、primary 文字、圆角 4px、12px/20px
 
 ### 输入框
 
@@ -131,6 +130,7 @@
 
 - 写法：`<table><thead><tr><th>…</th></tr></thead><tbody><tr><td><code>bb-spec-core</code> <span class="badge">推荐基座</span></td><td>…</td></tr></tbody></table>`
 - 样子：表头文字 text-muted；单元格内边距 8px 16px，行底 1px border；子插件名颜色 info、700；悬停行背景 surface；手机上隐藏表头，每行上下堆叠
+- 子插件名后面的标签 `<span class="badge">`：1px primary 边框、primary 文字、圆角 4px、内边距 0 8px、12px/20px；全站只有这里用标签
 - 按下、禁用、聚焦：没有这个状态（行不可点击）
 
 ### 卡片

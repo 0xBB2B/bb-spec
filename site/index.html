@@ -37,11 +37,11 @@
   </section>
   <section class="sec" id="pipeline">
     <h2><span class="h">##</span> <span data-i18n="pipeTitle">流水线怎么走</span></h2>
-    <p class="sec-lead" data-i18n="pipeLead">你读完 PRD 批准一次，/plan、/exec、/doc-update 自动接着跑；/git-push 由你手动触发。</p>
+    <p class="sec-lead" data-i18n="pipeLead">你读完 PRD 批准需求；要用新技术时先问你，plan 里新增或修改表结构、接口、数据格式、配置时再确认一次，其余自动跑完。/git-push 由你手动触发。</p>
     <div class="pipe">
-      <div class="node"><code data-i18n="stages.0.0">/prd</code><span class="role" data-i18n="stages.0.1">做什么</span><p data-i18n="stages.0.2">质疑、澄清、拆解，落盘 PRD，请你读完确认。</p><span class="badge" data-i18n="once">唯一一次批准</span></div>
+      <div class="node"><code data-i18n="stages.0.0">/prd</code><span class="role" data-i18n="stages.0.1">做什么</span><p data-i18n="stages.0.2">质疑、澄清、拆解，落盘 PRD，请你读完确认。</p></div>
       <div class="conn auto"><span>↓ <span data-i18n="auto">自动衔接</span></span></div>
-      <div class="node"><code data-i18n="stages.1.0">/plan</code><span class="role" data-i18n="stages.1.1">怎么做</span><p data-i18n="stages.1.2">把 PRD 变成函数级实施计划。只有要引入新技术时才停下问你。</p></div>
+      <div class="node"><code data-i18n="stages.1.0">/plan</code><span class="role" data-i18n="stages.1.1">怎么做</span><p data-i18n="stages.1.2">把 PRD 变成函数级实施计划。要用新技术时先问你；新增或修改表结构、接口、数据格式、配置时，列成清单请你确认。</p></div>
       <div class="conn auto"><span>↓ <span data-i18n="auto">自动衔接</span></span></div>
       <div class="node"><code data-i18n="stages.2.0">/exec</code><span class="role" data-i18n="stages.2.1">Red → Green → Review</span><p data-i18n="stages.2.2">三个互相隔离的 Agent 依次写测试、写实现、做审查。进度写进 PROGRESS.md，中断后能接着跑。</p></div>
       <div class="conn auto"><span>↓ <span data-i18n="auto">自动衔接</span></span></div>

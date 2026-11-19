@@ -305,12 +305,11 @@ const PIECES = [
   T('代码和 PRD 经 git 双向可查', 'Code and PRD, traceable both ways through git'),
   T('代码是唯一事实来源，PRD 只写为什么。每个 commit 带需求标记，从功能能找到代码，从函数能查回当时的需求与取舍。', 'Code is the single source of truth and the PRD only records why. Every commit carries a requirement trailer, so you can go from a feature to its code and from a function back to the requirement and trade-offs behind it.'),
   T('## 流水线怎么走', '## How the pipeline runs'),
-  T('你读完 PRD 批准一次，/plan、/exec、/doc-update 自动接着跑；/git-push 由你手动触发。', 'You read the PRD and approve once. /plan, /exec and /doc-update then run on their own; /git-push is triggered by you.'),
+  T('你读完 PRD 批准需求；要用新技术时先问你，plan 里新增或修改表结构、接口、数据格式、配置时再确认一次，其余自动跑完。/git-push 由你手动触发。', 'You read the PRD and approve the requirement. New tech is confirmed with you before the plan is written, and any new or changed table schema, API, data format or config is confirmed once the plan is done; everything else runs on its own. /git-push is triggered by you.'),
   T('做什么', 'what'),
   T('质疑、澄清、拆解，落盘 PRD，请你读完确认。', 'Challenge, clarify, break down, then write the PRD for you to read and confirm.'),
-  T('唯一一次批准', 'the only approval'),
   T('怎么做', 'how'),
-  T('把 PRD 变成函数级实施计划。只有要引入新技术时才停下问你。', 'Turns the PRD into a function-level plan. Stops only when new tech is needed.'),
+  T('把 PRD 变成函数级实施计划。要用新技术时先问你；新增或修改表结构、接口、数据格式、配置时，列成清单请你确认。', 'Turns the PRD into a function-level plan. Asks before bringing in new tech, and lists any new or changed table schema, API, data format or config for you to confirm.'),
   T('Red → Green → Review', 'Red → Green → Review'),
   T('三个互相隔离的 Agent 依次写测试、写实现、做审查。进度写进 PROGRESS.md，中断后能接着跑。', 'Three isolated agents write tests, implementation and review in turn. Progress goes to PROGRESS.md, so an interrupted run resumes.'),
   T('文档追平代码', 'docs sync'),
@@ -384,7 +383,7 @@ const main = async () => {
     const idx = (id) => staticDoc.all.indexOf(staticDoc.getElementById(id));
     ok(idx('problem') >= 0 && idx('problem') < idx('pipeline') && idx('pipeline') < idx('install'), '三个区块顺序应为 problem → pipeline → install');
     const pos = (t) => bodyText.indexOf(norm(t));
-    const order = ['Claude Code 插件', '每次交接物都是磁盘上的文档', '你读完 PRD 批准一次', '在 Claude Code 里执行这三行', 'MIT License'].map(pos);
+    const order = ['Claude Code 插件', '每次交接物都是磁盘上的文档', '你读完 PRD 批准需求', '在 Claude Code 里执行这三行', 'MIT License'].map(pos);
     ok(order.every((v, i) => v >= 0 && (i === 0 || v > order[i - 1])), `页面从上到下顺序应为 标题区、问题、流水线、安装、页脚，实际位置 ${JSON.stringify(order)}`);
     const topLinks = staticDoc.all.filter((e) => e.tag === 'a' && e.getAttribute('href') === '#top');
     const topEl = staticDoc.getElementById('top');
@@ -444,6 +443,24 @@ const main = async () => {
         ok(set.has(norm(p[lang])), `COPY.${lang} 缺少文案「${p[lang]}」`);
       }
     }
+  });
+
+  group('流水线确认文案', () => {
+    ok(staticDoc.querySelectorAll('.node .badge').length === 0, 'index.html 的 .node 内不应有 .badge 元素');
+    ok(!/\.node\s+\.badge/.test(CSS), 'style.css 不应含 .node .badge');
+    ok(/\.badge\s*\{/.test(CSS), 'style.css 仍应含 .badge {');
+    const b = boot();
+    if (!b.api || !b.api.COPY) { ok(false, 'BBHomepage.COPY 不可用'); return; }
+    for (const lang of ['zh', 'en']) ok(!('once' in b.api.COPY[lang]), `COPY.${lang} 不应有 once 键`);
+    const banned = { zh: ['唯一一次批准', '批准一次', '只有要引入新技术时才停下'], en: ['the only approval', 'approve once', 'Stops only when new tech'] };
+    for (const lang of ['zh', 'en']) {
+      b.api.applyLang(lang);
+      const text = norm((b.doc.body || b.doc).textContent);
+      for (const w of banned[lang]) ok(!text.includes(norm(w)), `${lang} 页面文字不应含「${w}」`);
+      for (const p of PIECES.filter((q) => /批准需求|函数级实施计划/.test(q.zh))) ok(text.includes(norm(p[lang])), `${lang} 页面文字缺少「${p[lang]}」`);
+    }
+    const allText = norm(leaves(b.api.COPY).join('') + bodyText);
+    for (const w of [...banned.zh, ...banned.en]) ok(!allText.includes(norm(w)), `文案中不应出现「${w}」`);
   });
 
   group('pickLang', () => {

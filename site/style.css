@@ -76,7 +76,6 @@ h2 .h { color: var(--primary); }
 .node .role { display: block; color: var(--primary); font-size: 12px; line-height: 20px; }
 .node p { margin: 8px 0 0; font-size: 12px; line-height: 20px; color: var(--muted); }
 .badge { display: inline-block; padding: 0 8px; border: 1px solid var(--primary); border-radius: 4px; color: var(--primary); font-size: 12px; line-height: 20px; white-space: nowrap; }
-.node .badge { margin-top: 8px; }
 .conn { position: relative; align-self: center; height: 16px; color: var(--primary); }
 .conn.manual { color: var(--text); }
 .conn::before { content: ""; position: absolute; left: 4px; right: 12px; top: 6px; border-top: 4px double currentColor; }
