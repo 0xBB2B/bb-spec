@@ -2,7 +2,7 @@
 # ui-preview-shell.html 校验：固定文案、无外部引用、行为（假 DOM + vm）、框内与外壳隔离
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 SHELL_HTML="$ROOT/plugins/bb-spec-workflow/templates/ui-preview-shell.html"
 PASS=0
 FAIL=0

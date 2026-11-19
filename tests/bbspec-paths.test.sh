@@ -2,7 +2,7 @@
 # bbspec-paths.sh 行为校验：配置查找顺序、base_dir 解析、多仓库工作区、$HOME 截止
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 SCRIPT="$ROOT/plugins/bb-spec-workflow/scripts/bbspec-paths.sh"
 PASS=0
 FAIL=0
@@ -151,6 +151,11 @@ mkgitrepo "$R"
 printf 'base_dir: a/../b\n' > "$R/.bb-spec.yaml"
 out=$(run "$R")
 expect "$out" base_dir "$R/a/../b"
+
+echo "[导出 CDPATH 且参数为相对路径 → 输出与不设 CDPATH 相同]"
+plain=$(cd "$FIXROOT" && env -u CDPATH bash "$SCRIPT" single 2>&1) || fail "无 CDPATH 相对目录调用退出码非 0"
+out=$(cd "$FIXROOT" && CDPATH=".:/tmp" bash "$SCRIPT" single 2>&1) || fail "CDPATH 下相对目录调用退出码非 0"
+if [[ "$out" == "$plain" ]]; then pass; else fail "CDPATH 下相对目录输出不同：预期 [$plain]，实际 [$out]"; fi
 
 echo ""
 echo "==============================="

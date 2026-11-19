@@ -2,7 +2,7 @@
 # 跑脚本子代理规则校验：子代理定义、三个流程 SKILL 的分流规则、子代理数量与 README 清单
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 PL="$ROOT/plugins"
 PASS=0
 FAIL=0

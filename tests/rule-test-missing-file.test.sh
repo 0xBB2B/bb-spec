@@ -2,7 +2,7 @@
 # 规则测试里的 lacks 断言：被测文件读不到时必须失败并提示"读不到"
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 PASS=0
 FAIL=0
 

@@ -2,7 +2,7 @@
 # 新技术审批规则校验：plan 列清单并一次弹窗、exec 与 impl-engineer 遇到表外新技术先停、prd 确认说明写明会中途停下
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 WF="$ROOT/plugins/bb-spec-workflow"
 PASS=0
 FAIL=0

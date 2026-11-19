@@ -2,7 +2,7 @@
 # pr-status.sh 行为校验：用假的 gh / glab 回放平台 JSON，检查归一后的 state / merge_commit / blocker
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 SCRIPT="$ROOT/plugins/bb-spec-workflow/skills/git-push/scripts/pr-status.sh"
 PASS=0
 FAIL=0

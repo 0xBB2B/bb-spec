@@ -2,7 +2,7 @@
 # 同根因位置规则校验：revise 修问题前搜同根因位置并分三种处理、code-constraints 把它们划进必改范围、impl-engineer 表外发现只上报
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 PL="$ROOT/plugins"
 PASS=0
 FAIL=0

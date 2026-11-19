@@ -2,7 +2,7 @@
 # branch-prds.sh 行为校验：本分支新增 PRD、commit 指向的已合并 PRD、多仓库工作区
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 SCRIPT="$ROOT/plugins/bb-spec-workflow/scripts/branch-prds.sh"
 PASS=0
 FAIL=0
@@ -150,6 +150,17 @@ ln -s "$D" "$R/.bb-spec/docs"
 g "$R" switch -q -c feat
 out=$(cd "$R" && bash "$SCRIPT" main)
 expect_out "$out" "new=2026-10-19.symlink-new" "软链接文档仓库输出"
+
+echo "[导出 CDPATH 且以相对路径调用脚本 → 输出与不设 CDPATH 相同]"
+R="$FIXROOT/single"
+want=$(printf 'new=2026-10-19.new\nmerged=2026-01-01.old')
+out=$(cd "$ROOT/plugins/bb-spec-workflow" && CDPATH=".:/tmp" bash scripts/branch-prds.sh main "$R" 2>&1) || fail "CDPATH 下相对路径调用退出码非 0"
+expect_out "$out" "$want" "CDPATH 下相对路径输出"
+
+echo "[导出 CDPATH 且第二个参数为相对路径 → 输出与不设 CDPATH 相同]"
+plain=$(cd "$FIXROOT" && env -u CDPATH bash "$SCRIPT" main single 2>&1) || fail "无 CDPATH 相对目录调用退出码非 0"
+out=$(cd "$FIXROOT" && CDPATH=".:/tmp" bash "$SCRIPT" main single 2>&1) || fail "CDPATH 下相对目录调用退出码非 0"
+expect_out "$out" "$plain" "CDPATH 下相对目录输出"
 
 echo ""
 echo "==============================="

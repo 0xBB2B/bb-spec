@@ -2,7 +2,7 @@
 # 界面预览规则校验：prototype 写明做法，prd/revise/exec 只调用它，以及 validate.sh 对外壳文件的检查
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 SKILLS="$ROOT/plugins/bb-spec-workflow/skills"
 SHELL_REL="plugins/bb-spec-workflow/templates/ui-preview-shell.html"
 PASS=0

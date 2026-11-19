@@ -2,7 +2,7 @@
 # git-push、prd、revise 三个 skill 的正文大小上限，以及搬到 references/ 的内容与正文的对应关系
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 SK="$ROOT/plugins/bb-spec-workflow/skills"
 PRD_LIMIT=18000
 PASS=0

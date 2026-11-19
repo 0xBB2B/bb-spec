@@ -2,7 +2,7 @@
 # 守护规则测试的取段逻辑：代码块里的标题行、分隔线、加粗步骤行、编号行既不能当成一段的结束行，也不能当成起始行
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 PASS=0
 FAIL=0
 

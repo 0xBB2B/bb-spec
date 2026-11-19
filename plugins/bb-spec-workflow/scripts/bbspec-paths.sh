@@ -5,7 +5,7 @@
 # 从仓库根往上找：先找最近的 .bb-spec.yaml，找不到再找最近的 .bb-spec/ 目录，都找不到用仓库根
 set -euo pipefail
 
-[ $# -gt 0 ] && cd "$1"
+[ $# -gt 0 ] && CDPATH= cd -- "$1" >/dev/null
 TOP=$(git rev-parse --show-toplevel 2>/dev/null || pwd -P)
 
 # 不查 $HOME 本身：~/.bb-spec/ 是 worktree 存放目录，不代表项目

@@ -2,7 +2,7 @@
 # /prototype 派子代理的规则校验：prototype 规程只派工和传话，prd/revise 的文件名和临时文件说明，exec 不变
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 WF="$ROOT/plugins/bb-spec-workflow"
 PROTO="$WF/skills/prototype/SKILL.md"
 PLUGIN="$WF/.claude-plugin/plugin.json"
@@ -71,7 +71,7 @@ echo "[对比派工说明]"
 has '必须写全 3 项' '截图目录的完整路径' '${CACHE_DIR}/ui-compare/<日期>.<主题>/'
 
 echo "[转报告]"
-has '原样给用户看' '待用户确认的问题' 'open <原型文件路径>' '提醒用户刷新已经打开的页面'
+has '原样给用户看' '待用户确认的问题' 'open <原型文件路径>'
 
 echo "[传话]"
 has 'SendMessage' '同一个原型子代理' '不改写原话'
@@ -116,20 +116,23 @@ done
 QUIT="$(file_section "$PRD" '**步骤 9：简报 + 弹窗确认**' '^### |^[*][*]' | grep -F '| 不做了 |' || true)"
 in_text prd不做了 '设计规范临时文件' "$QUIT"
 
-echo "[审查补充：DESIGN.md 位置、派不出去、确认后、打开时机、发不到时的补充]"
+echo "[审查补充：DESIGN.md 位置、派不出去、确认后、展示时机、发不到时的补充]"
 has 'docs_repo' '为空时取 `root`' '由用户决定怎么办' '不自己接手出原型或对比' \
   '照清单写约束和验收' '把清单当作期望行为' \
   '再写明"用户已确认"' '3 项之外附上用户的答复' \
   '用户确认的是「设计规范」展示页时，只照抄用户原话'
 
-echo "[打开时机]"
-has '按报告最后一行「需要用户看页面」决定要不要打开原型' '执行一次 `open <原型文件路径>`' \
-  '提醒用户刷新已经打开的页面' '不打开，也不提醒刷新' '报告里没有这一行：按"是"处理' \
-  '只看主对话自己在本次对话里执行过的 `open`' '换了新的原型子代理也不重新计数'
-has '出原型模式下报告里没有这一行：按"是"处理' \
-  '子代理交回确认内容清单的那一轮：不打开，也不提醒刷新，下面几条都不看' \
-  '传回答复，不打开原型，也不提醒刷新'
-lacks '原型文件第一次生成后' '写了原型文件）'
+echo "[展示时机]"
+has '"一轮"指从用户发一条消息，到主对话把结果交还给用户为止' '一轮最多展示一次' \
+  '`stat -f %m <原型文件路径>`' '不看报告里写了什么' \
+  '子代理交回确认内容清单的那一轮：不展示' \
+  '「需要用户看页面」是"否"：不展示' \
+  '出原型模式下最后一份报告里没有这一行：按"是"处理' \
+  '执行 `open <原型文件路径>`，在浏览器里新开一个标签页展示原型' \
+  '传回答复，不展示原型'
+lacks '提醒用户刷新' '提醒刷新' '已经对这个原型文件执行过 `open`' '换了新的原型子代理也不重新计数' \
+  '原型文件第一次生成后' '写了原型文件）' 'show-prototype.sh' '刷新'
+if sed -n '2,/^---$/p' "$PROTO" | grep -Fxq 'allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/*), Bash(stat -f %m *), Bash(open *)'; then pass; else fail "prototype frontmatter allowed-tools 缺少 stat、open 放行"; fi
 
 echo ""
 echo "通过 ${PASS}，失败 ${FAIL}"

@@ -2,7 +2,7 @@
 # /prd 导入模式规则校验：SKILL.md 的入口指引与 references/source-import.md 的导入规程
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 PL="$ROOT/plugins"
 PASS=0
 FAIL=0

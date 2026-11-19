@@ -2,7 +2,7 @@
 # tests/lib/md.sh 的接口：按代码块规则取一节、找标题行号、按行过滤、给每行标代码块状态
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 LIB="$ROOT/tests/lib/md.sh"
 PASS=0
 FAIL=0

@@ -2,7 +2,7 @@
 # 结构性校验：多 plugin 结构 + marketplace 一致性 + agent / skill / hook 格式完整性 + 安全基线 + 模板引用 + 路径泄露检测
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 PLUGINS_DIR="$ROOT/plugins"
 PASS=0
 FAIL=0

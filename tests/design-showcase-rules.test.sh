@@ -2,7 +2,7 @@
 # 设计规范展示页规则校验：模板 design-showcase.js、子代理定义的展示页一节、/prototype 规程的对话约束
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 WF="$ROOT/plugins/bb-spec-workflow"
 JS="$WF/templates/design-showcase.js"
 AGENT="$WF/agents/prototype-designer.md"

@@ -2,7 +2,7 @@
 # exec 重试与自修上限校验：实现重试每个 plan 最多 2 次、impl-defect 自修每个 plan 最多 2 轮，插件与测试目录里无旧上限句子
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." >/dev/null && pwd)"
 PL="$ROOT/plugins"
 PASS=0
 FAIL=0
