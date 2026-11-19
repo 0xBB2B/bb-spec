@@ -151,6 +151,12 @@ g "$R" switch -q -c feat
 out=$(cd "$R" && bash "$SCRIPT" main)
 expect_out "$out" "new=2026-10-19.symlink-new" "软链接文档仓库输出"
 
+echo "[导出 CDPATH 且以相对路径调用脚本 → 输出与不设 CDPATH 相同]"
+R="$FIXROOT/single"
+want=$(printf 'new=2026-10-19.new\nmerged=2026-01-01.old')
+out=$(cd "$ROOT/plugins/bb-spec-workflow" && CDPATH=".:/tmp" bash scripts/branch-prds.sh main "$R" 2>&1) || fail "CDPATH 下相对路径调用退出码非 0"
+expect_out "$out" "$want" "CDPATH 下相对路径输出"
+
 echo ""
 echo "==============================="
 echo "通过: $PASS  |  失败: $FAIL"
