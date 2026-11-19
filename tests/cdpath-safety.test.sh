@@ -17,10 +17,10 @@ for t in md-lib skill-size; do
 done
 
 echo "[tests/ 下每个脚本求自身目录的写法不受 CDPATH 影响]"
-pat='cd "$(dir''name "$0")'
+pat='cd (-- )?"\$\(dir''name "\$0"\)'
 for f in "$ROOT"/tests/*.sh; do
   name="tests/$(basename "$f")"
-  lines="$(grep -F -- "$pat" "$f" || true)"
+  lines="$(grep -E -- "$pat" "$f" || true)"
   if [[ -z "$lines" ]]; then pass; continue; fi
   bad=0
   while IFS= read -r line; do
